@@ -3,7 +3,8 @@
    Owns its own DOM refs and events. initBanner({ onPull }) wires it up;
    the pull buttons call onPull(count) so main stays the composition root. */
 
-import { RARITY, RARITY_ORDER, toCard } from '../core.js';
+import { toCard } from '../engine/core.js';
+import { bandsFrom } from '../engine/gacha.js';
 import { state, currentPool, setSetsPool } from '../state.js';
 import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET } from '../data/index.js';
 import { escapeHtml } from './util.js';
@@ -40,28 +41,73 @@ function showStatus(message, isError = false) {
   }
 }
 
+/* The two modes want different things from this row, so they diverge here:
+   Live enumerates (hand-built pool, every entry needs its own remove button),
+   Sets summarizes (see renderPoolSummary). */
 function renderPool() {
   const pool = currentPool();
-  chipsEl.innerHTML = '';
-  for (const card of pool) {
-    const chip = document.createElement('span');
-    chip.className = `chip r-${card.rarity}`;
-    chip.innerHTML =
-      `<img src="${escapeHtml(card.channel.avatarUrl)}" alt="">` +
-      `<span>${escapeHtml(card.channel.title)}</span>` +
-      `<b class="dot" title="${card.rarity}"></b>` +
-      (state.mode === 'live'
-        ? `<button class="chip-x" type="button" data-id="${escapeHtml(card.channel.id)}" aria-label="Remove ${escapeHtml(card.channel.title)}">×</button>`
-        : '');
-    chipsEl.appendChild(chip);
-  }
   if (!pool.length) {
     const msg = state.mode === 'live'
       ? 'Banner is empty — add a channel above to start pulling.'
       : 'Loading set…';
     chipsEl.innerHTML = `<p class="empty">${msg}</p>`;
+  } else if (state.mode === 'live') {
+    renderChips(pool);
+  } else {
+    renderPoolSummary(pool);
   }
   pullBtn1.disabled = pullBtn10.disabled = pullBtnDev.disabled = !pool.length;
+  renderRates();
+}
+
+function renderChips(pool) {
+  chipsEl.innerHTML = '';
+  for (const card of pool) {
+    const title = escapeHtml(card.channel.title);
+    const chip = document.createElement('span');
+    chip.className = `chip r-${card.rarity}`;
+    /* The name is truncated in CSS, so carry the full title as a tooltip. */
+    chip.innerHTML =
+      `<img src="${escapeHtml(card.channel.avatarUrl)}" alt="">` +
+      `<span class="chip-name" title="${title}">${title}</span>` +
+      `<b class="dot" title="${card.rarity}"></b>` +
+      `<button class="chip-x" type="button" data-id="${escapeHtml(card.channel.id)}" aria-label="Remove ${title}">×</button>`;
+    chipsEl.appendChild(chip);
+  }
+}
+
+/* Sets show the pool's composition, not a roll call of it. A real Series is
+   300–500 cards, so a chip each would render hundreds of read-only pills —
+   and every chip's <img> is the card's own avatar, which WP3 made the largest
+   thumbnail available (up to 800px) so the centrepiece isn't soft. That is a
+   punishing download for a 22px circle, repeated on every set switch. The band
+   counts are also simply better information when choosing between sets, and
+   bandsFrom already groups exactly this way. */
+function renderPoolSummary(pool) {
+  const bands = bandsFrom(pool);
+  chipsEl.innerHTML =
+    '<p class="pool-summary">' +
+    `<span class="pool-total">${pool.length} card${pool.length === 1 ? '' : 's'}</span>` +
+    bands.map(band =>
+      `<span class="pool-band r-${band.rarity}"><b class="dot"></b>${band.rarity} ${band.cards.length}</span>`
+    ).join('') +
+    '</p>';
+}
+
+/* The odds shown are the real ones for this pool, not the raw weight table.
+   The two-stage pull picks a rarity band first, then a card inside it, and
+   renormalizes over the bands the pool actually holds — so a sparse live
+   banner shows its own odds instead of a curve it can't produce. */
+function renderRates() {
+  const bands = bandsFrom(currentPool());
+  const total = bands.reduce((sum, band) => sum + band.weight, 0);
+  if (!total) {
+    ratesEl.textContent = '';
+    return;
+  }
+  ratesEl.textContent = 'Drop rates — ' + bands
+    .map(band => `${band.rarity} ${Math.round((band.weight / total) * 1000) / 10}%`)
+    .join(' · ');
 }
 
 function setMode(mode) {
@@ -176,8 +222,6 @@ export function initBanner({ onPull, onDevPull }) {
     renderPool();
   });
 
-  ratesEl.textContent =
-    'Pull weights per channel — ' + RARITY_ORDER.map(r => `${r} ${RARITY[r].weight}`).join(' · ');
   setMode('sets');
 
   /* Local dev convenience: if a gitignored src/config.local.js exists and

@@ -244,3 +244,72 @@ file, and the memory-only guarantee to players holds. The file is gitignored via
 `config.local.js` entry (its name doesn't match the pre-existing `*.local` rule). Working and
 rationale notes (external LLM dumps, the static-sets-vs-backend case) live in a gitignored
 `external-docs/` and are deliberately not part of the repo.
+
+**The pull is two-stage: pick a rarity band by weight, then a card inside it uniformly.**
+The old `pullOne` summed each *card's* rarity weight across the whole pool, so a band's real
+drop rate was its weight × how many cards of that band the pool happened to hold. The weights
+in `core.RARITY` sum to exactly 100 — they were written as a rate curve — but the two
+weightings compounded: a 500-card set curated to the target mix (~N 40 / R 30 / SR 18 / SSR 9 /
+UR 3 %) would have dropped UR at ~0.09%, not ~1%, and burying one UR under 200 commons cut its
+rate ~58×. That made the published odds a function of roster composition, which is exactly what
+a gacha may not do. Band-first makes the table literal: N 55% / R 27% / SR 12% / SSR 5% /
+UR 1%, independent of how many cards each band holds. Empty bands are dropped and the weights
+**renormalize over the bands actually present**, so a sparse live banner (two R channels and an
+SSR) draws 27:5 between them instead of under-rolling. Selection inside a band is uniform —
+rarity decides how often a *band* appears, never which card within it. Chosen over keeping
+per-card weights and controlling rates purely by curating set composition: that works only
+while every set is hand-balanced, and it breaks silently the moment a set gets big or lopsided.
+This is also the machine the three-tier sourcing pools (Legends / Majority / Wildcards) need
+later — swap what stage 1 groups by and the pull math is unchanged. Pinned by tests that assert
+the *exact same band sequence* from a 5-card pool and the same pool padded with 200 commons
+(75 tests).
+
+**The banner shows computed odds, not the raw weight table.** Now that the weights are true
+percentages, the rates line reads "Drop rates — N 55% · R 27% · …", recomputed from the current
+pool on every render so it reflects the renormalization above. The old "Pull weights per
+channel — N 55 · R 27 · …" was written once at init and, under the old engine, was not the odds
+a player actually faced.
+
+**`core.js` + `gacha.js` moved to `src/engine/`; the tree is organized by what a module may
+touch, not by topic.** The existing folders already encoded that rule — `data/` is what touches
+the network, `ui/` is what touches the DOM — but the two pure modules sat loose at the root, so
+the axis was implicit and incomplete. `engine/` names it: **nothing in that folder touches the
+DOM, the network, or any I/O — it would run unchanged in Node.** That admits `core.js` and
+`gacha.js` (its randomness is an injected parameter, so it is deterministic under a seed) and
+excludes `state.js` (mutable) and `main.js` (wiring), which stay at the root. Chosen over a
+topic-named folder grouping "game rules," which would have cut across the capability axis and
+left membership a matter of taste; and over waiting until the three-tier pool code gave the
+folder a second file, since the rule is what makes the folder worth having, not the file count.
+`engine/pools.js` and a future `engine/battle.js` now have an obvious home. Moved with
+`git mv`, so history follows the files; the only code change was import paths.
+
+**Sets mode shows the pool's composition; only Live enumerates it as chips.** The banner
+rendered one chip per pool card, which is fine for eight and untenable for the 300–500 card
+Series WP4 is building toward: hundreds of read-only pills (Sets chips carry no remove button),
+and every chip's `<img>` is the card's own avatar — which WP3 deliberately made the largest
+thumbnail available, up to 800px, so the centrepiece isn't soft. That is a punishing download
+for a 22px circle, repeated on every set switch. Sets now render `<n> cards — N 128 · R 94 · …`
+from `bandsFrom()` (the same grouping the two-stage pull uses, so the banner and the engine can
+never disagree about what is in the pool), and load no avatars at all. Live keeps chips
+unchanged: that pool is hand-built, small by nature, and each entry needs its `×`. Chosen over
+capping the chip list at "first 20 + 480 more", which keeps the payload problem for the twenty
+it still renders and tells the player less than the band counts do; the roster is also better
+discovered by pulling than by reading a list, which is the game. Surfaced by live-mode testing
+against real channels — the fictional sets never had enough cards or long enough titles to
+expose it.
+
+**Chip names truncate at 18ch with the full title as a tooltip.** Real channel titles run long
+and CJK titles longer still; a single seven-channel Live banner containing
+`TVアニメ『ヤニねこ』公式【ハメちゃんねる】` already wrapped the row onto a second line. The name
+now ellipsizes and carries a `title` attribute, so nothing is lost.
+
+**Card titles wrap anywhere; the 2-line clamp does the truncating.** The same live testing showed
+`TheBackgroundNPC` sheared to "TheBackground" on the card face. The suspected cause was the
+`-webkit-line-clamp: 2` failing on long/CJK titles — devtools disproved that: computed
+`line-clamp` reads `2` and every title measured one or two lines (13px / 26px against a 13.2px
+line box), so the clamp was working. The actual cause was horizontal: a single unbreakable word
+has no break opportunity, so it overflowed `.card-name` and `overflow: hidden` cut it mid-word
+with no ellipsis. Fixed with `overflow-wrap: anywhere`, which also lets the box shrink to
+min-content inside its `min-width: 0` flex parent — so the clamp, not the clip, decides what is
+dropped. Worth recording that the first diagnosis was wrong: the visible symptom (a title
+looking too tall) pointed at the vertical mechanism, and only measuring ruled it out.

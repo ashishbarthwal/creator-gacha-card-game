@@ -1,7 +1,7 @@
 /* ui/collection — the collection grid.
    Reads shared state; owns its own DOM refs. */
 
-import { RARITY_ORDER, toCount } from '../core.js';
+import { RARITY_ORDER, toCount } from '../engine/core.js';
 import { state } from '../state.js';
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';

@@ -4,7 +4,7 @@
    face is never colour-shifted); the accent is still sampled from the avatar,
    and the channel initial sits behind it as a faint monogram. */
 
-import { toCount } from '../core.js';
+import { toCount } from '../engine/core.js';
 import { escapeHtml, formatCount } from './util.js';
 
 function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }

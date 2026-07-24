@@ -1,8 +1,8 @@
 /* main — wiring only. Composes the pure core, the gacha engine, the data
    seam and the UI modules; holds nothing of its own but the pull glue. */
 
-import { pull } from './gacha.js';
-import { RARITY_ORDER } from './core.js';
+import { pull } from './engine/gacha.js';
+import { RARITY_ORDER } from './engine/core.js';
 import { currentPool, addToCollection } from './state.js';
 import { initBanner } from './ui/banner.js';
 import { renderCollection } from './ui/collection.js';

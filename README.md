@@ -76,6 +76,10 @@ randomness, no DOM. They sit between the data seam and everything stateful, whic
 the natural test target. The gacha engine takes an injectable RNG (`rng = Math.random` as a
 default parameter) so pulls can be tested with a fixed seed.
 
+Both live in `src/engine/`, because the source tree is organized by *what a module may touch*
+rather than by topic: nothing → `src/engine/` (headless — it would run unchanged in Node),
+the network → `src/data/`, the DOM → `src/ui/`. A new file's home follows from one question.
+
 ```
 input (@handle | URL | UC id)
         │
@@ -96,9 +100,10 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-64 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+75 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
-the drop-rate distribution is an exact assertion), and the card-set adapter's validation. CI
+the drop-rate distribution is an exact assertion, including that the odds don't move when a
+band is padded with 200 more cards), and the card-set adapter's validation. CI
 runs them on every push (that's the badge above); each run uploads a self-contained HTML
 report as an artifact.
 
@@ -119,9 +124,10 @@ into a tested, modular, deployable project in dependency order (full detail in
 
 - [x] **Prototype** — working single-file build: data seam, pure core, weighted gacha,
       reveal animation, in-memory collection.
-- [x] **WP0 — Split the monolith.** Broke the single file into `src/core.js` (pure),
-      `src/gacha.js`, `src/data/*` (the seam), `src/ui/*`, `src/state.js`, `src/main.js`
-      (wiring). Zero behavior change; `index.html` is now the entry point.
+- [x] **WP0 — Split the monolith.** Broke the single file into a pure core, the gacha
+      engine, `src/data/*` (the seam), `src/ui/*`, `src/state.js`, `src/main.js` (wiring).
+      Zero behavior change; `index.html` is now the entry point. (The core and the pull
+      engine later moved together into `src/engine/`.)
 - [x] **WP1 — Test suite.** Vitest against the pure core: exact rarity boundaries, hidden /
       malformed subscriber counts, monotonic stat scaling, seeded-RNG gacha distribution.
       56 tests, `npm test`, dev-only dependency.

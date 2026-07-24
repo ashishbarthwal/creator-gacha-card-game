@@ -4,7 +4,7 @@
    would change what every card is worth. */
 
 import { describe, it, expect } from 'vitest';
-import { RARITY, RARITY_ORDER, toCount, rarityFromSubs, statsFrom, toCard } from '../src/core.js';
+import { RARITY, RARITY_ORDER, toCount, rarityFromSubs, statsFrom, toCard } from '../src/engine/core.js';
 
 describe('rarityFromSubs — exact boundaries', () => {
   /* Table-driven, both sides of every band edge. The API reports counts as

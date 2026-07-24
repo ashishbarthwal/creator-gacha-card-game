@@ -10,7 +10,9 @@ Starting point was a working single-file `youtube-gacha.html`; everything below 
 `wp1`) with GitHub Releases; WP2 (footer) and WP3 (holographic cards) followed. WP4's
 **app-side half** is now in: a sets adapter behind the seam (`src/data/sets.js`), a
 `sets/index.json` manifest, a fictional `sample-series.json`, and a **Sets** banner mode with
-a set picker — pulling from curated static JSON with no API key. 64 tests run in CI on every
+a set picker — pulling from curated static JSON with no API key. The pull engine is now
+**two-stage** (band first, then card), so drop rates follow the weight table instead of the
+roster's shape. 75 tests run in CI on every
 push with a README badge and self-contained HTML report artifacts. Goal reframed (see
 CLAUDE.md): real users + AI-engineering showcase. **Deploy is deliberately deferred** — the app
 is still undercooked. **Next: `tools/build-set.js`, gated on the YouTube API storage / likeness
@@ -48,6 +50,10 @@ DECISIONS.md
 PLAN.md
 README.md
 ```
+
+*(Layout as WP0 delivered it. `core.js` and `gacha.js` later moved together into
+`src/engine/` — same files, same rules, one folder for the headless half. See
+DECISIONS.md.)*
 
 Rules:
 - `src/core.js` imports nothing. If it needs an import, the design is wrong.
@@ -170,7 +176,7 @@ sets and never need an API key (see DECISIONS.md). Two halves, one WP.
 with a set picker. The old standalone Demo mode was then **folded into a bundled starter set**
 (`src/data/starter.js`), so the banner is now two modes, **Sets (default) | Live**, and the
 starter set is the picker's first, always-present option (loaded from the JS bundle, so the
-default view paints instantly and works offline; see DECISIONS.md). 66 tests. The dev-side
+default view paints instantly and works offline; see DECISIONS.md). 75 tests. The dev-side
 pipeline (`build-set.js`) is not started; it waits on the YouTube API storage / likeness
 questions being clarified before it points at real channels, so no real creator data is
 committed yet.

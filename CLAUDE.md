@@ -72,7 +72,10 @@ set (see DECISIONS.md).
 
 **The pure core.** `rarityFromSubs` and `statsFrom` are pure and deterministic — no I/O,
 no randomness, no DOM. They sit between the seam and everything stateful. This is the
-test target.
+test target. They live in **`src/engine/`** with the pull engine, which is the same
+boundary drawn once as a folder: everything in `engine/` runs headless — no DOM, no
+network, no I/O. `gacha.js` takes its randomness as an injected parameter, so it is
+deterministic under a seed and belongs there too.
 
 ```
 input (@handle | URL | UC id)
@@ -86,9 +89,9 @@ input (@handle | URL | UC id)
    |            |            |
    +------------+------------+---------+
         |
-  derivation core (PURE)  <- rarityFromSubs, statsFrom
-        |
-  gacha engine (weighted RNG, x1/x10, dupes stack)
+  derivation core (PURE)  <- rarityFromSubs, statsFrom      | src/engine/
+        |                                                   |
+  gacha engine (band-first weighted pull, x1/x10, dupes)    | headless
         |
   collection state
         |
@@ -98,9 +101,13 @@ input (@handle | URL | UC id)
 ## Conventions
 
 - Vanilla JS, ES modules, no framework, no bundler.
-- Pure logic lives in `src/core.js` and imports nothing.
-- Anything touching the network lives behind `src/data/`.
-- Anything touching the DOM lives in `src/ui/`.
+- **The tree is organized by what a module may touch.** A new file's home follows from
+  that one question, not from its topic:
+  - touches nothing (pure, headless) → `src/engine/` — `core.js` derivation, `gacha.js`
+    pull. `engine/core.js` imports nothing; if it ever needs an import, the design is wrong.
+  - touches the network → `src/data/`, behind the seam.
+  - touches the DOM → `src/ui/`.
+  - `state.js` (mutable app state) and `main.js` (wiring) are neither, and stay at the root.
 - Fonts: Anton (display), Space Grotesk (body), Space Mono (stats/numbers).
 - Palette: dark plum stage, YouTube-red accents.
 - Record any new decision that closes off an option in `DECISIONS.md`.

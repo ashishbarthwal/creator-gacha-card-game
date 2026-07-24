@@ -3,7 +3,7 @@
    sandboxed previews. The API key lives here in memory too, and nowhere
    else. */
 
-import { toCard } from './core.js';
+import { toCard } from './engine/core.js';
 
 export const state = {
   mode: 'sets',                                // Sets is the default; Live is opt-in

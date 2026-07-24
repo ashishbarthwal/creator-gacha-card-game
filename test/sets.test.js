@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSet } from '../src/data/sets.js';
 import { STARTER_SET } from '../src/data/starter.js';
-import { RARITY_ORDER, toCard } from '../src/core.js';
+import { RARITY_ORDER, toCard } from '../src/engine/core.js';
 
 function validRaw() {
   return {

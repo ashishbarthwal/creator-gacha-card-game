@@ -199,7 +199,37 @@
   }
 
   .chip img { width: 22px; height: 22px; border-radius: 50%; }
-  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
+  .chip .dot,
+  .pool-band .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
+
+  /* Real channel names run long (and CJK titles longer still), and one of them
+     blowing the row onto a second line is not the chip's call to make. The full
+     title stays available as a tooltip. */
+  .chip-name {
+    max-width: 18ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Sets mode: the pool's composition in place of one chip per card. */
+  .pool-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .pool-total { color: var(--ink); font-weight: 700; }
+
+  .pool-band {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+  }
 
   .chip-x {
     background: none;
@@ -314,6 +344,12 @@
     font-size: clamp(12px, 5cqw, 19px);
     line-height: 1.1;
     letter-spacing: 0.2px;
+    /* A long single-word channel name ("TheBackgroundNPC") has no break
+       opportunity, so it ran past this box and overflow:hidden sheared it
+       mid-word with no ellipsis. `anywhere` also lets the box shrink to
+       min-content inside its min-width:0 flex parent. The 2-line clamp below
+       then does the truncating, which is what should be doing it. */
+    overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
