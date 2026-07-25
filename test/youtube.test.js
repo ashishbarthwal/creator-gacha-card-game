@@ -13,6 +13,7 @@ function item(over = {}) {
     snippet: {
       title: 'Test Channel',
       customUrl: '@test',
+      country: 'US',
       thumbnails: { default: { url: 'd.jpg' }, medium: { url: 'm.jpg' }, high: { url: 'h.jpg' } },
       ...over.snippet,
     },
@@ -34,6 +35,7 @@ describe('mapChannelItem — API item to Channel shape', () => {
       hiddenSubscriberCount: false,
       viewCount: '678900',
       videoCount: '42',
+      country: 'US',
     });
   });
 
@@ -64,6 +66,12 @@ describe('mapChannelItem — API item to Channel shape', () => {
       hiddenSubscriberCount: false,
       viewCount: '0',
       videoCount: '0',
+      country: '',
     });
+  });
+
+  it('captures the self-declared country, empty when unset', () => {
+    expect(mapChannelItem(item({ snippet: { country: 'IN' } })).country).toBe('IN');
+    expect(mapChannelItem({ id: 'UC_x' }).country).toBe('');
   });
 });

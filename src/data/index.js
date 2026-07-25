@@ -13,6 +13,7 @@
    @property {boolean} hiddenSubscriberCount
    @property {string}  viewCount              decimal string
    @property {string}  videoCount             decimal string
+   @property {string}  country                ISO 3166-1 alpha-2 (self-declared), "" when unset
  */
 
 export { STARTER_SET } from './starter.js';

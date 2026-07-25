@@ -386,3 +386,16 @@ whole suite runs in one worker with no spawn race; six consecutive `npm test` ru
 is dev-only config — the shipped app still has no build step — and the ~1.5s single-process runtime is
 fine for a suite this size. Recorded because it closes the "zero-config Vitest" default the repo ran
 on until now.
+
+**Discovery excludes self-declared Indian creators — a leaky local-risk hedge.** The operator is
+India-based, and the jurisdiction that most easily reaches an individual is their own, so an
+India-domiciled creator is the highest-enforceability claim vector; a foreign creator's claim against a
+free, non-monetized, India-run project is far harder to bring and enforce. `selectChannels` now drops
+any channel whose `country` is in `DEFAULT_EXCLUDE_COUNTRIES` (`['IN']`) via the pure `passesRegion`
+predicate, and `mapChannelItem` + `parseSet` carry `country` so the whole seam speaks one shape.
+Deliberately partial: `snippet.country` is self-declared and frequently absent, and an unknown country
+can't be excluded — so this trims the scariest vector but is a **supplement** to the real protections
+(no monetization, opt-out, unofficial disclaimer, fictional-first), never a substitute. `exclude: []`
+disables it. Applies to the live Magic Search paths (CLI + in-page button) today; its pipeline use lands
+with WP7. Chosen over a search-only region bias (`regionCode`/`relevanceLanguage`), which is even
+leakier and can't see a channel's declared country — the two can still stack later if wanted.

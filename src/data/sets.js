@@ -46,6 +46,7 @@ function normalizeChannel(ch, i, slug) {
     hiddenSubscriberCount: Boolean(ch.hiddenSubscriberCount),
     viewCount: String(ch.viewCount ?? '0'),
     videoCount: String(ch.videoCount ?? '0'),
+    country: String(ch.country ?? ''),
   };
   /* Keep subscriberCount only when present — the typedef omits it for hidden
      channels, matching the live API, so the core reads them the same way. */

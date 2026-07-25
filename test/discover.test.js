@@ -10,6 +10,7 @@ import {
   buildSearchParams,
   harvestChannelIds,
   passesFloor,
+  passesRegion,
   assignPool,
   selectChannels,
   SEARCH_BASE,
@@ -221,5 +222,35 @@ describe('selectChannels — floor + cap per query', () => {
 
   it('defaults the cap to 5', () => {
     expect(selectChannels(passing(9))).toHaveLength(5);
+  });
+
+  it('excludes an IN channel even when it clears the floor', () => {
+    const pool = [
+      channel({ id: 'UC_us', country: 'US', subscriberCount: '5000', videoCount: '40' }),
+      channel({ id: 'UC_in', country: 'IN', subscriberCount: '5000', videoCount: '40' }),
+    ];
+    expect(selectChannels(pool, { cap: 5 }).map(c => c.id)).toEqual(['UC_us']);
+  });
+});
+
+describe('passesRegion — the local-risk exclude', () => {
+  it('excludes a self-declared IN channel by default, case-insensitively', () => {
+    expect(passesRegion(channel({ country: 'IN' }))).toBe(false);
+    expect(passesRegion(channel({ country: 'in' }))).toBe(false);
+  });
+
+  it('keeps channels from other countries', () => {
+    expect(passesRegion(channel({ country: 'US' }))).toBe(true);
+    expect(passesRegion(channel({ country: 'GB' }))).toBe(true);
+  });
+
+  it("keeps a channel with no declared country — the unknown can't be excluded", () => {
+    expect(passesRegion(channel({ country: '' }))).toBe(true);
+    expect(passesRegion(channel())).toBe(true);
+  });
+
+  it('respects a custom exclude list, and [] disables it', () => {
+    expect(passesRegion(channel({ country: 'US' }), ['US', 'CA'])).toBe(false);
+    expect(passesRegion(channel({ country: 'IN' }), [])).toBe(true);
   });
 });

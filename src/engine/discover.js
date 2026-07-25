@@ -117,15 +117,31 @@ export function assignPool(channel, bands = DEFAULT_POOL_BANDS) {
   return 'wildcards';
 }
 
-/* Pick the channels one query contributes: keep only those that clear the
-   floor, then cap the count. Pure — the ranking is whatever order the caller
-   passes, so when the caller hands channels in the search's viewCount rank, the
-   cap keeps the top-ranked qualifiers. Short-circuits once `cap` are found. */
-export function selectChannels(channels, { floor = DEFAULT_FLOOR, cap = 5 } = {}) {
+/* Local-risk hedge: drop channels that self-declare a country in the exclude
+   list. India is excluded by default — an India-based operator is most easily
+   reached by an India-domiciled creator, so removing them trims the highest-
+   enforceability claim vector (see DECISIONS.md). Leaky by design: snippet.country
+   is self-declared and frequently absent, and an unknown country can't be
+   excluded, so this is a supplement to the real protections (no monetization,
+   opt-out), never a substitute. Pass exclude: [] to disable. */
+export const DEFAULT_EXCLUDE_COUNTRIES = ['IN'];
+
+export function passesRegion(channel, exclude = DEFAULT_EXCLUDE_COUNTRIES) {
+  const country = String(channel?.country ?? '').toUpperCase();
+  if (!country) return true; // an unknown country can't be excluded
+  return !exclude.some(c => String(c).toUpperCase() === country);
+}
+
+/* Pick the channels one query contributes: keep those that clear the floor and
+   aren't in an excluded region, then cap the count. Pure — the ranking is
+   whatever order the caller passes, so when the caller hands channels in the
+   search's viewCount rank, the cap keeps the top-ranked qualifiers. Short-
+   circuits once `cap` are found. */
+export function selectChannels(channels, { floor = DEFAULT_FLOOR, cap = 5, exclude = DEFAULT_EXCLUDE_COUNTRIES } = {}) {
   const kept = [];
   for (const channel of channels) {
     if (kept.length >= cap) break;
-    if (passesFloor(channel, floor)) kept.push(channel);
+    if (passesFloor(channel, floor) && passesRegion(channel, exclude)) kept.push(channel);
   }
   return kept;
 }

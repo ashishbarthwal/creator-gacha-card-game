@@ -59,5 +59,6 @@ export function mapChannelItem(item) {
     hiddenSubscriberCount: Boolean(stats.hiddenSubscriberCount),
     viewCount: stats.viewCount ?? '0',
     videoCount: stats.videoCount ?? '0',
+    country: item.snippet?.country ?? '', // ISO 3166-1 alpha-2, self-declared; often absent
   };
 }
