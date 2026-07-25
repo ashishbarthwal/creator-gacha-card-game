@@ -511,5 +511,3 @@ Preserved so the analysis is not re-derived later:
   by real organisations. The conclusion still holds, because naming a project to identify that
   project is nominative use and the doc already excludes logos and branding; only the reason is wrong.
 - Emblems (WP13) are shared infrastructure between the two, since RG cannot use project logos either.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
