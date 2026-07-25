@@ -54,6 +54,17 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
 - [ ] Static host (GitHub Pages / Netlify) + live link
 - [ ] README: screenshots · live demo · test-suite pointer
 
+## WP12 — Pull reveal theatre ✅
+
+Built out of sequence (2026-07-25), ahead of WP6–11 — the pull is the moment the game is
+*for*, and it was the weakest thing on screen.
+
+- [X] Rarity-escalated flip order: commons first and fast, rares last (crescendo)
+- [X] Beam telegraph · specular sweep · reveal-time seam glow (backs identical until the turn)
+- [X] Twinkling stars, SR+ — JS-placed to dodge the avatar circle
+- [X] UR three-beat finish: ignition (frame laps) → discharge (silhouette) → aura (breathing, sheds motes)
+- [X] Reduced-motion path: instant, still, but still wears the rarity halo
+
 ---
 
 ## Gate (not a build WP)
