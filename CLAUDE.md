@@ -1,4 +1,4 @@
-# YouTube Gacha
+# Creator Gacha
 
 Browser-based gacha game where YouTube channels become collectible trading cards.
 Card stats are derived from real channel data, the same trick Wikigacha (Harusugi, Feb 2026)
@@ -21,7 +21,7 @@ unless they say otherwise.
 
 ## The core mapping
 
-| Wikigacha | YouTube Gacha |
+| Wikigacha | Creator Gacha |
 |---|---|
 | Article quality rank -> rarity | Subscriber count -> rarity |
 | Pageviews -> ATK | View count -> ATK |

@@ -1,4 +1,4 @@
-# YouTube Gacha
+# Creator Gacha
 
 > Pull collectible trading cards minted from real YouTube channel stats.
 > A browser-based gacha game where a channel's numbers *become* the card.
@@ -19,7 +19,7 @@ tested in public.
 
 ## The core idea
 
-| Wikigacha | YouTube Gacha |
+| Wikigacha | Creator Gacha |
 |---|---|
 | Article quality rank → rarity | **Subscriber count → rarity** |
 | Pageviews → ATK | **View count → ATK** |

@@ -21,7 +21,7 @@ const revealDone = document.getElementById('reveal-done');
 let revealTimers = [];
 
 const CARD_BACK_HTML =
-  '<div class="back-rings"></div><div class="back-play"></div><div class="back-word">YOUTUBE GACHA</div>';
+  '<div class="back-rings"></div><div class="back-play"></div><div class="back-word">CREATOR GACHA</div>';
 
 /* Per-rarity theatre. rank orders the sequence (rarer flips later, for a
    crescendo); beam is the pre-flip telegraph time (ms); hold is the pause after

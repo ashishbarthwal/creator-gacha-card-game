@@ -1,5 +1,5 @@
 {
-  "name": "youtube-gacha",
+  "name": "creator-gacha",
   "private": true,
   "type": "module",
   "description": "Dev harness only — the shipped app is plain ES modules with zero dependencies and no build step. Vitest runs the test suite against the pure core.",
