@@ -42,6 +42,7 @@ function accentFor(channel) {
     if (!channel.avatarUrl) return resolve(fallback);
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer'; // same hotlink-block dodge as the visible avatar
     img.onload = () => {
       try {
         const size = 12;
@@ -99,7 +100,7 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
         </div>
       </div>
       <div class="avatar-stage">
-        <div class="avatar-ring"><img class="avatar" alt="" src="${escapeHtml(channel.avatarUrl)}"></div>
+        <div class="avatar-ring"><img class="avatar" alt="" referrerpolicy="no-referrer" src="${escapeHtml(channel.avatarUrl)}"></div>
         ${count > 1 ? `<span class="count-badge">×${count}</span>` : ''}
         ${isNew ? '<span class="new-badge">NEW</span>' : ''}
       </div>
@@ -113,6 +114,13 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
       <div class="holo" aria-hidden="true"></div>
       <div class="glare" aria-hidden="true"></div>
     </div>`;
+  /* YouTube avatar URLs can 403 on a hotlink referer (the referrerpolicy above
+     is the usual dodge), and a few channels have no usable thumbnail at all. If
+     the image still can't load, drop it so the faint monogram behind shows as the
+     intended fallback instead of a broken-image glyph. */
+  const avatar = el.querySelector('.avatar');
+  if (!channel.avatarUrl) avatar.remove();
+  else avatar.addEventListener('error', () => avatar.remove(), { once: true });
   accentFor(channel).then(color => el.style.setProperty('--accent', color));
   return el;
 }
