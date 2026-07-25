@@ -5,7 +5,7 @@
 
 import { toCard } from '../engine/core.js';
 import { bandsFrom } from '../engine/gacha.js';
-import { selectChannels, DEFAULT_FLOOR } from '../engine/discover.js';
+import { selectChannels, SEARCH_TIERS } from '../engine/discover.js';
 import { state, currentPool, setSetsPool } from '../state.js';
 import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET, discoverChannels } from '../data/index.js';
 import { escapeHtml } from './util.js';
@@ -20,14 +20,9 @@ const STARTER_VALUE = '@starter';
    this must be gated or stripped before a real-users build — it needs a key and
    is the parked player-side search (see DECISIONS.md / magic-search notes).
 
-   WP6: the jitter is ON. `{}` takes SEARCH_JITTER's defaults, so each run picks
-   its own order and slides a 90-day window through the lookback — running the
-   same keyword twice now RE-ROLLS instead of returning the identical channels.
-   The ceiling is the other half: without it a broad keyword comes back as the
-   same few giants every time, which is exactly what buries the mid-sized
-   on-topic creators the pool is short of. */
-const MS_OPTS = {};
-const MS_FLOOR = { ...DEFAULT_FLOOR, maxSubs: 2_000_000 };
+   One button per sourcing tier. The tiers themselves — search bias and band —
+   are pure config and live in engine/discover.js as SEARCH_TIERS; this module
+   only renders a button per entry and reports the result. */
 const MS_CAP = 5;
 
 const modeSetsBtn = document.getElementById('mode-sets');
@@ -40,7 +35,11 @@ const apiKeyInput = document.getElementById('api-key');
 const addInput = document.getElementById('add-input');
 const addBtn = document.getElementById('add-btn');
 const msInput = document.getElementById('ms-input');
-const msBtn = document.getElementById('ms-btn');
+const msButtons = {
+  legends: document.getElementById('ms-legends'),
+  majority: document.getElementById('ms-majority'),
+  wildcards: document.getElementById('ms-wildcards'),
+};
 const chipsEl = document.getElementById('pool-chips');
 const statusEl = document.getElementById('status');
 const pullBtn1 = document.getElementById('pull-1');
@@ -82,14 +81,31 @@ function renderChips(pool) {
   chipsEl.innerHTML = '';
   for (const card of pool) {
     const title = escapeHtml(card.channel.title);
+    const initial = [...card.channel.title][0]?.toUpperCase() ?? '?';
     const chip = document.createElement('span');
     chip.className = `chip r-${card.rarity}`;
-    /* The name is truncated in CSS, so carry the full title as a tooltip. */
+    /* The name is truncated in CSS, so carry the full title as a tooltip. The
+       pfp slot always renders the initial; a usable avatar is layered over it. */
     chip.innerHTML =
-      `<img src="${escapeHtml(card.channel.avatarUrl)}" alt="" referrerpolicy="no-referrer">` +
+      `<span class="chip-pfp" aria-hidden="true">${escapeHtml(initial)}</span>` +
       `<span class="chip-name" title="${title}">${title}</span>` +
       `<b class="dot" title="${card.rarity}"></b>` +
       `<button class="chip-x" type="button" data-id="${escapeHtml(card.channel.id)}" aria-label="Remove ${title}">×</button>`;
+    /* Same discipline the card avatar has had since the hotlink fix, which the
+       chip never got: a channel with no picture at all yields avatarUrl '', and
+       an <img src=""> makes the browser fetch this very page, fail to decode the
+       HTML, and paint a broken-image glyph. So the element is only created when
+       there's a URL, and removed if that URL fails — either way the initial
+       behind it is what shows. Small/new channels are where this bites: they're
+       the ones most likely never to have set a picture. */
+    if (card.channel.avatarUrl) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      img.addEventListener('error', () => img.remove(), { once: true });
+      img.src = card.channel.avatarUrl;
+      chip.querySelector('.chip-pfp').appendChild(img);
+    }
     chipsEl.appendChild(chip);
   }
 }
@@ -240,33 +256,41 @@ async function onAddChannel() {
    channels to the Live pool. Reuses the exact search/floor/pool code the CLI
    tool uses — data/search.js is fetch-only, so it runs unchanged in the browser.
    Accumulates like the tool: repeat searches grow the pool, dupes are skipped. */
-async function onMagicSearch() {
+/* Every tier button locks while one search is in flight — they share the pool
+   and the key's quota, so letting two run at once just races them. */
+function msSetBusy(busy) {
+  for (const button of Object.values(msButtons)) button.disabled = busy;
+}
+
+async function onMagicSearch(tierKey) {
+  const tier = SEARCH_TIERS[tierKey];
   const keyword = msInput.value.trim() || 'cooking';
   if (!state.apiKey) {
     return showStatus('Magic Search needs a key — paste your YouTube Data API key above.', true);
   }
-  msBtn.disabled = true;
-  msBtn.textContent = 'Searching…';
-  showStatus(`Magic Search: "${keyword}"…`);
+  msSetBusy(true);
+  msButtons[tierKey].textContent = 'Searching…';
+  showStatus(`Magic Search — ${tier.label}: "${keyword}"…`);
   try {
-    const found = await discoverChannels(keyword, state.apiKey, MS_OPTS);
-    const kept = selectChannels(found, { floor: MS_FLOOR, cap: MS_CAP });
+    const found = await discoverChannels(keyword, state.apiKey, tier.opts);
+    const kept = selectChannels(found, { floor: tier.floor, cap: MS_CAP });
     let added = 0;
     for (const channel of kept) {
       if (state.livePool.some(card => card.channel.id === channel.id)) continue;
       state.livePool.push(toCard(channel));
       added += 1;
     }
-    msInput.value = '';
+    /* The keyword deliberately survives a search now: with a band per button,
+       the obvious next move is the same word through a different tier. */
     showStatus(added
-      ? `Magic Search added ${added} channel${added === 1 ? '' : 's'} for "${keyword}". Pull to reveal them.`
-      : `No new channels for "${keyword}" (already in the banner, or none cleared the floor).`);
+      ? `${tier.label} added ${added} channel${added === 1 ? '' : 's'} for "${keyword}". Pull to reveal them.`
+      : `No ${tier.label} channels for "${keyword}" — searched ${found.length} uploader${found.length === 1 ? '' : 's'}, none in that band (or already in the banner). Try another tier, or search again to re-roll.`);
     renderPool();
   } catch (err) {
     showStatus(err.message, true);
   } finally {
-    msBtn.disabled = false;
-    msBtn.textContent = 'Magic Search';
+    msSetBusy(false);
+    msButtons[tierKey].textContent = tier.label;
   }
 }
 
@@ -277,8 +301,11 @@ export function initBanner({ onPull, onDevPull }) {
   apiKeyInput.addEventListener('input', () => { state.apiKey = apiKeyInput.value.trim(); });
   addBtn.addEventListener('click', onAddChannel);
   addInput.addEventListener('keydown', e => { if (e.key === 'Enter') onAddChannel(); });
-  msBtn.addEventListener('click', onMagicSearch);
-  msInput.addEventListener('keydown', e => { if (e.key === 'Enter') onMagicSearch(); });
+  for (const [tierKey, button] of Object.entries(msButtons)) {
+    button.addEventListener('click', () => onMagicSearch(tierKey));
+  }
+  // Enter takes the broad middle — the tier you want most of the time.
+  msInput.addEventListener('keydown', e => { if (e.key === 'Enter') onMagicSearch('majority'); });
   pullBtn1.addEventListener('click', () => onPull(1));
   pullBtn10.addEventListener('click', () => onPull(10));
   pullBtnDev.addEventListener('click', () => onDevPull());

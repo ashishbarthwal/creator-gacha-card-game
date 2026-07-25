@@ -179,6 +179,47 @@ export function assignPool(channel, bands = DEFAULT_POOL_BANDS) {
   return 'wildcards';
 }
 
+/* The three sourcing tiers — one per pool assignPool sorts into. Each carries
+   BOTH a search bias and a band filter, and carrying both is the point: filtering
+   alone would run the identical query three ways and mostly return nothing,
+   because a keyword's most-viewed videos are made by big channels whichever band
+   you happen to be after. So the query is steered first, then the band trims.
+
+     legends    all-time most-viewed, no window — where the giants surface
+     majority   the full jitter — the broad middle
+     wildcards  recent uploads only — where small but still-ACTIVE creators are.
+                The 8-year default lookback would surface long-dead channels here,
+                the one place staleness actually costs a card.
+
+   The bands are derived from DEFAULT_POOL_BANDS, never re-typed, so a tier cannot
+   drift out of agreement with assignPool — the function that sorts these same
+   results into these same pools. The KEYS are the pool names for the same reason,
+   which is why the bottom tier is `wildcards` here and reads "Small" on its button:
+   a key that has to match assignPool's output can be checked, a synonym cannot.
+   Pure config, so it lives here rather than in the UI that renders a button per
+   entry. */
+export const SEARCH_TIERS = {
+  legends: {
+    label: 'Legends',
+    opts: { windowDays: null, orders: ['viewCount'] },
+    floor: { ...DEFAULT_FLOOR, minSubs: DEFAULT_POOL_BANDS.legendsMin },
+  },
+  majority: {
+    label: 'Majority',
+    opts: {},
+    floor: {
+      ...DEFAULT_FLOOR,
+      minSubs: DEFAULT_POOL_BANDS.majorityMin,
+      maxSubs: DEFAULT_POOL_BANDS.legendsMin - 1,
+    },
+  },
+  wildcards: {
+    label: 'Small',
+    opts: { orders: ['date'], windowDays: 30, lookbackDays: 2 * 365 },
+    floor: { ...DEFAULT_FLOOR, maxSubs: DEFAULT_POOL_BANDS.majorityMin - 1 },
+  },
+};
+
 /* Local-risk hedge: drop channels that self-declare a country in the exclude
    list. India is excluded by default — an India-based operator is most easily
    reached by an India-domiciled creator, so removing them trims the highest-

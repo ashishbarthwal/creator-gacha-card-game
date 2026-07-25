@@ -141,6 +141,18 @@
   .add-row { display: flex; gap: 10px; }
   .add-row .field { flex: 1; }
 
+  /* Magic Search tier row (dev) — one button per sourcing pool. */
+  .ms-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .ms-row .btn { padding: 8px 14px; font-size: 13px; }
+  .ms-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+
   #sets-controls { display: grid; gap: 8px; margin-bottom: 14px; }
   #sets-controls[hidden] { display: none; }
   #set-select { cursor: pointer; }
@@ -198,7 +210,26 @@
     font-size: 13px;
   }
 
-  .chip img { width: 22px; height: 22px; border-radius: 50%; }
+  /* The pfp slot is a rarity-tinted initial; a usable avatar covers it. That
+     makes "no picture" a designed state rather than a broken image — the same
+     monogram idea the card uses, sized down. */
+  .chip-pfp {
+    position: relative;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--t-ink, #0d1120);
+    background: var(--rc, var(--muted));
+  }
+
+  .chip-pfp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .chip .dot,
   .pool-band .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
 

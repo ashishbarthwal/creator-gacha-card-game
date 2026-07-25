@@ -16,6 +16,7 @@ import {
   assignPool,
   selectChannels,
   SEARCH_BASE,
+  SEARCH_TIERS,
   DEFAULT_FLOOR,
   KEYWORD_SEEDS,
   KEYWORD_MODIFIERS,
@@ -314,6 +315,40 @@ describe('selectChannels — floor + cap per query', () => {
       channel({ id: 'UC_in', country: 'IN', subscriberCount: '5000', videoCount: '40' }),
     ];
     expect(selectChannels(pool, { cap: 5 }).map(c => c.id)).toEqual(['UC_us']);
+  });
+});
+
+/* The tiers derive their bands from DEFAULT_POOL_BANDS rather than re-typing
+   the numbers. These pin that it actually holds — the bands are the reason the
+   three buttons mean anything, and an off-by-one would silently drop or
+   double-count a whole band of creators. */
+describe('SEARCH_TIERS — one tier per sourcing pool', () => {
+  const at = subs => channel({ subscriberCount: String(subs), videoCount: '40' });
+  // both sides of each boundary, plus the extremes
+  const SAMPLES = [1_000, 50_000, 99_999, 100_000, 100_001, 4_999_999, 5_000_000, 120_000_000];
+
+  it('admits a channel only into the pool assignPool already sorts it into', () => {
+    for (const [tierKey, tier] of Object.entries(SEARCH_TIERS)) {
+      for (const subs of SAMPLES) {
+        if (!passesFloor(at(subs), tier.floor)) continue;
+        expect(assignPool(at(subs)), `${subs} subs passed the ${tierKey} floor`).toBe(tierKey);
+      }
+    }
+  });
+
+  it('exactly one tier accepts any channel above the card floor — no gap, no overlap', () => {
+    for (const subs of SAMPLES) {
+      const hits = Object.keys(SEARCH_TIERS).filter(k => passesFloor(at(subs), SEARCH_TIERS[k].floor));
+      expect(hits, `${subs} subs`).toHaveLength(1);
+    }
+  });
+
+  it('steers the search per tier, not just the filter', () => {
+    // legends wants all-time most-viewed; small wants recent uploads
+    expect(SEARCH_TIERS.legends.opts).toMatchObject({ windowDays: null, orders: ['viewCount'] });
+    expect(SEARCH_TIERS.wildcards.opts.orders).toEqual(['date']);
+    expect(SEARCH_TIERS.wildcards.opts.lookbackDays).toBeLessThan(8 * 365); // not the stale default
+    expect(SEARCH_TIERS.majority.opts).toEqual({}); // the full jitter
   });
 });
 
