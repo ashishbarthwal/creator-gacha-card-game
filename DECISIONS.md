@@ -387,6 +387,15 @@ is dev-only config — the shipped app still has no build step — and the ~1.5s
 fine for a suite this size. Recorded because it closes the "zero-config Vitest" default the repo ran
 on until now.
 
+**Addendum (2026-07-25): the Vitest 4 upgrade silently un-did the fix above.** Vitest 4 removed
+`poolOptions`, which is where the serialization lived. It did not error — it printed a deprecation
+line and ignored the option — so `singleFork: true` stopped applying and the collection race returned
+at roughly one run in two ("no tests", all files failed, `import 0ms`). The replacement is the
+top-level `fileParallelism: false`, which forces workers to 1; `singleFork` no longer exists anywhere
+in the package. Six consecutive runs pass 119/119. Worth recording as its own line because the failure
+mode is the dangerous kind: a config option that stops existing is indistinguishable from one that
+works, unless you read the deprecation notice the runner prints on every single run.
+
 **Discovery excludes self-declared Indian creators — a leaky local-risk hedge.** The operator is
 India-based, and the jurisdiction that most easily reaches an individual is their own, so an
 India-domiciled creator is the highest-enforceability claim vector; a foreign creator's claim against a
