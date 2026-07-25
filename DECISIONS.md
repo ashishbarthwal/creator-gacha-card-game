@@ -479,3 +479,37 @@ Still outstanding and Ash's to do, since it touches their account and the CI bad
 real repo: renaming the GitHub repo from `youtube-gacha-card-game` and updating the badge URL in
 README.md. Also unchanged: the red palette, the `play-glyph` and `.back-play`'s red triangle — flagged
 earlier as compounding signals, now much weaker without the mark carrying them.
+
+**Creator Gacha first; Repo Gacha parked, not rejected.** `external-docs/repo-gacha.md` proposes the
+same engine over open-source repositories. It is materially safer — repos are not people, so the
+likeness problem vanishes outright; eligibility is gated on an actual open-source licence; and
+maintainers generally *want* discovery, which inverts the incentive that makes the creator version
+delicate. The decisive practical difference is storage: YouTube's Developer Policies force API data
+to be refreshed or deleted within 30 days, which is the entire reason sets are monthly printings.
+GitHub imposes no equivalent cap on public repo metadata, so a set file could simply persist, and a
+whole work package stops existing.
+
+Deferred anyway, because safety is a tiebreaker and not a reason to pick a project — CG's problems
+are each solvable and mostly already solved, and the one that decides whether a thing gets finished
+is which one you want to build.
+
+Preserved so the analysis is not re-derived later:
+
+- **~70% survives a pivot, and it's the 70% that took the design thought.** `gacha.js` is fully
+  source-agnostic. `core.js` keeps `toCount`/`RARITY`/`toCard` untouched; only `rarityFromSubs` and
+  `statsFrom` need re-parameterising (stars→rarity, stars/forks→ATK/DEF) with the same shape and the
+  same tests. The seam, `sets.js`, `starter.js` and all of `ui/` including the reveal are untouched —
+  a GitHub adapter slots exactly where `youtube.js` sits. That is the pure-core boundary paying off.
+- **The one place RG is RISKIER than CG:** its "AI-generated educational summaries". CG only ever
+  asserts raw numbers; a generated fact attached to a real named project will eventually be
+  confidently wrong, which is a credibility problem and defamation-adjacent in a way "201,000 stars"
+  is not. The doc addresses copyright ("written independently, not copied") and never addresses
+  accuracy. Those facts want to be hand-written or human-reviewed, not generated at scale.
+- **The doc's stated reasoning is off in one place:** it treats the open-source licence as the safety
+  gate, but a licence grants rights to the CODE, not the NAME — Apache-2.0 §6 explicitly declines to
+  grant trademark rights and MIT never mentions them. "Docker", "Kubernetes", "Rust" are marks held
+  by real organisations. The conclusion still holds, because naming a project to identify that
+  project is nominative use and the doc already excludes logos and branding; only the reason is wrong.
+- Emblems (WP13) are shared infrastructure between the two, since RG cannot use project logos either.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

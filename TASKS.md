@@ -103,6 +103,12 @@ the CORS-tainted canvas in `accentFor`, which can then be deleted.
 Fits the existing tree without bending it: recipe generation is pure → `engine/emblem.js`,
 rendering → `ui/`, classification → build-side tool with tags baked into the set JSON.
 
+**This is the one WP that serves both games.** Repo Gacha (parked, below) can't use project
+logos either, so its cards need procedural artwork from the same pipeline — only the
+classification input changes, from channel description to language/topics. That makes
+emblems shared infrastructure rather than a hedge against the pfp problem, which argues
+for building it properly rather than minimally.
+
 - [ ] Semantic classification (build-time; store only derived TAGS, never raw descriptions —
       tags are our data, descriptions are API data under the 30-day rule)
 - [ ] `engine/emblem.js` — deterministic recipe from channel id + tags, pure and testable
@@ -133,3 +139,8 @@ they are cheap now and expensive after launch.
 ## Parked (far future)
 
 - [ ] Battles · decks · pity · accounts
+- [ ] **Repo Gacha** — the same engine over open-source repos instead of creators.
+      Doc: `external-docs/repo-gacha.md`. Deferred 2026-07-26 in favour of finishing CG;
+      genuinely smaller, because the legal machinery CG needs (opt-out, monthly refresh,
+      country filter, trademark gate) mostly doesn't apply. See DECISIONS.md for what
+      survives a pivot and where the doc's reasoning is off.
