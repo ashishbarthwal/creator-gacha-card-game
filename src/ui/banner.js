@@ -5,7 +5,7 @@
 
 import { toCard } from '../engine/core.js';
 import { bandsFrom } from '../engine/gacha.js';
-import { selectChannels } from '../engine/discover.js';
+import { selectChannels, DEFAULT_FLOOR } from '../engine/discover.js';
 import { state, currentPool, setSetsPool } from '../state.js';
 import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET, discoverChannels } from '../data/index.js';
 import { escapeHtml } from './util.js';
@@ -16,11 +16,18 @@ import { escapeHtml } from './util.js';
 const STARTER_VALUE = '@starter';
 
 /* Magic Search (dev affordance): bulk-discover channels by keyword through the
-   live API and drop them into the Live pool so they can be pulled. Deterministic
-   for now (fixed order, no window). Like Dev Pull, this must be gated or stripped
-   before a real-users build — it needs a key and is the parked player-side
-   search (see DECISIONS.md / magic-search notes). */
-const MS_OPTS = { windowDays: null, orders: ['viewCount'] };
+   live API and drop them into the Live pool so they can be pulled. Like Dev Pull,
+   this must be gated or stripped before a real-users build — it needs a key and
+   is the parked player-side search (see DECISIONS.md / magic-search notes).
+
+   WP6: the jitter is ON. `{}` takes SEARCH_JITTER's defaults, so each run picks
+   its own order and slides a 90-day window through the lookback — running the
+   same keyword twice now RE-ROLLS instead of returning the identical channels.
+   The ceiling is the other half: without it a broad keyword comes back as the
+   same few giants every time, which is exactly what buries the mid-sized
+   on-topic creators the pool is short of. */
+const MS_OPTS = {};
+const MS_FLOOR = { ...DEFAULT_FLOOR, maxSubs: 2_000_000 };
 const MS_CAP = 5;
 
 const modeSetsBtn = document.getElementById('mode-sets');
@@ -243,7 +250,7 @@ async function onMagicSearch() {
   showStatus(`Magic Search: "${keyword}"…`);
   try {
     const found = await discoverChannels(keyword, state.apiKey, MS_OPTS);
-    const kept = selectChannels(found, { cap: MS_CAP });
+    const kept = selectChannels(found, { floor: MS_FLOOR, cap: MS_CAP });
     let added = 0;
     for (const channel of kept) {
       if (state.livePool.some(card => card.channel.id === channel.id)) continue;

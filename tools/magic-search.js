@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-/* tools/magic-search — Magic Search, first working draft. DETERMINISTIC: no
-   randomness yet (that is a later draft, see DECISIONS.md). Runs a list of
-   1–2 word queries through the agreed mechanism, one query at a time:
+/* tools/magic-search — Magic Search. WP6 turned the randomization on: queries
+   are jittered (own order, a 90-day window slid through an 8-year lookback) and
+   can now be GENERATED from the keyword vocab rather than hand-listed, so
+   re-running stops re-harvesting the same corner of YouTube. A subscriber
+   ceiling keeps the giants out. Runs one query at a time:
 
-     search.list (order=viewCount, no window, 100u)
+     search.list (jittered order + window, 100u)
        -> harvest ALL uploaders, deduped
        -> drop channels already seen (this run AND prior runs)
        -> channels.list the rest (1u) -> Channel objects
@@ -22,7 +24,10 @@
 
    Run:   node tools/magic-search.js                 (built-in query list)
           node tools/magic-search.js cooking guitar  (your own queries)
+          node tools/magic-search.js --random 12     (generated from the vocab)
           node tools/magic-search.js --fresh          (start the file over)
+   Env:   MS_PER_QUERY=5   cards kept per query
+          MS_MAX_SUBS=0    lift the exclude-giants ceiling (default 2M)
    Key:   YOUTUBE_API_KEY env var, else src/config.local.js. Never printed,
           never written to output. Real creator data goes to a gitignored
           *.draft.json, never committed. */
@@ -32,11 +37,22 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 import { searchChannelIds, fetchChannelsByIds } from '../src/data/search.js';
-import { selectChannels, assignPool, DEFAULT_FLOOR } from '../src/engine/discover.js';
+import { selectChannels, assignPool, buildKeywords, DEFAULT_FLOOR } from '../src/engine/discover.js';
 import { rarityFromSubs, RARITY_ORDER } from '../src/engine/core.js';
 
 const PER_QUERY = Number(process.env.MS_PER_QUERY ?? 5);
-const DETERMINISTIC = { windowDays: null, orders: ['viewCount'] };
+
+/* WP6: the jitter is ON — `{}` takes SEARCH_JITTER's defaults, so every query
+   picks its own order and slides a 90-day window through the lookback. Re-running
+   the same query list now returns different creators instead of re-harvesting the
+   channels the last run already found and paying 100 quota units to do it. */
+const JITTERED = {};
+
+/* The exclude-giants ceiling. A broad query is dominated by a handful of
+   enormous channels, and those are both the ones already in the pool and the
+   ones with the most to complain about. MS_MAX_SUBS=0 lifts it. */
+const MAX_SUBS = Number(process.env.MS_MAX_SUBS ?? 2_000_000) || Infinity;
+const FLOOR = { ...DEFAULT_FLOOR, maxSubs: MAX_SUBS };
 
 const DEFAULT_QUERIES = [
   'cooking', 'guitar', 'chess', 'origami', 'skateboarding',
@@ -66,13 +82,16 @@ async function loadKey() {
   }
 }
 
-function fmtSubs(channel) {
-  if (channel.hiddenSubscriberCount) return 'hidden';
-  const v = Number(channel.subscriberCount);
+function fmtCount(v) {
   if (!Number.isFinite(v)) return '—';
   if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
   if (v >= 1e3) return Math.round(v / 1e3) + 'K';
   return String(v);
+}
+
+function fmtSubs(channel) {
+  if (channel.hiddenSubscriberCount) return 'hidden';
+  return fmtCount(Number(channel.subscriberCount));
 }
 
 /* Make the draft loadable from the Sets picker without hand-editing the committed
@@ -89,8 +108,17 @@ async function registerLocally() {
 async function main() {
   const rawArgs = process.argv.slice(2);
   const fresh = rawArgs.includes('--fresh') || process.env.MS_FRESH === '1';
-  const args = rawArgs.filter(a => a !== '--fresh');
-  const queries = args.length ? args : DEFAULT_QUERIES;
+  /* --random [n] generates its queries from the keyword vocab instead of using
+     the built-in list or your arguments — the point being that a fixed query
+     list keeps finding the same corner of YouTube however hard the per-query
+     jitter works. Bare --random defaults to 10. */
+  const randomAt = rawArgs.indexOf('--random');
+  const randomCount = randomAt === -1 ? 0 : (Number(rawArgs[randomAt + 1]) || 10);
+  const args = rawArgs.filter(a => !a.startsWith('--'));
+
+  const queries = randomCount ? buildKeywords(randomCount)
+    : args.length ? args
+    : DEFAULT_QUERIES;
 
   const key = await loadKey();
   if (!key) {
@@ -103,16 +131,18 @@ async function main() {
   const channels = [...prior];
   const seen = new Set(prior.map(c => c.id));
 
-  console.log(`Magic Search draft — ${queries.length} queries, cap ${PER_QUERY}/query (deterministic)`);
+  const ceiling = MAX_SUBS === Infinity ? 'no ceiling' : `max ${fmtCount(MAX_SUBS)} subs`;
+  console.log(`Magic Search draft — ${queries.length} queries, cap ${PER_QUERY}/query, jittered, ${ceiling}`);
+  if (randomCount) console.log(`generated queries: ${queries.join(', ')}`);
   console.log(fresh ? 'starting fresh\n' : `continuing from ${prior.length} existing cards\n`);
 
   let added = 0;
   for (const q of queries) {
     try {
-      const ids = await searchChannelIds(q, key, DETERMINISTIC);
+      const ids = await searchChannelIds(q, key, JITTERED);
       const freshIds = ids.filter(id => !seen.has(id));      // dedup (this run + prior runs) before we spend the enrich call
       const found = await fetchChannelsByIds(freshIds, key);
-      const kept = selectChannels(found, { floor: DEFAULT_FLOOR, cap: PER_QUERY });
+      const kept = selectChannels(found, { floor: FLOOR, cap: PER_QUERY });
       for (const ch of kept) { seen.add(ch.id); channels.push(ch); added++; }
       console.log(`  "${q}": ${ids.length} uploaders (${freshIds.length} new) -> kept ${kept.length}`);
       for (const ch of kept) console.log(`      · ${ch.title} — ${fmtSubs(ch)}`);

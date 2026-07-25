@@ -8,12 +8,17 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildSearchParams,
+  buildKeyword,
+  buildKeywords,
   harvestChannelIds,
   passesFloor,
   passesRegion,
   assignPool,
   selectChannels,
   SEARCH_BASE,
+  DEFAULT_FLOOR,
+  KEYWORD_SEEDS,
+  KEYWORD_MODIFIERS,
 } from '../src/engine/discover.js';
 
 /* mulberry32 — same tiny seedable PRNG the gacha tests use, so "randomized"
@@ -147,6 +152,75 @@ describe('passesFloor — cull the too-small and too-inactive', () => {
     expect(passesFloor(channel({ subscriberCount: '2000' }), { minSubs: 5000, minVideos: 1 }))
       .toBe(false);
   });
+
+  /* WP6's exclude-giants knob. Off by default on purpose: a global ceiling
+     would empty the `legends` pool, which is sized on 5M+ subs. */
+  it('has no ceiling by default — a giant passes', () => {
+    expect(passesFloor(channel({ subscriberCount: '250000000' }))).toBe(true);
+  });
+
+  it('fails a channel above an explicit maxSubs', () => {
+    expect(passesFloor(channel({ subscriberCount: '9000000' }), { ...DEFAULT_FLOOR, maxSubs: 2_000_000 }))
+      .toBe(false);
+  });
+
+  it('passes exactly on the ceiling', () => {
+    expect(passesFloor(channel({ subscriberCount: '2000000' }), { ...DEFAULT_FLOOR, maxSubs: 2_000_000 }))
+      .toBe(true);
+  });
+
+  it('a partial floor still gets the other bounds defaulted', () => {
+    // only a ceiling given — minSubs/minVideos must not become undefined and
+    // silently fail every comparison
+    expect(passesFloor(channel({ subscriberCount: '5000', videoCount: '1' }), { maxSubs: 1_000_000 }))
+      .toBe(true);
+  });
+});
+
+describe('buildKeyword — seed x modifier vocab', () => {
+  const gen = seed => buildKeyword({ rng: mulberry32(seed) });
+
+  it('builds a keyword from the vocab', () => {
+    const kw = gen(4);
+    const seed = KEYWORD_SEEDS.find(s => kw === s || kw.startsWith(s + ' '));
+    expect(seed, `"${kw}" should start with a known seed`).toBeTruthy();
+    expect(KEYWORD_MODIFIERS).toContain(kw.slice(seed.length).trim());
+  });
+
+  it('is reproducible under the same seed', () => {
+    expect(gen(7)).toBe(gen(7));
+  });
+
+  it('never leaves a trailing space when the empty modifier is drawn', () => {
+    const kw = buildKeyword({ rng: mulberry32(1), modifiers: [''] });
+    expect(kw).toBe(kw.trim());
+    expect(KEYWORD_SEEDS).toContain(kw);
+  });
+
+  it('respects a custom vocab', () => {
+    expect(buildKeyword({ rng: mulberry32(2), seeds: ['chess'], modifiers: ['asmr'] }))
+      .toBe('chess asmr');
+  });
+});
+
+describe('buildKeywords — a distinct batch', () => {
+  it('returns n distinct keywords', () => {
+    const list = buildKeywords(12, { rng: mulberry32(5) });
+    expect(list).toHaveLength(12);
+    expect(new Set(list).size).toBe(12);
+  });
+
+  it('is reproducible under the same seed, and a re-roll differs', () => {
+    expect(buildKeywords(6, { rng: mulberry32(5) })).toEqual(buildKeywords(6, { rng: mulberry32(5) }));
+    expect(buildKeywords(6, { rng: mulberry32(5) })).not.toEqual(buildKeywords(6, { rng: mulberry32(6) }));
+  });
+
+  /* The vocab can't satisfy the ask — must return short rather than spin
+     forever looking for a distinct combination that doesn't exist. */
+  it('returns short instead of hanging when the vocab is too small', () => {
+    const list = buildKeywords(50, { rng: mulberry32(1), seeds: ['chess'], modifiers: ['', 'asmr'] });
+    expect(list.sort()).toEqual(['chess', 'chess asmr']);
+  });
 });
 
 describe('assignPool — the three sourcing pools by sub band', () => {
@@ -222,6 +296,16 @@ describe('selectChannels — floor + cap per query', () => {
 
   it('defaults the cap to 5', () => {
     expect(selectChannels(passing(9))).toHaveLength(5);
+  });
+
+  it('drops giants when the caller sets a ceiling — the WP6 acceptance case', () => {
+    const pool = [
+      channel({ id: 'UC_giant', subscriberCount: '120000000', videoCount: '900' }),
+      channel({ id: 'UC_mid', subscriberCount: '240000', videoCount: '180' }),
+      channel({ id: 'UC_small', subscriberCount: '12000', videoCount: '60' }),
+    ];
+    const kept = selectChannels(pool, { floor: { ...DEFAULT_FLOOR, maxSubs: 2_000_000 }, cap: 5 });
+    expect(kept.map(c => c.id)).toEqual(['UC_mid', 'UC_small']);
   });
 
   it('excludes an IN channel even when it clears the floor', () => {

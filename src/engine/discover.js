@@ -42,6 +42,58 @@ export const SEARCH_JITTER = {
 const pick = (arr, r) => arr[Math.min(Math.floor(r * arr.length), arr.length - 1)];
 const rfc3339 = ms => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
 
+/* Keyword vocabulary — the re-roll one level up. buildSearchParams randomizes
+   the query for a GIVEN keyword; this randomizes the keyword itself, so sourcing
+   stops depending on a hand-written query list to reach new ground.
+
+   The vocab is hobby / craft / skill topics on purpose. That is where the
+   mid-sized on-topic creators this WP is aiming at actually live, and it steers
+   the whole feature clear of news, politics and anything keyed to a real
+   person's name — which matters more here than usual, given every result
+   becomes a card bearing someone's likeness. */
+export const KEYWORD_SEEDS = [
+  'cooking', 'baking', 'sourdough', 'fermentation', 'coffee roasting', 'tea ceremony',
+  'chess', 'rubiks cube', 'origami', 'calligraphy', 'bookbinding', 'pottery',
+  'woodworking', 'blacksmithing', 'welding', 'leatherwork', 'knife making',
+  'watch repair', 'restoration', 'model trains', 'lego', 'diorama',
+  'guitar', 'piano', 'drums', 'synthesizers', 'field recording', 'music theory',
+  'drawing', 'watercolor', 'oil painting', 'pixel art', 'animation', 'sculpting',
+  'film photography', 'darkroom', 'astrophotography', 'astronomy', 'geology',
+  'birdwatching', 'mycology', 'beekeeping', 'gardening', 'bonsai', 'aquascaping',
+  'hiking', 'bouldering', 'kayaking', 'skateboarding', 'unicycle',
+  'sewing', 'embroidery', 'knitting', 'soap making', 'candle making',
+  '3d printing', 'arduino', 'retro computing', 'speedrun', 'board games',
+  'tabletop rpg', 'magic tricks', 'juggling', 'van build',
+];
+
+/* The empty modifier is in the list deliberately — a bare topic is a perfectly
+   good query, and keeping it in the draw means roughly one search in N stays
+   broad instead of every one being narrowed. */
+export const KEYWORD_MODIFIERS = [
+  '', 'tutorial', 'for beginners', 'asmr', 'timelapse', 'challenge', 'review',
+  'behind the scenes', 'workshop tour', 'first attempt', 'explained', 'tips',
+  'gone wrong', 'diy', 'process', 'day in the life', 'setup tour', 'masterclass',
+];
+
+/* One keyword: seed x modifier. Pure and rng-injected like buildSearchParams,
+   so a seeded run reproduces the exact query list. */
+export function buildKeyword(opts = {}) {
+  const { rng = Math.random, seeds = KEYWORD_SEEDS, modifiers = KEYWORD_MODIFIERS } = opts;
+  const seed = pick(seeds, rng());
+  const modifier = pick(modifiers, rng());
+  return modifier ? `${seed} ${modifier}` : seed;
+}
+
+/* n distinct keywords. Deduped because the vocab collides over a long run and a
+   repeated query spends 100 quota units re-harvesting channels the previous one
+   already found. The guard bounds the draw so a deliberately tiny custom vocab
+   returns short rather than spinning. */
+export function buildKeywords(n, opts = {}) {
+  const seen = new Set();
+  for (let i = 0; seen.size < n && i < n * 40; i++) seen.add(buildKeyword(opts));
+  return [...seen];
+}
+
 /* Build a search.list query for a keyword. Two modes from one function:
    - Randomized (default): a fixed-length window slid to a random start inside
      the lookback, plus order jitter — the re-roll. Consumes rng.
@@ -93,15 +145,25 @@ export function harvestChannelIds(searchJson) {
   return ids;
 }
 
-/* Exclude channels too small or too inactive to earn a card. A hidden
-   subscriber count cannot clear a subs floor we cannot see, so it fails —
-   consistent with the core reading hidden counts as the bottom band. */
-export const DEFAULT_FLOOR = { minSubs: 1_000, minVideos: 5 };
+/* Exclude channels too small or too inactive to earn a card — and, when asked,
+   the giants at the other end. A hidden subscriber count cannot clear a subs
+   floor we cannot see, so it fails — consistent with the core reading hidden
+   counts as the bottom band.
+
+   `maxSubs` is the WP6 exclude-giants knob and defaults to Infinity, i.e. OFF.
+   That default is deliberate: a generic keyword is dominated by a handful of
+   enormous channels, so a ceiling is what surfaces the mid/small on-topic
+   creators the sourcing actually wants — but the same ceiling would empty the
+   `legends` pool, which is sized on 5M+. So the ceiling is a per-query lever the
+   caller opts into, never a global rule. The parameter is still named `floor`
+   for its callers' sake though it now describes a band. */
+export const DEFAULT_FLOOR = { minSubs: 1_000, maxSubs: Infinity, minVideos: 5 };
 
 export function passesFloor(channel, floor = DEFAULT_FLOOR) {
   if (channel?.hiddenSubscriberCount) return false;
-  return toCount(channel?.subscriberCount) >= floor.minSubs
-      && toCount(channel?.videoCount) >= floor.minVideos;
+  const { minSubs = 0, maxSubs = Infinity, minVideos = 0 } = floor;
+  const subs = toCount(channel?.subscriberCount);
+  return subs >= minSubs && subs <= maxSubs && toCount(channel?.videoCount) >= minVideos;
 }
 
 /* Sort a channel into one of the three sourcing pools by subscriber band.

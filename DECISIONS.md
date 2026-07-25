@@ -408,3 +408,30 @@ can't be excluded — so this trims the scariest vector but is a **supplement** 
 disables it. Applies to the live Magic Search paths (CLI + in-page button) today; its pipeline use lands
 with WP7. Chosen over a search-only region bias (`regionCode`/`relevanceLanguage`), which is even
 leakier and can't see a channel's declared country — the two can still stack later if wanted.
+
+**Exclude-giants is a per-query lever, not a global rule.** WP6 adds `maxSubs` to the discovery
+floor, because a generic keyword is dominated by a handful of enormous channels and those are both
+the ones already in the pool and the ones with the most standing to object. It defaults to
+`Infinity` — OFF — which looks timid until you line it up with `assignPool`: the `legends` tier is
+defined as 5M+ subs, so a global ceiling below that would permanently empty a pool the three-tier
+sourcing depends on. Both live callers opt in at 2M (`MS_MAX_SUBS=0` lifts it in the CLI). The
+knob is named inside `floor`, which now describes a band rather than a floor; kept for its callers
+rather than renamed. Closes off "just cap subscribers globally", which would have silently starved
+the legends pool.
+
+**The Magic Search keyword vocab is hobby/craft topics only.** The generator is seed × modifier
+(64 × 18 = 1152 queries), and the seed list is deliberately confined to crafts, skills and hobbies —
+woodworking, field recording, bonsai — with no news, politics, drama, or anything keyed to a real
+person's name. Two reasons, one practical and one not: mid-sized on-topic creators actually live in
+those niches, which is the pool the sourcing is short of; and every result becomes a card carrying
+someone's likeness, so the vocab is the cheapest possible place to keep the feature away from
+subjects where that is least defensible. Closes off "generate keywords from trending/broad topics",
+which maximises reach in exactly the direction the project has been steering away from.
+
+**WP6 was mostly switching on what WP5 already built.** `buildSearchParams` shipped in WP5 with
+full order jitter and a slid publication window, injected rng and all — and then both live callers
+(`ui/banner.js` MS_OPTS, `tools/magic-search.js` DETERMINISTIC) pinned `windowDays: null,
+orders: ['viewCount']`, so none of it ran. Recorded because the engine being "done" and the feature
+being live are separate facts, and the checklist read as though the first implied the second. The
+per-query jitter is also not sufficient on its own: a fixed query list keeps finding the same corner
+of YouTube however hard each query is randomized, which is what the keyword generator is for.

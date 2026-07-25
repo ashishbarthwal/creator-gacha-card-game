@@ -20,12 +20,15 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
 - [X] CLI (`tools/magic-search.js`): accumulates into a gitignored draft set
 - [X] In-page dev trigger (Live-mode button)
 
-## WP6 — Discovery quality
+## WP6 — Discovery quality  🟡 built, acceptance unverified
 
-- [ ] Tuning knobs: exclude giants (`maxSubs`) · `order=date` · recent window
-- [ ] Randomized re-rolls (seeded query jitter)
-- [ ] Keyword generator (seed × modifier vocab)
+- [X] Tuning knobs: exclude giants (`maxSubs`, opt-in) · `order=date` · recent window
+- [X] Randomized re-rolls (seeded query jitter) — engine already had it; **both live
+      callers were pinned deterministic**, and WP6 is mostly turning that on
+- [X] Keyword generator (seed × modifier vocab) — 64 × 18 = 1152 queries, `--random N`
 - [ ] Accept: generic keyword returns mid/small on-topic creators; re-roll differs
+      — needs a live run against a real key, which costs quota. Not verifiable
+      from the tests: they pin the pure engine on synthetic fixtures.
 
 ## WP7 — Set-build pipeline  ⚠️ gated on legality
 
