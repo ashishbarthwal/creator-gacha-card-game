@@ -104,7 +104,8 @@ input (@handle | URL | UC id)
 - **The tree is organized by what a module may touch.** A new file's home follows from
   that one question, not from its topic:
   - touches nothing (pure, headless) → `src/engine/` — `core.js` derivation, `gacha.js`
-    pull. `engine/core.js` imports nothing; if it ever needs an import, the design is wrong.
+    pull, `discover.js` Magic Search sourcing core. `engine/core.js` imports nothing; if it
+    ever needs an import, the design is wrong.
   - touches the network → `src/data/`, behind the seam.
   - touches the DOM → `src/ui/`.
   - `state.js` (mutable app state) and `main.js` (wiring) are neither, and stay at the root.

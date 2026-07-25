@@ -37,6 +37,14 @@ export async function fetchLiveChannel(resolved, apiKey) {
   }
   const item = body.items?.[0];
   if (!item) throw new Error('No channel found for that input.');
+  return mapChannelItem(item);
+}
+
+/* Map one YouTube API channel item (from channels.list) to the Channel shape.
+   Pure — no I/O. Extracted so the live single-channel adapter above and Magic
+   Search's batch fetch (data/search.js) shape channels the exact same way from
+   the same source, instead of each doing it its own way. */
+export function mapChannelItem(item) {
   const stats = item.statistics ?? {};
   return {
     id: item.id,

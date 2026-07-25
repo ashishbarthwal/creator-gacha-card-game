@@ -12,11 +12,20 @@ Starting point was a working single-file `youtube-gacha.html`; everything below 
 `sets/index.json` manifest, a fictional `sample-series.json`, and a **Sets** banner mode with
 a set picker — pulling from curated static JSON with no API key. The pull engine is now
 **two-stage** (band first, then card), so drop rates follow the weight table instead of the
-roster's shape. 75 tests run in CI on every
+roster's shape. 113 tests run in CI on every
 push with a README badge and self-contained HTML report artifacts. Goal reframed (see
 CLAUDE.md): real users + AI-engineering showcase. **Deploy is deliberately deferred** — the app
-is still undercooked. **Next: `tools/build-set.js`, gated on the YouTube API storage / likeness
-questions being clarified with Google before it points at real channels.**
+is still undercooked.
+
+**Update (2026-07-25): Magic Search draft 1 works end-to-end; legality is out of scope for the build phase.**
+The dev-side sourcing pipeline is live: `src/engine/discover.js` (the pure keyword→channel core —
+query build, uploader harvest, subscriber/activity floor, three-tier pool tag), `src/data/search.js`
+(the live `search.list` + `channels.list` fetch), a deterministic CLI (`tools/magic-search.js`, runs
+accumulate into a gitignored draft set) and an **in-page dev trigger** now fetch real creators into
+cards. Pure parts are tested; the suite is 113 green. Next: randomized queries and the tuning knobs
+(exclude the giants, `order=date`, recent window), then `tools/build-set.js` proper. The storage /
+likeness questions no longer block writing build tooling — they are settled **before deploying to
+real users**, not before code (see DECISIONS.md).
 
 ---
 
@@ -176,10 +185,16 @@ sets and never need an API key (see DECISIONS.md). Two halves, one WP.
 with a set picker. The old standalone Demo mode was then **folded into a bundled starter set**
 (`src/data/starter.js`), so the banner is now two modes, **Sets (default) | Live**, and the
 starter set is the picker's first, always-present option (loaded from the JS bundle, so the
-default view paints instantly and works offline; see DECISIONS.md). 75 tests. The dev-side
-pipeline (`build-set.js`) is not started; it waits on the YouTube API storage / likeness
-questions being clarified before it points at real channels, so no real creator data is
-committed yet.
+default view paints instantly and works offline; see DECISIONS.md). 113 tests. The dev-side
+pipeline has **begun with Magic Search draft 1** — `src/engine/discover.js`, the pure
+keyword→channel core (query build, uploader harvest, subscriber/activity floor, three-tier pool
+tag), built and tested. The live fetch (`src/data/search.js`), a deterministic CLI prototype
+(`tools/magic-search.js`, runs accumulate into a gitignored draft set) and an in-page dev trigger
+now fetch real creators into cards end-to-end; `tools/build-set.js` proper (the curated set
+pipeline) still follows. Legality is out of scope for the
+build phase (see DECISIONS.md): the storage / likeness questions are settled before deploying to
+real users, so sets still ship fictional for now, but the Google question no longer blocks writing
+the tooling.
 
 **Dev-side pipeline (never shipped to players):**
 - `tools/build-set.js` — Node script, zero dependencies. Input: a curated handle/UC-id list

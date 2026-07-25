@@ -313,3 +313,76 @@ with no ellipsis. Fixed with `overflow-wrap: anywhere`, which also lets the box 
 min-content inside its `min-width: 0` flex parent — so the clamp, not the clip, decides what is
 dropped. Worth recording that the first diagnosis was wrong: the visible symptom (a title
 looking too tall) pointed at the vertical mechanism, and only measuring ruled it out.
+
+**Magic Search draft 1: the pure discovery engine, without the live fetch.** `src/engine/discover.js`
+is the headless half of keyword→channel sourcing: `buildSearchParams` (a seeded, randomized
+`search.list` query), `harvestChannelIds` (every uploader in a response, deduped — all ~50, since
+one search already costs 100 quota units, so keeping one and dropping 49 is the quota bug the
+three-tier design fixes), `passesFloor` (a subscriber + activity cull; a hidden count fails, since a
+floor you can't see isn't cleared), and `assignPool` (legends/majority/wildcards by sub band). It
+follows the same split `sets.js` draws — the pure, validated, tested part lands first (22 tests on
+synthetic fixtures authored in the real `search.list` and Channel shapes), and the one live
+`search.list` call that consumes the params is a thin IO wrapper (`data/search.js`) left as the next
+step. Nondeterminism is injected, never reached for — `rng` **and** `now`, extending gacha.js's
+rng-injection to the clock — so the "random" re-roll (a fixed-length `publishedAfter` window slid to
+a random start, plus order jitter — the feature's whole point) is a reproducible assertion instead of
+a live coin-flip against an API that cannot repeat. Chosen over building the fetch in the same pass:
+the query randomization is pure and is the novel bit, so it belongs in the tested engine, while the
+fetch adds a key, quota cost, and non-reproducibility for no extra proof. The earlier "wait on the
+Google storage/likeness gate" framing is set aside for now — this is a private build, not a public
+launch; legality is revisited before any public launch, not before writing build tooling.
+
+**Legality is out of scope during the build phase; resolved before deploying to real users.**
+Earlier entries gated real-creator sourcing on the YouTube API storage + likeness/consent questions
+clearing with Google (see "The first set ships with fictional channels"). That gate is narrowed, not
+dropped: it blocks **deploying real creators to real users**, not **writing build tooling**. This is
+a private, un-deployed build, so Magic Search and the discovery pipeline get built now — against
+synthetic fixtures and Ash's own key — with no real creator data committed or served. The
+storage / likeness / consent questions, and the 30-day refresh-printing mechanism that answers the
+storage half, are settled **before any public launch**, not before code. Order of operations: build
+first, resolve legalities before real users, then deploy. This supersedes the "gated before it points
+at real channels" framing in PLAN.md and the fictional-sets entry; it reopens none of CLAUDE.md's
+locked decisions — no monetization, client-side only, and the unofficial disclaimer all stand.
+
+**Magic Search runs in the browser too, as a dev trigger — the fetch layer is environment-neutral.**
+`data/search.js` uses only `fetch` and `URLSearchParams`, so the same discovery code the CLI runs in
+Node runs unchanged in the browser. A **"Magic Search" button in Live mode** takes a keyword, runs
+`search.list` → `channels.list` → floor → cap, and drops the top few channels into the live pool to
+pull immediately. It reuses the exact engine (`selectChannels`/`assignPool`) and seam (`toCard`), so
+a discovered channel is indistinguishable from a hand-added or set one — the seam demonstrated a
+third time. Deterministic for now (fixed `order=viewCount`, no window). Like **Dev Pull**, it is a
+**dev affordance, gated on nothing yet, and must be gated or stripped before a real-users build** —
+it needs a key and is the parked player-side keyword search; committing it does not ship it (deploy
+is still deferred). Chosen over a Node-only tool: watching real creators become cards live is the
+fastest way to feel whether discovery is any good, and it cost nothing extra because the module
+already ran in both environments.
+
+**Discovery runs accumulate into one draft set; a gitignored local manifest surfaces it in the
+picker.** `tools/magic-search.js` merges each run into `sets/magic-search.draft.json`, deduping across
+runs by UC id, so repeated searches grow the pool instead of overwriting it — the file is the first,
+simplest form of the candidate DB the three-tier design calls for (store and rendered set collapsed
+into one file for the draft; they separate later). `--fresh` starts over. To view the draft without
+hand-editing the committed `sets/index.json`, the tool also maintains a gitignored
+`sets/index.local.json`, and `banner.js` reads it **only on localhost** (self-disabling in
+production, same spirit as `config.local.js`) to append generated drafts to the Sets dropdown. Both
+`sets/*.draft.json` and `sets/index.local.json` are gitignored, so no real creator data and no
+local-only pointer is ever committed.
+
+**Card and chip avatars survive YouTube's hotlink 403s: `referrerpolicy="no-referrer"` + a monogram
+fallback.** Google's avatar CDN inconsistently rejects hotlinked images by referer, so some real
+channels' avatars loaded and others 403'd — invisible until Magic Search rendered a batch of real
+channels at once. The visible `<img>` had no referrer policy and no error handling, so a blocked
+image left an empty ring. Fix: set `referrerpolicy="no-referrer"` on the card avatar, the
+accent-sampling image, and the pool chips so Google stops blocking; and on a genuine load failure,
+remove the image so the faint monogram behind shows as the intended fallback instead of a
+broken-image glyph. A pre-existing render bug across all sources, not a Magic Search one — discovery
+just surfaced it.
+
+**Vitest pool pinned to a single fork.** The default `threads` pool intermittently failed worker
+init on this setup (Windows / Node 24) with a "Cannot read properties of undefined (reading
+'config')" race at collection — 0 tests run, all files reported "failed" — and it recurred even with
+`forks` and serial files. `vitest.config.js` now pins `pool: 'forks'` with `singleFork: true`, so the
+whole suite runs in one worker with no spawn race; six consecutive `npm test` runs passed 113/113. It
+is dev-only config — the shipped app still has no build step — and the ~1.5s single-process runtime is
+fine for a suite this size. Recorded because it closes the "zero-config Vitest" default the repo ran
+on until now.

@@ -5,14 +5,23 @@
 
 import { toCard } from '../engine/core.js';
 import { bandsFrom } from '../engine/gacha.js';
+import { selectChannels } from '../engine/discover.js';
 import { state, currentPool, setSetsPool } from '../state.js';
-import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET } from '../data/index.js';
+import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET, discoverChannels } from '../data/index.js';
 import { escapeHtml } from './util.js';
 
 /* The bundled starter set is offered as the first, always-present option. Its
    picker value is this sentinel (real sets use their file path), so selecting
    it skips the fetch and loads from memory. */
 const STARTER_VALUE = '@starter';
+
+/* Magic Search (dev affordance): bulk-discover channels by keyword through the
+   live API and drop them into the Live pool so they can be pulled. Deterministic
+   for now (fixed order, no window). Like Dev Pull, this must be gated or stripped
+   before a real-users build — it needs a key and is the parked player-side
+   search (see DECISIONS.md / magic-search notes). */
+const MS_OPTS = { windowDays: null, orders: ['viewCount'] };
+const MS_CAP = 5;
 
 const modeSetsBtn = document.getElementById('mode-sets');
 const modeLiveBtn = document.getElementById('mode-live');
@@ -23,6 +32,8 @@ const liveControls = document.getElementById('live-controls');
 const apiKeyInput = document.getElementById('api-key');
 const addInput = document.getElementById('add-input');
 const addBtn = document.getElementById('add-btn');
+const msInput = document.getElementById('ms-input');
+const msBtn = document.getElementById('ms-btn');
 const chipsEl = document.getElementById('pool-chips');
 const statusEl = document.getElementById('status');
 const pullBtn1 = document.getElementById('pull-1');
@@ -68,7 +79,7 @@ function renderChips(pool) {
     chip.className = `chip r-${card.rarity}`;
     /* The name is truncated in CSS, so carry the full title as a tooltip. */
     chip.innerHTML =
-      `<img src="${escapeHtml(card.channel.avatarUrl)}" alt="">` +
+      `<img src="${escapeHtml(card.channel.avatarUrl)}" alt="" referrerpolicy="no-referrer">` +
       `<span class="chip-name" title="${title}">${title}</span>` +
       `<b class="dot" title="${card.rarity}"></b>` +
       `<button class="chip-x" type="button" data-id="${escapeHtml(card.channel.id)}" aria-label="Remove ${title}">×</button>`;
@@ -147,8 +158,22 @@ function selectStarter() {
 }
 
 async function appendManifestSets() {
+  await appendSetsFrom('sets/index.json', { warnOnFail: true });
+  /* Dev-only: a gitignored sets/index.local.json lets local build tools (e.g.
+     tools/magic-search.js) surface their generated draft sets in the picker
+     without touching the committed manifest. Probed only on localhost, so a
+     deployed build never makes the doomed request — same spirit as the
+     config.local.js pre-fill above. */
+  if (isLocalDev()) await appendSetsFrom('sets/index.local.json', { warnOnFail: false });
+}
+
+function isLocalDev() {
+  return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+}
+
+async function appendSetsFrom(url, { warnOnFail }) {
   try {
-    const res = await fetch('sets/index.json');
+    const res = await fetch(url);
     if (!res.ok) throw new Error();
     const { sets } = await res.json();
     for (const s of sets ?? []) {
@@ -159,7 +184,7 @@ async function appendManifestSets() {
     }
   } catch {
     // The starter set still works; the extra sets just aren't offered.
-    showStatus('Could not load the additional set list.', true);
+    if (warnOnFail) showStatus('Could not load the additional set list.', true);
   }
 }
 
@@ -204,6 +229,40 @@ async function onAddChannel() {
   }
 }
 
+/* Dev: run one keyword through the live discovery path and add the top few
+   channels to the Live pool. Reuses the exact search/floor/pool code the CLI
+   tool uses — data/search.js is fetch-only, so it runs unchanged in the browser.
+   Accumulates like the tool: repeat searches grow the pool, dupes are skipped. */
+async function onMagicSearch() {
+  const keyword = msInput.value.trim() || 'cooking';
+  if (!state.apiKey) {
+    return showStatus('Magic Search needs a key — paste your YouTube Data API key above.', true);
+  }
+  msBtn.disabled = true;
+  msBtn.textContent = 'Searching…';
+  showStatus(`Magic Search: "${keyword}"…`);
+  try {
+    const found = await discoverChannels(keyword, state.apiKey, MS_OPTS);
+    const kept = selectChannels(found, { cap: MS_CAP });
+    let added = 0;
+    for (const channel of kept) {
+      if (state.livePool.some(card => card.channel.id === channel.id)) continue;
+      state.livePool.push(toCard(channel));
+      added += 1;
+    }
+    msInput.value = '';
+    showStatus(added
+      ? `Magic Search added ${added} channel${added === 1 ? '' : 's'} for "${keyword}". Pull to reveal them.`
+      : `No new channels for "${keyword}" (already in the banner, or none cleared the floor).`);
+    renderPool();
+  } catch (err) {
+    showStatus(err.message, true);
+  } finally {
+    msBtn.disabled = false;
+    msBtn.textContent = 'Magic Search';
+  }
+}
+
 export function initBanner({ onPull, onDevPull }) {
   modeSetsBtn.addEventListener('click', () => setMode('sets'));
   modeLiveBtn.addEventListener('click', () => setMode('live'));
@@ -211,6 +270,8 @@ export function initBanner({ onPull, onDevPull }) {
   apiKeyInput.addEventListener('input', () => { state.apiKey = apiKeyInput.value.trim(); });
   addBtn.addEventListener('click', onAddChannel);
   addInput.addEventListener('keydown', e => { if (e.key === 'Enter') onAddChannel(); });
+  msBtn.addEventListener('click', onMagicSearch);
+  msInput.addEventListener('keydown', e => { if (e.key === 'Enter') onMagicSearch(); });
   pullBtn1.addEventListener('click', () => onPull(1));
   pullBtn10.addEventListener('click', () => onPull(10));
   pullBtnDev.addEventListener('click', () => onDevPull());

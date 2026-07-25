@@ -26,3 +26,9 @@ Thumbs.db
 # Test / build output — reports are generated on demand, never committed
 coverage/
 reports/
+
+# Magic Search output — generated sets carry real creator data; never committed
+# (see DECISIONS.md: build first, legality before deploying to real users).
+sets/*.draft.json
+# Dev-only picker manifest that surfaces generated drafts in the Sets dropdown.
+sets/index.local.json

@@ -19,3 +19,4 @@ export { STARTER_SET } from './starter.js';
 export { fetchLiveChannel } from './youtube.js';
 export { resolveChannelInput } from './resolve.js';
 export { loadSet, parseSet } from './sets.js';
+export { discoverChannels } from './search.js';
