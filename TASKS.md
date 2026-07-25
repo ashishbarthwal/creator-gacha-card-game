@@ -30,13 +30,23 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
       — needs a live run against a real key, which costs quota. Not verifiable
       from the tests: they pin the pure engine on synthetic fixtures.
 
+## WP7a — Opt-out contact line  🔴 NOT gated — prerequisite
+
+Pulled out of WP7 deliberately. It was sitting inside a work package gated on legality,
+which is backwards: the opt-out is one of the things that *makes* the legal position
+defensible, so gating it behind that resolution means it can only ever arrive too late.
+It ships **with the first real-creator set, before it**, not after.
+
+- [ ] Footer contact line + honored-removal policy (already decided in DECISIONS.md)
+- [ ] Pick the contact route — the one part that isn't free (see below)
+
 ## WP7 — Set-build pipeline  ⚠️ gated on legality
 
 - [X] Exclude self-declared IN creators — leaky local-risk hedge (engine filter built)
 - [ ] Candidate DB (build-side source of truth)
 - [ ] `build-set.js` proper (curated list → `sets/*.json`)
 - [ ] Monthly refresh workflow (30-day printings)
-- [ ] Footer opt-out / contact line
+- [ ] Strip `country` from shipped sets (build-time only — see the Gate section)
 
 ## WP8 — Production hardening
 
@@ -72,7 +82,17 @@ Built out of sequence (2026-07-25), ahead of WP6–11 — the pull is the moment
 
 ## Gate (not a build WP)
 
-- [ ] **Legality resolution** — must clear before WP11 ships to real users
+Both must clear before WP11 ships to real users. Deliberately deferred, not resolved —
+they are cheap now and expensive after launch.
+
+- [ ] **Legality resolution**
+- [X] **Rename off the "YouTube" trademark** — now **Creator Gacha** (done early, 2026-07-26).
+      Descriptive use retained in the tagline; the footer disclaimer is unchanged and still
+      required. **One piece left, and it's yours:** rename the GitHub repo from
+      `youtube-gacha-card-game` and update the CI badge URL in README.md — the badge path has
+      to match the real repo or it breaks.
+- [ ] **Strip `country` from shipped sets** — build-time only (`passesRegion`), never read at
+      runtime, so publishing it exposes a self-declared personal attribute the game never uses
 
 ## Parked (far future)
 

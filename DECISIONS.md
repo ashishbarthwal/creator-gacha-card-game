@@ -435,3 +435,47 @@ orders: ['viewCount']`, so none of it ran. Recorded because the engine being "do
 being live are separate facts, and the checklist read as though the first implied the second. The
 per-query jitter is also not sufficient on its own: a fixed query list keeps finding the same corner
 of YouTube however hard each query is randomized, which is what the keyword generator is for.
+
+**The name "YouTube Gacha" ships as-is for the private build; renaming is deferred to launch.**
+Putting a registered trademark in a product's name is the strongest possible signal of affiliation —
+stronger than anything the footer disclaimer can walk back, because the name travels in the title bar,
+the URL and any shared link, detached from the page. The Wikigacha precedent does NOT cover this: "wiki"
+is a generic noun describing a kind of site, so Harusugi never used Wikipedia's mark; "YouTube" is a
+mark. Descriptive use ("cards minted from real YouTube channel data") stays fine and stays in the
+tagline — it is the NAME SLOT that asserts brand identity, not the word.
+
+Deferred rather than fixed because the project is a private portfolio build with no launch, no users
+and no domain, and Ash's call is that the exposure is not real until it is public. Recorded because
+the cost curve only goes up: today it is find-and-replace, after launch it is a migration of links,
+search results and anything anyone bookmarked.
+
+**Trigger: this must be resolved before WP11 deploys to real users**, alongside the legality gate.
+Pre-scoped so it is not a research task later — the name lives in `index.html` (`<title>`, `<h1>`),
+`src/ui/reveal.js` (the card back wordmark reads "YOUTUBE GACHA"), `package.json` + lockfile `name`,
+README / CLAUDE.md / PLAN.md, and the GitHub repo name + the Actions badge URL in the README.
+
+Also noted, because they compound rather than stand alone: the red palette, the `play-glyph` in the
+`<h1>` and the red play triangle on the card back (`.back-play`) point the same direction as the name.
+A play triangle alone is a generic media symbol; red + play button + the mark together is what reads
+as affiliation. Dropping the name weakens the rest considerably, so the name is the high-leverage fix.
+
+**Superseded: the name is now "Creator Gacha".** The entry above deferred this to launch; Ash closed
+it early (2026-07-26) once a name they liked existed — the expensive half of a rename is deciding, and
+that was done, so executing was find-and-replace across eight files. Chosen over "Subgacha", which
+named the core mechanic (subs → rarity) and preserved Wikigacha's `[source]+gacha` construction, but
+lost on reading as a pun: "sub" carries too many unrelated meanings, and a name should not need
+explaining. "Creator Gacha" also stays accurate if the sets go fictional-first, since fictional
+channels are still creators.
+
+Descriptive use is deliberately RETAINED and moved into the tagline — "cards minted from real YouTube
+channel stats" — because naming the platform you interoperate with was never the problem. The name
+slot is what asserts a brand relationship; the body copy is nominative use. The footer disclaimer is
+unchanged and still required.
+
+Deliberately NOT renamed: the four historical references to `youtube-gacha.html` (PLAN.md, README.md,
+the WP0 entry above). That file genuinely existed and was genuinely deleted, and rewriting a record of
+what happened to match a later decision is exactly the kind of tidying that makes docs untrustworthy.
+Still outstanding and Ash's to do, since it touches their account and the CI badge path must match the
+real repo: renaming the GitHub repo from `youtube-gacha-card-game` and updating the badge URL in
+README.md. Also unchanged: the red palette, the `play-glyph` and `.back-play`'s red triangle — flagged
+earlier as compounding signals, now much weaker without the mark carrying them.
