@@ -75,6 +75,13 @@ It ships **with the first real-creator set, before it**, not after.
 
 - [ ] Static host (GitHub Pages / Netlify) + live link
 - [ ] README: screenshots · live demo · test-suite pointer
+- [ ] **Privacy policy page** — needed on its own merits (the app takes a user's API key) and
+      a stated prerequisite of any future quota audit. Unusually easy to write honestly here:
+      no backend, no accounts, no analytics, key held in memory only and sent nowhere but
+      googleapis.com. That is a strong document rather than a chore — but write it AFTER
+      WP9, since localStorage changes what it has to say (local-only, never transmitted).
+- [ ] **Terms of service page** — same audit prerequisite. Carries the unofficial/not-affiliated
+      disclaimer and the opt-out route (WP7a) in one place rather than only in the footer.
 
 ## WP12 — Pull reveal theatre  🟡 built, never seen
 
