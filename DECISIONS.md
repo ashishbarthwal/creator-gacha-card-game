@@ -511,3 +511,42 @@ Preserved so the analysis is not re-derived later:
   by real organisations. The conclusion still holds, because naming a project to identify that
   project is nominative use and the doc already excludes logos and branding; only the reason is wrong.
 - Emblems (WP13) are shared infrastructure between the two, since RG cannot use project logos either.
+
+## Launch posture: ship the real-pfp build first (2026-07-31)
+
+**The first public release carries real creator pictures and names.** Ash's call, made
+knowingly rather than by omission: the emblem build (WP13) is the safer artifact but the
+weaker experiment, and the question this release exists to answer — does anyone want to
+play this — cannot be answered by a version stripped of the thing that makes it legible.
+The risk accepted is real but bounded: no monetization, no ads, a disclaimer, a working
+opt-out, the India exclude, and a modal bad outcome that is an email asking for removal
+rather than a claim.
+
+**The emblem build is a flag, never a fork** — WP8's avatar-source switch is therefore
+promoted from "hardening" to a launch prerequisite. It is what makes this release
+*reversible*: if a creator objects, or the read of the room changes, flipping to generated
+emblems is a config change and a redeploy instead of a rewrite. Launching without the flag
+is what would make the decision irreversible, not launching with real pictures.
+
+**Shipped sets are built in CI at deploy and never committed.** A set file in git is
+permanent: `git rm` on an opted-out creator leaves them at the old commit, in a public repo
+this project actively invites people to browse — so committing sets would mean promising a
+removal we cannot actually perform. Building at deploy keeps creator data out of history
+entirely and *is* the monthly-refresh mechanism the 30-day storage cap already requires
+(above). One workflow satisfies both.
+
+**The candidate DB stores channel IDs, never channel data.** It is the committed,
+accumulating source of truth for *who is in the pool*, plus our own derived tags and the
+opt-out denylist; CI hydrates those IDs into full stats at build time. A UC id is an opaque
+public identifier, so this keeps the committed artifact clean under the rule above while
+leaving the denylist permanent and auditable — which is what makes an honored opt-out stick
+across every future build instead of being re-added by the next sourcing run.
+
+**Reverses the curation half of "Series are monthly printings" (above).** That entry said
+candidates are "human-approved before snapshotting." At the chosen first-set size (300+,
+pipeline-driven) that is not a promise Ash can keep, and a policy nobody performs is worse
+than one honestly scoped. Human approval is replaced by **mechanical rails**: the
+subscriber/activity floor, `safeSearch=strict`, the India exclude, the denylist, and a fast
+opt-out response. The target rarity mix and the monthly cadence are unchanged. This is a
+deliberate trade of editorial control for scale, recorded so the earlier line is not read as
+still operative.

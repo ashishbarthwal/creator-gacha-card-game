@@ -82,6 +82,22 @@
 <footer>
   <p>Fan project. Not affiliated with or endorsed by YouTube or Google. Channel data via the YouTube Data API.
   Your API key lives only in this page's memory: it is never logged, never persisted, and never sent anywhere except googleapis.com.</p>
+  <!-- WP7a — the creator opt-out. This ships BEFORE the first real-creator set,
+       never after: the opt-out is part of what makes carrying real channels
+       defensible, so gating it behind anything else guarantees it arrives too
+       late to have done its job. Policy is DECISIONS.md's: honored within 7
+       days, matching the user-data deletion window we extend the courtesy from.
+       No identity check on purpose — an unfounded removal costs one card, while
+       a verification gauntlet costs the good faith this line exists to show.
+
+       !! BEFORE DEPLOY: replace the placeholder address below. A .example TLD
+       cannot receive mail, so shipping as-is would advertise an opt-out that
+       silently goes nowhere — worse than claiming none at all. -->
+  <p class="footer-optout">
+    Are you a creator on one of these cards?
+    <a class="optout-link" href="mailto:removals@creator-gacha.example?subject=Card%20removal%20request">Ask to be removed</a>
+    — no questions asked, and you'll be out of every set within 7 days.
+  </p>
   <p class="footer-coffee">
     <a class="coffee-link" href="https://www.buymeacoffee.com/chunchunmaru" target="_blank" rel="noopener noreferrer">
       <span aria-hidden="true">☕</span> Buy ChunChunMaru a coffee
