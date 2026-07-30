@@ -159,9 +159,10 @@ they are cheap now and expensive after launch.
 - [ ] **Legality resolution**
 - [X] **Rename off the "YouTube" trademark** — now **Creator Gacha** (done early, 2026-07-26).
       Descriptive use retained in the tagline; the footer disclaimer is unchanged and still
-      required. **One piece left, and it's yours:** rename the GitHub repo from
-      `youtube-gacha-card-game` and update the CI badge URL in README.md — the badge path has
-      to match the real repo or it breaks.
+      required. **Closed out 2026-07-31:** the GitHub repo is `creator-gacha-card-game` and the
+      CI badge points at it. The longer form was chosen over a bare `creator-gacha` on purpose —
+      "gacha" is a niche term, and the repo list is read by people who may not know it means the
+      card-pull mechanic. It costs a longer Pages URL and buys legibility to a recruiter.
 - [ ] **Strip `country` from shipped sets** — build-time only (`passesRegion`), never read at
       runtime, so publishing it exposes a self-declared personal attribute the game never uses
 

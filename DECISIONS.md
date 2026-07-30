@@ -475,9 +475,11 @@ unchanged and still required.
 Deliberately NOT renamed: the four historical references to `youtube-gacha.html` (PLAN.md, README.md,
 the WP0 entry above). That file genuinely existed and was genuinely deleted, and rewriting a record of
 what happened to match a later decision is exactly the kind of tidying that makes docs untrustworthy.
-Still outstanding and Ash's to do, since it touches their account and the CI badge path must match the
-real repo: renaming the GitHub repo from `youtube-gacha-card-game` and updating the badge URL in
-README.md. Also unchanged: the red palette, the `play-glyph` and `.back-play`'s red triangle — flagged
+Closed out 2026-07-31: the GitHub repo is now `creator-gacha-card-game` and the README badge path
+follows it. `creator-gacha` was the shorter, cleaner option and would have matched `package.json`
+exactly; the longer form won because "gacha" is a niche term and the repo list is read by people who
+do not necessarily know it names the card-pull mechanic. Legibility to a stranger beat a tidier Pages
+URL. Also unchanged: the red palette, the `play-glyph` and `.back-play`'s red triangle — flagged
 earlier as compounding signals, now much weaker without the mark carrying them.
 
 **Creator Gacha first; Repo Gacha parked, not rejected.** `external-docs/repo-gacha.md` proposes the

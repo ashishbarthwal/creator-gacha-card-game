@@ -3,7 +3,7 @@
 > Pull collectible trading cards minted from real YouTube channel stats.
 > A browser-based gacha game where a channel's numbers *become* the card.
 
-[![tests](https://github.com/ashishbarthwal/youtube-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/youtube-gacha-card-game/actions/workflows/test.yml)
+[![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
 
 A fan tribute to [Wikigacha](https://en.wikipedia.org/wiki/Wikigacha) (Harusugi, Feb 2026),
 which plays the same trick with Wikipedia article metrics. This one does it with YouTube:
