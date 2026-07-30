@@ -100,10 +100,11 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-75 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+134 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
-band is padded with 200 more cards), and the card-set adapter's validation. CI
+band is padded with 200 more cards), the card-set adapter's validation, and the discovery
+engine, whose query jitter is reproducible under an injected clock and seed. CI
 runs them on every push (that's the badge above); each run uploads a self-contained HTML
 report as an artifact.
 
