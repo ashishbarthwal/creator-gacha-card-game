@@ -567,10 +567,18 @@
     width: 100%;
     height: 100%;
     transform-style: preserve-3d;
-    transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.3, 1.1);
+    /* The base turn, used by N and R. Slowed from 0.55s: a common's turn was
+       quicker than the eye wants for the thing the whole overlay is built
+       around, and at the old cadence several were mid-turn at once. */
+    transition: transform 0.72s cubic-bezier(0.2, 0.7, 0.3, 1.1);
   }
 
   .reveal-cell.flipped .flip-inner { transform: rotateY(180deg); }
+
+  /* Face-up, a card opens in the inspector — so it advertises that the way the
+     collection's cards do, rather than keeping the plain pointer it wore while
+     it was still just a thing to skip ahead. */
+  .reveal-cell.flipped { cursor: zoom-in; }
 
   .face { position: absolute; inset: 0; backface-visibility: hidden; }
   .face.front { transform: rotateY(180deg); }
@@ -634,10 +642,12 @@
   /* UR rests hotter and wider than it peaks elsewhere — it has an aura to sit
      inside, so the settled halo carries more than SR/SSR's do. */
   .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 44px 9px; }
-  /* SSR/UR turn over 0.8s (below), so their halo peaks later — otherwise it has
-     already started fading by the time the face is actually facing you. */
+  /* SSR/UR turn over 0.95s (below), so their halo peaks later — otherwise it has
+     already started fading by the time the face is actually facing you. The
+     face crosses into view around the halfway point of the turn, so these
+     delays move whenever the flip durations do. */
   .reveal-cell.flipped { animation: seam-light 0.8s ease-out var(--seam-delay, 0.15s) both; }
-  .glow-SSR.reveal-cell.flipped { --seam-delay: 0.42s; }
+  .glow-SSR.reveal-cell.flipped { --seam-delay: 0.5s; }
   /* UR waits longer still: its halo has to flood in BEHIND the ignition (below)
      rather than beat it, so the fire reads as the thing lighting the frame. */
   .glow-UR.reveal-cell.flipped { --seam-delay: 0.85s; }
@@ -662,7 +672,7 @@
        Fading the whole layer in gives them an arrival. */
     opacity: 0;
   }
-  .reveal-cell.flipped .stars { animation: stars-in 0.7s ease-out 0.45s both; }
+  .reveal-cell.flipped .stars { animation: stars-in 0.7s ease-out 0.52s both; }
   @keyframes stars-in { to { opacity: 1; } }
   .star {
     position: absolute;
@@ -713,6 +723,12 @@
      rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
      into the flip makes the long beams tension instead of waiting. */
   .reveal-cell.beaming .beam { animation: beam-build var(--beam-ms, 500ms) cubic-bezier(0.5, 0, 0.85, 0.35) forwards; }
+  /* A revealed card never wears its own telegraph. The scheduler already refuses
+     to light a beam on a turned card (reveal.js), but that is a rule about
+     timing; this makes the state unrepresentable, so no future path can strand a
+     cone of light above a card that has already landed. Declared after the rule
+     above so it wins on equal specificity. */
+  .reveal-cell.flipped .beam { animation: none; opacity: 0; }
 
   @keyframes beam-build {
     0%   { opacity: 0;   transform: scaleY(0.1); }
@@ -720,9 +736,12 @@
     100% { opacity: 1;   transform: scaleY(1); }
   }
 
-  /* rarer cards flip a touch slower — a beat of drama on the turn */
+  /* Rarer cards flip slower — a beat of drama on the turn. Now a three-step
+     ladder rather than two: SR used to share the common turn and only differed
+     in what landed after it, so the escalation started a tier late. */
+  .glow-SR  .flip-inner { transition-duration: 0.82s; }
   .glow-SSR .flip-inner,
-  .glow-UR  .flip-inner { transition-duration: 0.8s; }
+  .glow-UR  .flip-inner { transition-duration: 0.95s; }
 
   /* reveal-moment specular sweep — a single slow light pass across the card
      face as it lands (SR+ only), a faint tint per glow tier. Not a loop. */
@@ -747,10 +766,10 @@
     opacity: 0;
     filter: blur(1.5px);
   }
-  /* Delay is folded in per tier rather than set in a later rule: SSR/UR flip
-     over 0.8s, so their pass has to start later to cross a card that's facing
-     you. Rarer = slower and brighter. */
-  .glow-SR  .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.4s; }
+  /* Delay is folded in per tier rather than set in a later rule: SR flips over
+     0.82s and SSR/UR over 0.95s, so their pass has to start later to cross a
+     card that's facing you. Rarer = slower and brighter. */
+  .glow-SR  .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.46s; }
   .glow-SSR .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
   .glow-UR  .sweep { --sweep: rgba(255, 232, 214, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
   .glow-UR  .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
@@ -914,6 +933,22 @@
     font-size: 12.5px;
     line-height: 1.6;
   }
+
+  .footer-optout { margin-top: 10px; }
+
+  /* Underlined by default, unlike the coffee link one line below it. The two
+     footer links want opposite postures: the coffee is deliberately passive and
+     easy to miss, while the opt-out is a promise to someone who may be unhappy
+     to be here — it has to be findable on the first look. */
+  .optout-link {
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+  }
+
+  .optout-link:hover,
+  .optout-link:focus-visible { color: var(--ink); }
 
   .footer-coffee { margin-top: 12px; }
 

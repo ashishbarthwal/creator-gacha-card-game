@@ -25,6 +25,12 @@ export function openInspect(card, meta = {}) {
   inspectClose.focus();
 }
 
+/* The reveal overlay can sit underneath this one, and both answer Escape — so
+   it needs to be able to ask whether it is the top overlay before acting. */
+export function isInspectOpen() {
+  return !inspectEl.hidden;
+}
+
 export function closeInspect() {
   inspectEl.hidden = true;
   inspectHolder.innerHTML = '';

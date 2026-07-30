@@ -13,12 +13,19 @@
    openReveal(results). */
 
 import { renderCard } from './card.js';
+import { openInspect, isInspectOpen } from './inspect.js';
 
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
 const revealDone = document.getElementById('reveal-done');
 
 let revealTimers = [];
+
+/* Which pull result a cell is showing, so a click can open that card in the
+   inspector. A WeakMap rather than a dataset id: there is no keyed store to look
+   the result back up in (unlike the collection grid, which has state.collection),
+   and the entries fall away on their own when the grid is cleared. */
+const cellResults = new WeakMap();
 
 const CARD_BACK_HTML =
   '<div class="back-rings"></div><div class="back-play"></div><div class="back-word">CREATOR GACHA</div>';
@@ -28,12 +35,19 @@ const CARD_BACK_HTML =
    this card lands. Sweep, seam glow and stars are gated per rarity downstream. */
 const FX = {
   N:   { rank: 0, beam: 0,    hold: 0   },
-  R:   { rank: 1, beam: 200,  hold: 30  },
-  SR:  { rank: 2, beam: 360,  hold: 200 },
-  SSR: { rank: 3, beam: 600,  hold: 380 },
-  UR:  { rank: 4, beam: 950,  hold: 650 },
+  R:   { rank: 1, beam: 200,  hold: 60  },
+  SR:  { rank: 2, beam: 360,  hold: 240 },
+  SSR: { rank: 3, beam: 600,  hold: 430 },
+  UR:  { rank: 4, beam: 950,  hold: 700 },
 };
-const BASE_GAP = 115;      // gap between consecutive commons
+
+/* Gap between consecutive commons — the cadence knob, and the one that decides
+   whether an N run reads as a sequence or as a machine-gun. At 115ms it was the
+   latter: the flip animation itself runs far longer than the gap, so five cards
+   were mid-turn at once and no single card had a beat of its own. Widened so a
+   common still lands briskly but finishes most of its turn before the next
+   starts. The rarer tiers are spaced by their own beam + hold on top of this. */
+const BASE_GAP = 200;
 const OPENING_BEAT = 300;  // let the overlay settle before the first flip
 
 const SWEPT = new Set(['SR', 'SSR', 'UR']);   // get the specular sweep
@@ -66,12 +80,15 @@ export function openReveal(results) {
   revealEl.hidden = false;
   revealDone.focus();
 
+  /* Reduced motion: every card is already face-up, so there is no sequence to
+     run. Routed through flip() rather than setting .flipped directly so these
+     cards still pick up the focusability and label it applies — the inspector
+     is reachable here too, since the click/keyboard handlers are delegated on
+     the persistent grid rather than bound per cell in the animated path. */
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    cells.forEach(({ cell }) => cell.classList.add('flipped'));
+    cells.forEach(({ cell }) => flip(cell));
     return;
   }
-
-  cells.forEach(({ cell }) => cell.addEventListener('click', () => flip(cell)));
 
   /* Schedule by rarity rank: commons first and fast, rares last and dramatic.
      Ties keep pull order so a given seed is otherwise stable. */
@@ -85,6 +102,13 @@ export function openReveal(results) {
     if (fx.beam) {
       const at = cursor;
       revealTimers.push(setTimeout(() => {
+        /* A card can be turned early by clicking it, and the beam is a separate
+           timer from the flip — so by the time this fires the card may already
+           be face-up. Lighting a telegraph for a card that has landed is not
+           just pointless: the beam animation is `forwards`, and nothing removes
+           `beaming` after the flip, so it would strand a cone of light above the
+           card for as long as the overlay is open. */
+        if (cell.classList.contains('flipped')) return;
         cell.style.setProperty('--beam-ms', fx.beam + 'ms');
         cell.classList.add('beaming');
       }, at));
@@ -202,18 +226,51 @@ function buildCell(result) {
   flipEl.appendChild(inner);
   cell.appendChild(flipEl);
 
+  cellResults.set(cell, result);
   revealGrid.appendChild(cell);
   return { cell, rarity };
 }
 
 /* Turn one card. The sweep, seam glow and stars all live in the front face /
    CSS on .flipped; here we only flip. The guard makes a later scheduled flip
-   (after an early click) a no-op. */
+   (after an early click) a no-op.
+
+   The turn is also what makes a cell an inspectable thing, so the button
+   semantics are granted here rather than at build time: face-down, the card has
+   no identity to announce and naming it would hand a screen-reader user the
+   rarity the flip exists to withhold. */
 function flip(cell) {
   if (cell.classList.contains('flipped')) return;
   cell.classList.remove('beaming');
   cell.classList.add('flipped');
+
+  const title = cellResults.get(cell)?.card.channel.title;
+  if (!title) return;
+  cell.tabIndex = 0;
+  cell.setAttribute('role', 'button');
+  cell.setAttribute('aria-label', `View ${title} up close`);
 }
+
+/* A click means one of two things depending on where the card is in its turn,
+   and both are wanted: face-down it skips the wait, face-up it opens the card
+   large. Delegated on the persistent grid — like the collection's — so it
+   survives the innerHTML wipe at the top of openReveal and covers the
+   reduced-motion path without a second binding. */
+function inspectFromEvent(e) {
+  const cell = e.target.closest?.('.reveal-cell');
+  if (!cell || !revealGrid.contains(cell)) return;
+  if (!cell.classList.contains('flipped')) {
+    flip(cell);
+    return;
+  }
+  const result = cellResults.get(cell);
+  if (result) openInspect(result.card, { isNew: result.isNew });
+}
+
+revealGrid.addEventListener('click', inspectFromEvent);
+revealGrid.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectFromEvent(e); }
+});
 
 export function closeReveal() {
   revealTimers.forEach(clearTimeout);
@@ -223,4 +280,16 @@ export function closeReveal() {
 
 revealDone.addEventListener('click', closeReveal);
 revealEl.addEventListener('click', e => { if (e.target === revealEl) closeReveal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !revealEl.hidden) closeReveal(); });
+
+/* Escape closes the TOP overlay only. Now that the inspector can open from the
+   reveal, both are listening on document, and one Escape would otherwise close
+   the inspector AND drop the reveal behind it in a single press.
+   Registered on the CAPTURE phase deliberately: a capture listener on document
+   always runs before a bubble listener on document, whatever order the modules
+   happened to be imported in. So this asks "is the inspector up?" while the
+   answer is still true, instead of racing inspect.js's own handler to it. */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || revealEl.hidden) return;
+  if (isInspectOpen()) return; // the inspector is on top; that Escape is its own
+  closeReveal();
+}, true);

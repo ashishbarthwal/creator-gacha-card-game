@@ -34,15 +34,19 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
       works. **Still unconfirmed: that a re-roll differs.** Needs the same keyword run
       twice; not testable from the suite, which pins the pure engine on synthetic fixtures.
 
-## WP7a — Opt-out contact line  🔴 NOT gated — prerequisite
+## WP7a — Opt-out contact line  🟡 built, needs a real address
 
 Pulled out of WP7 deliberately. It was sitting inside a work package gated on legality,
 which is backwards: the opt-out is one of the things that *makes* the legal position
 defensible, so gating it behind that resolution means it can only ever arrive too late.
 It ships **with the first real-creator set, before it**, not after.
 
-- [ ] Footer contact line + honored-removal policy (already decided in DECISIONS.md)
-- [ ] Pick the contact route — the one part that isn't free (see below)
+- [X] Footer contact line + honored-removal policy (7 days, no identity check)
+- [ ] **Pick the contact route — BLOCKS DEPLOY.** The line currently points at a
+      `.example` placeholder, which cannot receive mail. Shipping it that way would
+      advertise an opt-out that silently goes nowhere: worse than claiming none.
+      Use a dedicated alias forwarding to Ash, not the primary address — a public
+      footer address attracts permanent spam.
 
 ## WP7 — Set-build pipeline  ⚠️ gated on legality
 
@@ -83,16 +87,34 @@ It ships **with the first real-creator set, before it**, not after.
 - [ ] **Terms of service page** — same audit prerequisite. Carries the unofficial/not-affiliated
       disclaimer and the opt-out route (WP7a) in one place rather than only in the footer.
 
-## WP12 — Pull reveal theatre  🟡 built, never seen
+## WP12 — Pull reveal theatre ✅
 
 Built out of sequence (2026-07-25), ahead of WP6–11 — the pull is the moment the game is
 *for*, and it was the weakest thing on screen.
 
-**Downgraded from ✅ on 2026-07-26.** Every item below is built and committed, but the whole
-package is *visual* and nothing automated covers it — the suite deliberately tests only the
-headless engine, and `reveal.js` touches the DOM. So these boxes record "written", not
-"verified", which is not what a ✅ means anywhere else on this list. It goes back to ✅ after
-someone actually watches a Dev Pull.
+**Downgraded to 🟡 on 2026-07-26, restored to ✅ on 2026-07-31** — the package is entirely
+visual and nothing automated covers it (the suite tests only the headless engine, and
+`reveal.js` touches the DOM), so the boxes recorded "written" until someone actually watched
+a Dev Pull. Ash did, on 2026-07-31: the crescendo, beam, sweep, stars and the UR three-beat
+all read as intended. One correction came out of it, below.
+
+- [X] **Turn speed, from that viewing.** Commons were machine-gunning: the cadence
+      (`BASE_GAP` 115ms) was far shorter than the flip itself, so ~5 cards were mid-turn at
+      once and none had a beat of its own. Cadence 115→200ms, and the turn slowed across the
+      board (0.55→0.72s base, a new SR step at 0.82s, SSR/UR 0.8→0.95s). The delays
+      choreographed against the flip midpoint moved with it — SSR seam 0.42→0.5s, SR sweep
+      0.4→0.46s, stars-in 0.45→0.52s — so the halo and sweep still land on a face that is
+      actually facing you.
+- [X] **Click a revealed card to inspect it** — QoL, so admiring a pull no longer costs a
+      trip through Done and the collection grid. Face-down a click still skips the wait;
+      face-up it opens the existing inspector, which already dims everything else. Escape now
+      closes the top overlay only (capture-phase guard) instead of collapsing both at once.
+- [X] **Stranded beam, found by using the above.** Beam and flip are separate timers, so
+      turning a card early left its beam timer to fire afterwards and re-light a telegraph on
+      a landed card — and `beam-build` is `forwards`, with nothing removing `beaming` after a
+      flip, so it held a cone of light above the card until the overlay closed. Fixed at the
+      scheduler (a beam refuses to light on a flipped cell) *and* in CSS
+      (`.reveal-cell.flipped .beam` is off), so timing is no longer the only thing preventing it.
 
 - [X] Rarity-escalated flip order: commons first and fast, rares last (crescendo)
 - [X] Beam telegraph · specular sweep · reveal-time seam glow (backs identical until the turn)
