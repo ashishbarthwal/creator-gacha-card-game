@@ -3,7 +3,7 @@
 
 import { pull } from './engine/gacha.js';
 import { RARITY_ORDER } from './engine/core.js';
-import { currentPool, addToCollection } from './state.js';
+import { currentPool, addToCollection, persistCollection } from './state.js';
 import { initBanner } from './ui/banner.js';
 import { renderCollection } from './ui/collection.js';
 import { openReveal } from './ui/reveal.js';
@@ -12,6 +12,7 @@ function doPull(count) {
   const pool = currentPool();
   if (!pool.length) return;
   const results = pull(pool, count).map(addToCollection);
+  persistCollection();          // once per pull, not once per card
   renderCollection();
   openReveal(results);
 }
@@ -38,6 +39,7 @@ function doDevPull() {
     .filter(Boolean);
   const fill = pull(pool, Math.max(0, 10 - oneEach.length));
   const results = [...oneEach, ...fill].slice(0, 10).map(addToCollection);
+  persistCollection();
   renderCollection();
   openReveal(results);
 }

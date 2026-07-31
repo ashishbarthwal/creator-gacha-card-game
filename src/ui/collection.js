@@ -2,7 +2,7 @@
    Reads shared state; owns its own DOM refs. */
 
 import { RARITY_ORDER, toCount } from '../engine/core.js';
-import { state } from '../state.js';
+import { state, resetCollection } from '../state.js';
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
 import { openInspect } from './inspect.js';
@@ -10,6 +10,17 @@ import { openInspect } from './inspect.js';
 const collGrid = document.getElementById('collection-grid');
 const collSummary = document.getElementById('coll-summary');
 const collEmpty = document.getElementById('coll-empty');
+const collClear = document.getElementById('coll-clear');
+
+/* Confirmed, because a collection is the only thing in this game a player can
+   lose, and there is no server-side copy to restore it from. */
+collClear.addEventListener('click', () => {
+  const n = state.collection.size;
+  if (!n) return;
+  if (!confirm(`Delete all ${n} card${n === 1 ? '' : 's'} from this browser? This cannot be undone.`)) return;
+  resetCollection();
+  renderCollection();
+});
 
 /* Delegated once on the persistent grid, so it keeps working across the
    innerHTML re-render in renderCollection below. */
@@ -43,6 +54,7 @@ export function renderCollection() {
     el.setAttribute('aria-label', `View ${item.card.channel.title} up close`);
     collGrid.appendChild(el);
   }
-  collSummary.textContent = items.length ? `${items.length} unique · ${total} cards` : '';
+  collSummary.textContent = items.length ? `${items.length} unique · ${total} cards · saved in this browser` : '';
   collEmpty.hidden = items.length > 0;
+  collClear.hidden = items.length === 0;
 }

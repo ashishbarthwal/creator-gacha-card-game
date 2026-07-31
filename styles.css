@@ -96,6 +96,30 @@
 
   .hint { color: var(--muted); font-size: 12.5px; }
 
+  /* The collection head holds three things (title, summary, clear). Pushing the
+     summary right keeps it grouped with the button instead of stranding it in
+     the middle of a space-between row. */
+  #coll-summary { margin-left: auto; }
+
+  /* A text button for a destructive-but-minor action: deliberately quieter than
+     anything in the banner, so "Clear collection" can never be mistaken for part
+     of the pull flow. It only appears when there is something to clear. */
+  .linkish {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    opacity: 0.75;
+  }
+
+  .linkish:hover,
+  .linkish:focus-visible { color: var(--red); opacity: 1; }
+
   /* mode toggle */
   .mode-toggle {
     display: flex;
