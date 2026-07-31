@@ -1,95 +1,189 @@
 # Decisions
 
 Append-only. One entry per decision that closes off an option. Newest at the bottom.
+Each line is the decision and its one-sentence reason; expand an entry for the full
+reasoning, the alternatives weighed, and what it closed off.
 
 ---
 
-**No monetization in the game.** No paid pulls, currency, perks, or ads. YouTube API ToS
+<details>
+<summary><b>No monetization in the game</b> — ToS, likenesses and gambling law all point the same way; Wikigacha launched free too.</summary>
+
+No paid pulls, currency, perks, or ads. YouTube API ToS
 restricts commercial use, cards use creators' names and likenesses, and paid gacha invites
 gambling and minor-protection regulation. Harusugi ran Wikigacha free at launch with only a
 Buy Me a Coffee link. We do the same.
 
-**One Buy Me a Coffee link, no strings.** Passive tip jar in the footer. It buys Ash a
+</details>
+
+<details>
+<summary><b>One Buy Me a Coffee link, no strings</b> — The single exception, and it unlocks nothing — the moment it does, every IP problem returns.</summary>
+
+Passive tip jar in the footer. It buys Ash a
 coffee and never unlocks anything in-game. If a donation ever grants in-game value, every
 IP and legal problem above comes back.
 
-**Client-side only, user-supplied API key.** Static host, no backend. This is what makes
+</details>
+
+<details>
+<summary><b>Client-side only, user-supplied API key</b> — No backend means no cost, and no cost is what makes the monetization answer easy.</summary>
+
+Static host, no backend. This is what makes
 the cost question mostly evaporate, which is what makes the monetization question easy.
 
-**No build step.** Plain ES modules. Vitest is a dev dependency and does not touch the
+</details>
+
+<details>
+<summary><b>No build step</b> — Plain ES modules; Vitest is dev-only and never touches the shipped artifact.</summary>
+
+Plain ES modules. Vitest is a dev dependency and does not touch the
 shipped artifact.
 
-**Split the single file into modules (WP0).** Vitest cannot import functions out of a
+</details>
+
+<details>
+<summary><b>Split the single file into modules (WP0)</b> — Vitest cannot import out of a <code>&lt;script&gt;</code> tag, so the test suite was impossible until this.</summary>
+
+Vitest cannot import functions out of a
 `<script>` tag inside an HTML file, so the single-file build made the test suite
 impossible. The tests are a portfolio goal, so the file structure has to serve them.
 
-**Handles and UC ids only.** `/c/` vanity URLs are not resolved. They require an extra
+</details>
+
+<details>
+<summary><b>Handles and UC ids only</b> — <code>/c/</code> vanity URLs need an extra API call and a heuristic match; the cost is not worth it.</summary>
+
+`/c/` vanity URLs are not resolved. They require an extra
 search API call and a heuristic match, and the cost is not worth it.
 
-**No persistence yet.** In-memory state only, to stay safe in sandboxed previews.
+</details>
+
+<details>
+<summary><b>No persistence yet</b> — In-memory only, to stay safe in sandboxed previews. Revisit on a real static host.</summary>
+
+In-memory state only, to stay safe in sandboxed previews.
 Revisit once the app is being served from a real static host.
 
-**Hidden subscriber counts read as N.** The API omits `subscriberCount` and sets
+</details>
+
+<details>
+<summary><b>Hidden subscriber counts read as N</b> — Hidden and malformed counts fall to the bottom band rather than throwing, so a card always renders.</summary>
+
+The API omits `subscriberCount` and sets
 `hiddenSubscriberCount: true` for channels that hide it. The core treats that — and any
 malformed count — as the lowest band rather than throwing, so a card always renders.
 To be pinned by tests in WP1.
 
-**Accent color: sample the avatar, fall back to a hash.** Live avatars are cross-origin;
+</details>
+
+<details>
+<summary><b>Accent color: sample the avatar, fall back to a hash</b> — CORS taint or a near-grey avatar falls back to a hash of the channel id — deterministic either way.</summary>
+
+Live avatars are cross-origin;
 when canvas sampling is blocked (CORS taint) or the avatar is near-grey, the accent is
 derived from a hash of the channel id instead. Deterministic either way, never blocks
 rendering.
 
-**Card sets are the primary pull source.** Curated, versioned channel snapshots ("Series")
+</details>
+
+<details>
+<summary><b>Card sets are the primary pull source</b> — Curated static JSON means players never need an API key; live BYO-key stays a power feature.</summary>
+
+Curated, versioned channel snapshots ("Series")
 ship as static JSON — players never need an API key. Demo mode becomes the built-in starter
 set; live BYO-key mode stays as a power feature. Chosen over shipping a shared
 referrer-restricted key as the default (that stays open as a fallback idea).
 
-**Series are monthly printings of ~300–500 cards.** YouTube's Developer Policies cap stored
+</details>
+
+<details>
+<summary><b>Series are monthly printings of ~300–500 cards</b> — The 30-day storage cap becomes the refresh cadence — compliance and TCG set flavour from one mechanism.</summary>
+
+YouTube's Developer Policies cap stored
 statistics at 30 days, so a scheduled snapshot refresh re-cuts each set monthly and cards
 carry a "stats as of <month>" label. Compliance and TCG set-symbol flavor from one mechanism.
 Curation flow: candidate lists are drafted with a target rarity mix (~N 40 / R 30 / SR 18 /
 SSR 9 / UR 3 %), then human-approved before snapshotting.
 
-**One app, many banners — the codebase never forks.** Genre sets (gaming, commentary, …) are
+</details>
+
+<details>
+<summary><b>One app, many banners — the codebase never forks</b> — Genre sets are banners inside one deployment; a themed sister site is deploy config, not a fork.</summary>
+
+Genre sets (gaming, commentary, …) are
 banners inside a single deployment. Themed sister deployments stay possible later from the
 same code with different default set + palette, but they are a deploy config, not a fork.
 
-**Opt-out for channel owners.** Real people become cards, so the footer gains a contact
+</details>
+
+<details>
+<summary><b>Opt-out for channel owners</b> — Real people become cards, so the footer carries a contact line and removals are honored in 7 days.</summary>
+
+Real people become cards, so the footer gains a contact
 line and removal requests are honored promptly (policy requires deletion within 7 days for
 user-data requests; we extend the courtesy to set membership).
 
-**WP0 done: monolith split, entry is `index.html`.** `youtube-gacha.html` is deleted; the
+</details>
+
+<details>
+<summary><b>WP0 done: monolith split, entry is <code>index.html</code></b> — Behaviour verified unchanged; <code>toCard</code> moved into the pure core so state depends on it, never the reverse.</summary>
+
+`youtube-gacha.html` is deleted; the
 app is ES modules under `src/`, loaded via `<script type="module" src="src/main.js">`.
 Behavior is unchanged (verified: pure-core values match, and demo mode boots to the
 identical 8-chip banner). `toCard` moved into `core.js` (it is pure — the model bridge,
 not a renderer) so `state.js` depends on `core`, never the reverse.
 
-**Two files beyond the planned tree: `src/state.js` and `src/ui/util.js`.** `state.js`
+</details>
+
+<details>
+<summary><b>Two files beyond the planned tree: <code>src/state.js</code> and <code>src/ui/util.js</code></b> — One owner for shared state, one home for <code>escapeHtml</code> — so <code>main</code> stays wiring and <code>banner</code> never imports the pull glue.</summary>
+
+`state.js`
 holds the shared in-memory `state` + `currentPool`/`addToCollection` so `banner`,
 `collection`, and `main` import one owner instead of threading it through every call.
 `ui/util.js` holds `escapeHtml` (used by both `card` and `banner`) rather than coupling
 `banner → card` for a generic helper. `main.js` stays wiring-only; `banner` takes an
 `onPull` callback so it never imports the pull glue.
 
-**Live adapter normalizes `customUrl` to the `@handle` shape.** The API's
+</details>
+
+<details>
+<summary><b>Live adapter normalizes <code>customUrl</code> to the <code>@handle</code> shape</b> — Older channels return a bare vanity string, so <code>@</code> is prepended and every source emits one shape.</summary>
+
+The API's
 `customUrl` is not guaranteed handle-shaped — older channels return a bare,
 lowercased vanity string ("mkbhd") where the modern format is "@mkbhd". The
 live adapter prepends `@` when missing so the `handle` field always matches the
 Channel typedef and the demo/sets adapters. Empty stays empty.
 
-**WP1 done: 56 tests pin the pure core and the pull engine.** Vitest is the repo's first
+</details>
+
+<details>
+<summary><b>WP1 done: 56 tests pin the pure core and the pull engine</b> — A seeded PRNG makes drop-rate order an exact, reproducible assertion instead of flaky statistics.</summary>
+
+Vitest is the repo's first
 and only dependency, dev-only — the shipped app still has zero. `test/core.test.js` pins
 every rarity boundary from both sides (string and number inputs), the hidden-subs-read-as-N
 rule, junk-input safety, and monotonic/multiplier stat scaling. `test/gacha.test.js` injects
 mulberry32 (a tiny seeded PRNG) so x10 size, dupe stacking, and the N>R>SR>SSR>UR frequency
 order are exact, reproducible assertions rather than flaky statistics.
 
-**Local dev needs a JS-MIME static server, not `file://`.** ES modules are blocked over
+</details>
+
+<details>
+<summary><b>Local dev needs a JS-MIME static server, not <code>file://</code></b> — Modules are blocked over <code>file://</code>, and Python's server sends the wrong MIME on Windows. Use <code>npx serve</code>.</summary>
+
+ES modules are blocked over
 `file://`, and browsers reject module scripts served as `text/plain` (Python's
 `http.server` does this on Windows). `npx serve` is the recommended local server;
 GitHub Pages / Netlify serve correct types, so hosting is unaffected. README updated.
 
-**WP2 done: coffee link published under `ChunChunMaru`, disclaimer already present.**
+</details>
+
+<details>
+<summary><b>WP2 done: coffee link published under <code>ChunChunMaru</code>, disclaimer already present</b> — Published under the social handle by choice; our footer disclaims a relationship rather than granting one.</summary>
+
 The footer's "not affiliated with YouTube/Google" line predated WP2, so WP2 added only the
 tip jar: a single passive text link to `buymeacoffee.com/chunchunmaru`, coffee-accent
 (SSR gold) on hover, opens in a new tab, wired to nothing in the game. Published under the
@@ -98,7 +192,12 @@ coffee buys Ash a coffee and never unlocks anything in-game. Unlike Wikigacha's 
 line (which grants reuse rights downstream), our footer disclaims a relationship; we have no
 license to grant, so the notice can only ever be a disclaimer, never an attribution.
 
-**Card face stays clean; the export carries the disclaimer (WP5).** Studying Wikigacha's
+</details>
+
+<details>
+<summary><b>Card face stays clean; the export carries the disclaimer (WP5)</b> — The risk peaks when a card leaves our page, so the PNG export is what carries the stamp.</summary>
+
+Studying Wikigacha's
 card up close: its CC BY-SA line lives on the pack art and page footer, not on the card face.
 We follow the same split but for a different reason — our disclaimer is risk management, not
 an attribution debt, and the risk peaks when a card leaves our page. So the in-app card face
@@ -106,7 +205,11 @@ stays uncluttered (WP3's frame/finish do the work), and the WP5 PNG export stamp
 "unofficial fan card · stats as of <month> · not affiliated with YouTube" line into the image
 itself, because the export is the version that travels without page context.
 
-**Test report is a self-contained monolith HTML, rendered from the JUnit XML.**
+</details>
+
+<details>
+<summary><b>Test report is a self-contained monolith HTML, rendered from the JUnit XML</b> — <code>@vitest/ui</code> is an app; a report should be a document — double-clickable, mailable, archivable.</summary>
+
 `@vitest/ui`'s HTML report was tried and dropped: it is an app (assets folder, gzipped
 metadata, needs a server), and a report should be a document — double-clickable,
 mailable, archivable. `tools/test-report.js` renders the JUnit XML we already emit into
@@ -114,7 +217,12 @@ one dependency-free HTML file per run, timestamped, failure traces inline. Dev
 dependencies are back down to Vitest alone. The failure path is verified, not assumed:
 a deliberately failing test must render a FAIL report and exit non-zero for CI.
 
-**Consume the API's integer fields; never parse a localized subscriber display.** The Data
+</details>
+
+<details>
+<summary><b>Consume the API's integer fields; never parse a localized subscriber display</b> — Scraped display text changes by locale — separators, suffixes, Japanese man; the API's decimal strings do not.</summary>
+
+The Data
 API returns counts as locale-free decimal strings (`"21083412"`). The app parses those
 (`core.toCount`) and formats them itself (`ui/util.formatCount` → "21.1M"), so we own the
 presentation instead of inheriting YouTube's. Scraping a channel page would instead force us
@@ -129,7 +237,11 @@ sandbox shortcut, never the pipeline and never the app — the live adapter has 
 API. (Localization angle surfaced in a 2026-07 external design review; recorded here so the
 reasoning outlives that conversation.)
 
-**WP3 done: holographic finish gated by rarity, and the CSS is now its own file.**
+</details>
+
+<details>
+<summary><b>WP3 done: holographic finish gated by rarity, and the CSS is now its own file</b> — Three custom properties per band put the rarity gating in exactly one place.</summary>
+
 `index.html`'s inline `<style>` moved wholesale into `styles.css` (planned split, taken at
 WP3 as the note said, not before). The finish is a pointer-tracked white glare, a masked
 rainbow holo sweep, and a 3D tilt — kept separate from the per-rarity *frame*, which already
@@ -145,7 +257,12 @@ nothing for N) in CSS, so a card is never left broken. Still zero app dependenci
 build step. The `card-prototype/` SSR sandbox proved the effect first; the shipped version
 generalizes it across all five bands.
 
-**Rarity tiers ARE the YouTube Creator Awards.** The rarity thresholds (100K / 1M / 10M /
+</details>
+
+<details>
+<summary><b>Rarity tiers ARE the YouTube Creator Awards</b> — The thresholds already were the play-button levels, so the tiers name themselves.</summary>
+
+The rarity thresholds (100K / 1M / 10M /
 50M) are exactly the Silver / Gold / Diamond / Custom-("Red Diamond") play-button thresholds,
 so the tiers name themselves: N=Graphite, R=Silver, SR=Gold, SSR=Diamond, UR=Red Diamond.
 This replaced the earlier arbitrary N-grey/R-blue/SR-purple/SSR-gold/UR-red hues with a
@@ -153,20 +270,34 @@ palette that ties the whole look back to YouTube. Each tier is one `--t-*` custo
 (bevel stops, glow, badge ink) so a card recolours by rarity from a single source, and the
 chip dots read the same `--rc`, so chips and cards can never disagree.
 
-**Card redesigned to a bevel-frame hero card (from the `card-prototype/` look).** A conic
+</details>
+
+<details>
+<summary><b>Card redesigned to a bevel-frame hero card (from the <code>card-prototype/</code> look)</b> — Container-query units mean one markup scales from the collection grid to the inspector with no overrides.</summary>
+
+A conic
 metal-bevel "seam" wraps a dark inner face: rarity badge + tier label top-left, name + handle
 top-right, the avatar as a ringed centrepiece, subs line + ATK/DEF boxes at the bottom, faint
 monogram behind. All internal sizes are **container-query units (`cqw` + `clamp`)**, so one
 markup scales cleanly from the collection grid to the inspector with no per-size overrides.
 
-**Avatar promoted from inset to centrepiece — reverses the old "small inset" guardrail.**
+</details>
+
+<details>
+<summary><b>Avatar promoted from inset to centrepiece — reverses the old "small inset" guardrail</b> — A real face is now protected art: the biggest thumbnail available, and the finish paints below it.</summary>
+
 Recorded in CLAUDE.md. Two consequences: the live adapter now fetches the largest thumbnail
 (high 800px → medium → default) instead of the 88px default, and **the holo/glare finish is
 layered below the avatar** (`.avatar-stage` sits above the finish) so a real creator's face is
 never colour-shifted by the effect. The frame and finish still do the heavy lifting; the
 avatar is protected art, like the clear window on a physical trading card.
 
-**UR's finish is a molten sheen + a smouldering ember, not a flowing colour sweep.** The
+</details>
+
+<details>
+<summary><b>UR's finish is a molten sheen + a smouldering ember, not a flowing colour sweep</b> — SSR is cold diamond, UR is molten heat — the top tier must never compete on SSR's axis.</summary>
+
+The
 first WP3 pass gave UR a constantly-scrolling rainbow background; it read as distracting and
 made the SSR diamond's rainbow out-shine the top tier. Replaced with: a warm gold→crimson
 holo (distinct from SSR's cool rainbow, so UR doesn't compete on the same axis), a bi-metal
@@ -174,25 +305,45 @@ red+gold bevel, a warm glare, and a slow irregular **ember flicker on the frame 
 Motion is gated to `prefers-reduced-motion: no-preference`; reduced-motion gets the static
 frame. Interior intensity is deliberately lower than the edge so the centre never overwhelms.
 
-**Card inspector: click a collection card to admire it large.** A centred overlay over a
+</details>
+
+<details>
+<summary><b>Card inspector: click a collection card to admire it large</b> — Reuses <code>renderCard</code> untouched; container-query sizing means the enlarged card needs no special styling.</summary>
+
+A centred overlay over a
 blurred backdrop shows one enlarged card with the same tilt/holo enabled (so it can be turned
 in the light). It reuses `renderCard` — the container-query sizing means the big card needs no
 special styling. Closes on button / backdrop / Escape and restores focus. Kept out of the
 reveal overlay, which has its own flip.
 
-**Reveal column count is pinned in JS, not left to `auto-fit`.** A x10 reveal alternated
+</details>
+
+<details>
+<summary><b>Reveal column count is pinned in JS, not left to <code>auto-fit</code></b> — A scrollbar stealing 17px could reflow a x10 between 5-wide and 4-wide, and each layout was self-stable.</summary>
+
+A x10 reveal alternated
 between 5-wide and 4-wide because a vertical scrollbar stealing ~17px could reflow the grid,
 and each layout was self-stable. `reveal.js` now sets `--reveal-cols = min(cards, 5)` and the
 grid uses `minmax(0, 148px)` columns, so cards shrink a hair rather than dropping a column —
 the scrollbar can no longer change the count. A x1 is a single centred card.
 
-**Dev Pull is a testing affordance, explicitly not a game mechanic.** A green "Dev Pull"
+</details>
+
+<details>
+<summary><b>Dev Pull is a testing affordance, explicitly not a game mechanic</b> — One card of every rarity in a single reveal, for tuning visuals. Gated or stripped before a real-users build.</summary>
+
+A green "Dev Pull"
 button fires a 10-pull seeded with one card of every rarity present in the pool, then filled
 with normal weighted pulls, so every tier's treatment shows in one reveal while tuning
 visuals. It must be gated (`?dev`) or stripped before the real-users build; it never changes
 the published drop rates.
 
-**Throwaway HTML sandboxes removed.** The scraped YouTube page dumps (`mkbhd.html`,
+</details>
+
+<details>
+<summary><b>Throwaway HTML sandboxes removed</b> — About 5 MB of scraped third-party page source plus the prototype mock-ups — all single-use, now redundant.</summary>
+
+The scraped YouTube page dumps (`mkbhd.html`,
 `yuntaku.html`, `yuntaku-about.html` — ~5 MB of third-party page source at the repo root) and
 the hand-built `card-prototype/` mock-ups are deleted now that the real cards render in the
 app. Each was single-use: the scrapes gave stat numbers for hand-prototyping (never the
@@ -200,8 +351,12 @@ pipeline — the live adapter always used the API), the prototypes proved the fr
 (now generalized across all five bands in WP3). References to them in the entries above are
 historical. Removing them shrinks the repo and drops the committed third-party HTML.
 
-**WP4 app-side: card sets are a third adapter behind the seam, surfaced as a "Sets" banner
-mode.** `data/sets.js` splits like the rest of the codebase — `parseSet` is pure and validated
+</details>
+
+<details>
+<summary><b>WP4 app-side: card sets are a third adapter behind the seam, surfaced as a "Sets" banner mode</b> — The gacha, reveal, render and collection code took zero changes to consume a set — the seam demonstrated.</summary>
+
+`data/sets.js` splits like the rest of the codebase — `parseSet` is pure and validated
 (8 new tests), `loadSet` is the thin fetch wrapper. A set is the envelope
 `{ slug, title, series, snapshotDate, channels[] }`; every channel is the exact Channel shape
 demo/live emit, so the gacha, reveal, render and collection code took **zero** changes to
@@ -211,7 +366,12 @@ change, chosen over the earlier "demo becomes the starter set" reframing (which 
 later). The picker is populated from a `sets/index.json` manifest that `build-set.js` will
 maintain.
 
-**Demo folded into a bundled starter set; two modes remain (Sets | Live).** This closes the
+</details>
+
+<details>
+<summary><b>Demo folded into a bundled starter set; two modes remain (Sets | Live)</b> — The starter set becomes a real set behind the seam, and it keeps the offline-capable receipt.</summary>
+
+This closes the
 "demo becomes the starter set" fork left open above. The eight demo channels moved verbatim
 (including the hidden-subscriber edge case) into `src/data/starter.js` as a real set envelope
 `{ slug, title, series, snapshotDate, channels[] }`, so they now flow through the same
@@ -227,7 +387,12 @@ receipt for the sake of ~100 fewer lines. Starter-set channel ids carry no snaps
 (they aren't a dated snapshot), which visually distinguishes the built-in sampler from a real,
 dated Series.
 
-**The first set ships with fictional channels, not real creators.** `sets/sample-series.json`
+</details>
+
+<details>
+<summary><b>The first set ships with fictional channels, not real creators</b> — Proves the adapter, picker and rarity spread without committing any real creator metadata yet.</summary>
+
+`sets/sample-series.json`
 ("Arcade Legends") is eight invented channels spanning every rarity (N→UR). It proves the
 adapter, picker, and rarity spread without committing any real creator metadata while the
 YouTube API storage / likeness questions are still being clarified with Google. `build-set.js`
@@ -236,7 +401,12 @@ are keyed on the immutable UC id (handle is display-only), so a set is handle-ch
 self-heals its display fields on each monthly re-snapshot; a UC id that 404s on refresh
 (deleted/terminated channel) must be dropped or flagged, never shipped as a broken card.
 
-**Local-dev API-key convenience: a gitignored `config.local.js`.** So live mode needn't have
+</details>
+
+<details>
+<summary><b>Local-dev API-key convenience: a gitignored <code>config.local.js</code></b> — The import rejects harmlessly wherever the file is absent, so the memory-only guarantee still holds.</summary>
+
+So live mode needn't have
 the key re-pasted on every reload, `banner.js` dynamically imports `config.local.js` and
 pre-fills the field if it exports `YOUTUBE_API_KEY`. The import rejects harmlessly when the
 file is absent — which is every deployment, so the shipped app still has no key and no such
@@ -245,7 +415,11 @@ file, and the memory-only guarantee to players holds. The file is gitignored via
 rationale notes (external LLM dumps, the static-sets-vs-backend case) live in a gitignored
 `external-docs/` and are deliberately not part of the repo.
 
-**The pull is two-stage: pick a rarity band by weight, then a card inside it uniformly.**
+</details>
+
+<details>
+<summary><b>The pull is two-stage: pick a rarity band by weight, then a card inside it uniformly</b> — Per-card weights made drop rates a function of roster composition, which is exactly what a gacha may not do.</summary>
+
 The old `pullOne` summed each *card's* rarity weight across the whole pool, so a band's real
 drop rate was its weight × how many cards of that band the pool happened to hold. The weights
 in `core.RARITY` sum to exactly 100 — they were written as a rate curve — but the two
@@ -264,14 +438,23 @@ later — swap what stage 1 groups by and the pull math is unchanged. Pinned by 
 the *exact same band sequence* from a 5-card pool and the same pool padded with 200 commons
 (75 tests).
 
-**The banner shows computed odds, not the raw weight table.** Now that the weights are true
+</details>
+
+<details>
+<summary><b>The banner shows computed odds, not the raw weight table</b> — Recomputed on every render, so a sparse banner shows its own odds instead of a curve it cannot produce.</summary>
+
+Now that the weights are true
 percentages, the rates line reads "Drop rates — N 55% · R 27% · …", recomputed from the current
 pool on every render so it reflects the renormalization above. The old "Pull weights per
 channel — N 55 · R 27 · …" was written once at init and, under the old engine, was not the odds
 a player actually faced.
 
-**`core.js` + `gacha.js` moved to `src/engine/`; the tree is organized by what a module may
-touch, not by topic.** The existing folders already encoded that rule — `data/` is what touches
+</details>
+
+<details>
+<summary><b><code>core.js</code> + <code>gacha.js</code> moved to <code>src/engine/</code>; the tree is organized by what a module may touch, not by topic</b> — Nothing in <code>engine/</code> touches the DOM, the network or any I/O — it would run unchanged in Node.</summary>
+
+The existing folders already encoded that rule — `data/` is what touches
 the network, `ui/` is what touches the DOM — but the two pure modules sat loose at the root, so
 the axis was implicit and incomplete. `engine/` names it: **nothing in that folder touches the
 DOM, the network, or any I/O — it would run unchanged in Node.** That admits `core.js` and
@@ -283,7 +466,12 @@ folder a second file, since the rule is what makes the folder worth having, not 
 `engine/pools.js` and a future `engine/battle.js` now have an obvious home. Moved with
 `git mv`, so history follows the files; the only code change was import paths.
 
-**Sets mode shows the pool's composition; only Live enumerates it as chips.** The banner
+</details>
+
+<details>
+<summary><b>Sets mode shows the pool's composition; only Live enumerates it as chips</b> — 300-500 chips would each fetch an 800px avatar for a 22px circle, and band counts inform better anyway.</summary>
+
+The banner
 rendered one chip per pool card, which is fine for eight and untenable for the 300–500 card
 Series WP4 is building toward: hundreds of read-only pills (Sets chips carry no remove button),
 and every chip's `<img>` is the card's own avatar — which WP3 deliberately made the largest
@@ -298,12 +486,22 @@ discovered by pulling than by reading a list, which is the game. Surfaced by liv
 against real channels — the fictional sets never had enough cards or long enough titles to
 expose it.
 
-**Chip names truncate at 18ch with the full title as a tooltip.** Real channel titles run long
+</details>
+
+<details>
+<summary><b>Chip names truncate at 18ch with the full title as a tooltip</b> — A single CJK title already wrapped the banner onto a second row.</summary>
+
+Real channel titles run long
 and CJK titles longer still; a single seven-channel Live banner containing
 `TVアニメ『ヤニねこ』公式【ハメちゃんねる】` already wrapped the row onto a second line. The name
 now ellipsizes and carries a `title` attribute, so nothing is lost.
 
-**Card titles wrap anywhere; the 2-line clamp does the truncating.** The same live testing showed
+</details>
+
+<details>
+<summary><b>Card titles wrap anywhere; the 2-line clamp does the truncating</b> — The first diagnosis was wrong: the cause was horizontal overflow, not the line clamp. Measuring settled it.</summary>
+
+The same live testing showed
 `TheBackgroundNPC` sheared to "TheBackground" on the card face. The suspected cause was the
 `-webkit-line-clamp: 2` failing on long/CJK titles — devtools disproved that: computed
 `line-clamp` reads `2` and every title measured one or two lines (13px / 26px against a 13.2px
@@ -314,7 +512,12 @@ min-content inside its `min-width: 0` flex parent — so the clamp, not the clip
 dropped. Worth recording that the first diagnosis was wrong: the visible symptom (a title
 looking too tall) pointed at the vertical mechanism, and only measuring ruled it out.
 
-**Magic Search draft 1: the pure discovery engine, without the live fetch.** `src/engine/discover.js`
+</details>
+
+<details>
+<summary><b>Magic Search draft 1: the pure discovery engine, without the live fetch</b> — The query randomization is the novel part, so it lands in the tested engine; the one fetch line waits.</summary>
+
+`src/engine/discover.js`
 is the headless half of keyword→channel sourcing: `buildSearchParams` (a seeded, randomized
 `search.list` query), `harvestChannelIds` (every uploader in a response, deduped — all ~50, since
 one search already costs 100 quota units, so keeping one and dropping 49 is the quota bug the
@@ -332,7 +535,11 @@ fetch adds a key, quota cost, and non-reproducibility for no extra proof. The ea
 Google storage/likeness gate" framing is set aside for now — this is a private build, not a public
 launch; legality is revisited before any public launch, not before writing build tooling.
 
-**Legality is out of scope during the build phase; resolved before deploying to real users.**
+</details>
+
+<details>
+<summary><b>Legality is out of scope during the build phase; resolved before deploying to real users</b> — The gate is narrowed, not dropped — it blocks deploying real creators, not writing build tooling.</summary>
+
 Earlier entries gated real-creator sourcing on the YouTube API storage + likeness/consent questions
 clearing with Google (see "The first set ships with fictional channels"). That gate is narrowed, not
 dropped: it blocks **deploying real creators to real users**, not **writing build tooling**. This is
@@ -344,7 +551,11 @@ first, resolve legalities before real users, then deploy. This supersedes the "g
 at real channels" framing in PLAN.md and the fictional-sets entry; it reopens none of CLAUDE.md's
 locked decisions — no monetization, client-side only, and the unofficial disclaimer all stand.
 
-**Magic Search runs in the browser too, as a dev trigger — the fetch layer is environment-neutral.**
+</details>
+
+<details>
+<summary><b>Magic Search runs in the browser too, as a dev trigger — the fetch layer is environment-neutral</b> — The fetch layer is environment-neutral, so watching real creators become cards cost nothing extra.</summary>
+
 `data/search.js` uses only `fetch` and `URLSearchParams`, so the same discovery code the CLI runs in
 Node runs unchanged in the browser. A **"Magic Search" button in Live mode** takes a keyword, runs
 `search.list` → `channels.list` → floor → cap, and drops the top few channels into the live pool to
@@ -357,8 +568,12 @@ is still deferred). Chosen over a Node-only tool: watching real creators become 
 fastest way to feel whether discovery is any good, and it cost nothing extra because the module
 already ran in both environments.
 
-**Discovery runs accumulate into one draft set; a gitignored local manifest surfaces it in the
-picker.** `tools/magic-search.js` merges each run into `sets/magic-search.draft.json`, deduping across
+</details>
+
+<details>
+<summary><b>Discovery runs accumulate into one draft set; a gitignored local manifest surfaces it in the picker</b> — The draft file is the first, simplest form of the candidate DB; no real creator data is ever committed.</summary>
+
+`tools/magic-search.js` merges each run into `sets/magic-search.draft.json`, deduping across
 runs by UC id, so repeated searches grow the pool instead of overwriting it — the file is the first,
 simplest form of the candidate DB the three-tier design calls for (store and rendered set collapsed
 into one file for the draft; they separate later). `--fresh` starts over. To view the draft without
@@ -368,8 +583,12 @@ production, same spirit as `config.local.js`) to append generated drafts to the 
 `sets/*.draft.json` and `sets/index.local.json` are gitignored, so no real creator data and no
 local-only pointer is ever committed.
 
-**Card and chip avatars survive YouTube's hotlink 403s: `referrerpolicy="no-referrer"` + a monogram
-fallback.** Google's avatar CDN inconsistently rejects hotlinked images by referer, so some real
+</details>
+
+<details>
+<summary><b>Card and chip avatars survive YouTube's hotlink 403s: <code>referrerpolicy="no-referrer"</code> + a monogram fallback</b> — A pre-existing bug across every source — discovery just rendered enough real channels at once to expose it.</summary>
+
+Google's avatar CDN inconsistently rejects hotlinked images by referer, so some real
 channels' avatars loaded and others 403'd — invisible until Magic Search rendered a batch of real
 channels at once. The visible `<img>` had no referrer policy and no error handling, so a blocked
 image left an empty ring. Fix: set `referrerpolicy="no-referrer"` on the card avatar, the
@@ -378,7 +597,12 @@ remove the image so the faint monogram behind shows as the intended fallback ins
 broken-image glyph. A pre-existing render bug across all sources, not a Magic Search one — discovery
 just surfaced it.
 
-**Vitest pool pinned to a single fork.** The default `threads` pool intermittently failed worker
+</details>
+
+<details>
+<summary><b>Vitest pool pinned to a single fork</b> — The default threads pool raced on worker init and reported zero tests as a whole-suite failure.</summary>
+
+The default `threads` pool intermittently failed worker
 init on this setup (Windows / Node 24) with a "Cannot read properties of undefined (reading
 'config')" race at collection — 0 tests run, all files reported "failed" — and it recurred even with
 `forks` and serial files. `vitest.config.js` now pins `pool: 'forks'` with `singleFork: true`, so the
@@ -387,7 +611,12 @@ is dev-only config — the shipped app still has no build step — and the ~1.5s
 fine for a suite this size. Recorded because it closes the "zero-config Vitest" default the repo ran
 on until now.
 
-**Addendum (2026-07-25): the Vitest 4 upgrade silently un-did the fix above.** Vitest 4 removed
+</details>
+
+<details>
+<summary><b>Addendum (2026-07-25): the Vitest 4 upgrade silently un-did the fix above</b> — A config option that stops existing is indistinguishable from one that works — the dangerous kind of failure.</summary>
+
+Vitest 4 removed
 `poolOptions`, which is where the serialization lived. It did not error — it printed a deprecation
 line and ignored the option — so `singleFork: true` stopped applying and the collection race returned
 at roughly one run in two ("no tests", all files failed, `import 0ms`). The replacement is the
@@ -396,7 +625,12 @@ in the package. Six consecutive runs pass 119/119. Worth recording as its own li
 mode is the dangerous kind: a config option that stops existing is indistinguishable from one that
 works, unless you read the deprecation notice the runner prints on every single run.
 
-**Discovery excludes self-declared Indian creators — a leaky local-risk hedge.** The operator is
+</details>
+
+<details>
+<summary><b>Discovery excludes self-declared Indian creators — a leaky local-risk hedge</b> — Trims the highest-enforceability claim vector, but <code>country</code> is self-declared, so it supplements rather than replaces.</summary>
+
+The operator is
 India-based, and the jurisdiction that most easily reaches an individual is their own, so an
 India-domiciled creator is the highest-enforceability claim vector; a foreign creator's claim against a
 free, non-monetized, India-run project is far harder to bring and enforce. `selectChannels` now drops
@@ -409,7 +643,12 @@ disables it. Applies to the live Magic Search paths (CLI + in-page button) today
 with WP7. Chosen over a search-only region bias (`regionCode`/`relevanceLanguage`), which is even
 leakier and can't see a channel's declared country — the two can still stack later if wanted.
 
-**Exclude-giants is a per-query lever, not a global rule.** WP6 adds `maxSubs` to the discovery
+</details>
+
+<details>
+<summary><b>Exclude-giants is a per-query lever, not a global rule</b> — A global ceiling would permanently empty the 5M+ legends pool the three-tier sourcing depends on.</summary>
+
+WP6 adds `maxSubs` to the discovery
 floor, because a generic keyword is dominated by a handful of enormous channels and those are both
 the ones already in the pool and the ones with the most standing to object. It defaults to
 `Infinity` — OFF — which looks timid until you line it up with `assignPool`: the `legends` tier is
@@ -419,7 +658,12 @@ knob is named inside `floor`, which now describes a band rather than a floor; ke
 rather than renamed. Closes off "just cap subscribers globally", which would have silently starved
 the legends pool.
 
-**The Magic Search keyword vocab is hobby/craft topics only.** The generator is seed × modifier
+</details>
+
+<details>
+<summary><b>The Magic Search keyword vocab is hobby/craft topics only</b> — Mid-sized on-topic creators live in those niches, and every result becomes a card carrying a likeness.</summary>
+
+The generator is seed × modifier
 (64 × 18 = 1152 queries), and the seed list is deliberately confined to crafts, skills and hobbies —
 woodworking, field recording, bonsai — with no news, politics, drama, or anything keyed to a real
 person's name. Two reasons, one practical and one not: mid-sized on-topic creators actually live in
@@ -428,7 +672,12 @@ someone's likeness, so the vocab is the cheapest possible place to keep the feat
 subjects where that is least defensible. Closes off "generate keywords from trending/broad topics",
 which maximises reach in exactly the direction the project has been steering away from.
 
-**WP6 was mostly switching on what WP5 already built.** `buildSearchParams` shipped in WP5 with
+</details>
+
+<details>
+<summary><b>WP6 was mostly switching on what WP5 already built</b> — The engine being done and the feature being live are separate facts; both callers had pinned the jitter off.</summary>
+
+`buildSearchParams` shipped in WP5 with
 full order jitter and a slid publication window, injected rng and all — and then both live callers
 (`ui/banner.js` MS_OPTS, `tools/magic-search.js` DETERMINISTIC) pinned `windowDays: null,
 orders: ['viewCount']`, so none of it ran. Recorded because the engine being "done" and the feature
@@ -436,7 +685,11 @@ being live are separate facts, and the checklist read as though the first implie
 per-query jitter is also not sufficient on its own: a fixed query list keeps finding the same corner
 of YouTube however hard each query is randomized, which is what the keyword generator is for.
 
-**The name "YouTube Gacha" ships as-is for the private build; renaming is deferred to launch.**
+</details>
+
+<details>
+<summary><b>The name "YouTube Gacha" ships as-is for the private build; renaming is deferred to launch</b> — A mark in the name slot travels in the title bar and every shared link, detached from the disclaimer.</summary>
+
 Putting a registered trademark in a product's name is the strongest possible signal of affiliation —
 stronger than anything the footer disclaimer can walk back, because the name travels in the title bar,
 the URL and any shared link, detached from the page. The Wikigacha precedent does NOT cover this: "wiki"
@@ -459,7 +712,12 @@ Also noted, because they compound rather than stand alone: the red palette, the 
 A play triangle alone is a generic media symbol; red + play button + the mark together is what reads
 as affiliation. Dropping the name weakens the rest considerably, so the name is the high-leverage fix.
 
-**Superseded: the name is now "Creator Gacha".** The entry above deferred this to launch; Ash closed
+</details>
+
+<details>
+<summary><b>Superseded: the name is now "Creator Gacha"</b> — Closed early once a name existed — the expensive half of a rename is deciding, not executing.</summary>
+
+The entry above deferred this to launch; Ash closed
 it early (2026-07-26) once a name they liked existed — the expensive half of a rename is deciding, and
 that was done, so executing was find-and-replace across eight files. Chosen over "Subgacha", which
 named the core mechanic (subs → rarity) and preserved Wikigacha's `[source]+gacha` construction, but
@@ -482,7 +740,12 @@ do not necessarily know it names the card-pull mechanic. Legibility to a strange
 URL. Also unchanged: the red palette, the `play-glyph` and `.back-play`'s red triangle — flagged
 earlier as compounding signals, now much weaker without the mark carrying them.
 
-**Creator Gacha first; Repo Gacha parked, not rejected.** `external-docs/repo-gacha.md` proposes the
+</details>
+
+<details>
+<summary><b>Creator Gacha first; Repo Gacha parked, not rejected</b> — Repos are not people and GitHub has no 30-day cap, but safety is a tiebreaker, not a reason to pick a project.</summary>
+
+`external-docs/repo-gacha.md` proposes the
 same engine over open-source repositories. It is materially safer — repos are not people, so the
 likeness problem vanishes outright; eligibility is gated on an actual open-source licence; and
 maintainers generally *want* discovery, which inverts the incentive that makes the creator version
@@ -514,9 +777,14 @@ Preserved so the analysis is not re-derived later:
   project is nominative use and the doc already excludes logos and branding; only the reason is wrong.
 - Emblems (WP13) are shared infrastructure between the two, since RG cannot use project logos either.
 
+</details>
+
 ## Launch posture: ship the real-pfp build first (2026-07-31)
 
-**The first public release carries real creator pictures and names.** Ash's call, made
+<details>
+<summary><b>The first public release carries real creator pictures and names</b> — The safer artifact is the weaker experiment; the risk accepted is real but bounded.</summary>
+
+Ash's call, made
 knowingly rather than by omission: the emblem build (WP13) is the safer artifact but the
 weaker experiment, and the question this release exists to answer — does anyone want to
 play this — cannot be answered by a version stripped of the thing that makes it legible.
@@ -524,27 +792,47 @@ The risk accepted is real but bounded: no monetization, no ads, a disclaimer, a 
 opt-out, the India exclude, and a modal bad outcome that is an email asking for removal
 rather than a claim.
 
-**The emblem build is a flag, never a fork** — WP8's avatar-source switch is therefore
+</details>
+
+<details>
+<summary><b>The emblem build is a flag, never a fork</b> — The flag is what makes this launch reversible — a config change and a redeploy, not a rewrite.</summary>
+
+— WP8's avatar-source switch is therefore
 promoted from "hardening" to a launch prerequisite. It is what makes this release
 *reversible*: if a creator objects, or the read of the room changes, flipping to generated
 emblems is a config change and a redeploy instead of a rewrite. Launching without the flag
 is what would make the decision irreversible, not launching with real pictures.
 
-**Shipped sets are built in CI at deploy and never committed.** A set file in git is
+</details>
+
+<details>
+<summary><b>Shipped sets are built in CI at deploy and never committed</b> — A set file in git makes an honored removal impossible to actually perform.</summary>
+
+A set file in git is
 permanent: `git rm` on an opted-out creator leaves them at the old commit, in a public repo
 this project actively invites people to browse — so committing sets would mean promising a
 removal we cannot actually perform. Building at deploy keeps creator data out of history
 entirely and *is* the monthly-refresh mechanism the 30-day storage cap already requires
 (above). One workflow satisfies both.
 
-**The candidate DB stores channel IDs, never channel data.** It is the committed,
+</details>
+
+<details>
+<summary><b>The candidate DB stores channel IDs, never channel data</b> — IDs plus our own tags and the denylist; CI hydrates stats at build, so an opt-out sticks across every future build.</summary>
+
+It is the committed,
 accumulating source of truth for *who is in the pool*, plus our own derived tags and the
 opt-out denylist; CI hydrates those IDs into full stats at build time. A UC id is an opaque
 public identifier, so this keeps the committed artifact clean under the rule above while
 leaving the denylist permanent and auditable — which is what makes an honored opt-out stick
 across every future build instead of being re-added by the next sourcing run.
 
-**Reverses the curation half of "Series are monthly printings" (above).** That entry said
+</details>
+
+<details>
+<summary><b>Reverses the curation half of "Series are monthly printings" (above)</b> — At 300+ cards human approval is not a promise Ash can keep, so mechanical rails replace it.</summary>
+
+That entry said
 candidates are "human-approved before snapshotting." At the chosen first-set size (300+,
 pipeline-driven) that is not a promise Ash can keep, and a policy nobody performs is worse
 than one honestly scoped. Human approval is replaced by **mechanical rails**: the
@@ -552,3 +840,5 @@ subscriber/activity floor, `safeSearch=strict`, the India exclude, the denylist,
 opt-out response. The target rarity mix and the monthly cadence are unchanged. This is a
 deliberate trade of editorial control for scale, recorded so the earlier line is not read as
 still operative.
+
+</details>
