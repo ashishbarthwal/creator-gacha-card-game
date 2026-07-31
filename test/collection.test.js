@@ -59,7 +59,11 @@ describe('serializeCollection', () => {
     /* The structural guarantee: storage.js only ever receives a collection, and
        a collection only ever yields channel fields and counts. */
     const collection = new Map([owned(channel())]);
-    collection.apiKey = 'AIzaSyFAKE_KEY_SHOULD_NEVER_PERSIST';
+    /* Deliberately too short to resemble a real Google key. The assertion below
+       still checks for the real-world `AIza` prefix, so the test keeps its
+       meaning without putting a key-shaped string in the repo for a scanner —
+       or a reader skimming the diff — to trip over. */
+    collection.apiKey = 'AIza_FAKE_never_persist';
     const json = JSON.stringify(serializeCollection(collection, { now: NOW }));
     expect(json).not.toMatch(/AIza|apiKey/);
   });
