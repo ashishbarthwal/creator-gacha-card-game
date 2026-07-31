@@ -26,12 +26,15 @@ Thumbs.db
 # Test / build output — reports are generated on demand, never committed
 coverage/
 reports/
+# The assembled deployable site. Built locally by tools/build-site.js and uploaded
+# straight to the CDN, so it never belongs in git — it carries the built sets.
+_site/
 
 # Magic Search output — generated sets carry real creator data; never committed
 # (see DECISIONS.md: build first, legality before deploying to real users).
 sets/*.draft.json
-# Built sets — full creator stats, minted by tools/build-set.js and rebuilt in CI
-# at deploy on the 25-day cadence. NEVER committed: a set file in git is permanent,
+# Built sets — full creator stats, minted by tools/build-set.js and rebuilt locally
+# on the 25-day cadence. NEVER committed: a set file in git is permanent,
 # which would break both the 30-day cap on stored statistics and the promise that a
 # removal request is actually performable (git rm leaves them at the old commit).
 sets/built/

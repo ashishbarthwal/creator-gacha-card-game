@@ -1005,3 +1005,50 @@ out at SR. Recorded now so the empty top bands are read as a known consequence r
 sourcing failure.
 
 </details>
+
+## The deploy runs locally, not in CI (2026-07-31)
+
+<details>
+<summary><b>Publishing moves to a Netlify direct upload from Ash's machine</b> — Hydration needs a key, the built set can't enter git, so the only place that can do both is the operator's own machine.</summary>
+
+The refresh/deploy was written as a GitHub Actions workflow and then moved, on Ash's
+objection to putting an API key in a repo secret. The objection surfaces a constraint the
+original design had absorbed without stating:
+
+- The deploy must **hydrate** channel IDs into live statistics. That needs a key.
+- The built set can **never be committed**. Git is permanent, so a committed set satisfies
+  neither the 30-day cap on stored statistics nor a promise that a removal is performable.
+
+Those two together mean the publishing step needs somewhere that has a key and is not a git
+history. CI was one answer; the operator's own machine is the other, and it is the one that
+keeps the key off GitHub entirely.
+
+So `npm run deploy` builds the set, assembles `_site`, runs the guards and uploads directly
+to the CDN. Netlify was already an accepted host (CLAUDE.md), and a direct upload involves no
+repo integration and no branch, so the set exists on the CDN and in no git history anywhere.
+`test.yml` stays in CI, where it has never needed a key.
+
+**The cost is real and is not hidden:** the 25-day refresh becomes a chore somebody has to
+remember rather than a scheduled job, and a missed one is a compliance problem rather than an
+inconvenience. That was judged cheaper than the alternatives — committing the set reopens two
+closed decisions, and an orphan `gh-pages` branch only launders the history rather than
+avoiding it.
+
+</details>
+
+<details>
+<summary><b>The site is assembled from an allowlist, and a guard enforces it</b> — A recursive copy of sets/ would have published the draft and walked past the country strip.</summary>
+
+Simulating the assemble step before shipping it caught a real bug: `cp -r sets` would have
+published `magic-search.draft.json` — 51 real creators with `country` intact — bypassing the
+strip that an entire work package exists to enforce. The file is gitignored and therefore
+absent from a clean checkout, so the bug was latent rather than live, which is exactly the
+kind that survives review.
+
+The copy now names each file. Two guards then refuse to build if any draft, dev manifest or
+`country` field reaches `_site`, and both were verified by planting a draft and watching them
+fire rather than by reasoning that they would. They are redundant with the allowlist by
+design: the allowlist is correct today, and the guard is what catches the day someone edits
+the copy list without thinking about what else lives in that directory.
+
+</details>

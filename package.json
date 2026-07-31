@@ -6,7 +6,9 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:report": "node tools/test-report.js"
+    "test:report": "node tools/test-report.js",
+    "build:site": "node tools/build-site.js",
+    "deploy": "node tools/build-set.js && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site"
   },
   "devDependencies": {
     "vitest": "^4.1.10"

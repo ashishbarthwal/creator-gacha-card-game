@@ -112,23 +112,20 @@ hydrates it, then the schedule that re-runs it.
         handle is 1 quota unit, ids batch 50 to a unit. A 200-name roster is ~200 units against
         10,000/day. `search.list` at 100 units a call is the only expensive thing in the system.
       - This is the *route*, not the roster — the names are WP9's scope.
-- [X] **Refresh + deploy workflow** (`.github/workflows/deploy.yml`) — one workflow, because
-      they are the same job: sets are built at deploy and never committed, so rebuilding IS
-      the refresh. Tests run first, so a broken build cannot reach users.
-      - **Cadence is the 1st and 26th, not `*/25`.** Cron's day-of-month field resets monthly,
-        so `*/25` fires on the 1st and 26th anyway — writing the days out says what it means
-        rather than implying a cycle cron cannot express. Longest gap 26 days, inside the
-        30-day cap with room to notice a failure; running at the cap would mean one skipped
-        run puts us out of compliance.
-      - **The site is assembled from an allowlist, file by file.** Caught by simulating the
-        step before committing it: a recursive `cp -r sets` would have published
-        `magic-search.draft.json` — real creator data with `country` intact — bypassing the
-        strip entirely. Absent from a CI checkout since it is gitignored, but latent.
-      - A guard step then refuses to deploy if any draft, dev manifest or `country` field
-        reaches `_site`. Cheap check, expensive failure.
-      - **Manual setup, once:** Pages source → GitHub Actions, and a `YOUTUBE_API_KEY` repo
-        secret. **Known hazard:** GitHub silently disables scheduled workflows after 60 days
-        of repo inactivity, which for a compliance job is worth knowing about.
+- [X] **Refresh + deploy — local, not CI** (`tools/build-site.js`, `npm run deploy`).
+      Written first as a GitHub Actions workflow, then moved: the deploy has to hydrate IDs
+      into live stats, which needs a key, and the built set can never be committed. The only
+      machine that can hold a key *and* publish without writing to a git history is Ash's own,
+      so the site uploads straight to the CDN (Netlify direct upload). `test.yml` stays in CI
+      and still needs no key.
+      - **The trade, stated because it is real:** the 25-day refresh is now a chore somebody
+        remembers, not a cron job. Cheaper than the alternatives — committing the set reopens
+        two closed decisions, and a key on GitHub was the thing being avoided.
+      - **The copy is an allowlist, file by file.** Caught by simulating the step before
+        shipping it: a recursive copy of `sets/` would have published `magic-search.draft.json`
+        — real creator data with `country` intact — walking straight past the strip.
+      - Two guards then refuse to build if a draft, dev manifest or `country` field reaches
+        `_site`. Both verified by planting a draft and watching them fire.
 - [X] Strip `country` from shipped sets — done in `engine/setbuild.js`; closes the last Gate
       item, see the Gate section for the full note
 
