@@ -48,6 +48,157 @@ export function minCardsForBand(rarity, presentRarities = RARITY_ORDER, pullSize
   return Math.max(2, Math.ceil(expectedDraws * BAND_HEADROOM));
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   THE BAND CAP — the floor above has a ceiling, and it exists for the opposite
+   failure.
+
+   The floor stops a band being too thin to survive a x10. The cap stops one
+   being so deep nobody can ever finish it. Both are real, and the second only
+   became visible once the curated legends roster landed 12 UR cards in a 79-card
+   set (2026-07-31).
+
+   The number that matters is how many pulls it takes to collect every card in a
+   band. For a band holding k cards and drawn on a share s of pulls, that is the
+   coupon-collector expectation:
+
+       pulls = k * H(k) / s          H(k) = 1 + 1/2 + ... + 1/k
+
+   Run over that 79-card set: the base bands complete in ~190-200 pulls and the
+   UR band takes ~3,720. The set finishes eighteen times over before its chase
+   cards do.
+
+   The load-bearing consequence, and the reason a cap is the ONLY fix: because
+   the pull picks a band by fixed weight and then draws uniformly inside it
+   (WP4), a band's completion time depends on how many cards THAT band holds and
+   on nothing else. Adding 300 commons does not make the UR band any more
+   finishable — it just changes the percentage. So the roster cannot be balanced
+   by growing it; the top has to be capped.
+
+   Surplus is not discarded, it is held: the candidate DB keeps every id, and a
+   later printing seeded on its own slug draws a different subset. That is how a
+   real TCG behaves — each printing has its own chase cards — and it falls out of
+   the seeded selection below rather than needing a rotation ledger. */
+
+/* Cards in a full printing. DECISIONS.md calls a Series 300-500; the allocation
+   below spends this budget across the bands rather than splitting it evenly. */
+export const DEFAULT_TARGET_SIZE = 400;
+
+/* Expected pulls to collect all k cards of a band drawn on share s. */
+function completionPulls(k, harmonicK, share) {
+  return share > 0 ? (k * harmonicK) / share : Infinity;
+}
+
+/* How deep each band should be, so that every band finishes at roughly the same
+   time and the total lands on targetSize.
+
+   Allocated by water-filling rather than by a percentage table: start every band
+   at the floor it already has to clear, then hand the next card to whichever
+   band currently completes SOONEST, until the budget is spent. Equal completion
+   times fall out of that, and the floor is respected by construction rather than
+   by clamping afterwards.
+
+   Chosen over "give each band targetSize * its weight", which looks like the
+   obvious answer and is wrong: weight is the rate a band is DRAWN at, and a band
+   drawn twice as often does not need twice as many cards to stay interesting —
+   H(k) grows logarithmically, so proportional allocation leaves the common bands
+   taking ~3x longer to complete than UR. Chosen over a hand-written mix (the
+   N40/R30/SR18/SSR9/UR3 in DECISIONS.md) because that number was inherited from
+   the per-card-weight era, when composition still moved the drop rates; under
+   band-first pulling it needed a new justification, and this is it. It lands
+   close to the old figures, which is a good sign rather than a coincidence. */
+export function bandTargets(presentRarities = RARITY_ORDER, { targetSize = DEFAULT_TARGET_SIZE, pullSize = PULL_SIZE } = {}) {
+  const present = (presentRarities ?? []).filter(r => RARITY[r]);
+  const totalWeight = present.reduce((sum, r) => sum + RARITY[r].weight, 0);
+  if (!present.length || !totalWeight) return {};
+
+  const targets = {};
+  const shares = {};
+  const harmonics = {};
+  let allocated = 0;
+
+  for (const rarity of present) {
+    const min = minCardsForBand(rarity, present, pullSize);
+    targets[rarity] = min;
+    shares[rarity] = RARITY[rarity].weight / totalWeight;
+    harmonics[rarity] = harmonic(min);
+    allocated += min;
+  }
+
+  /* The floors alone can already exceed a small budget. Honouring them over the
+     budget is the right way round — a starved band is a broken pull, while an
+     oversized set is only a longer one. */
+  while (allocated < targetSize) {
+    let pick = null;
+    let soonest = Infinity;
+    for (const rarity of present) {
+      const at = completionPulls(targets[rarity], harmonics[rarity], shares[rarity]);
+      if (at < soonest) { soonest = at; pick = rarity; }
+    }
+    targets[pick] += 1;
+    harmonics[pick] += 1 / targets[pick];
+    allocated += 1;
+  }
+  return targets;
+}
+
+function harmonic(k) {
+  let sum = 0;
+  for (let i = 1; i <= k; i++) sum += 1 / i;
+  return sum;
+}
+
+/* Stable hash of a string. Same shape as ui/card.js's accent fallback and
+   engine/emblem.js's hue: identical across runs and platforms, which is what
+   makes a capped build reproducible from its inputs alone. */
+function hashOf(text) {
+  let h = 0;
+  for (const ch of String(text)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return h;
+}
+
+/* Trim each band to its target, keeping a deterministic subset.
+
+   Which cards survive is decided by hashing `seed:channelId` and keeping the
+   lowest — so the choice is reproducible from the set slug and the roster with
+   no stored state, and a DIFFERENT slug selects a different subset. That is what
+   makes the surplus a future printing's chase cards rather than dead weight.
+
+   Keyed on the channel id rather than subscriber count on purpose: "keep the
+   biggest" would make every printing's top band identical, which is the outcome
+   this is here to avoid. */
+export function capBands(channels, { targetSize = DEFAULT_TARGET_SIZE, pullSize = PULL_SIZE, seed = '', pinned = new Set() } = {}) {
+  const pins = pinned instanceof Set ? pinned : new Set(pinned ?? []);
+  const bands = bandsOf(channels);
+  const targets = bandTargets(bands.map(b => b.rarity), { targetSize, pullSize });
+  const kept = [];
+  const capped = [];
+  for (const { rarity, cards } of bands) {
+    const target = targets[rarity] ?? cards.length;
+    if (cards.length <= target) {
+      kept.push(...cards);
+      continue;
+    }
+    /* Pinned cards sort ahead of everything, so the hash only ever decides the
+       REMAINDER of a band. Without this the cap chooses a set's headline cards
+       by hash, which is how the first 400-card build shipped five record labels
+       in UR and hashed PewDiePie out. Pins are honoured before the seed because
+       "which creators does this audience recognize" is a judgement the roster
+       makes and a hash cannot. */
+    const ranked = [...cards].sort((a, b) => {
+      const pa = pins.has(String(a.id)) ? 0 : 1;
+      const pb = pins.has(String(b.id)) ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      const ha = hashOf(`${seed}:${a.id}`);
+      const hb = hashOf(`${seed}:${b.id}`);
+      return ha - hb || (a.id < b.id ? -1 : 1);   // tie-break so the order is total
+    });
+    kept.push(...ranked.slice(0, target));
+    const droppedPins = ranked.slice(target).filter(c => pins.has(String(c.id))).length;
+    capped.push({ rarity, from: cards.length, to: target, droppedPins });
+  }
+  return { kept, capped, targets };
+}
+
 /* Group channels by the rarity their subscriber count derives, in RARITY_ORDER.
    Bands with no members are absent rather than empty, mirroring bandsFrom. */
 export function bandsOf(channels) {
@@ -118,10 +269,14 @@ function toPublished(channel) {
 
 /* Assemble the set envelope data/sets.js parses back. snapshotDate is passed in,
    never read from a clock here, so a build is reproducible under test. */
-export function assembleSet(channels, { slug, title, series = '', snapshotDate, pullSize = PULL_SIZE } = {}) {
+export function assembleSet(channels, { slug, title, series = '', snapshotDate, pullSize = PULL_SIZE, targetSize = DEFAULT_TARGET_SIZE, pinned = new Set() } = {}) {
   if (!slug || !title) throw new Error('A set needs a slug and a title.');
-  const { kept, dropped } = pruneStarvedBands(channels, pullSize);
-  if (!kept.length) throw new Error('No channels left to build a set from.');
+  /* Prune decides WHICH bands ship, cap decides how DEEP each one is, in that
+     order — a band dropped for starvation should never be allocated a budget.
+     The cap never re-starves anything, since every target starts at the floor. */
+  const { kept: surviving, dropped } = pruneStarvedBands(channels, pullSize);
+  if (!surviving.length) throw new Error('No channels left to build a set from.');
+  const { kept, capped, targets } = capBands(surviving, { targetSize, pullSize, seed: String(slug), pinned });
   return {
     set: {
       slug: String(slug),
@@ -131,6 +286,8 @@ export function assembleSet(channels, { slug, title, series = '', snapshotDate, 
       channels: kept.map(toPublished),
     },
     dropped,
+    capped,
+    targets,
     health: bandHealth(kept, pullSize),
   };
 }

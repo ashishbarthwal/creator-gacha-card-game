@@ -8,14 +8,17 @@
 import { describe, it, expect } from 'vitest';
 import {
   minCardsForBand,
+  bandTargets,
+  capBands,
   bandsOf,
   bandHealth,
   pruneStarvedBands,
   assembleSet,
   PULL_SIZE,
   BAND_HEADROOM,
+  DEFAULT_TARGET_SIZE,
 } from '../src/engine/setbuild.js';
-import { RARITY_ORDER } from '../src/engine/core.js';
+import { RARITY, RARITY_ORDER } from '../src/engine/core.js';
 
 /* Subscriber counts that land squarely inside each band, so a fixture's rarity
    is obvious at the call site rather than needing the boundary table. */
@@ -67,6 +70,128 @@ describe('minCardsForBand — derived from the weight table, not hand-tuned', ()
        same total, not against 100. */
     const twoBands = minCardsForBand('N', ['N', 'R']);
     expect(twoBands).toBeGreaterThan(minCardsForBand('N', RARITY_ORDER));
+  });
+});
+
+/* Expected pulls to collect every card in a band — the quantity the cap exists
+   to equalize. Written out here rather than imported so the test states the
+   model independently of the implementation. */
+function completesIn(k, rarity, present = RARITY_ORDER) {
+  const total = present.reduce((sum, r) => sum + RARITY[r].weight, 0);
+  let h = 0;
+  for (let i = 1; i <= k; i++) h += 1 / i;
+  return (k * h) / (RARITY[rarity].weight / total);
+}
+
+describe('bandTargets — the cap, so a chase card is reachable', () => {
+  it('spends exactly the budget', () => {
+    const targets = bandTargets(RARITY_ORDER, { targetSize: 400 });
+    expect(Object.values(targets).reduce((a, b) => a + b, 0)).toBe(400);
+  });
+
+  it('gives every band roughly the same completion time', () => {
+    /* The whole point: the 79-card build had base bands finishing in ~200 pulls
+       and UR in ~3,720. Within 10% of each other is the fix. */
+    const targets = bandTargets(RARITY_ORDER, { targetSize: 400 });
+    const times = RARITY_ORDER.map(r => completesIn(targets[r], r));
+    expect(Math.max(...times) / Math.min(...times)).toBeLessThan(1.1);
+  });
+
+  it('never allocates a band below the floor it has to clear', () => {
+    for (const size of [40, 120, 400]) {
+      const targets = bandTargets(RARITY_ORDER, { targetSize: size });
+      for (const rarity of RARITY_ORDER) {
+        expect(targets[rarity]).toBeGreaterThanOrEqual(minCardsForBand(rarity, RARITY_ORDER));
+      }
+    }
+  });
+
+  it('honours the floors over the budget when the budget is too small', () => {
+    /* A starved band is a broken pull; an oversized set is only a longer one, so
+       this overshoots rather than shipping a band that repeats. */
+    const targets = bandTargets(RARITY_ORDER, { targetSize: 1 });
+    const total = Object.values(targets).reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan(1);
+    expect(targets.UR).toBe(minCardsForBand('UR', RARITY_ORDER));
+  });
+
+  it('allocates a deeper roster to common bands than to rare ones', () => {
+    const targets = bandTargets(RARITY_ORDER, { targetSize: 400 });
+    const counts = RARITY_ORDER.map(r => targets[r]);
+    expect([...counts]).toEqual([...counts].sort((a, b) => b - a));
+  });
+
+  it('renormalizes over the bands actually present', () => {
+    const twoBands = bandTargets(['N', 'R'], { targetSize: 100 });
+    expect(Object.keys(twoBands).sort()).toEqual(['N', 'R']);
+    expect(twoBands.N + twoBands.R).toBe(100);
+  });
+});
+
+describe('capBands — the surplus becomes a later printing, not waste', () => {
+  it('trims an over-deep band and leaves a thin one alone', () => {
+    const { kept, capped } = capBands(roster({ N: 40, R: 30, UR: 12 }), { targetSize: 400 });
+    const urKept = kept.filter(c => c.id.startsWith('UC_UR'));
+    expect(urKept.length).toBeLessThan(12);
+    expect(capped.map(c => c.rarity)).toEqual(['UR']);
+    expect(kept.filter(c => c.id.startsWith('UC_N'))).toHaveLength(40); // under target, untouched
+  });
+
+  it('is reproducible — same seed, same cards', () => {
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const a = capBands(channels, { targetSize: 400, seed: 'series-1' });
+    const b = capBands(channels, { targetSize: 400, seed: 'series-1' });
+    expect(a.kept.map(c => c.id)).toEqual(b.kept.map(c => c.id));
+  });
+
+  it('selects a different subset for a different slug — the rotation', () => {
+    /* This is what makes the surplus Series 2's chase cards rather than dead
+       weight, with no rotation ledger to keep. */
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const one = capBands(channels, { targetSize: 400, seed: 'series-1' });
+    const two = capBands(channels, { targetSize: 400, seed: 'series-2' });
+    const urs = r => r.kept.filter(c => c.id.startsWith('UC_UR')).map(c => c.id).sort();
+    expect(urs(one)).not.toEqual(urs(two));
+  });
+
+  it('keeps a pinned card the hash would have dropped', () => {
+    /* The exact failure that motivated pins: the first 400-card build hashed
+       PewDiePie, Mark Rober and Dude Perfect out of UR and kept five record
+       labels. A pin is how the roster says which cards a set is sold on. */
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const unpinned = capBands(channels, { targetSize: 400, seed: 'series-1' });
+    const dropped = channels.filter(c =>
+      c.id.startsWith('UC_UR') && !unpinned.kept.some(k => k.id === c.id));
+    expect(dropped.length).toBeGreaterThan(0);
+
+    const pinned = capBands(channels, { targetSize: 400, seed: 'series-1', pinned: new Set([dropped[0].id]) });
+    expect(pinned.kept.some(c => c.id === dropped[0].id)).toBe(true);
+  });
+
+  it('reports when there are more pins than slots, rather than silently dropping one', () => {
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const allPinned = new Set(channels.filter(c => c.id.startsWith('UC_UR')).map(c => c.id));
+    const { capped } = capBands(channels, { targetSize: 400, seed: 's', pinned: allPinned });
+    expect(capped.find(c => c.rarity === 'UR').droppedPins).toBeGreaterThan(0);
+  });
+
+  it('leaves the rotation intact for everything that is not pinned', () => {
+    /* Pins decide the headline cards; the seed still decides the remainder, so
+       a later printing keeps drawing a different supporting cast. */
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const pin = new Set(['UC_UR_0']);
+    const one = capBands(channels, { targetSize: 400, seed: 'series-1', pinned: pin });
+    const two = capBands(channels, { targetSize: 400, seed: 'series-2', pinned: pin });
+    const urs = r => r.kept.filter(c => c.id.startsWith('UC_UR')).map(c => c.id).sort();
+    expect(urs(one)).toContain('UC_UR_0');
+    expect(urs(two)).toContain('UC_UR_0');
+    expect(urs(one)).not.toEqual(urs(two));
+  });
+
+  it('leaves every band healthy after capping', () => {
+    const { kept } = capBands(roster({ N: 300, R: 200, SR: 90, SSR: 40, UR: 20 }), { targetSize: 400 });
+    expect(bandHealth(kept).every(b => b.ok)).toBe(true);
+    expect(kept).toHaveLength(400);
   });
 });
 
@@ -173,5 +298,27 @@ describe('assembleSet — the strip is the last Gate item', () => {
     const { dropped, health } = build({ N: 40, R: 30, UR: 1 });
     expect(dropped.map(b => b.rarity)).toEqual(['UR']);
     expect(health.every(b => b.ok)).toBe(true);
+  });
+
+  it('caps an over-deep band and reports that too', () => {
+    /* The 79-card shape that prompted the cap: 12 UR against a thin base. */
+    const { set, capped } = build({ N: 27, R: 16, SR: 8, SSR: 16, UR: 12 });
+    const urs = set.channels.filter(c => Number(c.subscriberCount) >= 50e6);
+    expect(urs.length).toBeLessThan(12);
+    expect(capped.find(c => c.rarity === 'UR')).toMatchObject({ from: 12 });
+  });
+
+  it('prunes before it caps, so a starved band is never allocated a budget', () => {
+    const { set, dropped, capped, targets } = build({ N: 40, R: 30, UR: 1 });
+    expect(dropped.map(b => b.rarity)).toEqual(['UR']);
+    expect(targets).not.toHaveProperty('UR');
+    expect(capped.some(c => c.rarity === 'UR')).toBe(false);
+    expect(set.channels.every(c => Number(c.subscriberCount) < 50e6)).toBe(true);
+  });
+
+  it('defaults to a full printing', () => {
+    expect(DEFAULT_TARGET_SIZE).toBeGreaterThanOrEqual(300);
+    const { set } = build({ N: 400, R: 300, SR: 150, SSR: 60, UR: 30 });
+    expect(set.channels).toHaveLength(DEFAULT_TARGET_SIZE);
   });
 });
