@@ -26,7 +26,14 @@
           node tools/magic-search.js cooking guitar  (your own queries)
           node tools/magic-search.js --random 12     (generated from the vocab)
           node tools/magic-search.js --fresh          (start the file over)
-   Env:   MS_PER_QUERY=5   cards kept per query
+          node tools/magic-search.js --tier majority --random 12
+   Tier:  --tier legends|majority|wildcards steers the SEARCH and the band
+          together (engine SEARCH_TIERS, the same config the in-page buttons
+          use). Aim it at whichever band tools/build-set.js reports short; a
+          tier overrides MS_MAX_SUBS rather than stacking with it.
+   Env:   MS_PER_QUERY=5   cards kept per query. One search costs 100 units and
+          harvests ~50 uploaders, so a low cap pays full price and throws most of
+          it away — raise it when filling a printing.
           MS_MAX_SUBS=0    lift the exclude-giants ceiling (default 2M)
    Key:   YOUTUBE_API_KEY env var, else src/config.local.js. Never printed,
           never written to output. Real creator data goes to a gitignored
@@ -39,7 +46,7 @@ import { dirname, resolve } from 'node:path';
 import { searchChannelIds, fetchChannelsByIds } from '../src/data/search.js';
 import {
   selectChannels, assignPool, buildKeywords, regionReport, mergeRegionReports,
-  DEFAULT_FLOOR, DEFAULT_EXCLUDE_COUNTRIES,
+  DEFAULT_FLOOR, DEFAULT_EXCLUDE_COUNTRIES, SEARCH_TIERS,
 } from '../src/engine/discover.js';
 import { rarityFromSubs, RARITY_ORDER } from '../src/engine/core.js';
 
@@ -117,7 +124,29 @@ async function main() {
      jitter works. Bare --random defaults to 10. */
   const randomAt = rawArgs.indexOf('--random');
   const randomCount = randomAt === -1 ? 0 : (Number(rawArgs[randomAt + 1]) || 10);
-  const args = rawArgs.filter(a => !a.startsWith('--'));
+
+  /* --tier steers the SEARCH as well as the filter, which is the whole reason
+     SEARCH_TIERS carries both. Filtering alone would run the same query three
+     ways and mostly return nothing, because a keyword's most-viewed videos are
+     made by big channels whichever band you are after. The in-page buttons have
+     had this since WP6; the CLI is only now getting at the same config, because
+     filling a 400-card printing means aiming at the band that is short rather
+     than sourcing broadly and hoping. */
+  const tierAt = rawArgs.indexOf('--tier');
+  const tierKey = tierAt === -1 ? null : rawArgs[tierAt + 1];
+  if (tierKey && !SEARCH_TIERS[tierKey]) {
+    console.error(`Unknown tier "${tierKey}". Use one of: ${Object.keys(SEARCH_TIERS).join(', ')}`);
+    process.exit(1);
+  }
+  const tier = tierKey ? SEARCH_TIERS[tierKey] : null;
+
+  /* Flag VALUES must not fall through as queries — `--tier legends` would
+     otherwise search for the word "legends". */
+  const args = [];
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (!rawArgs[i].startsWith('--')) { args.push(rawArgs[i]); continue; }
+    if ((rawArgs[i] === '--tier' || rawArgs[i] === '--random') && rawArgs[i + 1] !== undefined) i++;
+  }
 
   const queries = randomCount ? buildKeywords(randomCount)
     : args.length ? args
@@ -134,7 +163,15 @@ async function main() {
   const channels = [...prior];
   const seen = new Set(prior.map(c => c.id));
 
-  const ceiling = MAX_SUBS === Infinity ? 'no ceiling' : `max ${fmtCount(MAX_SUBS)} subs`;
+  /* A tier replaces both halves at once — its own search bias and its own band —
+     so MS_MAX_SUBS is deliberately not merged in on top. Two ceilings from two
+     places is how a sourcing run ends up quietly returning nothing. */
+  const searchOpts = tier ? tier.opts : JITTERED;
+  const floor = tier ? tier.floor : FLOOR;
+
+  const ceiling = tier
+    ? `${tier.label} tier — ${fmtCount(tier.floor.minSubs)}${Number.isFinite(tier.floor.maxSubs) ? `-${fmtCount(tier.floor.maxSubs)}` : '+'} subs`
+    : MAX_SUBS === Infinity ? 'no ceiling' : `max ${fmtCount(MAX_SUBS)} subs`;
   console.log(`Magic Search draft — ${queries.length} queries, cap ${PER_QUERY}/query, jittered, ${ceiling}`);
   if (randomCount) console.log(`generated queries: ${queries.join(', ')}`);
   console.log(fresh ? 'starting fresh\n' : `continuing from ${prior.length} existing cards\n`);
@@ -143,14 +180,14 @@ async function main() {
   const regionReports = [];
   for (const q of queries) {
     try {
-      const ids = await searchChannelIds(q, key, JITTERED);
+      const ids = await searchChannelIds(q, key, searchOpts);
       const freshIds = ids.filter(id => !seen.has(id));      // dedup (this run + prior runs) before we spend the enrich call
       const found = await fetchChannelsByIds(freshIds, key);
       /* Measured over everything hydrated, BEFORE the floor and the cap — that
          is the only honest denominator for "what share could the region filter
          even see", since a channel culled for being too small never reached it. */
       regionReports.push(regionReport(found));
-      const kept = selectChannels(found, { floor: FLOOR, cap: PER_QUERY });
+      const kept = selectChannels(found, { floor, cap: PER_QUERY });
       for (const ch of kept) { seen.add(ch.id); channels.push(ch); added++; }
       console.log(`  "${q}": ${ids.length} uploaders (${freshIds.length} new) -> kept ${kept.length}`);
       for (const ch of kept) console.log(`      · ${ch.title} — ${fmtSubs(ch)}`);

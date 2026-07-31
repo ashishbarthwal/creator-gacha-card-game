@@ -26,6 +26,16 @@ export const SEARCH_BASE = {
   type: 'video',
   safeSearch: 'strict',
   maxResults: 50,
+  /* English bias, because recognition is the product. A card only lands if the
+     player knows who it is, and the audience this is built for is anglophone —
+     so a 20M-subscriber channel they have never heard of is a worse card than a
+     20M-subscriber channel they have, at identical stats. This is the cheapest
+     lever for that: it costs nothing, spends no extra quota, and biases rather
+     than filters, so a non-English creator big enough to be recognized anyway
+     can still surface. NOT a country filter — `snippet.country` is declared by
+     only ~70% of channels, so an allowlist would silently drop the 30% who
+     declare nothing, and plenty of those are English-language. */
+  relevanceLanguage: 'en',
 };
 
 /* The randomized levers. order=viewCount is the workhorse (the most-viewed
@@ -46,11 +56,22 @@ const rfc3339 = ms => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
    the query for a GIVEN keyword; this randomizes the keyword itself, so sourcing
    stops depending on a hand-written query list to reach new ground.
 
-   The vocab is hobby / craft / skill topics on purpose. That is where the
-   mid-sized on-topic creators this WP is aiming at actually live, and it steers
-   the whole feature clear of news, politics and anything keyed to a real
-   person's name — which matters more here than usual, given every result
-   becomes a card bearing someone's likeness. */
+   The vocab was hobby / craft / skill only, and WP9 widened it to the four
+   topics that actually carry recognition — gaming, tech, sports, lifestyle.
+
+   The guardrail that mattered is untouched, and it is worth being exact about
+   which one it was: no news, no politics, no drama, nothing keyed to a real
+   person's name. Gaming and tech are hobbies with enormous channels; sports and
+   lifestyle are mainstream without being newsworthy. None of them reopen the
+   thing the original restriction was protecting against.
+
+   What the narrow vocab cost was the top of the set. Hobby/craft keywords
+   essentially never surface a 10M+ channel, so SSR and UR could only ever be
+   filled by hand — and the cards a player recognizes are the whole reason a
+   chase card is worth chasing. The old note said broadening "maximises reach in
+   exactly the direction the project has been steering away from"; that reads as
+   one decision but is really two, and only the news/politics/person-named half
+   was ever load-bearing. */
 export const KEYWORD_SEEDS = [
   'cooking', 'baking', 'sourdough', 'fermentation', 'coffee roasting', 'tea ceremony',
   'chess', 'rubiks cube', 'origami', 'calligraphy', 'bookbinding', 'pottery',
@@ -64,6 +85,20 @@ export const KEYWORD_SEEDS = [
   'sewing', 'embroidery', 'knitting', 'soap making', 'candle making',
   '3d printing', 'arduino', 'retro computing', 'speedrun', 'board games',
   'tabletop rpg', 'magic tricks', 'juggling', 'van build',
+
+  /* WP9 — the recognition topics. These are where the channels a player has
+     actually heard of live, and the bands the hobby vocab could never reach. */
+  'gaming', 'minecraft', 'fortnite', 'roblox', 'call of duty', 'gta',
+  'league of legends', 'valorant', 'among us', 'horror game', 'game review',
+  'lets play', 'gaming setup', 'esports',
+  'tech review', 'smartphone', 'laptop review', 'pc build', 'gaming pc',
+  'headphones', 'camera review', 'gadgets', 'unboxing', 'apple',
+  'basketball', 'football skills', 'soccer', 'nba', 'trick shots',
+  'gym workout', 'bodybuilding', 'running', 'boxing', 'martial arts',
+  'skateboard tricks', 'surfing', 'golf tips', 'fishing',
+  'vlog', 'day in my life', 'morning routine', 'travel', 'food review',
+  'street food', 'car review', 'supercar', 'reaction', 'prank',
+  'fashion haul', 'skincare', 'makeup tutorial', 'home tour', 'productivity',
 ];
 
 /* The empty modifier is in the list deliberately — a bare topic is a perfectly
