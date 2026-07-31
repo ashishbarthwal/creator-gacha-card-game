@@ -156,14 +156,24 @@ export function harvestChannelIds(searchJson) {
    creators the sourcing actually wants — but the same ceiling would empty the
    `legends` pool, which is sized on 5M+. So the ceiling is a per-query lever the
    caller opts into, never a global rule. The parameter is still named `floor`
-   for its callers' sake though it now describes a band. */
-export const DEFAULT_FLOOR = { minSubs: 1_000, maxSubs: Infinity, minVideos: 5 };
+   for its callers' sake though it now describes a band.
+
+   `minViews` exists because a card with a zero stat reads as a bug. Found by
+   playing (2026-07-31): a channel with ~8,100 videos and no view count rendered
+   ATK 0. statsFrom is log10-scaled, so even a single view scores 36 — an ATK of
+   exactly 0 means the API gave us nothing to derive from. Whether that count is
+   genuinely zero or merely absent, we cannot make a card out of it, so it is
+   culled at sourcing rather than papered over with a minimum stat downstream. */
+export const DEFAULT_FLOOR = { minSubs: 1_000, minViews: 1_000, maxSubs: Infinity, minVideos: 5 };
 
 export function passesFloor(channel, floor = DEFAULT_FLOOR) {
   if (channel?.hiddenSubscriberCount) return false;
-  const { minSubs = 0, maxSubs = Infinity, minVideos = 0 } = floor;
+  const { minSubs = 0, maxSubs = Infinity, minVideos = 0, minViews = 0 } = floor;
   const subs = toCount(channel?.subscriberCount);
-  return subs >= minSubs && subs <= maxSubs && toCount(channel?.videoCount) >= minVideos;
+  return subs >= minSubs
+    && subs <= maxSubs
+    && toCount(channel?.videoCount) >= minVideos
+    && toCount(channel?.viewCount) >= minViews;
 }
 
 /* Sort a channel into one of the three sourcing pools by subscriber band.
@@ -233,6 +243,56 @@ export function passesRegion(channel, exclude = DEFAULT_EXCLUDE_COUNTRIES) {
   const country = String(channel?.country ?? '').toUpperCase();
   if (!country) return true; // an unknown country can't be excluded
   return !exclude.some(c => String(c).toUpperCase() === country);
+}
+
+/* Measure the leak instead of assuming it. passesRegion can only ever act on a
+   self-declared field, so its real effect is bounded by how many channels
+   declare anything at all — and that number had never been looked at, while the
+   exclude was being counted as one of the mitigations the legality gate closed
+   on (DECISIONS.md, "Launch posture"). A hedge that removes almost nothing is a
+   different input to that decision than one that removes most.
+
+   `coverage` is the number that matters: excluded/total is capped by it, so a
+   low coverage means the filter cannot be doing much no matter what the exclude
+   list says. `byCountry` is there to answer the follow-up — whether the ones
+   getting through declare something else or declare nothing.
+
+   Aggregate counts only, never per-channel records: this is a diagnostic
+   printed to a console, and country is the attribute we are careful not to
+   persist anywhere (see engine/candidates.js). */
+export function regionReport(channels, exclude = DEFAULT_EXCLUDE_COUNTRIES) {
+  const report = { total: 0, declared: 0, undeclared: 0, excluded: 0, byCountry: {} };
+  for (const channel of channels ?? []) {
+    if (!channel) continue;
+    report.total++;
+    const country = String(channel.country ?? '').toUpperCase();
+    if (!country) { report.undeclared++; continue; }
+    report.declared++;
+    report.byCountry[country] = (report.byCountry[country] ?? 0) + 1;
+    if (!passesRegion(channel, exclude)) report.excluded++;
+  }
+  /* Share of channels the filter could even see. The exclude's effect is capped
+     by this, which is the whole point of reporting it. */
+  report.coverage = report.total ? report.declared / report.total : 0;
+  return report;
+}
+
+/* Merge reports across queries so a multi-query run reports one honest total
+   rather than N unreadable ones. */
+export function mergeRegionReports(reports) {
+  const total = { total: 0, declared: 0, undeclared: 0, excluded: 0, byCountry: {} };
+  for (const r of reports ?? []) {
+    if (!r) continue;
+    total.total += r.total ?? 0;
+    total.declared += r.declared ?? 0;
+    total.undeclared += r.undeclared ?? 0;
+    total.excluded += r.excluded ?? 0;
+    for (const [country, n] of Object.entries(r.byCountry ?? {})) {
+      total.byCountry[country] = (total.byCountry[country] ?? 0) + n;
+    }
+  }
+  total.coverage = total.total ? total.declared / total.total : 0;
+  return total;
 }
 
 /* Pick the channels one query contributes: keep those that clear the floor and

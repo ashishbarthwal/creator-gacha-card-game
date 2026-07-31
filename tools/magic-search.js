@@ -37,7 +37,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 import { searchChannelIds, fetchChannelsByIds } from '../src/data/search.js';
-import { selectChannels, assignPool, buildKeywords, DEFAULT_FLOOR } from '../src/engine/discover.js';
+import {
+  selectChannels, assignPool, buildKeywords, regionReport, mergeRegionReports,
+  DEFAULT_FLOOR, DEFAULT_EXCLUDE_COUNTRIES,
+} from '../src/engine/discover.js';
 import { rarityFromSubs, RARITY_ORDER } from '../src/engine/core.js';
 
 const PER_QUERY = Number(process.env.MS_PER_QUERY ?? 5);
@@ -137,11 +140,16 @@ async function main() {
   console.log(fresh ? 'starting fresh\n' : `continuing from ${prior.length} existing cards\n`);
 
   let added = 0;
+  const regionReports = [];
   for (const q of queries) {
     try {
       const ids = await searchChannelIds(q, key, JITTERED);
       const freshIds = ids.filter(id => !seen.has(id));      // dedup (this run + prior runs) before we spend the enrich call
       const found = await fetchChannelsByIds(freshIds, key);
+      /* Measured over everything hydrated, BEFORE the floor and the cap — that
+         is the only honest denominator for "what share could the region filter
+         even see", since a channel culled for being too small never reached it. */
+      regionReports.push(regionReport(found));
       const kept = selectChannels(found, { floor: FLOOR, cap: PER_QUERY });
       for (const ch of kept) { seen.add(ch.id); channels.push(ch); added++; }
       console.log(`  "${q}": ${ids.length} uploaders (${freshIds.length} new) -> kept ${kept.length}`);
@@ -165,6 +173,20 @@ async function main() {
   console.log(`\n+${added} new -> ${channels.length} unique cards in ${OUT_FILE}`);
   console.log(`  rarity: ${RARITY_ORDER.map(r => `${r} ${rarity[r]}`).join(' · ')}`);
   console.log(`  pools:  legends ${pools.legends} · majority ${pools.majority} · wildcards ${pools.wildcards}`);
+
+  /* The region exclude, measured rather than assumed. Printed every run because
+     the number is an input to the launch decision, not a debug detail: the
+     filter reads a self-declared field, so its ceiling is the coverage line. */
+  const region = mergeRegionReports(regionReports);
+  if (region.total) {
+    const pct = n => `${((n / region.total) * 100).toFixed(1)}%`;
+    const top = Object.entries(region.byCountry).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    console.log(`\n  region exclude [${DEFAULT_EXCLUDE_COUNTRIES.join(', ')}] over ${region.total} hydrated channels:`);
+    console.log(`    declared a country: ${region.declared} (${pct(region.declared)}) · undeclared: ${region.undeclared} (${pct(region.undeclared)})`);
+    console.log(`    excluded: ${region.excluded} (${pct(region.excluded)} of all, ${region.declared ? ((region.excluded / region.declared) * 100).toFixed(1) : '0.0'}% of those that declared)`);
+    if (top.length) console.log(`    declared: ${top.map(([c, n]) => `${c} ${n}`).join(' · ')}`);
+    console.log(`    ceiling: the filter can never exceed ${pct(region.declared)} — it cannot see the rest.`);
+  }
   console.log(`\nView it: run  npx serve , open the app, pick "${SET_META.title}" in the Sets dropdown.`);
 }
 

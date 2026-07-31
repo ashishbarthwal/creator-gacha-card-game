@@ -13,6 +13,8 @@ import {
   harvestChannelIds,
   passesFloor,
   passesRegion,
+  regionReport,
+  mergeRegionReports,
   assignPool,
   selectChannels,
   SEARCH_BASE,
@@ -176,6 +178,91 @@ describe('passesFloor — cull the too-small and too-inactive', () => {
     expect(passesFloor(channel({ subscriberCount: '5000', videoCount: '1' }), { maxSubs: 1_000_000 }))
       .toBe(true);
   });
+
+  /* Found by playing, 2026-07-31: a channel with thousands of videos and no
+     view count rendered a card with ATK 0. statsFrom is log10-scaled, so one
+     view scores 36 — an ATK of exactly 0 means there was nothing to derive
+     from, and a zero stat reads as a bug whether or not the number is real. */
+  it('fails a channel with no views — it would render ATK 0', () => {
+    expect(passesFloor(channel({ viewCount: '0', videoCount: '8100' }))).toBe(false);
+  });
+
+  it('fails a channel whose view count is absent entirely', () => {
+    expect(passesFloor(channel({ viewCount: undefined }))).toBe(false);
+  });
+
+  it('passes exactly on the views floor', () => {
+    expect(passesFloor(channel({ viewCount: '1000' }))).toBe(true);
+    expect(passesFloor(channel({ viewCount: '999' }))).toBe(false);
+  });
+});
+
+/* The exclude is one of the five mitigations the legality gate closed on, and
+   it reads a self-declared field that is usually absent — so its real effect is
+   bounded by coverage, not by the exclude list. These pin the measurement, so
+   the launch decision can rest on what the filter does. */
+describe('regionReport — measure the leak instead of assuming it', () => {
+  const at = (country, over = {}) => channel({ country, ...over });
+
+  it('separates declared from undeclared, and reports the ceiling as coverage', () => {
+    const report = regionReport([at('IN'), at('US'), at(''), at('')]);
+    expect(report).toMatchObject({ total: 4, declared: 2, undeclared: 2, excluded: 1 });
+    expect(report.coverage).toBe(0.5);
+  });
+
+  it('coverage is the hard ceiling on how much the filter can ever remove', () => {
+    /* The finding that prompted this: if almost nobody declares, the exclude
+       cannot be doing much however aggressive the list is. */
+    const channels = [at('IN'), ...Array.from({ length: 19 }, () => at(''))];
+    const report = regionReport(channels);
+    expect(report.coverage).toBeCloseTo(0.05);
+    expect(report.excluded / report.total).toBeLessThanOrEqual(report.coverage);
+  });
+
+  it('counts the declared distribution, to show what the leakers declare instead', () => {
+    const report = regionReport([at('US'), at('US'), at('GB'), at('IN')]);
+    expect(report.byCountry).toEqual({ US: 2, GB: 1, IN: 1 });
+  });
+
+  it('normalizes case, matching passesRegion', () => {
+    const report = regionReport([at('in'), at('In')]);
+    expect(report.excluded).toBe(2);
+    expect(report.byCountry).toEqual({ IN: 2 });
+  });
+
+  it('honors a custom exclude list', () => {
+    expect(regionReport([at('US'), at('IN')], ['US']).excluded).toBe(1);
+    expect(regionReport([at('US'), at('IN')], []).excluded).toBe(0);
+  });
+
+  it('is all zeroes for empty or missing input rather than dividing by zero', () => {
+    for (const empty of [[], undefined, null]) {
+      expect(regionReport(empty)).toMatchObject({ total: 0, excluded: 0, coverage: 0 });
+    }
+  });
+
+  it('skips holes in the array without counting them', () => {
+    expect(regionReport([at('IN'), null, undefined]).total).toBe(1);
+  });
+});
+
+describe('mergeRegionReports — one honest total across a multi-query run', () => {
+  it('sums the counts and recomputes coverage over the combined total', () => {
+    const merged = mergeRegionReports([
+      regionReport([at2('IN'), at2('')]),
+      regionReport([at2('US'), at2(''), at2('')]),
+    ]);
+    expect(merged).toMatchObject({ total: 5, declared: 2, undeclared: 3, excluded: 1 });
+    expect(merged.coverage).toBeCloseTo(0.4);
+    expect(merged.byCountry).toEqual({ IN: 1, US: 1 });
+  });
+
+  it('is empty rather than NaN for no reports', () => {
+    expect(mergeRegionReports([])).toMatchObject({ total: 0, coverage: 0 });
+    expect(mergeRegionReports(undefined).coverage).toBe(0);
+  });
+
+  function at2(country) { return channel({ country }); }
 });
 
 describe('buildKeyword — seed x modifier vocab', () => {
