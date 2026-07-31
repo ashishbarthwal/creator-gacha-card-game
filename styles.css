@@ -1159,6 +1159,13 @@
     animation: rise 0.25s ease;
   }
 
+  /* Save sits beside Close rather than under the card, so the enlarged card —
+     the reason the overlay exists — keeps the vertical space it had. */
+  .inspect-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* Reserves its line so the box does not jump when the save result appears. */
+  #inspect-note { min-height: 1.2em; text-align: center; margin: -8px 0 0; }
+
   /* The hero card renders at ~2x the grid size; its container-query units do
      all the scaling, so no per-element overrides are needed here. */
   .inspect-holder { width: min(82vw, 340px); }

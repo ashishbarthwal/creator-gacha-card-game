@@ -123,7 +123,13 @@
 <div id="inspect" hidden role="dialog" aria-modal="true" aria-label="Card detail">
   <div class="inspect-box">
     <div id="inspect-holder" class="inspect-holder"></div>
-    <button id="inspect-close" class="btn ghost" type="button">Close</button>
+    <div class="inspect-actions">
+      <!-- The export is the version that travels without the page around it, so
+           it is the one that carries the disclaimer burned into the pixels. -->
+      <button id="inspect-save" class="btn ghost" type="button">Save as PNG</button>
+      <button id="inspect-close" class="btn ghost" type="button">Close</button>
+    </div>
+    <p id="inspect-note" class="hint" aria-live="polite"></p>
   </div>
 </div>
 
