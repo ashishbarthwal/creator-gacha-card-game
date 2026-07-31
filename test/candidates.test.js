@@ -15,6 +15,7 @@ import {
   refreshPools,
   hydratableIds,
   batchIds,
+  parseRosterLines,
   CANDIDATE_DB_VERSION,
   HYDRATE_BATCH,
 } from '../src/engine/candidates.js';
@@ -209,6 +210,48 @@ describe('batchIds — channels.list takes 50 per unit', () => {
     expect(batchIds([])).toEqual([]);
     expect(batchIds(['UC_a'], 0)).toEqual([['UC_a']]);
     expect(HYDRATE_BATCH).toBe(50);
+  });
+});
+
+/* The curated route. Keyword search cannot reach 10M+ subscribers with a
+   hobby/craft vocabulary, and broadening that vocabulary would trade away the
+   safety property it was chosen for — so the top bands come from a file a human
+   maintains, which means the file has to tolerate being written by a human. */
+describe('parseRosterLines — a roster a person can actually maintain', () => {
+  it('reads one entry per line', () => {
+    expect(parseRosterLines('@mkbhd\n@veritasium')).toEqual(['@mkbhd', '@veritasium']);
+  });
+
+  it('keeps comments and blank lines out, so the roster can carry its reasoning', () => {
+    const text = `
+      # Legends — chosen by hand, see WP9
+      @mkbhd            # tech, instantly recognizable
+
+      @veritasium
+    `;
+    expect(parseRosterLines(text)).toEqual(['@mkbhd', '@veritasium']);
+  });
+
+  it('drops a whole-line comment', () => {
+    expect(parseRosterLines('# nothing here\n@real')).toEqual(['@real']);
+  });
+
+  it('dedupes case-insensitively, keeping the first occurrence', () => {
+    expect(parseRosterLines('@MKBHD\n@mkbhd\n@other')).toEqual(['@MKBHD', '@other']);
+  });
+
+  it('preserves order — a roster is read top to bottom by whoever edits it', () => {
+    expect(parseRosterLines('@c\n@a\n@b')).toEqual(['@c', '@a', '@b']);
+  });
+
+  it('handles CRLF, since this file will be edited on Windows', () => {
+    expect(parseRosterLines('@a\r\n@b\r\n')).toEqual(['@a', '@b']);
+  });
+
+  it('is empty for empty or missing input rather than throwing', () => {
+    for (const empty of ['', '   \n\n', '# only a comment', null, undefined]) {
+      expect(parseRosterLines(empty)).toEqual([]);
+    }
   });
 });
 

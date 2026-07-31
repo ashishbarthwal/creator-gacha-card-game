@@ -95,14 +95,23 @@ hydrates it, then the schedule that re-runs it.
 - [X] **`minViews` floor — zero-stat cards.** A channel with ~8,100 videos and no view count
       rendered ATK 0 (even one view scores 36). `DEFAULT_FLOOR` gated subs and videos but not
       views. Now 1,000, inherited by all three tiers.
-- [ ] **SSR/UR are structurally unreachable — open.** The first real run produced
-      `N 27 · R 16 · SR 8 · SSR 0 · UR 0`. `KEYWORD_SEEDS` is deliberately hobby/craft (it steers
-      clear of news, politics and person-named channels, which matters when every result becomes
-      a card), and that vocabulary essentially never surfaces a 10M+ channel. So the pool cannot
-      currently mint a chase card, and WP12's UR three-beat finish would never fire for a real
-      player. Options, none taken yet: a curated legends allowlist (`assignPool`'s comment
-      already anticipates one), a second broader vocab used only for the legends tier, or accept
-      that a set tops out at SR and let the top band be the aspiration.
+- [X] **SSR/UR unreachable by search — closed by adding a curated route.** The first real
+      build came out `N 27 · R 16 · SR 8 · SSR 0 · UR 0`: no chase card, and WP12's UR finish
+      would never fire for a real player. SSR starts at 10M subs and UR at 50M, while
+      `KEYWORD_SEEDS` is hobby/craft on purpose — it avoids news, politics and person-named
+      channels, which matters when every result becomes a card carrying a likeness — and that
+      vocabulary essentially never surfaces a 10M+ channel.
+      - **Broadening the vocabulary was the obvious fix and the wrong one:** it would trade away
+        the exact safety property the vocabulary was chosen for. Who counts as a legend is human
+        knowledge, not a query, so it belongs in a file a person maintains. `assignPool`
+        anticipated this ("a curated allowlist can still promote a channel to legends later").
+      - `tools/add-candidates.js` + `catalog/legends.txt`: one @handle, UC id or URL per line,
+        `#` comments kept so the roster carries its own reasoning. Resolves, applies the region
+        exclude and the denylist exactly as search does, merges into the same candidate DB.
+      - **Cost, worth stating because "the API won't get us far" is only true of SEARCH:** a
+        handle is 1 quota unit, ids batch 50 to a unit. A 200-name roster is ~200 units against
+        10,000/day. `search.list` at 100 units a call is the only expensive thing in the system.
+      - This is the *route*, not the roster — the names are WP9's scope.
 - [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
       schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys
       a 5-day buffer to notice and re-run. Printings are still "monthly" in flavour.
@@ -134,29 +143,28 @@ hydrates it, then the schedule that re-runs it.
       the gating is DOM work and `config.js` reads `location`, which the headless suite has no
       meaningful version of.
 
-## WP14 — The decks (real card content) 📋 scope being defined
+## WP9 — The decks + persistence  📋 scope being defined
 
-**This is the next build.** WP7 built the machine; this fills it. Everything shipped so far
-produces a set, but only a 51-card proof made from whatever the hobby/craft keyword vocab
-happened to surface — not a deck anyone would want to pull from.
+**This is the next build**, and it is where the project stops being a pipeline and starts
+being a game. WP7 built the machine; this fills it, and then makes what a player pulls
+survive a reload — the two belong together because a deck worth collecting is only worth
+collecting if the collection persists.
 
-The end state: three decks the player picks between, shipped as static JSON, so a real user
-needs **no API key and makes no call to the YouTube Data API**. That property already holds
-mechanically (`sets/built/series-1.json` is served from the static host and the app reads it
-through the seam) — what is missing is *content worth shipping*.
+What already holds, so it is not in scope: a player needs **no API key and makes no call to
+the YouTube Data API**. `sets/built/<slug>.json` is a static file served from the host and
+read through the seam. What is missing is not architecture, it is *content* — the current
+set is a 51-card proof made from whatever the hobby/craft keyword vocab happened to surface,
+with no SSR and no UR in it.
 
-- [ ] **Scope, sizes and sourcing route — being defined 2026-07-31.** Open questions Ash is
-      specifying next: how many cards in each of the Legends / Majority / Small decks, how
-      recognizable the Legends roster needs to be, and how the roster is assembled.
-- [ ] Deployment structure for GitHub Pages (what actually gets served, and how the decks and
-      their manifest get there given built sets are never committed)
-
-*(Numbered 14 because it is new, not because it comes last — build order has never followed
-the numbering here; WP12 shipped between WP5 and WP6.)*
-
-## WP9 — Persistence
-
-- [ ] localStorage collection (survives reload)
+- [ ] **Deck sizes and rosters — Ash is specifying.** How many cards in Legends / Majority /
+      Small, how recognizable the Legends roster needs to be, and how each roster is assembled.
+- [ ] **Legends roster** — the curated route now exists (`tools/add-candidates.js`, WP7); what
+      it needs is names.
+- [ ] Deployment structure for GitHub Pages — what gets served, and how the decks and their
+      manifest arrive given built sets are never committed.
+- [ ] **localStorage collection (survives reload).** Folded in from the old WP9 rather than
+      kept separate: it is the same work package in practice, and it changes what the privacy
+      policy (WP11) has to say, so writing that page before this lands would mean rewriting it.
 
 ## WP10 — Share
 

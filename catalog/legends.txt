@@ -1,0 +1,38 @@
+# Legends roster — curated by hand.
+#
+# WHY THIS FILE EXISTS
+# Keyword search cannot reach the top bands. SSR starts at 10M subscribers and UR
+# at 50M, while the sourcing vocabulary (engine/discover.js, KEYWORD_SEEDS) is
+# hobby/craft on purpose — it avoids news, politics and person-named channels,
+# which matters when every result becomes a card carrying someone's likeness.
+# That vocabulary essentially never surfaces a 10M+ channel, so a set built only
+# from search tops out at SR and mints no chase card at all.
+#
+# Broadening the vocabulary would trade away the exact safety property it was
+# chosen for. Who counts as a legend is human knowledge, not a query — so it goes
+# in a file a person maintains and can argue with.
+#
+# FORMAT
+#   One entry per line: @handle, a UC id, or a youtube.com channel URL.
+#   Blank lines and everything after a # are ignored, so put the reasoning here.
+#   Duplicates are dropped case-insensitively, first occurrence wins.
+#
+# COST
+#   A handle costs 1 quota unit to resolve; UC ids batch 50 to a unit. A 200-name
+#   roster is ~200 units against 10,000/day. Cheap — search is the expensive call
+#   (100 units each), not this.
+#
+# USE
+#   node tools/add-candidates.js catalog/legends.txt --dry-run   # cost + parse check
+#   node tools/add-candidates.js catalog/legends.txt             # resolve and merge
+#   node tools/build-set.js --slug legends --title "Legends"     # mint the deck
+#
+# TWO THINGS TO KNOW BEFORE ADDING NAMES
+#   1. The India exclude applies here exactly as it does to search results. A
+#      roster is a decision about who is interesting, never an exemption from the
+#      local-risk hedge — and several of the largest channels on YouTube are
+#      India-based, so they will be dropped. The tool reports how many.
+#   2. Only ids reach catalog/candidates.json. Names written here are resolved to
+#      UC ids and nothing else about the channel is ever committed.
+#
+# Roster begins below. Empty until WP9 defines the deck sizes.

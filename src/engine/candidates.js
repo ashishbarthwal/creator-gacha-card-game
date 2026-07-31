@@ -150,6 +150,38 @@ export function hydratableIds(candidates, denylist = []) {
   return ids;
 }
 
+/* Read a curated roster file into a clean list of entries.
+
+   Exists because keyword search structurally cannot reach the top bands. SSR
+   starts at 10M subscribers and UR at 50M, and `KEYWORD_SEEDS` is hobby/craft on
+   purpose — it avoids news, politics and person-named channels, which matters
+   when every result becomes a card bearing someone's likeness. That vocabulary
+   essentially never surfaces a 10M+ channel, so a set built from it tops out at
+   SR and mints no chase card at all.
+
+   A curated list is the answer rather than a broader vocabulary, because who
+   counts as a "legend" is human knowledge, not a query. `assignPool` already
+   anticipated this ("a curated allowlist can still promote a channel to legends
+   later").
+
+   Blank lines and `#` comments survive, because this file is meant to be edited
+   and argued with by a person — a roster with no room for "why is this one
+   here" is a roster nobody maintains. Order is preserved and duplicates are
+   dropped, keeping the first occurrence. */
+export function parseRosterLines(text) {
+  const seen = new Set();
+  const entries = [];
+  for (const raw of String(text ?? '').split(/\r?\n/)) {
+    const line = raw.split('#')[0].trim();
+    if (!line) continue;
+    const key = line.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    entries.push(line);
+  }
+  return entries;
+}
+
 /* Batch ids for channels.list, which accepts up to 50 per call at 1 quota unit.
    A 500-candidate DB therefore hydrates for ~10 units against the 10,000/day
    budget, which is what makes a 25-day refresh cadence cheap enough to be
