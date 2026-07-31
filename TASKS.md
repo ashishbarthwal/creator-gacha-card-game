@@ -129,7 +129,30 @@ hydrates it, then the schedule that re-runs it.
       be worse than this one precisely because commit history can't be faked, and a stale
       fork reads worse than not building it. That makes this the config seam for both, so
       WP8 matters earlier than its position suggests.
-- [ ] Accept: clean build shows no dev buttons
+- [X] Accept: clean build shows no dev buttons — **verified by Ash 2026-07-31** in the browser,
+      across `localhost`, `?dev=0` (the prod view) and `?dev=1`. Not testable from the suite:
+      the gating is DOM work and `config.js` reads `location`, which the headless suite has no
+      meaningful version of.
+
+## WP14 — The decks (real card content) 📋 scope being defined
+
+**This is the next build.** WP7 built the machine; this fills it. Everything shipped so far
+produces a set, but only a 51-card proof made from whatever the hobby/craft keyword vocab
+happened to surface — not a deck anyone would want to pull from.
+
+The end state: three decks the player picks between, shipped as static JSON, so a real user
+needs **no API key and makes no call to the YouTube Data API**. That property already holds
+mechanically (`sets/built/series-1.json` is served from the static host and the app reads it
+through the seam) — what is missing is *content worth shipping*.
+
+- [ ] **Scope, sizes and sourcing route — being defined 2026-07-31.** Open questions Ash is
+      specifying next: how many cards in each of the Legends / Majority / Small decks, how
+      recognizable the Legends roster needs to be, and how the roster is assembled.
+- [ ] Deployment structure for GitHub Pages (what actually gets served, and how the decks and
+      their manifest get there given built sets are never committed)
+
+*(Numbered 14 because it is new, not because it comes last — build order has never followed
+the numbering here; WP12 shipped between WP5 and WP6.)*
 
 ## WP9 — Persistence
 
