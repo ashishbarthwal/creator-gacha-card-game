@@ -112,20 +112,11 @@ hydrates it, then the schedule that re-runs it.
         handle is 1 quota unit, ids batch 50 to a unit. A 200-name roster is ~200 units against
         10,000/day. `search.list` at 100 units a call is the only expensive thing in the system.
       - This is the *route*, not the roster — the names are WP9's scope.
-- [X] **Refresh + deploy — local, not CI** (`tools/build-site.js`, `npm run deploy`).
-      Written first as a GitHub Actions workflow, then moved: the deploy has to hydrate IDs
-      into live stats, which needs a key, and the built set can never be committed. The only
-      machine that can hold a key *and* publish without writing to a git history is Ash's own,
-      so the site uploads straight to the CDN (Netlify direct upload). `test.yml` stays in CI
-      and still needs no key.
-      - **The trade, stated because it is real:** the 25-day refresh is now a chore somebody
-        remembers, not a cron job. Cheaper than the alternatives — committing the set reopens
-        two closed decisions, and a key on GitHub was the thing being avoided.
-      - **The copy is an allowlist, file by file.** Caught by simulating the step before
-        shipping it: a recursive copy of `sets/` would have published `magic-search.draft.json`
-        — real creator data with `country` intact — walking straight past the strip.
-      - Two guards then refuse to build if a draft, dev manifest or `country` field reaches
-        `_site`. Both verified by planting a draft and watching them fire.
+- [X] **Deploy tooling exists; the deploy itself moved to WP11.** `tools/build-site.js` and
+      `npm run deploy` are written and locally verified, but publishing is not a set-build
+      concern and nothing should go live before the decks are curated (WP9). WP7's original
+      scope named a "monthly refresh workflow"; that reads as pipeline work but is really
+      release work, so it sits with the deploy in WP11 rather than holding this package open.
 - [X] Strip `country` from shipped sets — done in `engine/setbuild.js`; closes the last Gate
       item, see the Gate section for the full note
 
@@ -183,7 +174,16 @@ with no SSR and no UR in it.
 
 ## WP11 — Deploy + README
 
-- [ ] Static host (GitHub Pages / Netlify) + live link
+- [ ] **Netlify direct upload + live link.** Deliberately *after* WP9: nothing should be
+      published before the decks are curated, because the first thing a visitor sees should not
+      be a 51-card proof set. Tooling is already built and locally verified (moved here from
+      WP7) — `npm run deploy` builds the set, assembles `_site`, runs the draft/`country` guards
+      and uploads. Never run against Netlify yet.
+- [ ] **The 25-day refresh, as a habit rather than a job.** Moved here with the deploy. Runs
+      locally because hydration needs a key and the built set can never be committed, so the
+      only machine that can do both is Ash's — see DECISIONS.md. The honest cost: a missed
+      refresh is a compliance problem, not an inconvenience. Needs a calendar reminder or a
+      scheduled local task, decided when the deploy actually happens.
 - [ ] README: screenshots · live demo · test-suite pointer
 - [ ] **Privacy policy page** — needed on its own merits (the app takes a user's API key) and
       a stated prerequisite of any future quota audit. Unusually easy to write honestly here:
