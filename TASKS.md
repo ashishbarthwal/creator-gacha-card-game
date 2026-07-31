@@ -59,6 +59,15 @@ The legality gate closed, so this is no longer blocked. Building in the order th
 hydrates it, then the schedule that re-runs it.
 
 - [X] Exclude self-declared IN creators — leaky local-risk hedge (engine filter built)
+- [ ] **Measure how leaky, before trusting it.** Observed 2026-07-31: a live "cooking" pull
+      surfaced several apparently India-based creators. The filter is wired correctly — the
+      in-page caller takes the `['IN']` default — but it can only read `snippet.country`,
+      which is self-declared and usually absent, and an unknown country can't be excluded.
+      This is not a new caveat; what's new is that nobody has measured the rate. It matters
+      because the India exclude is one of the five mitigations the **legality gate closed on**
+      (Gate, below), and a hedge that removes ~nothing is a different input to that decision
+      than one that removes most. Instrument the sourcing path to report kept-vs-excluded and
+      how many declared a country at all, then re-read the gate against the real number.
 - [X] **Candidate DB (build-side source of truth)** — `engine/candidates.js` (pure: strip,
       merge, denylist, pool refresh, hydrate batching) + `tools/build-candidates.js` (no key,
       no network, spends no quota) writing `catalog/candidates.json`. 27 tests.
@@ -72,7 +81,18 @@ hydrates it, then the schedule that re-runs it.
         *will* rediscover an opted-out channel, so an opt-out that isn't re-enforced on every
         merge expires at the next `--random` run. `--prune` honors one immediately without
         needing a draft or a key.
-- [ ] `build-set.js` proper (curated list → `sets/*.json`)
+- [ ] `build-set.js` proper (candidate DB → hydrate → `sets/*.json`)
+      - [ ] **No band may ship with one card.** Found by playing, 2026-07-31: a 15-card live
+            pool returned the same R card 4× in one x10. Not the dupe rule — band starvation.
+            The pull picks a band by fixed weight then draws uniformly inside it, so a band
+            holding one card returns it every time that band hits (R weight 27 ≈ 2.7 of 10).
+            Correct behaviour, and exactly the trade WP4 made to stop composition diluting the
+            curve — but a set is only shippable if every present band has enough members that
+            a x10 doesn't visibly repeat. Assert it at build.
+- [ ] **`minViews` floor — zero-stat cards.** Found in the same pull: a channel with ~8,100
+      videos and no view count rendered ATK 0 (even one view scores 36). `DEFAULT_FLOOR` has
+      `minSubs` and `minVideos` but nothing on views, so it clears. A zero stat reads as a bug
+      to a player whether or not the data is real.
 - [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
       schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys
       a 5-day buffer to notice and re-run. Printings are still "monthly" in flavour.
@@ -188,6 +208,12 @@ they are cheap now and expensive after launch. **Two of the three are now closed
       realistic bad outcome is an email asking for removal, which gets honored. Deliberately
       NOT claimed: that a lawyer signed this off, or that the risk is zero. It is Ash's
       informed call to launch, and it is written down as that.
+      - ⚠️ **One input to this is unverified (noted 2026-07-31, gate left closed).** The India
+        exclude is cited above as trimming the highest-enforceability vector, but its real-world
+        effect has never been measured and a live pull suggests it is very leaky — see the
+        measurement task in WP7. This does not reopen the gate on its own; the decision listed
+        what would (a claim arriving, monetization, scale). It is flagged because the gate should
+        rest on what the filter *does*, not on what it was designed to do.
 - [X] **Rename off the "YouTube" trademark** — now **Creator Gacha** (done early, 2026-07-26).
       Descriptive use retained in the tagline; the footer disclaimer is unchanged and still
       required. **Closed out 2026-07-31:** the GitHub repo is `creator-gacha-card-game` and the
