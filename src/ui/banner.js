@@ -7,6 +7,7 @@ import { toCard } from '../engine/core.js';
 import { bandsFrom } from '../engine/gacha.js';
 import { selectChannels, SEARCH_TIERS } from '../engine/discover.js';
 import { state, currentPool, setSetsPool } from '../state.js';
+import { IS_DEV, gateDevElement } from '../config.js';
 import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET, discoverChannels } from '../data/index.js';
 import { escapeHtml } from './util.js';
 
@@ -35,6 +36,8 @@ const apiKeyInput = document.getElementById('api-key');
 const addInput = document.getElementById('add-input');
 const addBtn = document.getElementById('add-btn');
 const msInput = document.getElementById('ms-input');
+const msRow = document.getElementById('ms-row');
+const msInputRow = document.getElementById('ms-input-row');
 const msButtons = {
   legends: document.getElementById('ms-legends'),
   majority: document.getElementById('ms-majority'),
@@ -182,16 +185,19 @@ function selectStarter() {
 
 async function appendManifestSets() {
   await appendSetsFrom('sets/index.json', { warnOnFail: true });
+  /* Sets minted by tools/build-set.js. Never committed (a set file in git is
+     permanent, which would break both the 30-day statistics cap and the promise
+     that a removal is performable), so CI builds them at deploy and they arrive
+     through their own manifest rather than the committed one. Probed on every
+     host, unlike the dev manifest below — this is the production path. Silent on
+     failure, since a checkout with nothing built yet is the normal local state. */
+  await appendSetsFrom('sets/built/index.json', { warnOnFail: false });
   /* Dev-only: a gitignored sets/index.local.json lets local build tools (e.g.
      tools/magic-search.js) surface their generated draft sets in the picker
-     without touching the committed manifest. Probed only on localhost, so a
-     deployed build never makes the doomed request — same spirit as the
-     config.local.js pre-fill above. */
-  if (isLocalDev()) await appendSetsFrom('sets/index.local.json', { warnOnFail: false });
-}
-
-function isLocalDev() {
-  return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+     without touching the committed manifest. Probed only in dev, so a deployed
+     build never makes the doomed request — same spirit as the config.local.js
+     pre-fill above. */
+  if (IS_DEV) await appendSetsFrom('sets/index.local.json', { warnOnFail: false });
 }
 
 async function appendSetsFrom(url, { warnOnFail }) {
@@ -319,10 +325,23 @@ export function initBanner({ onPull, onDevPull }) {
 
   setMode('sets');
 
+  /* WP8: dev affordances are hidden outside dev. Magic Search spends the
+     visitor's own quota and is a sourcing tool, not a game feature; Dev Pull
+     forces one card of every rarity and would misrepresent the drop rates
+     printed directly beneath it. Both stay in the DOM (so `?dev=1` can reveal
+     them and the module-level refs above stay valid) — they are hidden, not
+     removed. */
+  gateDevElement(msRow);
+  gateDevElement(msInputRow);
+  gateDevElement(pullBtnDev);
+
   /* Local dev convenience: if a gitignored src/config.local.js exists and
      exports a YOUTUBE_API_KEY, pre-fill the Live API field so testing live
      mode needs no re-paste. The file never ships (see .gitignore), so the
-     dynamic import simply rejects — and is ignored — everywhere else. */
+     dynamic import simply rejects — and is ignored — everywhere else. Skipped
+     outside dev: there is no such file to find, and a deployed build should
+     never even reach for a key it does not have. */
+  if (!IS_DEV) return;
   import('../config.local.js')
     .then(({ YOUTUBE_API_KEY }) => {
       const key = String(YOUTUBE_API_KEY ?? '').trim();

@@ -132,13 +132,27 @@ async function main() {
   await mkdir(BUILT_DIR, { recursive: true });
   await writeFile(resolve(BUILT_DIR, `${slug}.json`), JSON.stringify(set, null, 2) + '\n');
 
+  /* A set nothing points at is not shipped. The committed sets/index.json can't
+     list it — built sets never enter git — so built sets carry their own
+     manifest, written beside them and served from the same deploy. Merged
+     rather than overwritten, so building a second set doesn't unpublish the
+     first. */
+  const manifestPath = resolve(BUILT_DIR, 'index.json');
+  const manifest = (await readJson(manifestPath)) ?? { sets: [] };
+  if (!Array.isArray(manifest.sets)) manifest.sets = [];
+  const entry = { slug, title, file: `sets/built/${slug}.json` };
+  const at = manifest.sets.findIndex(s => s.slug === slug);
+  if (at === -1) manifest.sets.push(entry); else manifest.sets[at] = entry;
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+
   /* Write the refreshed pool hints back, so the DB self-heals on every build
      instead of drifting further from the bands it claims. */
   const refreshed = refreshPools(db.candidates, hydrated);
   await writeFile(CANDIDATES_PATH, JSON.stringify({ ...db, updated: new Date().toISOString().slice(0, 10), candidates: refreshed }, null, 2) + '\n');
 
-  console.log(`\nWrote sets/built/${slug}.json (gitignored — sets are built at deploy, never committed).`);
+  console.log(`\nWrote sets/built/${slug}.json + sets/built/index.json (gitignored — sets are built at deploy, never committed).`);
   console.log('Refreshed the pool hints in catalog/candidates.json.');
+  console.log(`It will appear in the Sets picker as "${title}".`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

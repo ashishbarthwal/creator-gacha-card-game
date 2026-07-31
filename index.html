@@ -46,10 +46,12 @@
         <input id="add-input" class="field" placeholder="@handle, channel URL, or UC id" spellcheck="false">
         <button id="add-btn" class="btn ghost" type="button">Add</button>
       </div>
-      <div class="add-row">
+      <!-- Magic Search is a dev sourcing tool, not a game feature: it spends the
+           visitor's own API quota. Hidden outside dev by src/config.js (WP8). -->
+      <div id="ms-input-row" class="add-row">
         <input id="ms-input" class="field" placeholder="keyword, e.g. cooking — Magic Search (dev)" spellcheck="false">
       </div>
-      <div class="ms-row">
+      <div id="ms-row" class="ms-row">
         <span class="ms-label">Magic Search</span>
         <button id="ms-legends" class="btn dev" type="button" title="Dev: 5M+ subs. Searches all-time most-viewed, where the big channels are.">Legends</button>
         <button id="ms-majority" class="btn dev" type="button" title="Dev: 100K–5M subs. Jittered order and window — the broad middle.">Majority</button>
