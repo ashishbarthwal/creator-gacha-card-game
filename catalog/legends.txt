@@ -35,4 +35,194 @@
 #   2. Only ids reach catalog/candidates.json. Names written here are resolved to
 #      UC ids and nothing else about the channel is ever committed.
 #
-# Roster begins below. Empty until WP9 defines the deck sizes.
+# Roster begins below.
+#
+# ── First cut (2026-07-31): make SSR and UR reachable at all ──────────────────
+# The first real build was N 27 · R 16 · SR 8 · SSR 0 · UR 0, so the top two
+# bands did not exist and the UR reveal finish had never fired for a player.
+# This roster exists to close that, not to be the final deck — WP9's deck sizes
+# will grow it.
+#
+# Over-provisioned on purpose. Three things thin a roster between here and a
+# card, and none of them are knowable before the run: a handle that has since
+# changed resolves to nothing, the India exclude drops whoever declares IN, and
+# a band that ends up holding one card is PRUNED by the build (a one-card band
+# hands the player the same card every time it hits — see engine/setbuild.js).
+# The minimum that survives is two per band, so ~12 names per band is the cheap
+# insurance. A handle costs 1 quota unit; the whole roster is under 30 of 10,000.
+#
+# Expected bands are commented, not enforced. Subscriber counts move and the
+# build assigns rarity from freshly hydrated stats, so a name drifting one band
+# is normal and costs nothing.
+#
+# Skipped deliberately: channels built around child performers. The likeness
+# question this project already carries is worse when the likeness is a kid's.
+
+# ── UR candidates (50M+) ──────────────────────────────────────────────────────
+# A `!` prefix PINS an entry: it survives the band cap ahead of everything else.
+#
+# Pins exist because the first 400-card build hashed PewDiePie, Mark Rober and
+# Dude Perfect OUT of the UR band and kept five record labels — the cap had no
+# way to be told which cards a set is sold on. Recognition is not subscriber
+# count and no query can compute it, so it is stated here by hand.
+#
+# The eight pins below are exactly the eight UR slots, so this band is entirely
+# curated. The music-label channels stay in the roster unpinned: they are real
+# 50M+ channels and belong in the DB, but a card game about YouTubers should not
+# have a record label as its chase card.
+!@MrBeast               # the definitional YouTube chase card
+!@PewDiePie             # ditto, and the older half of the same story
+!@MarkRober             # engineering builds — also the closest UR to the craft vocab
+!@DudePerfect           # sports trick shots, brand-shaped rather than person-shaped
+!@WWE                   # sports entertainment — enormous Anglosphere recognition
+!@AlanChikinChow        # Shorts-native, English-language
+!@DanRhodes             # UK magic Shorts
+!@Zhong                 # Shorts-native
+@Cocomelon              # animated: a UR carrying no real person's face at all
+@5MinuteCraftsYouTube   # craft-adjacent, faceless brand
+@BLACKPINK              # unpinned — huge, but not an Anglosphere YouTuber
+@justinbieber           # unpinned — label channel, not a YouTuber
+@taylorswift            # unpinned
+@EdSheeran              # unpinned
+@ArianaGrande           # unpinned
+@BillieEilish           # unpinned
+
+# ── SSR candidates (10M–50M) ─────────────────────────────────────────────────
+# The band where recognition actually lives: almost every famous English-language
+# YouTuber sits between 10M and 50M, which is why SSR is worth curating hardest.
+!@Markiplier
+!@jacksepticeye
+!@Sidemen
+!@Smosh
+!@GoodMythicalMorning
+!@DanTDM
+!@ZachKing
+!@Vsauce                # science/curiosity — on-theme
+!@veritasium            # on-theme
+!@kurzgesagt            # on-theme
+!@LinusTechTips         # tech — on-theme
+!@mkbhd                 # tech — on-theme
+!@Mrwhosetheboss        # tech — on-theme, non-US
+@colinfurze             # workshop builds — the single best fit for the craft vocab
+@TheSlowMoGuys          # science/craft
+!@UnboxTherapy
+
+# ── SR/SSR fill (2026-07-31) ─────────────────────────────────────────────────
+# Added when the 400-card target left SR 26 short and SSR 12 short. Search
+# cannot close either gap: the majority tier stops at 5M, so SR's upper half
+# (5-10M) is out of its reach, and the legends tier hits the documented ceiling
+# where hobby/craft vocabulary never surfaces a big channel.
+#
+# Curation is also just cheaper here. A handle is 1 quota unit; a search is 100.
+# Closing a 38-card gap costs ~55 units this way against several thousand.
+#
+# Chosen to match the sourcing vocabulary rather than to maximise fame: makers,
+# science, cooking, art and music, which is what the keyword seeds already aim
+# at. Over-provisioned roughly 2x, since counts drift across band lines and the
+# India exclude applies here exactly as it does to search.
+
+# Makers / engineering — the closest fit to the keyword vocab
+@DIYPerks
+@SteveMould
+@Wintergatan
+@tested                 # Adam Savage
+@SimoneGiertz
+@ThisOldTony
+@BlackTailStudio
+@NightHawkInLight
+@IliketoMakeStuff
+@Hacksmith
+@SmarterEveryDay
+@TheKingofRandom
+@ElectroBOOM
+@GreatScottLab
+@TechnologyConnections
+@styropyro
+
+# Science / explainer
+@3blue1brown
+@Numberphile
+@Computerphile
+@minutephysics
+@pbsspacetime
+@TomScottGo
+
+# Cooking
+@bingingwithbabish
+@JoshuaWeissman
+@ChefJeanPierre
+@aragusea
+@EthanChlebowski
+@emmymade
+@NickDiGiovanni
+@alvinzhou
+
+# Art / music
+@ProkoTV
+@Jazza
+@PaulDavids
+@AndrewHuang
+@Rousseau
+@SamDoesArts
+
+# Larger entertainment — SSR depth the maker channels cannot reach alone
+!@HowToBasic
+@LazarBeam
+@PrestonPlayz
+!@SSSniperWolf
+@Aphmau
+@Jelly
+@SSundee
+@Unspeakable
+@MrBallen
+@Ludwig
+
+# ── Recognition fill (2026-07-31) ────────────────────────────────────────────
+# Gaming, tech, sports and lifestyle — the four topics that carry recognition in
+# the Anglosphere, added because the hobby/craft vocabulary could reach neither
+# these creators nor these bands.
+#
+# The point is not size. A 20M-subscriber channel the audience has never heard of
+# makes a worse card than a 20M-subscriber channel they have, at identical stats,
+# because the whole reward of pulling a chase card is knowing who it is. Nothing
+# in the pipeline can compute that, so it is a roster decision.
+#
+# The same two rules as everywhere else still apply: the India exclude is not
+# waived for curated names, and only UC ids ever reach catalog/candidates.json.
+
+# Gaming — the largest creator category on the platform
+!@IShowSpeed
+!@KSI
+!@Ninja
+!@dream
+!@CoryxKenshin
+!@VanossGaming
+@TypicalGamer
+@TommyInnit
+@MrBeastGaming
+@Flamingo
+@GeorgeNotFound
+
+# Lifestyle / entertainment
+!@LoganPaulVlogs
+!@RyanTrahan1
+!@dharmann
+!@LankyBox
+@jakepaul
+@BrentRivera
+@Airrack
+@JordanMatter
+@emmachamberlain
+@RebeccaZamolo
+@DannyDuncan
+
+# Tech — depth behind the three pinned tech channels
+@JerryRigEverything
+@Dave2D
+@austinevans
+
+# Sports
+@F2
+@jesser
+@NBA
+@ESPN

@@ -37,7 +37,7 @@ import { resolveChannelInput } from '../src/data/resolve.js';
 import { fetchLiveChannel } from '../src/data/youtube.js';
 import { fetchChannelsByIds } from '../src/data/search.js';
 import { passesRegion } from '../src/engine/discover.js';
-import { parseRosterLines, mergeCandidates, poolCounts, batchIds, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
+import { parseRosterLines, splitPin, mergeCandidates, poolCounts, batchIds, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
 import { rarityFromSubs, RARITY_ORDER } from '../src/engine/core.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -89,11 +89,16 @@ async function main() {
   const ids = [];
   const handles = [];
   const invalid = [];
+  /* A pin follows its entry through resolution. Handles resolve one at a time so
+     the mapping is direct; ids are already the key the DB uses. */
+  const pinnedIds = new Set();
+  const pinnedHandles = new Set();
   for (const entry of entries) {
-    const r = resolveChannelInput(entry);
-    if (r.error) invalid.push(entry);
-    else if (r.kind === 'id') ids.push(r.value);
-    else handles.push(r.value);
+    const { input, pinned } = splitPin(entry);
+    const r = resolveChannelInput(input);
+    if (r.error) invalid.push(input);
+    else if (r.kind === 'id') { ids.push(r.value); if (pinned) pinnedIds.add(r.value); }
+    else { handles.push(r.value); if (pinned) pinnedHandles.add(r.value); }
   }
 
   const cost = batchIds(ids).length + handles.length;
@@ -110,10 +115,15 @@ async function main() {
   }
 
   const found = [];
+  const pinned = new Set(pinnedIds);
   for (const batch of batchIds(ids)) found.push(...await fetchChannelsByIds(batch, key));
   for (const handle of handles) {
     try {
-      found.push(await fetchLiveChannel({ kind: 'handle', value: handle }, key));
+      const channel = await fetchLiveChannel({ kind: 'handle', value: handle }, key);
+      found.push(channel);
+      /* The handle only becomes a UC id here, so this is the first point the pin
+         can be recorded against the key the candidate DB actually uses. */
+      if (pinnedHandles.has(handle)) pinned.add(String(channel.id));
     } catch (err) {
       console.log(`  ! ${handle}: ${err.message}`);
     }
@@ -129,7 +139,7 @@ async function main() {
 
   const denylist = (await readJson(DENYLIST_PATH)) ?? [];
   const db = (await readJson(CANDIDATES_PATH)) ?? { version: CANDIDATE_DB_VERSION, candidates: [] };
-  const { candidates, added, evicted, rejected } = mergeCandidates(db.candidates ?? [], allowed, { denylist });
+  const { candidates, added, evicted, rejected } = mergeCandidates(db.candidates ?? [], allowed, { denylist, pinned });
 
   const pools = poolCounts(candidates);
   const rarity = Object.fromEntries(RARITY_ORDER.map(r => [r, 0]));
@@ -139,6 +149,7 @@ async function main() {
   if (excluded) console.log(`  region exclude dropped ${excluded}`);
   console.log(`  this roster: ${RARITY_ORDER.map(r => `${r} ${rarity[r]}`).join(' · ')}`);
   console.log(`  +${added} added · ${evicted} evicted · ${rejected} denied -> ${candidates.length} candidates`);
+  console.log(`  pinned: ${candidates.filter(c => c.pin).length} (survive the band cap ahead of everything else)`);
   console.log(`  pools: legends ${pools.legends} · majority ${pools.majority} · wildcards ${pools.wildcards}`);
   for (const ch of allowed) {
     console.log(`      · ${ch.title} — ${ch.hiddenSubscriberCount ? 'hidden' : fmt(Number(ch.subscriberCount))}`);

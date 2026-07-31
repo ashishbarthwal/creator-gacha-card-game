@@ -16,6 +16,7 @@ import {
   hydratableIds,
   batchIds,
   parseRosterLines,
+  splitPin,
   CANDIDATE_DB_VERSION,
   HYDRATE_BATCH,
 } from '../src/engine/candidates.js';
@@ -244,6 +245,10 @@ describe('parseRosterLines — a roster a person can actually maintain', () => {
     expect(parseRosterLines('@c\n@a\n@b')).toEqual(['@c', '@a', '@b']);
   });
 
+  it('dedupes across the pin marker, so pinning a listed name adds no second entry', () => {
+    expect(parseRosterLines('!@mkbhd\n@mkbhd')).toEqual(['!@mkbhd']);
+  });
+
   it('handles CRLF, since this file will be edited on Windows', () => {
     expect(parseRosterLines('@a\r\n@b\r\n')).toEqual(['@a', '@b']);
   });
@@ -252,6 +257,56 @@ describe('parseRosterLines — a roster a person can actually maintain', () => {
     for (const empty of ['', '   \n\n', '# only a comment', null, undefined]) {
       expect(parseRosterLines(empty)).toEqual([]);
     }
+  });
+});
+
+describe('splitPin — the roster says which cards a set is sold on', () => {
+  it('reads a leading ! as pinned and hands back the bare entry', () => {
+    expect(splitPin('!@MrBeast')).toEqual({ input: '@MrBeast', pinned: true });
+    expect(splitPin('@MrBeast')).toEqual({ input: '@MrBeast', pinned: false });
+  });
+
+  it('tolerates space after the marker, since a person types this by hand', () => {
+    expect(splitPin('! @MrBeast')).toEqual({ input: '@MrBeast', pinned: true });
+  });
+
+  it('is safe on empty input', () => {
+    expect(splitPin(null)).toEqual({ input: '', pinned: false });
+  });
+});
+
+describe('pins through the merge', () => {
+  it('records a pin on a newly discovered candidate', () => {
+    const { candidates } = mergeCandidates([], [channel({ id: 'UC_a' })], {
+      now: FIXED_NOW, pinned: new Set(['UC_a']),
+    });
+    expect(candidates[0].pin).toBe(true);
+  });
+
+  it('leaves the field off entirely when unpinned, keeping the committed file clean', () => {
+    const { candidates } = mergeCandidates([], [channel({ id: 'UC_a' })], { now: FIXED_NOW });
+    expect(candidates[0]).not.toHaveProperty('pin');
+  });
+
+  it('promotes a candidate already in the DB — discovered by search, pinned later', () => {
+    const prior = [{ id: 'UC_a', pool: 'legends', firstSeen: '2026-01-01' }];
+    const { candidates } = mergeCandidates(prior, [], { now: FIXED_NOW, pinned: new Set(['UC_a']) });
+    expect(candidates[0]).toMatchObject({ pin: true, firstSeen: '2026-01-01' });
+  });
+
+  it('keeps a pin through a merge that knows nothing about it', () => {
+    /* Magic Search merges run constantly and carry no roster, so a merge that
+       cleared unlisted pins would wipe them on the next sourcing run. */
+    const prior = [{ id: 'UC_a', pool: 'legends', firstSeen: '2026-01-01', pin: true }];
+    const { candidates } = mergeCandidates(prior, [channel({ id: 'UC_b' })], { now: FIXED_NOW });
+    expect(candidates.find(c => c.id === 'UC_a').pin).toBe(true);
+  });
+
+  it('still evicts a pinned candidate that opted out — a pin is not an override', () => {
+    const prior = [{ id: 'UC_a', pool: 'legends', firstSeen: '2026-01-01', pin: true }];
+    const { candidates, evicted } = mergeCandidates(prior, [], { denylist: ['UC_a'], now: FIXED_NOW });
+    expect(evicted).toBe(1);
+    expect(candidates).toEqual([]);
   });
 });
 

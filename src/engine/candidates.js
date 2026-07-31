@@ -56,12 +56,38 @@ export function denylistIds(denylist) {
    positive: every field is named here, so a new field appearing on the Channel
    shape upstream can never silently start being committed. That is the reverse
    of a blocklist, which would fail open the moment data/index.js grows a key. */
-export function toCandidate(channel, { now = Date.now() } = {}) {
-  return {
+export function toCandidate(channel, { now = Date.now(), pin = false } = {}) {
+  const record = {
     id: String(channel.id),
     pool: assignPool(channel),
     firstSeen: isoDay(now),
   };
+  /* Written only when true, so the 400 ordinary candidates stay three-field and
+     the pinned handful are visible at a glance in the committed file. */
+  if (pin) record.pin = true;
+  return record;
+}
+
+/* A leading `!` marks an entry as PINNED — it must survive the band cap.
+
+   The cap has to drop cards once a band is over target, and it chooses by
+   hashing the id, which is right for the bulk of a roster and wrong for the
+   cards a set is sold on. The first 400-card build proved it: the UR band came
+   out MrBeast, a nursery-rhyme channel, a craft farm and five record labels,
+   while PewDiePie, Mark Rober and Dude Perfect were hashed out. No amount of
+   sourcing fixes that, because the problem is that the build had no way to be
+   told which cards matter.
+
+   Pins are the same idea as the roster itself, applied one level down: which
+   creators are recognizable is human knowledge, not a number. Subscriber count
+   cannot stand in for it — that is exactly the "20M-subscriber channel nobody in
+   the audience has heard of outranks one they have" failure. */
+export const PIN_MARK = '!';
+
+export function splitPin(entry) {
+  const text = String(entry ?? '').trim();
+  const pinned = text.startsWith(PIN_MARK);
+  return { input: pinned ? text.slice(PIN_MARK.length).trim() : text, pinned };
 }
 
 /* Merge a sourcing run into the accumulated DB.
@@ -76,8 +102,9 @@ export function toCandidate(channel, { now = Date.now() } = {}) {
    channel still exists and still matches the keyword — drops it again without
    anyone remembering to. Without eviction, an opt-out silently expires at the
    next `--random` run. */
-export function mergeCandidates(prior, channels, { denylist = [], now = Date.now() } = {}) {
+export function mergeCandidates(prior, channels, { denylist = [], now = Date.now(), pinned = new Set() } = {}) {
   const denied = denylistIds(denylist);
+  const pins = pinned instanceof Set ? pinned : new Set(pinned ?? []);
   const byId = new Map();
   let evicted = 0;
 
@@ -85,8 +112,15 @@ export function mergeCandidates(prior, channels, { denylist = [], now = Date.now
      not this run — so re-running the pipeline can't rewrite the DB's history. */
   for (const record of prior ?? []) {
     if (!record?.id) continue;
-    if (denied.has(String(record.id))) { evicted++; continue; }
-    byId.set(String(record.id), record);
+    const id = String(record.id);
+    if (denied.has(id)) { evicted++; continue; }
+    /* A pin can be added to a candidate already in the DB — the usual case, since
+       a channel is normally discovered by search first and promoted by hand
+       later. Pins are STICKY: a merge only ever sets them, because most merges
+       come from Magic Search, which knows nothing about the roster and would
+       otherwise clear every pin it walked past. Un-pinning is deleting the field
+       in catalog/candidates.json, which is a committed file meant to be edited. */
+    byId.set(id, pins.has(id) ? { ...record, pin: true } : record);
   }
 
   let added = 0;
@@ -96,7 +130,7 @@ export function mergeCandidates(prior, channels, { denylist = [], now = Date.now
     const id = String(channel.id);
     if (denied.has(id)) { rejected++; continue; }
     if (byId.has(id)) continue;               // already known; this run adds nothing
-    byId.set(id, toCandidate(channel, { now }));
+    byId.set(id, toCandidate(channel, { now, pin: pins.has(id) }));
     added++;
   }
 
@@ -174,7 +208,10 @@ export function parseRosterLines(text) {
   for (const raw of String(text ?? '').split(/\r?\n/)) {
     const line = raw.split('#')[0].trim();
     if (!line) continue;
-    const key = line.toLowerCase();
+    /* Deduped on the entry WITHOUT its pin marker, so `!@mkbhd` and `@mkbhd` are
+       one candidate rather than two — otherwise pinning a name already in the
+       roster would silently add it twice. */
+    const key = splitPin(line).input.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     entries.push(line);
