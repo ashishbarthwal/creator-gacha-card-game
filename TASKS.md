@@ -106,7 +106,8 @@ hydrates it, then the schedule that re-runs it.
 - [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
       schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys
       a 5-day buffer to notice and re-run. Printings are still "monthly" in flavour.
-- [ ] Strip `country` from shipped sets (build-time only — see the Gate section)
+- [X] Strip `country` from shipped sets — done in `engine/setbuild.js`; closes the last Gate
+      item, see the Gate section for the full note
 
 ## WP8 — Production hardening
 
