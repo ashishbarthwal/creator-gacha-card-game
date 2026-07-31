@@ -96,7 +96,7 @@ hydrates it, then the schedule that re-runs it.
       rendered ATK 0 (even one view scores 36). `DEFAULT_FLOOR` gated subs and videos but not
       views. Now 1,000, inherited by all three tiers.
 - [X] **SSR/UR unreachable by search — closed by adding a curated route.** The first real
-      build came out `N 27 · R 16 · SR 8 · SSR 0 · UR 0`: no chase card, and WP12's UR finish
+      build came out `N 27 · R 16 · SR 8 · SSR 0 · UR 0`: no chase card, and the UR reveal finish
       would never fire for a real player. SSR starts at 10M subs and UR at 50M, while
       `KEYWORD_SEEDS` is hobby/craft on purpose — it avoids news, politics and person-named
       channels, which matters when every result becomes a card carrying a likeness — and that
@@ -181,41 +181,6 @@ with no SSR and no UR in it.
       WP9, since localStorage changes what it has to say (local-only, never transmitted).
 - [ ] **Terms of service page** — same audit prerequisite. Carries the unofficial/not-affiliated
       disclaimer and the opt-out route (WP7a) in one place rather than only in the footer.
-
-## WP12 — Pull reveal theatre ✅
-
-Built out of sequence (2026-07-25), ahead of WP6–11 — the pull is the moment the game is
-*for*, and it was the weakest thing on screen.
-
-**Downgraded to 🟡 on 2026-07-26, restored to ✅ on 2026-07-31** — the package is entirely
-visual and nothing automated covers it (the suite tests only the headless engine, and
-`reveal.js` touches the DOM), so the boxes recorded "written" until someone actually watched
-a Dev Pull. Ash did, on 2026-07-31: the crescendo, beam, sweep, stars and the UR three-beat
-all read as intended. One correction came out of it, below.
-
-- [X] **Turn speed, from that viewing.** Commons were machine-gunning: the cadence
-      (`BASE_GAP` 115ms) was far shorter than the flip itself, so ~5 cards were mid-turn at
-      once and none had a beat of its own. Cadence 115→200ms, and the turn slowed across the
-      board (0.55→0.72s base, a new SR step at 0.82s, SSR/UR 0.8→0.95s). The delays
-      choreographed against the flip midpoint moved with it — SSR seam 0.42→0.5s, SR sweep
-      0.4→0.46s, stars-in 0.45→0.52s — so the halo and sweep still land on a face that is
-      actually facing you.
-- [X] **Click a revealed card to inspect it** — QoL, so admiring a pull no longer costs a
-      trip through Done and the collection grid. Face-down a click still skips the wait;
-      face-up it opens the existing inspector, which already dims everything else. Escape now
-      closes the top overlay only (capture-phase guard) instead of collapsing both at once.
-- [X] **Stranded beam, found by using the above.** Beam and flip are separate timers, so
-      turning a card early left its beam timer to fire afterwards and re-light a telegraph on
-      a landed card — and `beam-build` is `forwards`, with nothing removing `beaming` after a
-      flip, so it held a cone of light above the card until the overlay closed. Fixed at the
-      scheduler (a beam refuses to light on a flipped cell) *and* in CSS
-      (`.reveal-cell.flipped .beam` is off), so timing is no longer the only thing preventing it.
-
-- [X] Rarity-escalated flip order: commons first and fast, rares last (crescendo)
-- [X] Beam telegraph · specular sweep · reveal-time seam glow (backs identical until the turn)
-- [X] Twinkling stars, SR+ — JS-placed to dodge the avatar circle
-- [X] UR three-beat finish: ignition (frame laps) → discharge (silhouette) → aura (breathing, sheds motes)
-- [X] Reduced-motion path: instant, still, but still wears the rarity halo
 
 ## WP13 — Procedural Creator Emblems  📄 proposed, not started
 
