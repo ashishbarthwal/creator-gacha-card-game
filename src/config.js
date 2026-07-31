@@ -8,17 +8,29 @@
    actually available. It is enough: dev affordances hidden on a real domain is
    the requirement, not tamper-proofing.
 
-   `?dev=1` forces dev mode on any host. That is deliberate and safe: everything
-   it reveals (Dev Pull, Magic Search) either operates on cards the visitor can
-   already see or requires them to supply their own API key and spend their own
-   quota. Nothing behind this flag is privileged, so the escape hatch costs
-   nothing and makes a deployed build debuggable without a redeploy. */
+   The override runs both ways, and the second direction is the one that earns
+   its keep:
+
+     ?dev=1   force dev on a real host — debug a deployed build, no redeploy
+     ?dev=0   force PROD on localhost — see exactly what a stranger sees
+
+   Without `?dev=0` the production view is only reachable by serving over a LAN
+   IP and typing it in, which is enough friction that nobody checks, and the
+   whole point of this file is that the deployed build hides its dev tools. A
+   guardrail nobody can see is a guardrail nobody verifies.
+
+   Both directions are safe to leave open: everything the flag reveals (Dev Pull,
+   Magic Search) either operates on cards the visitor can already see or requires
+   them to supply their own API key and spend their own quota. Nothing behind it
+   is privileged. */
 
 const DEV_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '']);
+const OFF = new Set(['0', 'false', 'no']);
 
 function detectDev() {
   if (typeof location === 'undefined') return false;   // non-browser (tests, Node tools)
-  if (new URLSearchParams(location.search).has('dev')) return true;
+  const flag = new URLSearchParams(location.search).get('dev');
+  if (flag !== null) return !OFF.has(flag.toLowerCase());
   return DEV_HOSTS.has(location.hostname) || location.hostname.endsWith('.local');
 }
 
