@@ -100,7 +100,7 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-161 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+173 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery
@@ -134,19 +134,41 @@ into a tested, modular, deployable project in dependency order (full detail in
       engine later moved together into `src/engine/`.)
 - [x] **WP1 — Test suite.** Vitest against the pure core: exact rarity boundaries, hidden /
       malformed subscriber counts, monotonic stat scaling, seeded-RNG gacha distribution.
-      56 tests, `npm test`, dev-only dependency.
+      56 tests as delivered, `npm test`, dev-only dependency. (The suite has grown with every
+      WP since; the current total is above.)
 - [x] **WP2 — Footer.** Buy Me a Coffee tip jar (passive, never tied to game state) plus the
       "not affiliated with YouTube/Google" disclaimer.
 - [x] **WP3 — Holographic cards.** Pointer-tracked tilt + holo shine gated by rarity, with
       reduced-motion and touch fallbacks. Grew into a full card redesign: metal-bevel frames
       on a tier system mapped to the YouTube Creator Awards (Silver/Gold/Diamond/Red Diamond),
       a click-to-enlarge inspector, and the inline CSS split out to `styles.css`.
-- [~] **WP4 — Card sets.** *App-side landed:* a sets adapter behind the seam, a
-      `sets/index.json` manifest, and a **Sets** banner mode that pulls from curated static JSON
-      with no API key (sample set ships fictional channels for now). *Pending:* the
-      `build-set.js` snapshot/refresh pipeline that mints real sets.
-- [ ] **WP5 — Extras.** Card→PNG export, localStorage persistence, auto-resolved battles,
-      and a polished README with a live demo link.
+- [x] **WP4 — Card sets.** A sets adapter behind the seam, a `sets/index.json` manifest, and a
+      **Sets** banner mode that pulls from curated static JSON with no API key. Demo mode was
+      folded into a bundled starter set, so the default view paints instantly and works offline.
+      The pull became two-stage (band first, then card), so drop rates follow the weight table
+      instead of whatever shape the roster happens to have.
+- [x] **WP5 — Magic Search.** Keyword → channel discovery: a pure sourcing core
+      (`engine/discover.js` — query build, uploader harvest, floor, pool tag), the live
+      `search.list` → `channels.list` fetch, a CLI that accumulates into a gitignored draft, and
+      in-page tier buttons.
+- [x] **WP6 — Discovery quality.** Seeded query jitter (both live callers had it disabled), a
+      generated keyword vocab, a subscriber ceiling, and three tier buttons that steer the
+      *search* rather than just filtering it. Bands derive from one constant so a tier can't
+      drift from the pool it sorts into.
+- [x] **WP7a — Creator opt-out.** A real contact route in the footer and a stated policy:
+      removal honored within 7 days, no identity check. Shipped deliberately *before* the first
+      real-creator set, since an opt-out that arrives after one is already too late.
+- [~] **WP7 — Set-build pipeline.** *Landed:* the candidate DB — `catalog/candidates.json`
+      commits channel IDs, our own tags and the opt-out denylist, never channel data, because
+      anything in git is permanent and could satisfy neither the 30-day storage cap nor a
+      promised removal. *Pending:* `build-set.js` (hydrate → filter → per-pool sampling) and the
+      25-day refresh workflow.
+- [x] **WP12 — Pull reveal theatre.** Built out of sequence: the pull is the moment the game is
+      *for*, and it was the weakest thing on screen. Rarity-escalated flip order, a beam
+      telegraph, specular sweep, SR+ twinkling stars, and a three-beat UR finish — all CSS, with
+      a reduced-motion path that stays still but keeps the rarity halo.
+- [ ] **Next.** Production hardening (dev affordances gated, avatar-source flag), localStorage
+      persistence, card→PNG export, then deploy with a privacy policy and terms page.
 
 ---
 
@@ -165,8 +187,13 @@ A few decisions are deliberately locked (see [`DECISIONS.md`](DECISIONS.md) for 
 
 Unofficial fan project. **Not affiliated with or endorsed by YouTube or Google.** Channel data
 is retrieved via the YouTube Data API and belongs to the respective creators and Google. Cards
-use publicly available channel information; if you're a creator and would like your channel left
-out of a set, that request will be honored.
+use publicly available channel information.
+
+**Creators:** if you'd like your channel left out, email
+[ashish.barthwal.cs@gmail.com](mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request).
+Removal is honored within 7 days, with no identity check — the same policy and address as the
+in-app footer. Removals are permanent: an excluded channel is recorded in `catalog/denylist.json`
+and re-enforced on every future sourcing run, so it cannot be silently re-added later.
 
 ## License
 
