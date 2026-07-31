@@ -867,3 +867,74 @@ prevent. What would reopen it: a claim actually arriving, monetization of any ki
 project reaching a scale where "obscurity is protective" stops being true.
 
 </details>
+
+## The candidate DB is a directory boundary (2026-07-31)
+
+<details>
+<summary><b>Three directories, one rule: only IDs and our own tags enter git</b> — The split is physical so the guarantee is checkable by looking at a path, not by trusting a reviewer.</summary>
+
+WP7 step 1 landed the candidate DB, and the shape it took is a directory split rather than a
+convention:
+
+    sets/*.draft.json   gitignored   real creator data, local only
+    catalog/*.json      COMMITTED    ids + our tags + the denylist
+    sets/<slug>.json    built in CI  full stats, deployed, never committed
+
+Two prior decisions collapse into this one boundary. YouTube's 30-day cap on stored statistics
+cannot be met by anything in git, because git is permanent — a committed stat can be neither
+refreshed nor deleted on time. And the 7-day opt-out cannot be honored for anything in git,
+because `git rm` leaves the creator at the old commit in a public repo this project actively
+invites people to browse. Both rules point at the same answer, so the middle row is the only
+one that enters history.
+
+Making it a *path* rather than a code convention is the point: "did we commit creator data"
+becomes a question answerable by looking at where a file lives.
+
+</details>
+
+<details>
+<summary><b>The strip is a positive allowlist, never a blocklist</b> — A blocklist fails open the moment the Channel shape upstream grows a field.</summary>
+
+`toCandidate` names every field it keeps (`id`, `pool`, `firstSeen`) instead of deleting the
+ones it doesn't. A blocklist would be equivalent today and wrong tomorrow: the first time
+`data/index.js` gains a property, a blocklist starts committing it silently and nothing fails.
+The allowlist's failure mode is the safe one — a genuinely needed field is missing and
+obvious, rather than an unwanted field present and invisible. A test asserts the exact key set
+and a second asserts the serialized JSON contains none of the stripped values, since the real
+risk is a field surviving the round-trip rather than the object literal looking clean.
+
+</details>
+
+<details>
+<summary><b>The denylist evicts as well as blocks</b> — Sourcing will rediscover an opted-out creator, so a one-time removal silently expires.</summary>
+
+The obvious half is refusing to admit a denied id. The half that carries the guarantee is
+evicting one already in the DB, and then re-enforcing that on *every* merge — because the
+channel still exists and still matches the keyword that found it, so the next `--random` run
+finds them again. An opt-out honored once and not re-applied is an opt-out that lasts until the
+next sourcing run, which is worse than none: it looks kept while quietly failing.
+
+`hydratableIds` drops denied ids before the fetch rather than filtering the results, on the
+same reasoning — the point of an opt-out is that we stop looking someone up, not that we look
+them up and discard the answer.
+
+`--prune` exists so honoring a request costs one command with no draft, no key and no quota,
+letting the answer be "already done" instead of "at the next build". That matters because the
+promise in the footer is 7 days, and the person keeping it is one person reading their own
+inbox. For the same reason the denylist parses a bare `"UC_id"` string as well as the full
+audit record: the fast path under time pressure must not be the one that silently does nothing.
+
+</details>
+
+<details>
+<summary><b>The stored pool tag is a hint, and build-set recomputes</b> — Cached bands go stale as channels grow; the authority is always freshly hydrated stats.</summary>
+
+`pool` is recorded at discovery so the DB can answer "which tier is short" between builds with
+no API key, but it is derived from a subscriber count that keeps moving — a channel crossing 5M
+carries a stale tag. Nothing downstream may trust it for a build; `build-set.js` assigns pools
+from freshly hydrated stats. `refreshPools` lets the hint self-heal at hydrate time, when fresh
+Channel objects are already in hand and the correction is free. Country is not cached at all,
+for a stronger version of the same reason plus the gate item: the region exclude re-runs at
+hydrate, so a self-declared personal attribute the game never reads is never persisted.
+
+</details>

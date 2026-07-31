@@ -52,10 +52,26 @@ It ships **with the first real-creator set, before it**, not after.
       actually read beats a forwarding address that might not be, and the promise is
       answering fast. The cost — a public mailto gets harvested — was taken knowingly.
 
-## WP7 — Set-build pipeline  ⚠️ gated on legality
+## WP7 — Set-build pipeline  🟡 ungated 2026-07-31, in progress
+
+The legality gate closed, so this is no longer blocked. Building in the order the
+07-31 decisions imply: the committed source of truth first, then the thing that
+hydrates it, then the schedule that re-runs it.
 
 - [X] Exclude self-declared IN creators — leaky local-risk hedge (engine filter built)
-- [ ] Candidate DB (build-side source of truth)
+- [X] **Candidate DB (build-side source of truth)** — `engine/candidates.js` (pure: strip,
+      merge, denylist, pool refresh, hydrate batching) + `tools/build-candidates.js` (no key,
+      no network, spends no quota) writing `catalog/candidates.json`. 27 tests.
+      - The directory split IS the rule: `sets/*.draft.json` gitignored (real creator data),
+        `catalog/*.json` committed (ids + our tags + denylist), `sets/<slug>.json` built in CI
+        and never committed. Committing creator data would break the 30-day cap (git is
+        permanent) and the 7-day opt-out (`git rm` leaves them at the old commit) at once.
+      - The strip is an explicit positive allowlist, so a new field on the Channel shape can
+        never start being committed silently.
+      - **The denylist evicts as well as blocks**, which is the load-bearing half: sourcing
+        *will* rediscover an opted-out channel, so an opt-out that isn't re-enforced on every
+        merge expires at the next `--random` run. `--prune` honors one immediately without
+        needing a draft or a key.
 - [ ] `build-set.js` proper (curated list → `sets/*.json`)
 - [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
       schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys

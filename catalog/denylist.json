@@ -1,0 +1,4 @@
+{
+  "note": "Channels that asked to be excluded. Add an id here and re-run tools/build-candidates.js --prune. Entries are permanent: they evict from the DB and block every future sourcing run. A bare \"UC_id\" string works too.",
+  "denied": []
+}
