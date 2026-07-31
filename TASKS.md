@@ -158,15 +158,76 @@ read through the seam. What is missing is not architecture, it is *content* — 
 set is a 51-card proof made from whatever the hobby/craft keyword vocab happened to surface,
 with no SSR and no UR in it.
 
-- [ ] **Deck sizes and rosters — Ash is specifying.** How many cards in Legends / Majority /
-      Small, how recognizable the Legends roster needs to be, and how each roster is assembled.
-- [ ] **Legends roster** — the curated route now exists (`tools/add-candidates.js`, WP7); what
-      it needs is names.
+- [X] **Deck sizes settled (2026-07-31): ONE deck of 400, not three.** The proposal was to ship
+      the three sourcing pools as three decks; run against the real set, two of the three build
+      to **zero** and the third is 100% N. Rarity is derived from subscriber count, so slicing
+      decks by subscriber band slices the rarity ladder out of each one — structural, not a
+      shortage. The tiers keep steering the search and feed one deck carrying the full N→UR
+      ladder. Themed decks (Tech / Craft / Gaming) stay open; each needs the whole ladder.
+- [X] **The band cap — a chase card has to be reachable.** `bandTargets`/`capBands` in
+      `engine/setbuild.js`: the ceiling matching the floor that was already there, derived from
+      the same weight table. The 79-card set had its base bands completing in ~190 pulls and UR
+      in ~3,720, and **growing the set cannot fix that** — band-first pulling makes a band's
+      completion time a function of that band's own card count and nothing else. Allocated by
+      water-filling to equalize completion; 400 cards yields N 199 · R 109 · SR 56 · SSR 28 ·
+      UR 8, every band finishing within 2,125–2,199 pulls. 13 tests.
+      - Surplus is **held, not dropped**: selection hashes `slug:channelId`, so a later printing
+        draws a different subset with no rotation ledger to keep.
+- [X] **Legends roster — 74 names, resolved 69.** Two passes: the top-band fill (SSR 16 · UR 12)
+      and an SR/SSR fill aimed at makers, science, cooking, art and music, to match the keyword
+      vocabulary rather than to maximise fame. None were dropped by the India exclude.
+- [X] **`--tier` on `tools/magic-search.js`** — `SEARCH_TIERS` has steered the in-page buttons
+      since WP6 and the CLI could not reach it. The cap turned the build report into a
+      per-band shortfall list, which is only actionable if the tool can be aimed at a band.
+      Wildcards added 151 to N without touching R/SR; majority took R from 31 to 111.
+- [X] **Pins — the cap needed to be told which cards a set is sold on.** A `!` in the roster
+      sorts an entry ahead of its band, so the hash only decides the remainder. Built because
+      the first 400-card build hashed PewDiePie, Mark Rober and Dude Perfect OUT of UR and kept
+      five record labels. Recognition is not subscriber count and no query computes it. Pins
+      are sticky across merges (Magic Search carries no roster) but never override the
+      denylist. 12 tests.
+- [X] **Vocabulary widened to gaming / tech / sports / lifestyle + `relevanceLanguage: 'en'`.**
+      Only the news/politics/person-named half of the old restriction was load-bearing; the
+      narrowness was costing the top of the set and the recognizability of the commons. A
+      language bias beats a country allowlist, which would silently drop the ~30% who declare
+      no country.
+- [X] **Measured: broad topics triple the India exclusion rate** — 34.0% excluded over 521
+      hydrated channels (81.4% declared), against 8.6–13.3% on hobby/craft. Strengthens the
+      gate's reliance on the filter and is a real yield cost of broadening.
+- [X] **Series 1 built: 400 cards, all five bands healthy.** 622 candidates → 13 quota units to
+      hydrate. Drop rates over 100,000 simulated pulls: N 55.14 · R 26.97 · SR 11.93 ·
+      SSR 4.93 · UR 1.03 against a 55/27/12/5/1 table.
+      - UR: MrBeast · WWE · PewDiePie · Alan's Universe · Mark Rober · Zhong · Dude Perfect ·
+        IShowSpeed. SSR carries Markiplier, Dream, Sidemen, KSI, Ninja, MKBHD, LTT, CoryxKenshin,
+        Logan/Jake Paul, Zach King, Vsauce, Kurzgesagt and Veritasium.
+      - **Open, and stated rather than papered over:** the commons are still a blend. The
+        language bias filters nothing, and ~380 candidates were sourced before it existed, so
+        N and R carry names an anglophone player will not recognize. Top two bands curated,
+        commons sampled.
 - [ ] Deployment structure for GitHub Pages — what gets served, and how the decks and their
       manifest arrive given built sets are never committed.
-- [ ] **localStorage collection (survives reload).** Folded in from the old WP9 rather than
-      kept separate: it is the same work package in practice, and it changes what the privacy
-      policy (WP11) has to say, so writing that page before this lands would mean rewriting it.
+- [X] **localStorage collection (survives reload) — landed 2026-08-01.** Supersedes the "no
+      persistence yet" decision, which was about sandboxed previews. `engine/collection.js`
+      (pure: shape, validation, reconciliation) + `src/storage.js` (the IO edge, at the root
+      because it touches neither the DOM, the network, nor nothing). 15 tests.
+      - **Stores the channel snapshot + count, never the derived card.** rarity/atk/def are
+        recomputed on load, so a saved rarity can never drift out of agreement with
+        `rarityFromSubs`. Storing only the id was rejected: the set is re-cut on every build,
+        so a card can leave print and an id-only store would delete it from someone's binder.
+      - **The 30-day cap is answered by reconciliation, not expiry.** A loaded set IS current
+        data, so every owned card still in print is refreshed from it for free, zero extra
+        requests. Only cards that left the set keep an ageing snapshot, stamped with `savedAt`.
+      - **The API key still never persists, structurally** — `storage.js` is the only module
+        touching localStorage and is only ever handed a collection. A test writes a key onto
+        the collection and asserts it cannot reach the serialized bytes.
+      - Every storage path swallows its errors (corrupt JSON, `QuotaExceededError`, a
+        sandboxed frame that throws on *access*), verified against a shim. One card is 281
+        bytes; 400 cards is ~80KB against a ~5MB budget.
+      - **Clear-collection control shipped with it**, confirmed before firing. Not polish: the
+        WP11 privacy policy is about to claim the data is local and yours, which is only true
+        if something performs the deletion.
+- [ ] **Browser check on the persistence** — not testable from the suite (localStorage + DOM).
+      See the checklist handed over 2026-08-01.
 
 ## WP10 — Share
 
@@ -179,11 +240,26 @@ with no SSR and no UR in it.
       be a 51-card proof set. Tooling is already built and locally verified (moved here from
       WP7) — `npm run deploy` builds the set, assembles `_site`, runs the draft/`country` guards
       and uploads. Never run against Netlify yet.
-- [ ] **The 25-day refresh, as a habit rather than a job.** Moved here with the deploy. Runs
-      locally because hydration needs a key and the built set can never be committed, so the
-      only machine that can do both is Ash's — see DECISIONS.md. The honest cost: a missed
-      refresh is a compliance problem, not an inconvenience. Needs a calendar reminder or a
-      scheduled local task, decided when the deploy actually happens.
+- [X] **The 25-day refresh now has an alarm (2026-08-01).** The mechanism existed since WP7;
+      the *check* did not, so a 40-day-old set built and served like a fresh one.
+      `engine/freshness.js` (pure, injected clock) sets two thresholds — warn at 25, **refuse
+      to publish at 30**. Refusing at the cadence would block a compliant day-26 publish and
+      breed a bypass flag; the five-day gap is what makes a missed Sunday survivable. An
+      undated set is refused too — "no snapshotDate" is "age cannot be established", so it
+      fails closed. 14 tests.
+      - Guard verified by watching it fire, as the other two `build-site.js` guards were:
+        26 days warned and built, 33 days refused, undated refused, and the **exit code breaks
+        the `&&` chain** so the upload never runs.
+      - **`catalog/refresh-log.json` is COMMITTED** — dates and counts only, never creator
+        data. It is the one refresh artifact that survives losing the machine, and the only
+        thing that can prove the cadence was kept: a set carries a single date, so a missed
+        month is invisible in it and obvious in a log. `build` and `deploy` are separate
+        events, because rebuilding locally and never shipping is the quiet failure.
+      - `npm run status` — no key, no network, exits 0/1/2 so a scheduled task can act on it.
+        Also flags roster drift (candidates added since the last build), which no clock catches.
+- [ ] **Schedule the refresh on Ash's machine.** Task Scheduler weekly, with "run task as soon
+      as possible after a scheduled start is missed". The guard makes a miss safe rather than
+      silent, so this is best-effort by design.
 - [ ] README: screenshots · live demo · test-suite pointer
 - [ ] **Privacy policy page** — needed on its own merits (the app takes a user's API key) and
       a stated prerequisite of any future quota audit. Unusually easy to write honestly here:

@@ -1052,3 +1052,336 @@ design: the allowlist is correct today, and the guard is what catches the day so
 the copy list without thinking about what else lives in that directory.
 
 </details>
+
+## Sizing a printing: the band cap (2026-07-31)
+
+<details>
+<summary><b>A deck is never a sourcing pool — the three tiers feed one set, they don't become three</b> — Rarity is derived from subscriber count, so slicing decks by subscriber band slices the rarity ladder out of each one.</summary>
+
+The proposal was to ship the three sourcing pools as three decks: a Legends deck, a
+Majority deck, a Small deck. Run against the real 79-card set, two of the three build to
+**nothing** and the third is unplayable:
+
+    legends (5M+)      30 cards -> prunes to 0   SR 2 starves; dropping it makes SSR need
+                                                 17 of 16, which starves, then UR needs 20
+    majority (100K-5M) 22 cards -> prunes to 0   SR 6 starves, then R needs 20 of 16
+    wildcards (<100K)  27 cards -> survives, but it is 100% N — one band, so every pull
+                                                 returns the same rarity and nothing is rare
+
+The cause is structural rather than a shortage, which is why more sourcing would not have
+fixed it: **rarity IS derived from subscriber count** (`rarityFromSubs`), so a deck sliced by
+subscriber pool is a deck sliced by rarity. A legends deck holds nothing rare *relative to
+itself*, and a small deck holds nothing rare at all. The prune cascade is the build correctly
+refusing to ship either.
+
+So the three tiers keep the job they were designed for — steering the SEARCH so the candidate
+DB has coverage across the spectrum — and they feed **one** deck carrying the full N→UR
+ladder. Themed decks (Tech / Craft / Gaming) stay open and are what the earlier "one app,
+many banners" entry actually meant; each one needs the whole ladder inside it.
+
+Recorded because the idea is a natural one — the pools are already named, tiered and
+buttoned, so shipping them as decks looks like reuse rather than a category error.
+
+</details>
+
+<details>
+<summary><b>Set size is decided by completion time, and only a cap can control it</b> — Band-first pulling means a band's completion time depends on that band's card count and nothing else, so a bloated top band cannot be balanced by growing the base.</summary>
+
+The curated legends roster landed 12 UR cards in a 79-card set, and the resulting set was
+unfinishable at the top. The measure is the coupon-collector expectation — for a band of `k`
+cards drawn on a share `s` of pulls, `k·H(k)/s`:
+
+    N 27 -> ~190 pulls    R 16 -> ~200    SR 8 -> ~180    SSR 16 -> ~1,080    UR 12 -> ~3,720
+
+The base finishes eighteen times over before the chase cards do. The load-bearing part is
+**why growing the set cannot fix this**: WP4's two-stage pull picks a band by fixed weight and
+then draws uniformly inside it, so a band's completion time is a function of that band's own
+card count and of nothing else. Adding three hundred commons changes the percentages on the
+tin and leaves UR at 3,720 pulls. The only lever is how many URs there are.
+
+Hence `maxCardsForBand`/`bandTargets` in `engine/setbuild.js` — the ceiling matching the floor
+that was already there, and derived from the same weight table for the same reason. Allocation
+is by water-filling: start every band at the floor it must clear, then hand the next card to
+whichever band completes soonest, until the budget is spent. Equal completion times fall out
+of that, and the floor is honoured by construction rather than clamped afterwards. At 400
+cards it yields **N 199 · R 109 · SR 56 · SSR 28 · UR 8**, every band finishing within
+2,125–2,199 pulls.
+
+Closed off, and both were the obvious answers:
+
+- **"Give each band targetSize × its weight."** Weight is the rate a band is DRAWN at, not the
+  depth it needs. `H(k)` grows logarithmically, so proportional allocation leaves the common
+  bands taking ~3x longer to complete than UR — the same failure, pointed the other way.
+- **"Keep the hand-written N40/R30/SR18/SSR9/UR3 mix"** from the monthly-printings entry. That
+  number is a survivor of the per-card-weight era, when composition still moved the drop
+  rates; band-first pulling took its justification away and nobody noticed, because it kept
+  looking reasonable. The derivation lands close to it, which is a good sign for the old
+  number rather than a reason to keep inheriting it unexamined.
+
+</details>
+
+<details>
+<summary><b>Surplus is held, not discarded — the cap is seeded on the set slug</b> — Which cards survive the cap is a hash of <code>slug:channelId</code>, so a later printing draws a different subset with no rotation ledger to maintain.</summary>
+
+Capping raises "which twelve URs, and what happens to the other four". Selection hashes
+`slug:channelId` and keeps the lowest, so a build is reproducible from its inputs alone and a
+*different slug selects a different subset* — Series 2's chase cards are already sitting in the
+candidate DB, and nothing has to remember what Series 1 printed. That matters because the DB
+is the only committed artifact and it deliberately holds ids, not history.
+
+Keyed on the channel id rather than on subscriber count on purpose: "keep the biggest" is the
+tempting rule and would make every printing's top band identical, which is exactly the outcome
+the rotation exists to avoid.
+
+</details>
+
+<details>
+<summary><b><code>--tier</code> exposes the sourcing tiers to the CLI, because filling a printing means aiming at a band</b> — The build now reports which band is short, which is only actionable if the tool can be pointed at one.</summary>
+
+`SEARCH_TIERS` has steered the in-page buttons since WP6 and the CLI could not reach it, so
+`tools/magic-search.js` sourced broadly and hoped. Once the cap gave the build a per-band
+target, its report became a shortfall list — and a shortfall list is only useful if the tool
+can act on it. Measured across the fill: the wildcards tier added 151 cards to N without
+touching R or SR, and the majority tier took R from 31 to 111.
+
+The tier replaces both the search bias and the band filter together rather than merging with
+`MS_MAX_SUBS`, because two ceilings arriving from two places is how a sourcing run quietly
+returns nothing.
+
+Also recorded, since it was measured rather than assumed: **`MS_PER_QUERY` was costing more
+than it looked.** One `search.list` is 100 quota units and harvests ~50 uploaders, so the
+default cap of 5 paid full price and discarded most of the result. At 30, the same 100 units
+returned ~10 usable cards per query instead of ~4. The remaining waste is queries that return
+zero uploaders — roughly one in three, since the jittered window can land on an empty stretch —
+and that is the real cost of the randomization, worth naming rather than hiding.
+
+**Curation is also simply cheaper than search, which inverts the intuition.** A handle costs
+1 unit to resolve; a search costs 100. Closing SR's last 26 cards and SSR's 12 by hand cost
+~55 units against several thousand for the equivalent search coverage — and the curated names
+match the hobby/craft vocabulary better than whatever a broad query surfaces.
+
+</details>
+
+## Recognition is the product (2026-07-31)
+
+<details>
+<summary><b>The cap takes pins, because recognition is human knowledge and a hash cannot hold it</b> — The first 400-card build hashed PewDiePie, Mark Rober and Dude Perfect out of UR and kept five record labels.</summary>
+
+The band cap decides which cards survive by hashing `slug:channelId`, which is right for the
+bulk of a roster and wrong for the cards a set is sold on. The first 400-card build shipped a
+UR band of **MrBeast, Cocomelon, BLACKPINK, 5-Minute Crafts, Justin Bieber, Taylor Swift, Ed
+Sheeran and Ariana Grande** — one YouTuber, a nursery-rhyme channel, a craft farm and five
+record labels, with PewDiePie, Mark Rober and Dude Perfect hashed out. Every chase card in a
+game about YouTubers, decided by a hash.
+
+A `!` prefix in the roster pins an entry: it sorts ahead of everything in its band, so the
+hash only ever decides the remainder. The eight UR pins are exactly the eight UR slots, so
+that band is now entirely curated, and the music-label channels stay in the DB unpinned —
+they are real 50M+ channels and belong in the pool, but they are not what anyone is chasing.
+
+Why a rule could not do this: **recognition is not subscriber count.** A 20M-subscriber
+channel the audience has never heard of makes a worse card than a 20M-subscriber channel they
+have, at identical stats — the reward of pulling a chase card is knowing who it is. That is
+the same reasoning that put the legends roster in a hand-maintained file, applied one level
+further down. "Keep the biggest" was already rejected for making every printing identical;
+it would also have been wrong on the merits.
+
+Pins are STICKY across merges, and deliberately: most merges come from Magic Search, which
+knows nothing about the roster and would otherwise clear every pin it walked past. Un-pinning
+is deleting the field in `catalog/candidates.json`. A pin is also **not** an override of the
+denylist — an opted-out creator is still evicted, pinned or not, and a test pins that.
+
+</details>
+
+<details>
+<summary><b>The keyword vocabulary widens to gaming, tech, sports and lifestyle</b> — Only the news/politics/person-named half of the original restriction was ever load-bearing; the narrowness was costing the top of the set.</summary>
+
+`KEYWORD_SEEDS` was hobby/craft only, and an earlier entry closed off broadening it as
+"maximising reach in exactly the direction the project has been steering away from". That
+reads as one decision and is really two, and only one of them mattered: **no news, no
+politics, no drama, nothing keyed to a real person's name.** Gaming and tech are hobbies with
+enormous channels; sports and lifestyle are mainstream without being newsworthy. None of them
+touch the guardrail.
+
+What the narrowness cost was the whole top of the set — hobby keywords essentially never
+surface a 10M+ channel, so SSR and UR could only ever be filled by hand, and the commons were
+drawn from niches an anglophone audience mostly has not heard of. 52 seeds added across the
+four topics.
+
+`SEARCH_BASE` also gains `relevanceLanguage: 'en'`. Chosen over a country allowlist, which
+looks stricter and is worse: `snippet.country` is declared by only ~70% of channels, so an
+allowlist silently drops the ~30% who declare nothing, and plenty of those are
+English-language. A bias costs nothing, spends no extra quota, and still lets a non-English
+creator big enough to be recognized anyway come through.
+
+Honest about what this does NOT fix: the commons are still a blend. `relevanceLanguage`
+biases rather than filters, and the ~380 candidates sourced before this landed were found
+with no language signal at all, so N and R still carry names an anglophone player will not
+recognize. The top two bands are curated and the commons are sampled; that is the trade, and
+it is the right way round.
+
+</details>
+
+<details>
+<summary><b>Measured: broad topics triple the India exclusion rate — 8-13% to 34%</b> — The exclude does far more work on mainstream vocabulary than on hobby vocabulary, which is a real cost of broadening and an argument that the filter is not a token.</summary>
+
+Twelve queries across gaming, tech, food, fitness, travel, reaction and beauty hydrated 521
+channels: **declared a country 81.4%, excluded 177 (34.0% of all, 41.7% of those declaring)**.
+The hobby/craft runs measured earlier the same week came in at 8.6-13.3%.
+
+Two things follow, and they point in opposite directions. The exclude is doing considerably
+more work than the original 10-15% prediction or even the 8-13% measurement suggested, which
+strengthens the gate's reliance on it. And broadening the vocabulary costs real yield —
+roughly a third of everything mainstream topics surface is discarded before it can become a
+card, so the same 100-unit search buys fewer usable candidates than it does on craft topics.
+
+Recorded because it is the kind of number that only exists if someone prints it, and the gate
+rests on what the filter actually does rather than on what it was designed to do.
+
+</details>
+
+## The refresh gets an alarm (2026-08-01)
+
+<details>
+<summary><b>Two thresholds: warn at 25 days, refuse to publish at 30</b> — Refusing at the cadence would block a compliant day-26 publish and teach somebody to reach for a bypass; a guard people route around protects nothing.</summary>
+
+The mechanism for honouring YouTube's 30-day cap on stored statistics has existed since WP7 —
+`build-set.js` re-hydrates every id in one run, so a single command resets the whole clock for
+~13 quota units and no searches. What never existed was a **check**. A set forty days old
+built, assembled and served exactly like a fresh one.
+
+That gap is sharper here than it would be elsewhere, because the deploy deliberately runs on
+one machine rather than in CI (the key never goes near a repo secret). The cost was accepted
+openly at the time — "the 25-day refresh becomes a chore somebody has to remember" — but a
+chore with no alarm attached is one that gets missed, and a missed one is a compliance problem
+rather than an inconvenience.
+
+`engine/freshness.js` (pure, `now` injected like gacha's rng) sets two thresholds:
+
+    REFRESH_DAYS  25   the cadence — warn, keep building
+    POLICY_DAYS   30   the actual cap — REFUSE, publishing is blocked
+
+Warning at 25 and refusing at 30 rather than refusing at 25 is the whole design. Refusing at
+the cadence would block a day-26 publish of data that is still perfectly compliant, and the
+predictable result is a `--force` flag that gets used every time. The five-day gap is what
+makes a missed Sunday survivable.
+
+**An undated set is refused too.** No `snapshotDate` is not "fine", it is "its age cannot be
+established", and the only safe reading of that is closed. `refreshStatus` returns
+`publishable: false` for it, and a test pins that specifically, because failing open there
+would let the one file whose age nobody can verify walk past the guard built to catch it.
+
+The guard sits in `build-site.js` beside the two that were already there, and was verified the
+same way they were — by planting a 26-day set (warned, built), a 33-day set (refused), and an
+undated one (refused), then checking the **exit code breaks the `&&` chain** so the upload
+never runs. Reasoning that it would have worked was not sufficient for the other two guards
+and is not sufficient here.
+
+</details>
+
+<details>
+<summary><b>The refresh ledger is committed, because it is the only artifact that can prove the cadence was kept</b> — A built set carries one date, so it knows when it was last made and nothing about the runs before it; a missed month is invisible there and obvious in a log.</summary>
+
+`catalog/refresh-log.json` records one line per build and per deploy: timestamp, event, slug,
+card count, snapshot date. **Dates and counts only — no titles, no ids, no statistics** — which
+is exactly what lets it be committed while every file carrying creator data stays gitignored.
+A test asserts the entry's exact key set, since the real risk is a future field quietly turning
+it into creator data.
+
+That it is committed is the point. Every other refresh artifact is deliberately local and
+disposable, so the receipt that the 30-day cap was honoured would die with the machine that
+produced it. This one survives, and it is the document you would actually show if anyone asked.
+
+**`build` and `deploy` are separate events on purpose.** Conflating them hides the exact
+failure the ledger exists to catch: rebuilding locally and never shipping, which leaves the
+machine looking refreshed while the CDN still serves the old snapshot. Only the published copy
+is under the cap, because it is the only one anyone can read. `tools/record-deploy.js` runs
+**last** in the `&&`-joined deploy chain and reads `_site` rather than the build output, so a
+failed upload writes nothing — the ledger records deploys that happened, not deploys that were
+attempted.
+
+`npm run status` reads all of it with no key and no network, and exits 0/1/2 (nothing due /
+refresh due / expired) so a scheduled task can act on it instead of printing into the void. It
+also flags roster drift — candidates added since the last build — which is the other reason to
+rebuild and the one no clock would ever catch.
+
+</details>
+
+## The collection persists (2026-08-01)
+
+<details>
+<summary><b>Supersedes "No persistence yet" — the collection saves to localStorage, the API key still never does</b> — The old entry was about sandboxed previews, and there is a real host now; the key staying memory-only is structural rather than a rule someone has to remember.</summary>
+
+The earlier decision kept everything in memory "to stay safe in sandboxed previews. Revisit
+once the app is being served from a real static host." That condition is met, and a gacha whose
+collection evaporates on reload has no reason for anyone to come back to it.
+
+What changed is only the collection. **The API key remains memory-only**, and the way that is
+guaranteed is worth stating: `src/storage.js` is the single module that touches localStorage,
+and the only thing it is ever handed is a collection. There is no code path that could persist
+a key by mistake, so the promise in the footer is kept by the shape of the code rather than by
+a rule someone has to remember. A test writes a key onto the collection object and asserts it
+cannot reach the serialized bytes.
+
+`engine/collection.js` is the pure half (shape, validation, reconciliation) and is where the
+tests live; `storage.js` is the thin IO edge, which is the same split `data/sets.js` draws
+between `parseSet` and `loadSet`. It sits at the root rather than in `engine/`, `data/` or
+`ui/` because it touches none of those three — not pure, not the network, not the DOM — which
+is the same reason `state.js` lives there.
+
+</details>
+
+<details>
+<summary><b>Store the channel snapshot, not the card, and not just the id</b> — Derived fields can always be recomputed but can also drift out of agreement with the code that computes them; an id alone would make cards vanish when a set is re-cut.</summary>
+
+A card is `toCard(channel)` — `{ channel, rarity, atk, def }` — where everything but the
+channel is derived, purely and deterministically. Persisting the derived half would mean a
+saved rarity could one day disagree with `rarityFromSubs`, a bug with no way to detect it. So
+the store holds the channel and the count, and the card is re-derived on load. The same
+discipline as the candidate DB storing ids rather than statistics: keep the source, compute
+the rest.
+
+Storing *only* the id was the other option and is worse. The set is re-cut on every build —
+subscriber counts move, a channel crossing 10M jumps SR to SSR, and the band cap then selects
+differently — so a card in somebody's collection can leave the set entirely. An id-only store
+would make their card silently disappear on the week that happens. A collection is a record of
+what you pulled; a physical card does not vanish from a binder because its subject got popular.
+
+The stored channel is a positive allowlist, so `country` is absent by construction here too —
+the third file to use that pattern, and the reasoning is strongest here because this is storage
+on someone else's device that we cannot clear remotely.
+
+</details>
+
+<details>
+<summary><b>A saved snapshot stays inside the 30-day cap by being refreshed from the set, not by expiring</b> — The set a player just loaded IS current data, so reconciling against it costs nothing and needs no extra request.</summary>
+
+A snapshot sitting in a player's browser is still stored API data, and the Developer Policies
+cap statistics at 30 days. Expiring cards would have been the obvious answer and would have
+deleted the thing people came for.
+
+`reconcileCollection` runs whenever a set loads: every owned card whose id is in that set is
+refreshed from it, counts preserved. A player who opens the game at all therefore carries
+current data for everything still in print, automatically, with **zero** additional API calls —
+the set was going to be fetched anyway. Only cards that have genuinely left the set keep an
+ageing snapshot, and those carry `savedAt` so they can be expired later without guessing when
+they arrived. It writes only when something actually changed, so opening the game twice in a
+row does not touch storage the second time.
+
+**Every path in `storage.js` swallows its errors.** localStorage is not reliably available:
+private modes have thrown on write, a full store throws `QuotaExceededError`, and a sandboxed
+frame can throw merely on *accessing* `window.localStorage` — so the availability check is
+inside the try, not a `typeof` guard. All of it was exercised against a shim rather than
+assumed: corrupt JSON reads as empty, a throwing setter returns false, a throwing accessor
+degrades to the in-memory behaviour the app shipped with for eight work packages. A collection
+is a convenience; it must never be able to break the game.
+
+**The clear button is part of the decision, not polish.** Data kept on someone's device with no
+way to remove it is not "local and yours", it is data they cannot delete — and WP11's privacy
+policy is about to claim the former. It is confirmed before it fires, since a collection is the
+only thing in this game a player can lose and there is no server-side copy to restore from.
+
+Sizing, measured rather than assumed: one card serializes to 281 bytes, so a full 400-card
+collection is ~80KB against a typical 5MB budget.
+
+</details>
