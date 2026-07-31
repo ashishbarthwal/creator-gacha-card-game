@@ -34,7 +34,7 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
       works. **Still unconfirmed: that a re-roll differs.** Needs the same keyword run
       twice; not testable from the suite, which pins the pure engine on synthetic fixtures.
 
-## WP7a — Opt-out contact line  🟡 built, needs a real address
+## WP7a — Opt-out contact line ✅
 
 Pulled out of WP7 deliberately. It was sitting inside a work package gated on legality,
 which is backwards: the opt-out is one of the things that *makes* the legal position
@@ -42,11 +42,10 @@ defensible, so gating it behind that resolution means it can only ever arrive to
 It ships **with the first real-creator set, before it**, not after.
 
 - [X] Footer contact line + honored-removal policy (7 days, no identity check)
-- [ ] **Pick the contact route — BLOCKS DEPLOY.** The line currently points at a
-      `.example` placeholder, which cannot receive mail. Shipping it that way would
-      advertise an opt-out that silently goes nowhere: worse than claiming none.
-      Use a dedicated alias forwarding to Ash, not the primary address — a public
-      footer address attracts permanent spam.
+- [X] **Contact route picked (2026-07-31):** `ashish.barthwal.cs@gmail.com`, Ash's own
+      address, chosen over the dedicated alias suggested here. A real inbox that is
+      actually read beats a forwarding address that might not be, and the promise is
+      answering fast. The cost — a public mailto gets harvested — was taken knowingly.
 
 ## WP7 — Set-build pipeline  ⚠️ gated on legality
 
@@ -153,10 +152,19 @@ for building it properly rather than minimally.
 
 ## Gate (not a build WP)
 
-Both must clear before WP11 ships to real users. Deliberately deferred, not resolved —
-they are cheap now and expensive after launch.
+All must clear before WP11 ships to real users. Deliberately deferred, not resolved —
+they are cheap now and expensive after launch. **Two of the three are now closed; only the
+`country` strip is outstanding.**
 
-- [ ] **Legality resolution**
+- [X] **Legality resolution — closed 2026-07-31, by accepting a bounded risk rather than by
+      eliminating one.** Recorded in full under "Launch posture" in DECISIONS.md. What
+      "resolved" concretely means here: no monetization and no ads, so there is no commercial
+      use to complain about; the unofficial/not-affiliated disclaimer; a working opt-out
+      honored in 7 days (WP7a); the India exclude trimming the highest-enforceability vector;
+      and the WP8 avatar flag, which keeps the decision reversible instead of permanent. The
+      realistic bad outcome is an email asking for removal, which gets honored. Deliberately
+      NOT claimed: that a lawyer signed this off, or that the risk is zero. It is Ash's
+      informed call to launch, and it is written down as that.
 - [X] **Rename off the "YouTube" trademark** — now **Creator Gacha** (done early, 2026-07-26).
       Descriptive use retained in the tagline; the footer disclaimer is unchanged and still
       required. **Closed out 2026-07-31:** the GitHub repo is `creator-gacha-card-game` and the

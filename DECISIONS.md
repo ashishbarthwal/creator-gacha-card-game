@@ -842,3 +842,28 @@ deliberate trade of editorial control for scale, recorded so the earlier line is
 still operative.
 
 </details>
+
+<details>
+<summary><b>The opt-out goes to Ash's own inbox, and the legality gate closes on a bounded risk</b> — A read inbox beats a forwarded one, and "resolved" means mitigated and reversible, not zero.</summary>
+
+The contact route is `ashish.barthwal.cs@gmail.com`, chosen over the dedicated forwarding
+alias that was recommended. The argument for an alias is real — a public `mailto:` in static
+markup will be harvested, and that address is Ash's primary identity — but the promise this
+line makes is a fast answer, and a real inbox that is actually read serves that better than a
+forwarding address that might not be. The spam cost was accepted knowingly rather than
+overlooked.
+
+With that in place the **legality gate is closed (2026-07-31)**. Closed by accepting a
+bounded risk, not by eliminating one, and the distinction is the whole entry: no monetization
+and no ads, so there is no commercial use to object to; the unofficial disclaimer; an opt-out
+honored in 7 days; the India exclude trimming the highest-enforceability claim vector; and
+WP8's avatar flag keeping the decision reversible rather than permanent. The realistic bad
+outcome is an email asking for removal, which gets honored.
+
+Deliberately NOT claimed: that a lawyer reviewed this, or that the exposure is zero. It is an
+informed decision by the operator to launch, recorded as exactly that — because a gate marked
+"resolved" with nothing behind it would be the kind of empty receipt this file exists to
+prevent. What would reopen it: a claim actually arriving, monetization of any kind, or the
+project reaching a scale where "obscurity is protective" stops being true.
+
+</details>
