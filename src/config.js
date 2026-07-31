@@ -36,6 +36,40 @@ function detectDev() {
 
 export const IS_DEV = detectDev();
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   AVATAR SOURCE — the launch's reversibility switch.
+
+     'photo'   the creator's real profile picture, hotlinked from Google
+     'emblem'  a deterministic generated emblem (engine/emblem.js), no network
+
+   DECISIONS.md (2026-07-31) promoted this from hardening to a launch
+   prerequisite. The first release ships real pictures knowingly — the emblem
+   build is the safer artifact but the weaker experiment, and the question the
+   release exists to answer cannot be answered by a version stripped of the thing
+   that makes it legible. What makes that decision defensible is that it is
+   REVERSIBLE: if a creator objects, or the read of the room changes, this line
+   changes and the site redeploys. Launching without the switch is what would
+   make it permanent.
+
+   It is one flag over one codebase, never a fork. A stale fork reads worse than
+   not building the thing, and commit history cannot be faked — so both builds
+   have to be the same repo with a switch in it.
+
+   `?avatars=emblem` previews the other build without a redeploy, which is also
+   how the switch stays trustworthy: a flag nobody can exercise is a flag nobody
+   knows still works. */
+const AVATAR_SOURCES = new Set(['photo', 'emblem']);
+const AVATAR_DEFAULT = 'photo';
+
+function detectAvatarSource() {
+  if (typeof location === 'undefined') return AVATAR_DEFAULT;
+  const asked = new URLSearchParams(location.search).get('avatars');
+  return AVATAR_SOURCES.has(asked) ? asked : AVATAR_DEFAULT;
+}
+
+export const AVATAR_SOURCE = detectAvatarSource();
+export const USE_EMBLEMS = AVATAR_SOURCE === 'emblem';
+
 /* Hide an element unless this is a dev build, and mark it so CSS and anyone
    reading the DOM can tell the difference between "hidden because prod" and
    "hidden because the UI is in another mode". Removing outright would break the

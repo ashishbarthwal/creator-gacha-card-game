@@ -5,7 +5,17 @@
    and the channel initial sits behind it as a faint monogram. */
 
 import { toCount } from '../engine/core.js';
+import { emblemFor, emblemAccent } from '../engine/emblem.js';
+import { USE_EMBLEMS } from '../config.js';
 import { escapeHtml, formatCount } from './util.js';
+
+/* The one place the avatar-source switch is read. Everything downstream — the
+   ring, the tilt, the reveal, the 403 fallback — is handed a URL and stays
+   ignorant of where it came from, which is what keeps this a flag rather than a
+   second rendering path. An emblem is a data URI, so it makes no request. */
+function avatarUrlFor(channel) {
+  return USE_EMBLEMS ? emblemFor(channel) : channel.avatarUrl;
+}
 
 function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
 
@@ -38,6 +48,15 @@ const accentCache = new Map();
 function accentFor(channel) {
   if (accentCache.has(channel.id)) return accentCache.get(channel.id);
   const fallback = hashAccent(channel.id);
+  /* In emblem mode there is no photograph to sample, and the emblem already
+     knows its own hue — so take it directly rather than rasterising a data URI
+     to read back a colour we generated. Synchronous, and it skips the canvas
+     entirely (the tainted-canvas branch below exists only for real avatars). */
+  if (USE_EMBLEMS) {
+    const promise = Promise.resolve(emblemAccent(channel));
+    accentCache.set(channel.id, promise);
+    return promise;
+  }
   const promise = new Promise(resolve => {
     if (!channel.avatarUrl) return resolve(fallback);
     const img = new Image();
@@ -86,6 +105,7 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
     ? 'subs hidden'
     : `${formatCount(toCount(channel.subscriberCount))} subs`;
   const handle = channel.handle ? escapeHtml(channel.handle) : '';
+  const avatarUrl = avatarUrlFor(channel);
   el.innerHTML = `
     <div class="card-inner">
       <div class="monogram" aria-hidden="true">${escapeHtml(initial)}</div>
@@ -100,7 +120,7 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
         </div>
       </div>
       <div class="avatar-stage">
-        <div class="avatar-ring"><img class="avatar" alt="" referrerpolicy="no-referrer" src="${escapeHtml(channel.avatarUrl)}"></div>
+        <div class="avatar-ring"><img class="avatar" alt="" referrerpolicy="no-referrer" src="${escapeHtml(avatarUrl)}"></div>
         ${count > 1 ? `<span class="count-badge">×${count}</span>` : ''}
         ${isNew ? '<span class="new-badge">NEW</span>' : ''}
       </div>
@@ -119,7 +139,7 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
      the image still can't load, drop it so the faint monogram behind shows as the
      intended fallback instead of a broken-image glyph. */
   const avatar = el.querySelector('.avatar');
-  if (!channel.avatarUrl) avatar.remove();
+  if (!avatarUrl) avatar.remove();
   else avatar.addEventListener('error', () => avatar.remove(), { once: true });
   accentFor(channel).then(color => el.style.setProperty('--accent', color));
   return el;

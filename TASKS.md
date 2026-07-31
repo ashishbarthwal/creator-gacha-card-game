@@ -110,9 +110,20 @@ hydrates it, then the schedule that re-runs it.
 
 ## WP8 — Production hardening
 
-- [ ] Gate/strip dev affordances (Dev Pull, in-page Magic Search ×3)
-- [ ] Dev-vs-prod config
-- [ ] **Avatar-source flag: real pfp vs generated emblem (WP13).** Agreed 2026-07-26 that the
+- [X] Gate/strip dev affordances (Dev Pull, in-page Magic Search ×3) — hidden, not removed,
+      so `?dev=1` still reveals them and the module-level DOM refs stay valid
+- [X] Dev-vs-prod config (`src/config.js`) — detected at runtime from hostname, because with
+      no build step there is no bundler to swap a constant and no env var a browser can read.
+      `?dev=0` forces the prod view on localhost, which is what makes the gating checkable at
+      all: a guardrail only reachable by serving over a LAN IP is one nobody verifies.
+- [X] **Avatar-source flag: real pfp vs generated emblem — landed 2026-07-31.** `AVATAR_SOURCE`
+      in `src/config.js`, previewable at `?avatars=emblem`. `engine/emblem.js` is the seed of
+      WP13, not WP13: a deterministic gradient-disc emblem keyed on the channel id, no network
+      and no canvas. It reuses the starter set's artwork rather than inventing a second visual —
+      that art shipped in WP4 and has been looked at, and `data/starter.js` now imports the
+      shared generator instead of keeping its own copy (verified byte-identical). One flag over
+      one codebase, so flipping to emblems is a redeploy rather than a rewrite. 16 tests.
+      Original note below, still the reasoning: Agreed 2026-07-26 that the
       pfp and no-pfp builds are ONE codebase with a flag, never forks — a fresh repo would
       be worse than this one precisely because commit history can't be faked, and a stale
       fork reads worse than not building it. That makes this the config seam for both, so

@@ -9,19 +9,14 @@
    default view paints instantly with no network round-trip. One channel hides
    its subscriber count on purpose, keeping that branch exercised by real use. */
 
-function avatar(initial, hue) {
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">` +
-    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
-    `<stop offset="0" stop-color="hsl(${hue},72%,52%)"/>` +
-    `<stop offset="1" stop-color="hsl(${(hue + 40) % 360},68%,34%)"/>` +
-    `</linearGradient></defs>` +
-    `<rect width="120" height="120" fill="url(#g)"/>` +
-    `<text x="60" y="62" font-family="Arial Black, Arial, sans-serif" font-size="56" font-weight="900" ` +
-    `fill="rgba(255,255,255,0.92)" text-anchor="middle" dominant-baseline="central">${initial}</text>` +
-    `</svg>`;
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-}
+/* The generated-avatar artwork moved to engine/emblem.js when the avatar-source
+   flag landed (WP8): the emblem build needs exactly this picture for real
+   channels, and one proven visual beats two. The hue is derived from the
+   channel id there rather than passed in, so these fictional channels are
+   authored with ids chosen to spread across the wheel. */
+import { emblemFor } from '../engine/emblem.js';
+
+const avatar = (initial, hue) => emblemFor({}, { initial, hue });
 
 /* No snapshotDate: these are invented channels, not a real snapshot, so the
    card view shows no "stats as of <month>" label — the absence signals the
