@@ -20,7 +20,7 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
 - [X] CLI (`tools/magic-search.js`): accumulates into a gitignored draft set
 - [X] In-page dev trigger (Live-mode) — one button then; three tier buttons now, see WP6
 
-## WP6 — Discovery quality  🟡 built, acceptance unverified
+## WP6 — Discovery quality ✅
 
 - [X] Tuning knobs: exclude giants (`maxSubs`, opt-in) · `order=date` · recent window
 - [X] Randomized re-rolls (seeded query jitter) — engine already had it; **both live
@@ -29,10 +29,15 @@ WP0–3 done (split · tests · footer · cards) — starts at WP4. `[x]` done �
 - [X] Tier buttons: Legends / Majority / Small — each steers the SEARCH, not just the
       filter, because a keyword's most-viewed videos are big channels whichever band
       you want. Bands derive from `DEFAULT_POOL_BANDS` so they can't drift from `assignPool`
-- [~] Accept: **half evidenced.** A live run of "cooking" + "gaming" returned mid/small
-      on-topic creators, rates `N 58.5 · R 28.7 · SR 12.8`, nothing above SR — the ceiling
-      works. **Still unconfirmed: that a re-roll differs.** Needs the same keyword run
-      twice; not testable from the suite, which pins the pure engine on synthetic fixtures.
+- [X] Accept: **fully evidenced (2026-07-31).** Two live checks, neither reachable from the
+      suite — it pins the pure engine on synthetic fixtures and a fixed clock, which proves
+      the jitter is *computed*, never that a real API answers differently.
+      1. The ceiling: "cooking" + "gaming" returned mid/small on-topic creators at
+         `N 58.5 · R 28.7 · SR 12.8`, nothing above SR.
+      2. The re-roll: three consecutive in-page **Majority** runs on "cooking" each returned
+         different channels. This covers **both** live callers rather than one, because
+         Majority's `opts` is `{}` — the identical object `tools/magic-search.js` passes as
+         `JITTERED` — so the CLI needs no separate run to be evidenced.
 
 ## WP7a — Opt-out contact line ✅
 
@@ -52,7 +57,9 @@ It ships **with the first real-creator set, before it**, not after.
 - [X] Exclude self-declared IN creators — leaky local-risk hedge (engine filter built)
 - [ ] Candidate DB (build-side source of truth)
 - [ ] `build-set.js` proper (curated list → `sets/*.json`)
-- [ ] Monthly refresh workflow (30-day printings)
+- [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
+      schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys
+      a 5-day buffer to notice and re-run. Printings are still "monthly" in flavour.
 - [ ] Strip `country` from shipped sets (build-time only — see the Gate section)
 
 ## WP8 — Production hardening
