@@ -50,8 +50,10 @@ No build step, no dependencies — plain ES modules under `src/`, served as-is.
   - `python -m http.server` **only** if your OS maps `.js` to `text/javascript`; some
     setups (notably Windows) serve it as `text/plain`, which browsers reject for modules.
     GitHub Pages / Netlify serve it correctly, so deployment is unaffected.
-- **Demo mode** is the default — eight fictional channels, generated avatars, zero network.
-  Pull ×1 / ×10, watch the reveal, build a collection. Everything works offline.
+- **Sets mode** is the default — pick a card set and pull with no API key at all. The bundled
+  **starter set** ships fictional channels with generated avatars and zero network, so the
+  default view paints instantly and works offline. Pull ×1 / ×10, watch the reveal, build a
+  collection.
 - **Live mode** pulls real channels. It needs your own free
   [YouTube Data API v3](https://developers.google.com/youtube/v3/getting-started) key,
   pasted into the app. The key lives only in the page's memory — it is never stored,
@@ -65,11 +67,11 @@ Add channels by `@handle`, channel URL, or `UC…` id. (Vanity `/c/` URLs aren't
 
 Two structural ideas do the heavy lifting:
 
-**The data seam.** `demo`, `sets` (curated JSON snapshots), and `live` sources all produce an
-*identical* channel object shape, so nothing downstream can tell them apart. This is why the
-app runs offline, why tests never need an API key, and why demo mode is a real adapter rather
-than a hack. Adding the `sets` source needed no changes to the gacha, reveal, render, or
-collection code — it's just another pool behind the seam.
+**The data seam.** The bundled `starter` set, fetched `sets` (curated JSON snapshots), and
+`live` all produce an *identical* channel object shape, so nothing downstream can tell them
+apart. This is why the app runs offline, why tests never need an API key, and why the starter
+set is a real adapter rather than a hack. Adding the `sets` source needed no changes to the
+gacha, reveal, render, or collection code — it's just another pool behind the seam.
 
 **The pure core.** `rarityFromSubs` and `statsFrom` are pure and deterministic — no I/O, no
 randomness, no DOM. They sit between the data seam and everything stateful, which makes them
@@ -85,9 +87,10 @@ input (@handle | URL | UC id)
         │
    resolve to channelId
         │
-   ┌────┼─────────┐            ← the data seam
- demo  sets      live (YouTube Data API v3)
-   └────┼─────────┘
+   ┌──────┼────────┐           ← the data seam
+ starter  sets    live (YouTube Data API v3)
+ (bundled)(JSON)  (user key)
+   └──────┼────────┘
         │
   derivation core (PURE)        ← rarityFromSubs, statsFrom
         │
@@ -100,7 +103,7 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-173 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+193 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery
@@ -158,11 +161,15 @@ into a tested, modular, deployable project in dependency order (full detail in
 - [x] **WP7a — Creator opt-out.** A real contact route in the footer and a stated policy:
       removal honored within 7 days, no identity check. Shipped deliberately *before* the first
       real-creator set, since an opt-out that arrives after one is already too late.
-- [~] **WP7 — Set-build pipeline.** *Landed:* the candidate DB — `catalog/candidates.json`
-      commits channel IDs, our own tags and the opt-out denylist, never channel data, because
-      anything in git is permanent and could satisfy neither the 30-day storage cap nor a
-      promised removal. *Pending:* `build-set.js` (hydrate → filter → per-pool sampling) and the
-      25-day refresh workflow.
+- [~] **WP7 — Set-build pipeline.** Two committed artifacts and one that never is.
+      `catalog/candidates.json` holds channel IDs, our own tags and the opt-out denylist —
+      never channel data, because anything in git is permanent and could satisfy neither the
+      30-day storage cap nor a promised removal. `build-set.js` hydrates those IDs into a full
+      set, re-runs the region filter on *fresh* data, and writes to a gitignored `sets/built/`.
+      The published record is assembled from a positive allowlist, so a self-declared `country`
+      cannot reach a shipped file by omission. Sets are minted in CI at deploy.
+      *Pending:* the 25-day refresh workflow, and a sourcing route that can actually reach the
+      SSR/UR bands — the hobby/craft keyword vocab tops out around SR.
 - [x] **WP12 — Pull reveal theatre.** Built out of sequence: the pull is the moment the game is
       *for*, and it was the weakest thing on screen. Rarity-escalated flip order, a beam
       telegraph, specular sweep, SR+ twinkling stars, and a three-beat UR finish — all CSS, with

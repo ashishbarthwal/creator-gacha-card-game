@@ -59,15 +59,15 @@ The legality gate closed, so this is no longer blocked. Building in the order th
 hydrates it, then the schedule that re-runs it.
 
 - [X] Exclude self-declared IN creators — leaky local-risk hedge (engine filter built)
-- [ ] **Measure how leaky, before trusting it.** Observed 2026-07-31: a live "cooking" pull
-      surfaced several apparently India-based creators. The filter is wired correctly — the
-      in-page caller takes the `['IN']` default — but it can only read `snippet.country`,
-      which is self-declared and usually absent, and an unknown country can't be excluded.
-      This is not a new caveat; what's new is that nobody has measured the rate. It matters
-      because the India exclude is one of the five mitigations the **legality gate closed on**
-      (Gate, below), and a hedge that removes ~nothing is a different input to that decision
-      than one that removes most. Instrument the sourcing path to report kept-vs-excluded and
-      how many declared a country at all, then re-read the gate against the real number.
+- [X] **Measured, 2026-07-31 — and it works better than feared.** `regionReport` now prints on
+      every CLI run. Two live runs over 326 hydrated channels: **coverage 65–73%** (the share
+      declaring any country, which is the hard ceiling on what the filter can ever remove) and
+      **8.6–12.8% actually excluded** — 34 India-declared creators dropped. The prediction going
+      in was ~10–15% coverage, i.e. a filter doing almost nothing; the real number is roughly
+      five times better, so the gate's description of it as a meaningful hedge stands.
+      - The screenshot that prompted this is still explained: the creators who got through are
+        in the 27–35% who declare nothing, and an unknown country can't be excluded. The filter
+        is a supplement to the real protections, never a substitute — unchanged.
 - [X] **Candidate DB (build-side source of truth)** — `engine/candidates.js` (pure: strip,
       merge, denylist, pool refresh, hydrate batching) + `tools/build-candidates.js` (no key,
       no network, spends no quota) writing `catalog/candidates.json`. 27 tests.
@@ -81,18 +81,28 @@ hydrates it, then the schedule that re-runs it.
         *will* rediscover an opted-out channel, so an opt-out that isn't re-enforced on every
         merge expires at the next `--random` run. `--prune` honors one immediately without
         needing a draft or a key.
-- [ ] `build-set.js` proper (candidate DB → hydrate → `sets/*.json`)
-      - [ ] **No band may ship with one card.** Found by playing, 2026-07-31: a 15-card live
-            pool returned the same R card 4× in one x10. Not the dupe rule — band starvation.
-            The pull picks a band by fixed weight then draws uniformly inside it, so a band
-            holding one card returns it every time that band hits (R weight 27 ≈ 2.7 of 10).
-            Correct behaviour, and exactly the trade WP4 made to stop composition diluting the
-            curve — but a set is only shippable if every present band has enough members that
-            a x10 doesn't visibly repeat. Assert it at build.
-- [ ] **`minViews` floor — zero-stat cards.** Found in the same pull: a channel with ~8,100
-      videos and no view count rendered ATK 0 (even one view scores 36). `DEFAULT_FLOOR` has
-      `minSubs` and `minVideos` but nothing on views, so it clears. A zero stat reads as a bug
-      to a player whether or not the data is real.
+- [X] **`build-set.js`** — `engine/setbuild.js` (pure: band health, prune, strip, assemble) +
+      `tools/build-set.js` (hydrate → re-filter → refresh hints → write). 20 tests.
+      Ran for real 2026-07-31: 51 candidates → 2 quota units → a 51-card set, all bands healthy.
+      - [X] **No band may ship starved.** Found by playing: a 15-card pool returned the same R
+            card 4× in one x10. Not the dupe rule — band starvation. The pull draws a band by
+            fixed weight then picks uniformly inside it, so a one-card band returns it every
+            time. The minimum is **derived from the same weight table the pull uses**, not a flat
+            number — N takes ~5.5 of 10 draws and needs a deep roster, UR takes ~0.1 and needs
+            two. Starved bands are pruned rather than failing the build, and pruning re-checks,
+            since removing a band renormalizes the others upward.
+      - [X] Output goes to `sets/built/`, **gitignored** — see the Gate item below.
+- [X] **`minViews` floor — zero-stat cards.** A channel with ~8,100 videos and no view count
+      rendered ATK 0 (even one view scores 36). `DEFAULT_FLOOR` gated subs and videos but not
+      views. Now 1,000, inherited by all three tiers.
+- [ ] **SSR/UR are structurally unreachable — open.** The first real run produced
+      `N 27 · R 16 · SR 8 · SSR 0 · UR 0`. `KEYWORD_SEEDS` is deliberately hobby/craft (it steers
+      clear of news, politics and person-named channels, which matters when every result becomes
+      a card), and that vocabulary essentially never surfaces a 10M+ channel. So the pool cannot
+      currently mint a chase card, and WP12's UR three-beat finish would never fire for a real
+      player. Options, none taken yet: a curated legends allowlist (`assignPool`'s comment
+      already anticipates one), a second broader vocab used only for the legends tier, or accept
+      that a set tops out at SR and let the top band be the aspiration.
 - [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
       schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys
       a 5-day buffer to notice and re-run. Printings are still "monthly" in flavour.
@@ -220,8 +230,13 @@ they are cheap now and expensive after launch. **Two of the three are now closed
       CI badge points at it. The longer form was chosen over a bare `creator-gacha` on purpose —
       "gacha" is a niche term, and the repo list is read by people who may not know it means the
       card-pull mechanic. It costs a longer Pages URL and buys legibility to a recruiter.
-- [ ] **Strip `country` from shipped sets** — build-time only (`passesRegion`), never read at
-      runtime, so publishing it exposes a self-declared personal attribute the game never uses
+- [X] **Strip `country` from shipped sets — closed 2026-07-31.** `engine/setbuild.js` assembles
+      the published record from a positive allowlist, so country is absent by construction
+      rather than by a deletion someone has to remember. Two tests pin it, one on the object and
+      one on the serialized bytes, since the bytes are what ship. **The Gate is now fully
+      closed.** Built sets go to a gitignored `sets/built/` and are minted in CI at deploy: a set
+      file in git is permanent, which would break both the 30-day statistics cap and the promise
+      that a removal is actually performable.
 
 ## Parked (far future)
 

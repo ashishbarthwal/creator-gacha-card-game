@@ -938,3 +938,70 @@ for a stronger version of the same reason plus the gate item: the region exclude
 hydrate, so a self-declared personal attribute the game never reads is never persisted.
 
 </details>
+
+## Building a real set: what the first run taught (2026-07-31)
+
+<details>
+<summary><b>The India exclude works about five times better than predicted</b> — 65–73% of channels declare a country, so the filter is a real hedge rather than a token one.</summary>
+
+`regionReport` was added because the exclude was being counted as one of the five mitigations
+the legality gate closed on while nobody had measured it. The prediction going in — stated
+before the run, so it is on the record — was ~10–15% coverage, i.e. a filter doing almost
+nothing.
+
+The measurement over 326 hydrated channels across two runs: **coverage 65–73%** (the share
+declaring any country at all, which is the hard ceiling on what the filter can remove) and
+**8.6–12.8% actually excluded**, 34 India-declared creators dropped.
+
+So the gate's description of the exclude as trimming the highest-enforceability vector stands,
+and no reopening is warranted. The original caveat is unchanged and still matters: the 27–35%
+who declare nothing cannot be excluded, which is exactly where the creators visible in the
+screenshot that prompted this came from. It remains a supplement to the real protections
+(no monetization, the disclaimer, the opt-out), never a substitute.
+
+</details>
+
+<details>
+<summary><b>The band-starvation minimum derives from the pull's own weight table</b> — A flat "N cards per band" is wrong at both ends; the weights already encode the answer.</summary>
+
+Found by playing: a 15-card pool returned the same R card four times in one x10. Not the dupe
+rule, which is intended — band starvation. The pull draws a band by fixed weight then picks
+uniformly inside it, so a band holding one card returns it every time that band hits.
+
+The fix belongs at build, not in `gacha.js`: the two-stage pull is deliberate and correct, since
+it is what stops roster composition from diluting the drop curve (WP4). What a set owes the
+player is enough distinct cards per band.
+
+The minimum is computed from `RARITY[band].weight` normalized over the bands actually present,
+times a headroom factor, floored at two. A single hand-tuned number would be wrong at both ends
+— N takes ~5.5 of every 10 draws and needs a deep roster to look varied, while UR takes ~0.1 and
+is fine with two. Normalizing over *present* bands matters because `bandsFrom` drops empty ones
+and renormalizes, so a set holding only N and R really does draw 55:27.
+
+Starved bands are pruned rather than failing the build: a scheduled 25-day refresh that dies on
+one thin band stops shipping sets entirely, which is worse than shipping one band lighter. The
+prune loops rather than filtering once, because removing a band renormalizes the rest upward and
+can starve a neighbour that just passed.
+
+</details>
+
+<details>
+<summary><b>The hobby/craft keyword vocab cannot reach SSR or UR — open</b> — The safest sourcing vocabulary is also the one that never finds a chase card.</summary>
+
+The first real build produced `N 27 · R 16 · SR 8 · SSR 0 · UR 0`. This is not a bug in
+sourcing; it follows from a deliberate earlier choice. `KEYWORD_SEEDS` is hobby/craft on purpose
+— it steers clear of news, politics and person-named channels, which matters more than usual
+when every result becomes a card bearing someone's likeness — and that vocabulary essentially
+never surfaces a 10M+ channel.
+
+The cost is real: SSR starts at 10M and UR at 50M, so the pool currently cannot mint a chase
+card at all, and WP12's UR three-beat finish would never fire for a real player. The tension is
+that the two safest properties of the sourcing (small creators, non-newsworthy topics) are
+exactly what excludes the cards a gacha is emotionally built around.
+
+Not resolved here. The options are a curated legends allowlist (`assignPool` already anticipates
+one), a second broader vocabulary used only for the legends tier, or accepting that a set tops
+out at SR. Recorded now so the empty top bands are read as a known consequence rather than a
+sourcing failure.
+
+</details>
