@@ -918,6 +918,25 @@ next sourcing run, which is worse than none: it looks kept while quietly failing
 same reasoning — the point of an opt-out is that we stop looking someone up, not that we look
 them up and discard the answer.
 
+**The limit of that, stated because the docs above could be read as claiming more (noted
+2026-08-01).** The argument that keeps sets out of git — `git rm` leaves someone at the old
+commit in a public repo — applies to the candidate DB too. An opt-out is enforced in every
+future build, and it is **not erased from history**: that id sits in the commits that preceded
+the removal, permanently. The same is true of `catalog/legends.txt`, which is committed and
+holds real `@handles` and editorial notes about named creators, in plainer text than any UC id.
+
+So "we commit nothing about creators" would be an overclaim, and this file should not be read
+as making it. What is committed is an opaque public identifier — one that appears in the
+channel's own URL — plus, for the curated roster, names that are already public and famous. No
+statistics, no avatar, no likeness, nothing that goes stale. Compared with a committed set —
+name, face and subscriber count frozen forever — it is a different order of exposure, and it is
+the price of an opt-out that can actually be re-enforced.
+
+Considered and rejected: gitignoring `candidates.json` to remove the residue. It would work, and
+it would cost the thing the file exists for — the pool stops being a shared, reviewable artifact
+and becomes machine-local, so a removal could no longer be performed against a document anyone
+can audit, and the roster would die with the laptop.
+
 `--prune` exists so honoring a request costs one command with no draft, no key and no quota,
 letting the answer be "already done" instead of "at the next build". That matters because the
 promise in the footer is 7 days, and the person keeping it is one person reading their own
@@ -1304,6 +1323,81 @@ attempted.
 refresh due / expired) so a scheduled task can act on it instead of printing into the void. It
 also flags roster drift — candidates added since the last build — which is the other reason to
 rebuild and the one no clock would ever catch.
+
+</details>
+
+## WP10: the export carries what the page cannot (2026-08-01)
+
+<details>
+<summary><b>The PNG is hand-drawn in canvas, not a DOM snapshot</b> — html2canvas is a 200KB dependency in a project whose whole shape is zero dependencies and no build step.</summary>
+
+The obvious implementation is html2canvas or one of its relatives, and it was never available:
+the shipped app has no dependencies and no bundler (CLAUDE.md), so pulling in a rasteriser to
+support one button would cost more than the feature is worth and would be the first thing a
+reader of this repo noticed.
+
+Drawing the card again against a 2D context is more code, but it is code that ships as-is,
+reads like the rest of the project, and cannot break because an upstream library changed how it
+parses a CSS gradient. The conic bevel is approximated with a linear sweep — a canvas conic
+gradient exists but is not universally available, and the frame reads as metal because of the
+light/dark alternation rather than the exact sweep geometry.
+
+</details>
+
+<details>
+<summary><b>The exporter reads the tier palette off the live element, never a copy</b> — Re-typing five hex values into JS creates a second source of truth that drifts silently the first time a tier is retuned.</summary>
+
+Every tier colour already exists exactly once, as the `--t-*` custom properties on `.r-N` …
+`.r-UR` in `styles.css` — the arrangement WP3 chose specifically so a card recolours from one
+place. Copying those values into the exporter would have quietly reintroduced the problem that
+decision solved: retune SSR and the app shows the new blue while every exported PNG keeps
+printing the old one, with nothing failing to indicate it.
+
+So `paletteFrom` reads them with `getComputedStyle` off the rendered card. The consequence worth
+knowing, because it constrains where the feature can live: **the card element must be in the
+document when the export runs**, since a detached node has no computed custom properties. That
+is why Save sits in the inspector, the one screen that already has an enlarged card mounted.
+
+</details>
+
+<details>
+<summary><b>Measured: Google's avatar CDN sends <code>Access-Control-Allow-Origin: *</code>, so the export can carry the real face</b> — A tainted canvas throws on toBlob, so this single header decided whether the feature could exist at all.</summary>
+
+Drawing a cross-origin image onto a canvas taints it, and a tainted canvas throws `SecurityError`
+on `toBlob` — not a degraded image, no image. `accentFor` in `ui/card.js` has carried a
+tainted-canvas fallback since WP3 for exactly this reason, so the pessimistic assumption was
+already in the codebase and it would have been reasonable to design around it.
+
+Checked instead of assumed (2026-08-01), against a real avatar URL from the built set:
+
+    Access-Control-Allow-Origin: *
+    Cross-Origin-Resource-Policy: cross-origin
+
+So an image requested with `crossOrigin='anonymous'` draws clean, and the PNG carries the actual
+creator photo rather than a monogram. It is still treated as failable — a hotlink 403, a channel
+with no avatar, or a change in Google's policy all fall back to the monogram rather than losing
+the export — but the good path is the normal one, which is the opposite of what the existing
+fallback implied.
+
+Worth noting for later: this also means `accentFor`'s tainted-canvas branch is probably dead code
+against today's CDN. Left alone, because it costs nothing and is the correct behaviour if the
+header ever goes away.
+
+</details>
+
+<details>
+<summary><b>An undated card drops the stats clause rather than printing an empty one</b> — The stamp is the honest thing in an image that travels without context; a half-filled sentence is the worst possible place for a sloppy string.</summary>
+
+The caption is "Unofficial fan card · stats as of August 2026 · not affiliated with YouTube or
+Google". Starter-set and live-mode cards have no snapshot date, and the clause is omitted
+entirely rather than rendered blank — "stats as of ·" reads as a bug to anyone who sees it, and
+inventing a date would be a lie in the one line that exists to tell the truth.
+
+`monthLabel` matches `YYYY-MM(-DD)` with a regex rather than handing the string to `Date.parse`,
+after a test caught the first version turning `"someday"` into December 2000: the original code
+tested `length === 7` to spot a bare year-month, `"someday"` is seven characters, and V8 parses
+`"someday-01"` without complaint. A caption that invents a date is precisely the failure this
+file exists to prevent, so the shape is now checked before anything is parsed.
 
 </details>
 

@@ -229,9 +229,27 @@ with no SSR and no UR in it.
 - [ ] **Browser check on the persistence** — not testable from the suite (localStorage + DOM).
       See the checklist handed over 2026-08-01.
 
-## WP10 — Share
+## WP10 — Share ✅
 
-- [ ] Card → PNG export (stamped disclaimer)
+- [X] **Card → PNG export with the disclaimer burned in (2026-08-01).**
+      `engine/share.js` (pure: caption, month label, filename slug — 16 tests) +
+      `ui/share.js` (the canvas draw). "Save as PNG" sits in the card inspector.
+      - **Hand-drawn in canvas, not html2canvas** — a 200KB rasteriser is not available to a
+        project with zero dependencies and no build step.
+      - **The tier palette is read off the live element** with `getComputedStyle`, never
+        re-typed. Copying the five `--t-*` hex values into JS would reintroduce exactly the
+        drift WP3's one-place-per-tier arrangement removed. Consequence: the card must be
+        mounted when export runs, which is why Save lives in the inspector.
+      - **CORS measured, and it decided the feature.** A tainted canvas throws on `toBlob` —
+        no image at all — and `accentFor` has assumed tainting since WP3. Google's avatar CDN
+        actually sends `Access-Control-Allow-Origin: *`, so `crossOrigin='anonymous'` draws
+        clean and the PNG carries the real face. Still falls back to the monogram on a 403,
+        a missing avatar, or a policy change.
+      - **An undated card omits the stats clause** rather than printing "stats as of ·".
+        A test caught `monthLabel` turning `"someday"` into December 2000 — seven characters
+        tripped a `length === 7` check for bare year-month, and `Date.parse` accepted
+        `"someday-01"`. Now shape-matched before parsing.
+- [ ] Browser check on the export — not testable headless (canvas + fonts + CORS).
 
 ## WP11 — Deploy + README
 
