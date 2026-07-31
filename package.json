@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "test:report": "node tools/test-report.js",
     "build:site": "node tools/build-site.js",
-    "deploy": "node tools/build-set.js && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site"
+    "status": "node tools/status.js",
+    "deploy": "node tools/build-set.js && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site && node tools/record-deploy.js"
   },
   "devDependencies": {
     "vitest": "^4.1.10"

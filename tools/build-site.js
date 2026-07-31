@@ -26,6 +26,8 @@ import { rm, mkdir, cp, readdir, readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative, join } from 'node:path';
 
+import { refreshStatus, REFRESH_DAYS, POLICY_DAYS } from '../src/engine/freshness.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const SITE = resolve(ROOT, '_site');
@@ -87,6 +89,39 @@ async function main() {
   if (withCountry.length) {
     console.error('Refusing to build: a shipped set carries a country field.');
     for (const f of withCountry) console.error(`  ${relative(ROOT, f)}`);
+    process.exit(1);
+  }
+
+  /* THE STALENESS GUARD. The other two guards keep data out that must never
+     ship; this one keeps data out that has simply aged past what the Developer
+     Policies allow us to store (30 days on statistics).
+
+     It refuses at the policy cap and only warns at the 25-day cadence, because
+     refusing at 25 would block a day-26 publish of data that is still perfectly
+     compliant — and a guard people learn to route around protects nothing while
+     looking like it does.
+
+     An undated set is refused too. "No snapshotDate" is not "fine", it is "its
+     age cannot be established", and the only safe reading of that is closed.
+     The remedy is never a flag: it is `node tools/build-set.js`, which
+     re-hydrates every id and resets the clock for ~13 quota units. */
+  const stale = [];
+  for (const f of files.filter(f => f.includes('built') && f.endsWith('.json') && !f.endsWith('index.json'))) {
+    const set = JSON.parse(await readFile(f, 'utf8'));
+    const status = refreshStatus(set.snapshotDate);
+    if (!status.publishable) stale.push({ f, status, slug: set.slug });
+    else if (status.state === 'due') {
+      console.warn(`  ! ${set.slug}: ${status.ageDays} days old — past the ${REFRESH_DAYS}-day cadence, ` +
+        `${status.expiresInDays} day${status.expiresInDays === 1 ? '' : 's'} before it may not be published. Rebuild soon.`);
+    }
+  }
+  if (stale.length) {
+    console.error(`Refusing to build: a set is past the ${POLICY_DAYS}-day cap on stored statistics.`);
+    for (const { f, status, slug } of stale) {
+      console.error(`  ${relative(ROOT, f)} — ${slug}: ` +
+        (status.state === 'unknown' ? 'no snapshotDate, age cannot be established' : `${status.ageDays} days old`));
+    }
+    console.error('\nFix:  node tools/build-set.js     (re-hydrates every id, ~13 quota units, no searches)');
     process.exit(1);
   }
 

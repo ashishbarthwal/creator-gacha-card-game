@@ -1,0 +1,12 @@
+{
+  "note": "Refresh ledger — dates and counts only, never creator data. Written by tools/build-set.js and npm run deploy. See src/engine/freshness.js.",
+  "entries": [
+    {
+      "at": "2026-07-31T19:18:06.577Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 400,
+      "snapshotDate": "2026-07-31"
+    }
+  ]
+}

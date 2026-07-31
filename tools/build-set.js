@@ -35,7 +35,8 @@ import { dirname, resolve } from 'node:path';
 import { fetchChannelsByIds } from '../src/data/search.js';
 import { passesRegion, regionReport, DEFAULT_EXCLUDE_COUNTRIES } from '../src/engine/discover.js';
 import { hydratableIds, batchIds, refreshPools, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
-import { assembleSet } from '../src/engine/setbuild.js';
+import { assembleSet, DEFAULT_TARGET_SIZE } from '../src/engine/setbuild.js';
+import { refreshEntry, appendRefreshEntry } from '../src/engine/freshness.js';
 import { RARITY_ORDER, rarityFromSubs } from '../src/engine/core.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -43,6 +44,7 @@ const ROOT = resolve(__dirname, '..');
 const CANDIDATES_PATH = resolve(ROOT, 'catalog/candidates.json');
 const DENYLIST_PATH = resolve(ROOT, 'catalog/denylist.json');
 const BUILT_DIR = resolve(ROOT, 'sets/built');
+const REFRESH_LOG_PATH = resolve(ROOT, 'catalog/refresh-log.json');
 
 async function readJson(path, fallback = null) {
   try { return JSON.parse(await readFile(path, 'utf8')); } catch { return fallback; }
@@ -69,6 +71,7 @@ async function main() {
   const slug = arg('--slug', 'series-1');
   const title = arg('--title', 'Series 1');
   const series = arg('--series', 'Creator Gacha');
+  const targetSize = Number(arg('--target', DEFAULT_TARGET_SIZE)) || DEFAULT_TARGET_SIZE;
 
   const db = await readJson(CANDIDATES_PATH);
   if (!db?.candidates?.length) {
@@ -110,8 +113,12 @@ async function main() {
   const region = regionReport(hydrated);
   const allowed = hydrated.filter(c => passesRegion(c));
 
-  const { set, dropped, health } = assembleSet(allowed, {
-    slug, title, series, snapshotDate: new Date().toISOString().slice(0, 10),
+  /* Pinned candidates survive the cap ahead of everything else — the roster's
+     answer to "which cards is this set sold on", which a hash cannot supply. */
+  const pinned = new Set(db.candidates.filter(c => c?.pin).map(c => String(c.id)));
+
+  const { set, dropped, capped, targets } = assembleSet(allowed, {
+    slug, title, series, targetSize, pinned, snapshotDate: new Date().toISOString().slice(0, 10),
   });
 
   const rarity = Object.fromEntries(RARITY_ORDER.map(r => [r, 0]));
@@ -119,13 +126,28 @@ async function main() {
 
   console.log(`  hydrated ${hydrated.length}${vanished ? ` (${vanished} vanished — deleted or terminated)` : ''}`);
   console.log(`  region exclude [${DEFAULT_EXCLUDE_COUNTRIES.join(', ')}]: ${hydrated.length - allowed.length} removed, ${region.undeclared} undeclared (unseeable)`);
-  for (const band of health) {
-    console.log(`    ${band.rarity.padEnd(3)} ${String(band.count).padStart(3)} cards (needs ${band.needed}) ${band.ok ? 'ok' : 'STARVED'}`);
+  /* Per band: what shipped, against what a printing of this size wants. The
+     shortfall column is the whole sourcing to-do list — it says which band to
+     point the next Magic Search run at, and the cap column says which band has
+     surplus already banked for the next printing. */
+  console.log(`  bands (target ${targetSize} cards):`);
+  let short = 0;
+  for (const band of RARITY_ORDER) {
+    const target = targets[band];
+    if (target === undefined) continue;
+    const have = rarity[band];
+    const wasCapped = capped.find(c => c.rarity === band);
+    const note = wasCapped ? `capped from ${wasCapped.from} — ${wasCapped.from - wasCapped.to} held for the next printing`
+        + (wasCapped.droppedPins ? `  ⚠ ${wasCapped.droppedPins} PINNED card${wasCapped.droppedPins === 1 ? '' : 's'} dropped — more pins than slots` : '')
+      : have < target ? `${target - have} short` : 'full';
+    if (have < target) short += target - have;
+    console.log(`    ${band.padEnd(3)} ${String(have).padStart(3)} / ${String(target).padStart(3)}   ${note}`);
   }
   for (const band of dropped) {
     console.log(`  dropped band ${band.rarity}: ${band.count} card${band.count === 1 ? '' : 's'}, needed ${band.needed} — a x10 would have repeated it`);
   }
   console.log(`  set: ${set.channels.length} cards — ${RARITY_ORDER.map(r => `${r} ${rarity[r]}`).join(' · ')}`);
+  if (short) console.log(`  ${short} cards short of a full ${targetSize}-card printing — source more with tools/magic-search.js`);
 
   if (dryRun) return console.log('\n--dry-run: nothing written.');
 
@@ -150,7 +172,22 @@ async function main() {
   const refreshed = refreshPools(db.candidates, hydrated);
   await writeFile(CANDIDATES_PATH, JSON.stringify({ ...db, updated: new Date().toISOString().slice(0, 10), candidates: refreshed }, null, 2) + '\n');
 
+  /* The refresh ledger — the only artifact that can answer "did the cadence
+     actually happen". A built set carries one snapshotDate, so it knows when it
+     was last made and nothing about the runs before it; a missed month is
+     invisible in the set and obvious here. Dates and counts only, so this is the
+     one refresh artifact that can be COMMITTED while every file holding creator
+     data stays out of git — the receipt outlives the machine that made it. */
+  const log = (await readJson(REFRESH_LOG_PATH)) ?? {
+    note: 'Refresh ledger — dates and counts only, never creator data. Written by tools/build-set.js and npm run deploy. See src/engine/freshness.js.',
+    entries: [],
+  };
+  await writeFile(REFRESH_LOG_PATH, JSON.stringify(
+    appendRefreshEntry(log, refreshEntry({ event: 'build', slug, cards: set.channels.length, snapshotDate: set.snapshotDate })),
+    null, 2) + '\n');
+
   console.log(`\nWrote sets/built/${slug}.json + sets/built/index.json (gitignored — sets are built at deploy, never committed).`);
+  console.log('Recorded the build in catalog/refresh-log.json.');
   console.log('Refreshed the pool hints in catalog/candidates.json.');
   console.log(`It will appear in the Sets picker as "${title}".`);
 }
