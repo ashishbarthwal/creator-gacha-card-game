@@ -52,7 +52,7 @@ It ships **with the first real-creator set, before it**, not after.
       actually read beats a forwarding address that might not be, and the promise is
       answering fast. The cost — a public mailto gets harvested — was taken knowingly.
 
-## WP7 — Set-build pipeline  🟡 ungated 2026-07-31, in progress
+## WP7 — Set-build pipeline ✅
 
 The legality gate closed, so this is no longer blocked. Building in the order the
 07-31 decisions imply: the committed source of truth first, then the thing that
@@ -112,9 +112,23 @@ hydrates it, then the schedule that re-runs it.
         handle is 1 quota unit, ids batch 50 to a unit. A 200-name roster is ~200 units against
         10,000/day. `search.list` at 100 units a call is the only expensive thing in the system.
       - This is the *route*, not the roster — the names are WP9's scope.
-- [ ] Refresh workflow — **25-day cadence, not 30**. The policy cap is 30 days; running the
-      schedule at the cap means any skipped or failed run is instantly non-compliant. 25 buys
-      a 5-day buffer to notice and re-run. Printings are still "monthly" in flavour.
+- [X] **Refresh + deploy workflow** (`.github/workflows/deploy.yml`) — one workflow, because
+      they are the same job: sets are built at deploy and never committed, so rebuilding IS
+      the refresh. Tests run first, so a broken build cannot reach users.
+      - **Cadence is the 1st and 26th, not `*/25`.** Cron's day-of-month field resets monthly,
+        so `*/25` fires on the 1st and 26th anyway — writing the days out says what it means
+        rather than implying a cycle cron cannot express. Longest gap 26 days, inside the
+        30-day cap with room to notice a failure; running at the cap would mean one skipped
+        run puts us out of compliance.
+      - **The site is assembled from an allowlist, file by file.** Caught by simulating the
+        step before committing it: a recursive `cp -r sets` would have published
+        `magic-search.draft.json` — real creator data with `country` intact — bypassing the
+        strip entirely. Absent from a CI checkout since it is gitignored, but latent.
+      - A guard step then refuses to deploy if any draft, dev manifest or `country` field
+        reaches `_site`. Cheap check, expensive failure.
+      - **Manual setup, once:** Pages source → GitHub Actions, and a `YOUTUBE_API_KEY` repo
+        secret. **Known hazard:** GitHub silently disables scheduled workflows after 60 days
+        of repo inactivity, which for a compliance job is worth knowing about.
 - [X] Strip `country` from shipped sets — done in `engine/setbuild.js`; closes the last Gate
       item, see the Gate section for the full note
 

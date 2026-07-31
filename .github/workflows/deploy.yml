@@ -1,0 +1,116 @@
+# Refresh + deploy. One workflow, because they are the same job.
+#
+# Sets are built at deploy and never committed: a set file in git is permanent,
+# which would break both YouTube's 30-day cap on stored statistics and the
+# promise that a removal request is actually performable (git rm leaves the
+# creator at the old commit in a public repo). So there is no artifact to
+# "refresh" separately from the deploy — rebuilding IS the refresh.
+#
+# CADENCE: the 1st and 26th, not */25. Cron's day-of-month field resets every
+# month, so */25 fires on the 1st and 26th anyway — writing the days out says
+# what it means instead of implying a 25-day cycle that cron cannot express. The
+# longest gap is 26 days, inside the 30-day cap with room to notice a failure.
+# Running at the cap would mean one skipped run puts us out of compliance.
+#
+# SETUP THIS NEEDS ONCE, by hand:
+#   Settings > Pages > Source: GitHub Actions
+#   Settings > Secrets and variables > Actions > New secret: YOUTUBE_API_KEY
+#
+# KNOWN HAZARD: GitHub disables scheduled workflows after 60 days with no
+# repository activity, silently. For a compliance job that matters — if this
+# repo goes quiet, check that the schedule is still enabled.
+
+name: deploy
+
+on:
+  schedule:
+    - cron: '0 3 1,26 * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The deploy-pages action needs to mint an OIDC token and write to Pages; nothing
+# here needs write access to the repository itself.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race. cancel-in-progress is false on purpose: a running
+# deploy should finish rather than be killed halfway by the next push.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # A broken build must not reach users. The suite is fast and needs no key.
+      - name: Test
+        run: npm test
+
+      # Mints sets/built/<slug>.json plus its manifest. Costs ~1 quota unit per
+      # 50 candidates. Fails loudly on quota exhaustion or an empty candidate DB
+      # rather than deploying a site with no set to pull from.
+      - name: Build card sets
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: node tools/build-set.js --slug series-1 --title "Series 1"
+
+      # Assemble the site explicitly rather than publishing the repo root. An
+      # allowlist, for the same reason the candidate strip is one: publishing
+      # everything-except would start shipping whatever gets added next. This is
+      # also what keeps node_modules, the test suite, the build tooling and
+      # catalog/ (build-side only) off the public site.
+      - name: Assemble site
+        run: |
+          mkdir -p _site/sets
+          cp index.html styles.css _site/
+          cp -r src _site/
+          rm -f _site/src/config.local.js
+          # sets/ is copied FILE BY FILE, never recursively. That directory also
+          # holds tools/magic-search.js's draft — real creator data with country
+          # intact, gitignored and so absent from a CI checkout, but a recursive
+          # copy would publish it the moment one existed and would bypass the
+          # country strip completely. Name what ships.
+          cp sets/index.json sets/sample-series.json _site/sets/
+          cp -r sets/built _site/sets/built
+          echo "--- shipping ---"
+          find _site -type f | sort
+
+      # The assemble step is an allowlist, so this should never fire. It exists
+      # because the cost of being wrong is publishing creator data we promised
+      # not to store — cheap check, expensive failure.
+      - name: Refuse to publish drafts or dev manifests
+        run: |
+          if find _site -name '*.draft.json' -o -name 'index.local.json' | grep -q .; then
+            echo "::error::A draft or dev manifest reached _site. Refusing to deploy."
+            find _site -name '*.draft.json' -o -name 'index.local.json'
+            exit 1
+          fi
+          if grep -rl '"country"' _site/sets/ 2>/dev/null | grep -q .; then
+            echo "::error::A shipped set carries a country field. Refusing to deploy."
+            exit 1
+          fi
+          echo "No drafts, no dev manifests, no country fields."
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
