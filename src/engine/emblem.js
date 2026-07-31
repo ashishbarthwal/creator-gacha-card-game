@@ -1,7 +1,7 @@
 /* engine/emblem — PURE. A deterministic generated emblem for a channel: same
    channel in, same picture out, with no network and no canvas.
 
-   This is the seed of WP13, not WP13 itself. The full proposal (semantic
+   This is the seed of WP11, not WP11 itself. The full proposal (semantic
    classification, a themed icon library) stays unbuilt; what exists here is the
    piece the launch actually needs — a real alternative to a creator's profile
    photo that can be switched on by config. DECISIONS.md (2026-07-31) made that

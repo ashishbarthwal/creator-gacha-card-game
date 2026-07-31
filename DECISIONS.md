@@ -702,7 +702,7 @@ and no domain, and Ash's call is that the exposure is not real until it is publi
 the cost curve only goes up: today it is find-and-replace, after launch it is a migration of links,
 search results and anything anyone bookmarked.
 
-**Trigger: this must be resolved before WP11 deploys to real users**, alongside the legality gate.
+**Trigger: this must be resolved before WP10 deploys to real users**, alongside the legality gate.
 Pre-scoped so it is not a research task later — the name lives in `index.html` (`<title>`, `<h1>`),
 `src/ui/reveal.js` (the card back wordmark reads "YOUTUBE GACHA"), `package.json` + lockfile `name`,
 README / CLAUDE.md / PLAN.md, and the GitHub repo name + the Actions badge URL in the README.
@@ -775,7 +775,7 @@ Preserved so the analysis is not re-derived later:
   grant trademark rights and MIT never mentions them. "Docker", "Kubernetes", "Rust" are marks held
   by real organisations. The conclusion still holds, because naming a project to identify that
   project is nominative use and the doc already excludes logos and branding; only the reason is wrong.
-- Emblems (WP13) are shared infrastructure between the two, since RG cannot use project logos either.
+- Emblems (WP11) are shared infrastructure between the two, since RG cannot use project logos either.
 
 </details>
 
@@ -785,7 +785,7 @@ Preserved so the analysis is not re-derived later:
 <summary><b>The first public release carries real creator pictures and names</b> — The safer artifact is the weaker experiment; the risk accepted is real but bounded.</summary>
 
 Ash's call, made
-knowingly rather than by omission: the emblem build (WP13) is the safer artifact but the
+knowingly rather than by omission: the emblem build (WP11) is the safer artifact but the
 weaker experiment, and the question this release exists to answer — does anyone want to
 play this — cannot be answered by a version stripped of the thing that makes it legible.
 The risk accepted is real but bounded: no monetization, no ads, a disclaimer, a working
@@ -1326,78 +1326,42 @@ rebuild and the one no clock would ever catch.
 
 </details>
 
-## WP10: the export carries what the page cannot (2026-08-01)
+## Share is scrapped, after being built (2026-08-01)
 
 <details>
-<summary><b>The PNG is hand-drawn in canvas, not a DOM snapshot</b> — html2canvas is a 200KB dependency in a project whose whole shape is zero dependencies and no build step.</summary>
+<summary><b>The card-to-PNG export is withdrawn — the work package is deleted, not deferred</b> — It was the one feature that put copies beyond the reach of the opt-out, and its benefit scales with users the project does not have yet.</summary>
 
-The obvious implementation is html2canvas or one of its relatives, and it was never available:
-the shipped app has no dependencies and no bundler (CLAUDE.md), so pulling in a rasteriser to
-support one button would cost more than the feature is worth and would be the first thing a
-reader of this repo noticed.
+WP10 was built and is being removed before it ever shipped. The code worked: a hand-drawn
+canvas card with the unofficial-fan-card notice burned into the pixels, 16 tests on the caption
+and filename, real avatars confirmed drawable because Google's CDN sends
+`Access-Control-Allow-Origin: *`. None of that was the problem.
 
-Drawing the card again against a 2D context is more code, but it is code that ships as-is,
-reads like the rest of the project, and cannot break because an upstream library changed how it
-parses a CSS gradient. The conic bevel is approximated with a linear sweep — a canvas conic
-gradient exists but is not universally available, and the frame reads as metal because of the
-light/dark alternation rather than the exact sweep geometry.
+**The problem is what an export does to the opt-out.** The legality gate closed on five
+mitigations, and the strongest is a removal honoured within 7 days. That promise is keepable
+today because every copy of a card is ours — denylist, rebuild, gone. An export creates copies
+we cannot recall, so the in-app removal keeps working while the circulation does not stop. It
+is also the feature most likely to *generate* the removal request in the first place: the
+recorded modal bad outcome is "an email asking for removal", and a card on a timeline carrying
+a real face and subscriber count produces that far more reliably than a page nobody visits.
 
-</details>
+The counter-argument is real and was weighed: anyone can screenshot, and a screenshot carries no
+disclaimer at all, so an export arguably makes circulation *safer* rather than more dangerous.
+That is true about kind and wrong about volume. A screenshot takes intent; a Save button is an
+invitation. And volume is exactly what turns "obscurity is protective" into "not protective" —
+which this file already names as one of the three conditions that would reopen the gate.
 
-<details>
-<summary><b>The exporter reads the tier palette off the live element, never a copy</b> — Re-typing five hex values into JS creates a second source of truth that drifts silently the first time a tier is retuned.</summary>
+**What decided it: the benefit scales with users, the risk starts on day one, and there are no
+users yet.** Sharing is a growth mechanism with nothing to grow — the deploy has not happened.
+Shipping it now would have bought nothing and spent the one thing that cannot be walked back.
 
-Every tier colour already exists exactly once, as the `--t-*` custom properties on `.r-N` …
-`.r-UR` in `styles.css` — the arrangement WP3 chose specifically so a card recolours from one
-place. Copying those values into the exporter would have quietly reintroduced the problem that
-decision solved: retune SSR and the app shows the new blue while every exported PNG keeps
-printing the old one, with nothing failing to indicate it.
+Deleted rather than deferred, and rather than hidden behind the dev flag. A gated feature is a
+decision postponed, and this one does not need postponing — if sharing is ever wanted it will
+want redesigning around whatever is true then (emblem-only exports, say, which keep the share
+loop and drop the likeness from the artifact that travels). Keeping dead code behind a flag to
+avoid admitting a reversal is how a codebase accumulates things nobody will delete later.
 
-So `paletteFrom` reads them with `getComputedStyle` off the rendered card. The consequence worth
-knowing, because it constrains where the feature can live: **the card element must be in the
-document when the export runs**, since a detached node has no computed custom properties. That
-is why Save sits in the inspector, the one screen that already has an enlarged card mounted.
-
-</details>
-
-<details>
-<summary><b>Measured: Google's avatar CDN sends <code>Access-Control-Allow-Origin: *</code>, so the export can carry the real face</b> — A tainted canvas throws on toBlob, so this single header decided whether the feature could exist at all.</summary>
-
-Drawing a cross-origin image onto a canvas taints it, and a tainted canvas throws `SecurityError`
-on `toBlob` — not a degraded image, no image. `accentFor` in `ui/card.js` has carried a
-tainted-canvas fallback since WP3 for exactly this reason, so the pessimistic assumption was
-already in the codebase and it would have been reasonable to design around it.
-
-Checked instead of assumed (2026-08-01), against a real avatar URL from the built set:
-
-    Access-Control-Allow-Origin: *
-    Cross-Origin-Resource-Policy: cross-origin
-
-So an image requested with `crossOrigin='anonymous'` draws clean, and the PNG carries the actual
-creator photo rather than a monogram. It is still treated as failable — a hotlink 403, a channel
-with no avatar, or a change in Google's policy all fall back to the monogram rather than losing
-the export — but the good path is the normal one, which is the opposite of what the existing
-fallback implied.
-
-Worth noting for later: this also means `accentFor`'s tainted-canvas branch is probably dead code
-against today's CDN. Left alone, because it costs nothing and is the correct behaviour if the
-header ever goes away.
-
-</details>
-
-<details>
-<summary><b>An undated card drops the stats clause rather than printing an empty one</b> — The stamp is the honest thing in an image that travels without context; a half-filled sentence is the worst possible place for a sloppy string.</summary>
-
-The caption is "Unofficial fan card · stats as of August 2026 · not affiliated with YouTube or
-Google". Starter-set and live-mode cards have no snapshot date, and the clause is omitted
-entirely rather than rendered blank — "stats as of ·" reads as a bug to anyone who sees it, and
-inventing a date would be a lie in the one line that exists to tell the truth.
-
-`monthLabel` matches `YYYY-MM(-DD)` with a regex rather than handing the string to `Date.parse`,
-after a test caught the first version turning `"someday"` into December 2000: the original code
-tested `length === 7` to spot a bare year-month, `"someday"` is seven characters, and V8 parses
-`"someday-01"` without complaint. A caption that invents a date is precisely the failure this
-file exists to prevent, so the shape is now checked before anything is parsed.
+The reverted commit stays in history on purpose. Building something, reasoning about it, and
+withdrawing it before launch is a decision worth being able to read.
 
 </details>
 
@@ -1471,7 +1435,7 @@ degrades to the in-memory behaviour the app shipped with for eight work packages
 is a convenience; it must never be able to break the game.
 
 **The clear button is part of the decision, not polish.** Data kept on someone's device with no
-way to remove it is not "local and yours", it is data they cannot delete — and WP11's privacy
+way to remove it is not "local and yours", it is data they cannot delete — and WP10's privacy
 policy is about to claim the former. It is confirmed before it fires, since a collection is the
 only thing in this game a player can lose and there is no server-side copy to restore from.
 

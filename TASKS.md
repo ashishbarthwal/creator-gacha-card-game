@@ -112,11 +112,11 @@ hydrates it, then the schedule that re-runs it.
         handle is 1 quota unit, ids batch 50 to a unit. A 200-name roster is ~200 units against
         10,000/day. `search.list` at 100 units a call is the only expensive thing in the system.
       - This is the *route*, not the roster — the names are WP9's scope.
-- [X] **Deploy tooling exists; the deploy itself moved to WP11.** `tools/build-site.js` and
+- [X] **Deploy tooling exists; the deploy itself moved to WP10.** `tools/build-site.js` and
       `npm run deploy` are written and locally verified, but publishing is not a set-build
       concern and nothing should go live before the decks are curated (WP9). WP7's original
       scope named a "monthly refresh workflow"; that reads as pipeline work but is really
-      release work, so it sits with the deploy in WP11 rather than holding this package open.
+      release work, so it sits with the deploy in WP10 rather than holding this package open.
 - [X] Strip `country` from shipped sets — done in `engine/setbuild.js`; closes the last Gate
       item, see the Gate section for the full note
 
@@ -130,7 +130,7 @@ hydrates it, then the schedule that re-runs it.
       all: a guardrail only reachable by serving over a LAN IP is one nobody verifies.
 - [X] **Avatar-source flag: real pfp vs generated emblem — landed 2026-07-31.** `AVATAR_SOURCE`
       in `src/config.js`, previewable at `?avatars=emblem`. `engine/emblem.js` is the seed of
-      WP13, not WP13: a deterministic gradient-disc emblem keyed on the channel id, no network
+      WP11, not WP11: a deterministic gradient-disc emblem keyed on the channel id, no network
       and no canvas. It reuses the starter set's artwork rather than inventing a second visual —
       that art shipped in WP4 and has been looked at, and `data/starter.js` now imports the
       shared generator instead of keeping its own copy (verified byte-identical). One flag over
@@ -145,7 +145,7 @@ hydrates it, then the schedule that re-runs it.
       the gating is DOM work and `config.js` reads `location`, which the headless suite has no
       meaningful version of.
 
-## WP9 — The decks + persistence  📋 scope being defined
+## WP9 — The decks + persistence ✅
 
 **This is the next build**, and it is where the project stops being a pipeline and starts
 being a game. WP7 built the machine; this fills it, and then makes what a player pulls
@@ -224,34 +224,34 @@ with no SSR and no UR in it.
         sandboxed frame that throws on *access*), verified against a shim. One card is 281
         bytes; 400 cards is ~80KB against a ~5MB budget.
       - **Clear-collection control shipped with it**, confirmed before firing. Not polish: the
-        WP11 privacy policy is about to claim the data is local and yours, which is only true
+        WP10 privacy policy is about to claim the data is local and yours, which is only true
         if something performs the deletion.
 - [ ] **Browser check on the persistence** — not testable from the suite (localStorage + DOM).
       See the checklist handed over 2026-08-01.
 
-## WP10 — Share ✅
+## ~~Share~~ — scrapped 2026-08-01, after being built
 
-- [X] **Card → PNG export with the disclaimer burned in (2026-08-01).**
-      `engine/share.js` (pure: caption, month label, filename slug — 16 tests) +
-      `ui/share.js` (the canvas draw). "Save as PNG" sits in the card inspector.
-      - **Hand-drawn in canvas, not html2canvas** — a 200KB rasteriser is not available to a
-        project with zero dependencies and no build step.
-      - **The tier palette is read off the live element** with `getComputedStyle`, never
-        re-typed. Copying the five `--t-*` hex values into JS would reintroduce exactly the
-        drift WP3's one-place-per-tier arrangement removed. Consequence: the card must be
-        mounted when export runs, which is why Save lives in the inspector.
-      - **CORS measured, and it decided the feature.** A tainted canvas throws on `toBlob` —
-        no image at all — and `accentFor` has assumed tainting since WP3. Google's avatar CDN
-        actually sends `Access-Control-Allow-Origin: *`, so `crossOrigin='anonymous'` draws
-        clean and the PNG carries the real face. Still falls back to the monogram on a 403,
-        a missing avatar, or a policy change.
-      - **An undated card omits the stats clause** rather than printing "stats as of ·".
-        A test caught `monthLabel` turning `"someday"` into December 2000 — seven characters
-        tripped a `length === 7` check for bare year-month, and `Date.parse` accepted
-        `"someday-01"`. Now shape-matched before parsing.
-- [ ] Browser check on the export — not testable headless (canvas + fonts + CORS).
+The card → PNG export was written, tested and then **withdrawn before it ever shipped**. The
+work package is deleted rather than renumbered, and everything below it moved up one.
 
-## WP11 — Deploy + README
+Why, in short — the full reasoning is in DECISIONS.md:
+
+- **It puts copies beyond the reach of the opt-out.** A removal honoured in 7 days is the
+  strongest of the five mitigations the legality gate closed on, and it is keepable only
+  because every copy of a card is ours. Exports cannot be recalled.
+- **It is the feature most likely to produce the removal request** it then cannot fully honour.
+- **The benefit scales with users; the risk starts on day one.** Sharing is a growth mechanism
+  and there is nothing to grow yet — the deploy has not happened.
+- Screenshots exist regardless, and carry no disclaimer at all. That is a real counter-argument
+  and it is about *kind*, not *volume* — a screenshot takes intent, a Save button is an
+  invitation.
+
+Deleted, not hidden behind the dev flag: a gated feature is a decision postponed, and keeping
+dead code behind a switch to avoid admitting a reversal is how a codebase fills with things
+nobody will delete. If sharing is wanted later it wants redesigning — emblem-only exports, say,
+which keep the loop and drop the likeness from the artifact that travels.
+
+## WP10 — Deploy + README
 
 - [ ] **Netlify direct upload + live link.** Deliberately *after* WP9: nothing should be
       published before the decks are curated, because the first thing a visitor sees should not
@@ -287,7 +287,7 @@ with no SSR and no UR in it.
 - [ ] **Terms of service page** — same audit prerequisite. Carries the unofficial/not-affiliated
       disclaimer and the opt-out route (WP7a) in one place rather than only in the footer.
 
-## WP13 — Procedural Creator Emblems  📄 proposed, not started
+## WP11 — Procedural Creator Emblems  📄 proposed, not started
 
 Design doc: `external-docs/new-design-proposal.md` (gitignored). Replaces the creator's
 profile picture with a deterministic generated emblem, which dissolves the likeness problem
@@ -318,7 +318,7 @@ for building it properly rather than minimally.
 
 ## Gate (not a build WP)
 
-All must clear before WP11 ships to real users. Deliberately deferred, not resolved —
+All must clear before WP10 ships to real users. Deliberately deferred, not resolved —
 they are cheap now and expensive after launch. **Two of the three are now closed; only the
 `country` strip is outstanding.**
 
