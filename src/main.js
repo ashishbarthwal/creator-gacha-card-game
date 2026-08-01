@@ -5,7 +5,7 @@ import { pull } from './engine/gacha.js';
 import { RARITY_ORDER } from './engine/core.js';
 import { currentPool, addToCollection, persistCollection } from './state.js';
 import { initBanner } from './ui/banner.js';
-import { renderCollection } from './ui/collection.js';
+import { renderCollection, notePulled } from './ui/collection.js';
 import { openReveal } from './ui/reveal.js';
 
 function doPull(count) {
@@ -13,6 +13,7 @@ function doPull(count) {
   if (!pool.length) return;
   const results = pull(pool, count).map(addToCollection);
   persistCollection();          // once per pull, not once per card
+  notePulled(results);          // session order + NEW flags, for the collection view
   renderCollection();
   openReveal(results);
 }
@@ -40,6 +41,7 @@ function doDevPull() {
   const fill = pull(pool, Math.max(0, 10 - oneEach.length));
   const results = [...oneEach, ...fill].slice(0, 10).map(addToCollection);
   persistCollection();
+  notePulled(results);
   renderCollection();
   openReveal(results);
 }

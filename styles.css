@@ -5,6 +5,10 @@
     --line: rgba(255, 255, 255, 0.09);
     --panel: rgba(255, 255, 255, 0.04);
     --red: #ff2d55;
+    /* One page width, named once. The column grew from 1000px so the banner can
+       hold two columns without either of them getting cramped. */
+    --page: 1120px;
+    --focus: rgba(255, 45, 85, 0.75);
     --c-n: #9aa3b2;
     --c-r: #57b0ff;
     --c-sr: #c77dff;
@@ -30,26 +34,36 @@
   ::selection { background: var(--red); color: #fff; }
 
   header, main, footer {
-    max-width: 1000px;
+    max-width: var(--page);
     margin: 0 auto;
     padding-left: 20px;
     padding-right: 20px;
   }
 
-  header { padding-top: 36px; padding-bottom: 8px; }
+  /* A visible ring on every interactive thing, keyboard-only. Several controls
+     previously had nothing at all, which is both an accessibility hole and the
+     kind of unfinished edge that reads as a prototype. */
+  :where(button, a, select, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .site-head { padding-top: 26px; padding-bottom: 2px; }
+
+  .brand { display: flex; align-items: center; gap: 14px; }
 
   h1 {
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: clamp(30px, 6vw, 44px);
+    font-size: clamp(30px, 6vw, 46px);
     letter-spacing: 1px;
     text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    line-height: 1;
   }
 
   .play-glyph {
+    flex: none;
     width: 0; height: 0;
     border-left: 22px solid var(--red);
     border-top: 14px solid transparent;
@@ -57,15 +71,91 @@
     filter: drop-shadow(0 0 10px rgba(255, 45, 85, 0.55));
   }
 
-  .tagline { color: var(--muted); margin-top: 6px; font-size: 15px; }
+  .tagline { color: var(--muted); margin-top: 8px; font-size: 15px; }
 
-  main { display: grid; gap: 22px; padding-bottom: 30px; padding-top: 20px; }
+  /* Three flat statements, styled as one quiet row rather than three badges —
+     they are reassurance, not features, and should not compete with the banner. */
+  main { display: grid; gap: 18px; padding-bottom: 28px; padding-top: 18px; }
 
   .panel {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 18px;
+    padding: 22px 24px;
+  }
+
+  .panel-banner { padding: 24px 26px 26px; }
+
+  /* The banner is where the page is used; the collection is where it is read
+     back. Giving the two the same weight left the visitor no cue about which to
+     look at first, so the banner now carries a warmer field and a faint lift. */
+  .panel-banner {
+    position: relative;
+    overflow: hidden; /* contains the ambient layer below */
+    background:
+      radial-gradient(120% 140% at 82% -20%, rgba(255, 45, 85, 0.11) 0%, transparent 58%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.028) 100%);
+    border-color: rgba(255, 255, 255, 0.13);
+    box-shadow: 0 18px 46px -28px rgba(0, 0, 0, 0.9);
+  }
+
+  .panel-banner > *:not(.hero-amb) { position: relative; z-index: 1; }
+
+  /* ---- ambient hero lighting -----------------------------------------------
+     One slow radial breath behind the pack plus six drifting motes. Six, not
+     sixty: the brief is a PC-client lobby, and the difference between "premium"
+     and "mobile storefront" here is almost entirely restraint. Everything is
+     transform/opacity only, so it stays on the compositor. */
+  .hero-amb {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .amb-glow {
+    position: absolute;
+    right: -6%;
+    top: 50%;
+    width: 460px;
+    height: 460px;
+    margin-top: -230px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 45, 85, 0.2), rgba(160, 60, 190, 0.09) 55%, transparent 76%);
+    filter: blur(18px);
+    animation: amb-breathe 7s ease-in-out infinite;
+  }
+
+  @keyframes amb-breathe {
+    0%, 100% { opacity: 0.62; transform: scale(0.96); }
+    50%      { opacity: 1;    transform: scale(1.06); }
+  }
+
+  .amb-mote {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 220, 235, 0.95) 0%, rgba(255, 45, 85, 0.5) 45%, transparent 72%);
+    opacity: 0;
+    animation: amb-drift var(--dur, 13s) linear var(--delay, 0s) infinite;
+  }
+
+  /* Hand-placed rather than randomised, so the drift never bunches and the whole
+     field is reproducible between loads. */
+  .amb-mote:nth-child(2) { left: 62%; bottom: -6px; --dur: 12s; --delay: 0s; }
+  .amb-mote:nth-child(3) { left: 74%; bottom: -6px; --dur: 16s; --delay: 2.4s; }
+  .amb-mote:nth-child(4) { left: 86%; bottom: -6px; --dur: 14s; --delay: 5.1s; }
+  .amb-mote:nth-child(5) { left: 68%; bottom: -6px; --dur: 18s; --delay: 7.6s; }
+  .amb-mote:nth-child(6) { left: 92%; bottom: -6px; --dur: 15s; --delay: 3.3s; }
+  .amb-mote:nth-child(7) { left: 56%; bottom: -6px; --dur: 17s; --delay: 9.2s; }
+
+  @keyframes amb-drift {
+    0%   { opacity: 0;    transform: translate3d(0, 0, 0) scale(0.6); }
+    12%  { opacity: 0.85; }
+    78%  { opacity: 0.5; }
+    100% { opacity: 0;    transform: translate3d(-26px, -320px, 0) scale(1); }
   }
 
   .panel-head {
@@ -120,14 +210,21 @@
   .linkish:hover,
   .linkish:focus-visible { color: var(--red); opacity: 1; }
 
-  /* mode toggle */
+  /* Mode toggle. Demoted: "Live API" is a power-user route that needs a Google
+     Cloud key, and for the player this build is aimed at it is noise. It stays
+     reachable — removing a working feature to tidy a screen is the wrong trade —
+     but it no longer wears the accent colour the pull controls own. */
   .mode-toggle {
     display: flex;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.24);
     border: 1px solid var(--line);
     border-radius: 999px;
-    padding: 3px;
+    padding: 2px;
+    opacity: 0.75;
+    transition: opacity 0.2s ease;
   }
+
+  .mode-toggle:hover, .mode-toggle:focus-within { opacity: 1; }
 
   .mode-btn {
     border: none;
@@ -135,15 +232,218 @@
     color: var(--muted);
     font-family: var(--font-body);
     font-weight: 600;
-    font-size: 13px;
-    padding: 7px 16px;
+    font-size: 12px;
+    padding: 6px 13px;
     border-radius: 999px;
     cursor: pointer;
   }
 
-  .mode-btn.active {
+  .mode-btn.active { background: rgba(255, 255, 255, 0.11); color: var(--ink); }
+
+  /* ---- the stage -----------------------------------------------------------
+     One object, centred, with one instruction under it. The two-column layout
+     this replaces was a form: a set of controls on the left and artwork on the
+     right, with the pull as a submit button. A gacha is not a form. Everything
+     that described the machine — set size, band counts, drop table, completion —
+     is gone, and what is left is the pack. */
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0 4px;
+  }
+
+  /* The two controls that must stay reachable, pushed to the top edge and kept
+     quiet. A player picks a set once and then never looks at this row again. */
+  .stage-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .set-pick { max-width: 260px; }
+
+  .set-pick .field {
+    background: rgba(0, 0, 0, 0.22);
+    border-color: rgba(255, 255, 255, 0.1);
+    font-size: 13.5px;
+    padding: 9px 34px 9px 13px;
+  }
+
+  /* Visually hidden but present for screen readers and the aria-labelledby on
+     the section — the heading is redundant to anyone who can see the pack. */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---- the pack ------------------------------------------------------------
+     Three fanned card backs. Same vocabulary as the back the reveal flips over
+     (concentric rings, red play glyph, wordmark) so it is a preview of the real
+     thing rather than unrelated decoration. Static by default; the fan opens on
+     hover of the whole banner, which quietly connects it to the pull buttons. */
+  /* The pack is a real <button>: it is the primary action, so it gets the
+     semantics, the keyboard behaviour and the focus ring for free rather than a
+     div with a click handler bolted on. */
+  .pack {
+    position: relative;
+    display: block;
+    width: min(300px, 74vw);
+    aspect-ratio: 5 / 7;
+    perspective: 1000px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1.05);
+  }
+
+  .pack:disabled { cursor: default; opacity: 0.45; }
+  .pack:not(:disabled):hover { transform: translateY(-6px); }
+  .pack:not(:disabled):active { transform: translateY(-1px) scale(0.985); }
+
+  .pack-card {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    background: radial-gradient(circle at 50% 42%, #3a2757 0%, #1c1229 72%);
+    box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.75);
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1.05);
+    overflow: hidden;
+  }
+
+  .pack-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(115deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 14px 16px);
+  }
+
+  /* Back two first so the front card stacks last and stays fully legible. */
+  .pack-card:nth-child(1) { transform: rotate(-9deg) translate(-14px, 4px) scale(0.96); filter: brightness(0.62); }
+  .pack-card:nth-child(2) { transform: rotate(5deg) translate(10px, 1px) scale(0.98); filter: brightness(0.8); }
+  .pack-card:nth-child(3) { transform: rotate(-1deg); }
+
+  /* The fan opens on the pack's own hover/focus now, not the whole panel — the
+     pack is the control, so it should be the thing that answers you. */
+  .pack:not(:disabled):hover .pack-card:nth-child(1),
+  .pack:not(:disabled):focus-visible .pack-card:nth-child(1) { transform: rotate(-17deg) translate(-38px, 10px) scale(0.96); }
+  .pack:not(:disabled):hover .pack-card:nth-child(2),
+  .pack:not(:disabled):focus-visible .pack-card:nth-child(2) { transform: rotate(12deg) translate(34px, 4px) scale(0.98); }
+
+  .pack-rings {
+    position: absolute;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 0 24px rgba(255, 255, 255, 0.045),
+      0 0 0 50px rgba(255, 255, 255, 0.03);
+  }
+
+  .pack-play {
+    position: relative;
+    width: 0; height: 0;
+    margin-left: 6px;
+    border-left: 26px solid var(--red);
+    border-top: 16px solid transparent;
+    border-bottom: 16px solid transparent;
+    filter: drop-shadow(0 0 12px rgba(255, 45, 85, 0.55));
+  }
+
+  .pack-word {
+    position: absolute;
+    bottom: 14px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(203, 184, 230, 0.6);
+  }
+
+  /* The pack breathes so the stage is never fully still. Stops on hover, where
+     the lift and the fan take over. */
+  .pack-card:nth-child(3) { animation: pack-float 5.5s ease-in-out infinite; }
+
+  @keyframes pack-float {
+    0%, 100% { transform: rotate(-1deg) translateY(0); }
+    50%      { transform: rotate(-1deg) translateY(-8px); }
+  }
+
+  .pack:hover .pack-card:nth-child(3),
+  .pack:focus-visible .pack-card:nth-child(3) { animation: none; }
+
+  /* ---- the instruction -----------------------------------------------------
+     Wikigacha's "TAP TO OPEN" does the entire job of a call to action without
+     being a button, because the object above it already is one. */
+  .tap-hint {
+    margin-top: 18px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    animation: tap-pulse 2.6s ease-in-out infinite;
+  }
+
+  .pack:disabled + .tap-hint { visibility: hidden; }
+
+  @keyframes tap-pulse {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+  }
+
+  /* ---- how many ------------------------------------------------------------
+     A size choice, not a second pull button. Two segments, and the pack does
+     the pulling. */
+  .count-toggle {
+    display: inline-flex;
+    margin-top: 16px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid var(--line);
+  }
+
+  .count-btn {
+    min-width: 62px;
+    padding: 8px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+
+  .count-btn:hover { color: var(--ink); }
+
+  .count-btn.on {
     background: linear-gradient(135deg, #ff2d55, #c9184a);
     color: #fff;
+    box-shadow: 0 4px 16px -6px rgba(255, 45, 85, 0.8);
+  }
+
+  @media (max-width: 899px) {
+    .pack-word { bottom: 10px; font-size: 9px; letter-spacing: 2px; }
   }
 
   /* inputs */
@@ -158,9 +458,49 @@
     font-size: 14px;
   }
 
-  .field:focus { outline: 2px solid rgba(255, 45, 85, 0.6); outline-offset: 1px; }
+  .field:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 
-  #live-controls { display: grid; gap: 10px; margin-bottom: 14px; }
+  /* The native select kept the OS arrow and stretched the full page width for a
+     two-item list. Capped and given the page's own chevron instead. */
+  .select-wrap { position: relative; max-width: 420px; }
+
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    width: 8px; height: 8px;
+    margin-top: -6px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .select-wrap .field {
+    appearance: none;
+    padding-right: 38px;
+    font-weight: 500;
+  }
+
+  /* Stored statistics have to be shown in their time context, so the snapshot
+     date is a permanent fixture — it reads better as a stamp than as a stray
+     line of grey text. */
+  .stamp:empty { display: none; }
+
+  .stamp {
+    display: inline-block;
+    margin-top: 9px;
+    padding: 3px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.25);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  #live-controls { display: grid; gap: 10px; }
   #live-controls[hidden] { display: none; }
   .add-row { display: flex; gap: 10px; }
   .add-row .field { flex: 1; }
@@ -177,7 +517,10 @@
     margin-right: 2px;
   }
 
-  #sets-controls { display: grid; gap: 8px; margin-bottom: 14px; }
+  /* Block, not grid: as a grid item the snapshot stamp stretched to the full
+     column width and read as an empty input rather than a small tag. Spacing is
+     owned by the children instead. */
+  #sets-controls { display: block; }
   #sets-controls[hidden] { display: none; }
   #set-select { cursor: pointer; }
   #set-meta { font-family: var(--font-mono); }
@@ -207,21 +550,32 @@
 
   .btn.ghost { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); }
 
-  /* dev-only pull: guarantees one of every rarity in a single reveal */
+  /* Magic Search's tier buttons keep the old .dev look — they sit inside the
+     dev-only Live panel where there is no primary action to compete with. */
   .btn.dev {
-    background: linear-gradient(135deg, #22c55e, #15803d);
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.22);
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #86efac;
+    box-shadow: none;
+    font-size: 13px;
+    padding: 9px 15px;
   }
 
-  .pull-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
-  .rates { margin-top: 10px; }
+  .btn.dev:hover:not(:disabled) { background: rgba(34, 197, 94, 0.18); }
 
-  .status { min-height: 20px; margin-top: 12px; font-size: 13px; color: #9be29b; }
+  .status { min-height: 18px; margin-top: 14px; font-size: 13px; color: #9be29b; text-align: center; }
   .status.error { color: #ff9db0; }
+  .status:empty { min-height: 0; margin-top: 0; }
+
+  /* Everything left on the stage below the count toggle is either transient
+     (status) or instrumentation (Dev Pull) or a legal necessity (the snapshot
+     stamp). All three are centred and quiet so none of them competes. */
+  .stage .btn.debug { margin-top: 14px; }
+  .stage .stamp { margin-top: 16px; opacity: 0.65; }
 
   /* banner chips */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips:empty { display: none; }
 
   .chip {
     display: inline-flex;
@@ -255,7 +609,7 @@
 
   .chip-pfp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .chip .dot,
-  .pool-band .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
+  .filter-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
 
   /* Real channel names run long (and CJK titles longer still), and one of them
      blowing the row onto a second line is not the chip's call to make. The full
@@ -265,25 +619,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  /* Sets mode: the pool's composition in place of one chip per card. */
-  .pool-summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 14px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .pool-total { color: var(--ink); font-weight: 700; }
-
-  .pool-band {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
   }
 
   .chip-x {
@@ -298,7 +633,41 @@
 
   .chip-x:hover { color: var(--ink); }
 
+  /* The empty collection is the first thing most visitors will see in this
+     panel, and it was a large blank box with one grey sentence in the corner.
+     Centred, given some air and a dashed edge, it reads as a slot waiting to be
+     filled rather than as a section that failed to load. */
   .empty { color: var(--muted); font-size: 14px; }
+
+  /* An id selector beats the UA's `[hidden] { display: none }`, so the display
+     below would pin this open forever once collection.js sets .hidden. Same
+     guard #live-controls and #sets-controls already carry. */
+  #coll-empty[hidden] { display: none; }
+
+  #coll-empty {
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    padding: 34px 20px;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.15);
+    text-align: center;
+  }
+
+  #coll-empty::before {
+    content: '';
+    width: 30px;
+    height: 42px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.035) 7px 9px);
+  }
+
+  /* The grid and the empty state are mutually exclusive; collapsing the grid
+     when it has no cards stops it reserving a gap above the empty box. */
+  .cards-grid:empty { display: none; }
 
   /* Rarity → YouTube Creator Award tier. --rc (chip dots + accents) and the
      --t-* set (bevel, glow, badge) both derive from the tier, so chips and
@@ -491,11 +860,15 @@
 
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(5px, 2.5cqw, 9px); }
 
+  /* The stat panel is the card's only block of hard data, so it gets a real
+     surface: a slight vertical gradient and a top highlight, which separates it
+     from the card face instead of sitting on it as a flat grey rectangle. */
   .stat {
     border-radius: clamp(6px, 3cqw, 11px);
     padding: clamp(5px, 2.6cqw, 10px) clamp(6px, 3cqw, 12px);
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(0, 0, 0, 0.42) 45%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
     text-align: center;
   }
 
@@ -519,12 +892,90 @@
     letter-spacing: 0.5px;
   }
 
+  /* ---- collection toolbar --------------------------------------------------
+     Hidden until the binder is large enough to need it (ui/collection.js). */
+  .coll-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 16px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .coll-tools[hidden] { display: none; }
+
+  .tool-search { flex: 1 1 220px; min-width: 0; }
+  .tool-search .field { padding: 9px 13px; font-size: 13.5px; }
+  .tool-sort { flex: none; }
+  .select-sm { width: 168px; }
+  .select-sm .field { padding: 9px 13px; font-size: 13.5px; }
+
+  .filter-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.24);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.14s ease;
+  }
+
+  .filter-chip em { font-style: normal; font-family: var(--font-mono); opacity: 0.6; }
+  .filter-chip:hover { color: var(--ink); border-color: rgba(255, 255, 255, 0.22); transform: translateY(-1px); }
+
+  /* The active chip borrows the band's own colour, so the filter state and the
+     thing being filtered are never described in two different languages. */
+  .filter-chip.on {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--rc, var(--red)) 60%, transparent);
+    background: color-mix(in srgb, var(--rc, var(--red)) 16%, rgba(0, 0, 0, 0.3));
+    box-shadow: 0 0 16px -8px var(--rc, var(--red));
+  }
+
+  .filter-chip.on em { opacity: 0.85; }
+
+  .coll-none { padding: 26px 4px; }
+  .coll-none[hidden] { display: none; }
+
   /* collection */
   .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
     gap: 16px;
   }
+
+  /* Card hover polish. Deliberately shadow-and-glow only, never transform:
+     .card.lit (the WP3 pointer tilt) already owns the transform property, and a
+     hover lift here would simply be overwritten the moment the tilt engages —
+     or worse, fight it on the frame where .lit is added. Depth by light instead,
+     which also costs nothing on the compositor. */
+  .cards-grid .card {
+    transition: transform 0.2s ease, box-shadow 0.25s ease;
+  }
+
+  .cards-grid .card:hover,
+  .cards-grid .card:focus-visible {
+    box-shadow:
+      0 20px 44px -14px rgba(0, 0, 0, 0.72),
+      0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+      0 0 30px -6px var(--t-glow);
+  }
+
+  /* The rarer the card, the further its glow reaches on hover — the same
+     escalation the reveal uses, carried into the binder so a UR still announces
+     itself once it is sitting in a grid of forty. */
+  .cards-grid .card.r-SSR:hover { box-shadow: 0 20px 46px -14px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
+  .cards-grid .card.r-UR:hover  { box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
 
   /* reveal overlay */
   #reveal {
@@ -951,14 +1402,27 @@
 
   footer {
     border-top: 1px solid var(--line);
-    padding-top: 24px;
+    padding-top: 22px;
     padding-bottom: 44px;
     color: var(--muted);
     font-size: 12.5px;
     line-height: 1.6;
   }
 
-  .footer-optout { margin-top: 10px; }
+  /* Standing legal text on one side, the two links a person might act on pulled
+     out on the other. Previously three paragraphs of identical weight, which
+     buried the opt-out in the middle of the stack — the one line here that has a
+     promise attached to it. */
+  .footer-grid { display: grid; gap: 18px; }
+
+  @media (min-width: 760px) {
+    .footer-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 46px; }
+    .footer-links { text-align: right; }
+  }
+
+  .footer-legal { max-width: 62ch; }
+
+  .footer-optout { margin-top: 0; }
 
   /* Underlined by default, unlike the coffee link one line below it. The two
      footer links want opposite postures: the coffee is deliberately passive and
@@ -993,13 +1457,28 @@
   }
 
   @media (max-width: 560px) {
-    .pull-row .btn { flex: 1; }
     .reveal-grid { grid-template-columns: repeat(auto-fit, minmax(122px, 138px)); }
+    .coll-tools { gap: 10px 12px; }
+    .tool-search { flex-basis: 100%; }
+    .select-sm { width: 100%; }
+    .tool-sort { flex: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .flip-inner { transition: none; }
     .reveal-box { animation: none; }
+    /* The fan still opens on hover — it is a state change, not an ambient
+       animation — it just arrives instead of sliding. */
+    .pack-card { transition: none; }
+    /* Everything ambient stops entirely. The glow keeps its lighting (it is a
+       gradient, not motion); the motes, the float, the odds pulse and the CTA
+       sweep are all pure motion and simply do not run. */
+    .amb-glow { animation: none; opacity: 0.8; }
+    .amb-mote { animation: none; opacity: 0; }
+    .pack-card:nth-child(3) { animation: none; }
+    .pack { transition: none; }
+    .tap-hint { animation: none; opacity: 0.85; }
+    .count-btn, .filter-chip, .cards-grid .card { transition: none; }
     /* Still wear the rarity halo, just arrived-at rather than animated-to. */
     .reveal-cell.flipped { animation: none; box-shadow: 0 0 var(--seam-rest, 22px 3px) var(--seam, transparent); }
     .btn { transition: none; }

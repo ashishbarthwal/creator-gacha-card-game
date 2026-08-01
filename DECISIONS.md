@@ -1652,3 +1652,49 @@ Miss rate was 11 of 68 — 16%, against the ~10% the earlier passes saw. Recall 
 from display names the same way a human does, and is wrong in the same places.
 
 </details>
+
+## The player is not shown the machine (2026-08-02)
+
+<details>
+<summary><b>Set size, drop rates, band composition and collection completion are removed from the UI entirely</b> — they were facts about the machine, and the reveal already answers the only question they were standing in for.</summary>
+
+The banner had grown a dashboard: `1,442 cards in this set`, five rarity count tiles, a
+proportional drop-rate bar with a percentage legend, and a collection progress block carrying
+owned/total, completion %, and a duplicate counter. All of it accurate, all of it well built,
+and all of it wrong for the person it was in front of.
+
+**The test that settled it.** Every one of those numbers describes the *generator*, not the
+game. A player deciding whether to open a pack does not need the denominator, and being handed
+one changes the activity: a sealed box becomes a checklist, and a duplicate stops being a
+near-miss and becomes a logged failure. Wikigacha shows a pack and the words "TAP TO OPEN".
+That restraint is not an oversight in it; it is most of why it feels good.
+
+**What replaced it: the pack is the button.** Not artwork beside a submit control — the
+primary action is a real `<button>` wrapping the card backs, so it gets keyboard semantics and
+a focus ring for free. `×1 / ×10` became a *size* choice rather than a second control that also
+pulls, because two buttons that both pull means neither is the thing you are looking at.
+
+**What survived the cut, and the line that decides it.** Search, rarity filters and sort
+stayed: they are TOOLS, not telemetry — finding your own card is a need a player actually has.
+The rarity chips lost their counts on the same principle, since `SSR 3` turns a way-to-find
+back into a readout. "Saved in this browser" stayed because it is not a statistic; it is the
+promise the Clear button makes good on.
+
+**Collection sort defaults to rarity, not recency.** The reveal overlay has already shown the
+player what they just pulled, seconds earlier and with the full flip — a binder that also leads
+with it spends its best row on an answered question. Recency also decays as a default: N is
+55% of pulls, so newest-first becomes a wall of Graphite. The NEW badges keep this session's
+pulls findable under any sort.
+
+**What this closes off.** Any future "collection completion" or "pity counter" feature now has
+to argue its way back in against this entry, not simply be added. Drop rates specifically:
+publishing odds is a regulatory expectation for *paid* gacha, and this game has none and never
+will (see "No monetization in the game"), so the obligation does not attach. If monetization
+were ever added — it will not be — the odds would have to come back, which is one more small
+reason it will not be.
+
+**Not removed:** the Live API mode. It is demoted (smaller, dimmed, stripped of the accent
+colour the pull controls own) because it needs a Google Cloud key and is noise for the player
+this build targets. Deleting a working feature to tidy a screen is the wrong trade.
+
+</details>

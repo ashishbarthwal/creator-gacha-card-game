@@ -1,10 +1,10 @@
-/* ui/banner — the banner section: mode toggle, live channel add/remove,
-   pool chips, pull buttons, rates line and status messages.
+/* ui/banner — the banner section: set picker, mode toggle, live channel
+   add/remove, the pack (which IS the pull control), the ×1/×10 size choice and
+   status messages.
    Owns its own DOM refs and events. initBanner({ onPull }) wires it up;
-   the pull buttons call onPull(count) so main stays the composition root. */
+   the pack calls onPull(count) so main stays the composition root. */
 
 import { toCard } from '../engine/core.js';
-import { bandsFrom } from '../engine/gacha.js';
 import { selectChannels, SEARCH_TIERS } from '../engine/discover.js';
 import { state, currentPool, setSetsPool } from '../state.js';
 import { IS_DEV, gateDevElement } from '../config.js';
@@ -45,12 +45,16 @@ const msButtons = {
 };
 const chipsEl = document.getElementById('pool-chips');
 const statusEl = document.getElementById('status');
-const pullBtn1 = document.getElementById('pull-1');
-const pullBtn10 = document.getElementById('pull-10');
+const packBtn = document.getElementById('pack-open');
+const countBtn1 = document.getElementById('pull-1');
+const countBtn10 = document.getElementById('pull-10');
 const pullBtnDev = document.getElementById('pull-dev');
-const ratesEl = document.getElementById('rates');
 
 let statusTimer = null;
+
+/* How many cards the pack opens for. The pack itself is the action, so this is
+   a choice about size rather than a second button that also pulls. */
+let packCount = 10;
 
 function showStatus(message, isError = false) {
   clearTimeout(statusTimer);
@@ -61,23 +65,27 @@ function showStatus(message, isError = false) {
   }
 }
 
-/* The two modes want different things from this row, so they diverge here:
-   Live enumerates (hand-built pool, every entry needs its own remove button),
-   Sets summarizes (see renderPoolSummary). */
+/* The two modes want different things from this row, so they diverge here.
+   Live ENUMERATES: the pool is hand-built, so every entry needs to be visible
+   and removable. Sets shows NOTHING — the set is a sealed box, and telling a
+   player it holds 1,442 cards across five bands describes the machine rather
+   than the game. That was the whole of the minimalism pass.
+
+   Rendering sets as chips was never an option anyway: a real Series is hundreds
+   of cards, and every chip's <img> is the card's own avatar — which WP3 made the
+   largest thumbnail available (up to 800px) so the centrepiece isn't soft. That
+   is a punishing download for a 22px circle, repeated on every set switch. */
 function renderPool() {
   const pool = currentPool();
-  if (!pool.length) {
-    const msg = state.mode === 'live'
-      ? 'Banner is empty — add a channel above to start pulling.'
-      : 'Loading set…';
-    chipsEl.innerHTML = `<p class="empty">${msg}</p>`;
-  } else if (state.mode === 'live') {
-    renderChips(pool);
+  if (state.mode === 'live') {
+    if (pool.length) renderChips(pool);
+    else chipsEl.innerHTML = '<p class="empty">Banner is empty — add a channel above to start pulling.</p>';
   } else {
-    renderPoolSummary(pool);
+    chipsEl.innerHTML = '';
   }
-  pullBtn1.disabled = pullBtn10.disabled = pullBtnDev.disabled = !pool.length;
-  renderRates();
+  const ready = pool.length > 0;
+  packBtn.disabled = pullBtnDev.disabled = !ready;
+  packBtn.classList.toggle('is-ready', ready);
 }
 
 function renderChips(pool) {
@@ -111,40 +119,6 @@ function renderChips(pool) {
     }
     chipsEl.appendChild(chip);
   }
-}
-
-/* Sets show the pool's composition, not a roll call of it. A real Series is
-   300–500 cards, so a chip each would render hundreds of read-only pills —
-   and every chip's <img> is the card's own avatar, which WP3 made the largest
-   thumbnail available (up to 800px) so the centrepiece isn't soft. That is a
-   punishing download for a 22px circle, repeated on every set switch. The band
-   counts are also simply better information when choosing between sets, and
-   bandsFrom already groups exactly this way. */
-function renderPoolSummary(pool) {
-  const bands = bandsFrom(pool);
-  chipsEl.innerHTML =
-    '<p class="pool-summary">' +
-    `<span class="pool-total">${pool.length} card${pool.length === 1 ? '' : 's'}</span>` +
-    bands.map(band =>
-      `<span class="pool-band r-${band.rarity}"><b class="dot"></b>${band.rarity} ${band.cards.length}</span>`
-    ).join('') +
-    '</p>';
-}
-
-/* The odds shown are the real ones for this pool, not the raw weight table.
-   The two-stage pull picks a rarity band first, then a card inside it, and
-   renormalizes over the bands the pool actually holds — so a sparse live
-   banner shows its own odds instead of a curve it can't produce. */
-function renderRates() {
-  const bands = bandsFrom(currentPool());
-  const total = bands.reduce((sum, band) => sum + band.weight, 0);
-  if (!total) {
-    ratesEl.textContent = '';
-    return;
-  }
-  ratesEl.textContent = 'Drop rates — ' + bands
-    .map(band => `${band.rarity} ${Math.round((band.weight / total) * 1000) / 10}%`)
-    .join(' · ');
 }
 
 function setMode(mode) {
@@ -312,8 +286,20 @@ export function initBanner({ onPull, onDevPull }) {
   }
   // Enter takes the broad middle — the tier you want most of the time.
   msInput.addEventListener('keydown', e => { if (e.key === 'Enter') onMagicSearch('majority'); });
-  pullBtn1.addEventListener('click', () => onPull(1));
-  pullBtn10.addEventListener('click', () => onPull(10));
+  /* The pack is the pull. The count buttons only choose its size — the old
+     layout had two buttons that both pulled, which made neither of them the
+     thing you were looking at. */
+  packBtn.addEventListener('click', () => { if (!packBtn.disabled) onPull(packCount); });
+  for (const [count, button] of [[1, countBtn1], [10, countBtn10]]) {
+    button.addEventListener('click', () => {
+      packCount = count;
+      for (const other of [countBtn1, countBtn10]) {
+        const on = other === button;
+        other.classList.toggle('on', on);
+        other.setAttribute('aria-pressed', String(on));
+      }
+    });
+  }
   pullBtnDev.addEventListener('click', () => onDevPull());
 
   chipsEl.addEventListener('click', e => {
@@ -327,10 +313,11 @@ export function initBanner({ onPull, onDevPull }) {
 
   /* WP8: dev affordances are hidden outside dev. Magic Search spends the
      visitor's own quota and is a sourcing tool, not a game feature; Dev Pull
-     forces one card of every rarity and would misrepresent the drop rates
-     printed directly beneath it. Both stay in the DOM (so `?dev=1` can reveal
-     them and the module-level refs above stay valid) — they are hidden, not
-     removed. */
+     forces one card of every rarity, which is not what the weights would do.
+     (It used to be said that this "misrepresents the drop rates printed beneath
+     it" — those are no longer printed, but a control that quietly ignores the
+     odds is still not something to hand a player.) Both stay in the DOM, so
+     `?dev=1` can reveal them and the refs above stay valid. */
   gateDevElement(msRow);
   gateDevElement(msInputRow);
   gateDevElement(pullBtnDev);

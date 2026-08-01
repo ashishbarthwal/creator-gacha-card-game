@@ -17,27 +17,44 @@
 </head>
 <body>
 
-<header>
-  <h1><span class="play-glyph"></span>Creator Gacha</h1>
-  <!-- The name drops the trademark; the tagline keeps the meaning. Naming the
-       platform you interoperate with is descriptive use and is fine — it is the
-       NAME SLOT that would assert a brand relationship. See DECISIONS.md. -->
+<header class="site-head">
+  <div class="brand">
+    <span class="play-glyph"></span>
+    <!-- The name drops the trademark; the tagline keeps the meaning. Naming the
+         platform you interoperate with is descriptive use and is fine — it is the
+         NAME SLOT that would assert a brand relationship. See DECISIONS.md. -->
+    <h1>Creator Gacha</h1>
+  </div>
   <p class="tagline">Pull collectible cards minted from real YouTube channel stats.</p>
 </header>
 
 <main>
-  <section class="panel" aria-labelledby="banner-h">
-    <div class="panel-head">
-      <h2 id="banner-h">Banner</h2>
+  <section class="panel panel-banner" aria-labelledby="banner-h">
+    <!-- Ambient lighting for the hero: one soft radial wash plus a handful of
+         slow-drifting motes. Decorative, pointer-events:none, and reduced to
+         static under prefers-reduced-motion. Kept to a count you can name on
+         purpose — this is a PC-client lobby, not a mobile storefront. -->
+    <div class="hero-amb" aria-hidden="true">
+      <span class="amb-glow"></span>
+      <span class="amb-mote"></span><span class="amb-mote"></span><span class="amb-mote"></span>
+      <span class="amb-mote"></span><span class="amb-mote"></span><span class="amb-mote"></span>
+    </div>
+
+    <h2 id="banner-h" class="sr-only">Banner</h2>
+
+    <!-- The only two controls a player needs before opening: which set, and
+         (for the few who want it) their own API key. Both sit quietly at the
+         top edge so the pack owns the middle of the stage. -->
+    <div class="stage-top">
+      <div id="sets-controls">
+        <div class="select-wrap set-pick">
+          <select id="set-select" class="field" aria-label="Card set"></select>
+        </div>
+      </div>
       <div class="mode-toggle" role="group" aria-label="Data source">
         <button id="mode-sets" class="mode-btn active" type="button">Sets</button>
         <button id="mode-live" class="mode-btn" type="button">Live API</button>
       </div>
-    </div>
-
-    <div id="sets-controls">
-      <select id="set-select" class="field" aria-label="Card set"></select>
-      <p id="set-meta" class="hint"></p>
     </div>
 
     <div id="live-controls" hidden>
@@ -60,18 +77,35 @@
       <p class="hint">Your key stays in this page's memory — never stored, never sent anywhere except googleapis.com. Get one free in Google Cloud Console → YouTube Data API v3.</p>
     </div>
 
+    <!-- Live mode only: the hand-built banner has to be manageable, so its
+         channels stay enumerated. Sets mode renders nothing here — a player
+         does not need an inventory of the box they are pulling from. -->
     <div id="pool-chips" class="chips"></div>
-    <p id="status" class="status" role="status" aria-live="polite"></p>
 
-    <div class="pull-row">
-      <button id="pull-1" class="btn primary" type="button">Pull ×1</button>
-      <button id="pull-10" class="btn primary" type="button">Pull ×10</button>
-      <button id="pull-dev" class="btn dev" type="button" title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
+    <!-- The pack IS the button. Everything above was a form with a submit
+         control at the bottom; a gacha is one object you open. -->
+    <div class="stage">
+      <button id="pack-open" class="pack" type="button" aria-label="Open a pack">
+        <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
+        <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
+        <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
+      </button>
+
+      <p class="tap-hint" aria-hidden="true">Tap to open</p>
+
+      <!-- Not two ways to pull — one action, and a choice of how many. -->
+      <div class="count-toggle" role="group" aria-label="Cards per pull">
+        <button id="pull-1" class="count-btn" type="button" aria-pressed="false">×1</button>
+        <button id="pull-10" class="count-btn on" type="button" aria-pressed="true">×10</button>
+      </div>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <button id="pull-dev" class="btn debug" type="button" title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
+      <p id="set-meta" class="stamp"></p>
     </div>
-    <p id="rates" class="hint rates"></p>
   </section>
 
-  <section class="panel" aria-labelledby="coll-h">
+  <section class="panel panel-collection" aria-labelledby="coll-h">
     <div class="panel-head">
       <h2 id="coll-h">Collection</h2>
       <span id="coll-summary" class="hint"></span>
@@ -80,36 +114,70 @@
            not "local and yours", it is just data you cannot delete. -->
       <button id="coll-clear" type="button" class="linkish" hidden>Clear collection</button>
     </div>
+
+    <!-- Tools appear only once the binder is big enough to be hard to scan.
+         They are the one thing here that survived the cut, because finding your
+         own card is a need a player actually has — unlike knowing the set size
+         or the drop table, which were only ever facts about the machine. -->
+    <div id="coll-tools" class="coll-tools" hidden>
+      <div class="tool-search">
+        <input id="coll-search" class="field" type="search" placeholder="Search your cards" spellcheck="false" aria-label="Search your collection">
+      </div>
+      <div id="coll-filters" class="filter-row" role="group" aria-label="Filter by rarity"></div>
+      <div class="tool-sort">
+        <div class="select-wrap select-sm">
+          <select id="coll-sort" class="field" aria-label="Sort cards">
+            <option value="rarity">Rarity</option>
+            <option value="recent">Newest first</option>
+            <option value="atk">ATK</option>
+            <option value="def">DEF</option>
+            <option value="subs">Subscribers</option>
+            <option value="name">Name</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <div id="collection-grid" class="cards-grid"></div>
+    <p id="coll-none" class="empty coll-none" hidden>Nothing matches those filters.</p>
     <p id="coll-empty" class="empty">No cards yet — pull to start your collection.</p>
   </section>
 </main>
 
 <footer>
-  <p>Fan project. Not affiliated with or endorsed by YouTube or Google. Channel data via the YouTube Data API.
-  Your API key lives only in this page's memory: it is never logged, never persisted, and never sent anywhere except googleapis.com.</p>
-  <!-- WP7a — the creator opt-out. This ships BEFORE the first real-creator set,
-       never after: the opt-out is part of what makes carrying real channels
-       defensible, so gating it behind anything else guarantees it arrives too
-       late to have done its job. Policy is DECISIONS.md's: honored within 7
-       days, matching the user-data deletion window we extend the courtesy from.
-       No identity check on purpose — an unfounded removal costs one card, while
-       a verification gauntlet costs the good faith this line exists to show.
+  <!-- Two columns at desktop: the standing legal text on the left, the two
+       links a person might actually act on pulled out on the right, where they
+       are not buried in the middle of a paragraph wall. -->
+  <div class="footer-grid">
+    <div class="footer-legal">
+      <p>Fan project. Not affiliated with or endorsed by YouTube or Google. Channel data via the YouTube Data API.
+      Your API key lives only in this page's memory: it is never logged, never persisted, and never sent anywhere except googleapis.com.</p>
+    </div>
+    <div class="footer-links">
+      <!-- WP7a — the creator opt-out. This ships BEFORE the first real-creator set,
+           never after: the opt-out is part of what makes carrying real channels
+           defensible, so gating it behind anything else guarantees it arrives too
+           late to have done its job. Policy is DECISIONS.md's: honored within 7
+           days, matching the user-data deletion window we extend the courtesy from.
+           No identity check on purpose — an unfounded removal costs one card, while
+           a verification gauntlet costs the good faith this line exists to show.
 
-       The address is Ash's own, chosen over a dedicated alias: a real inbox that
-       is actually read beats a forwarding address that might not be, and the
-       whole promise is answering quickly. It is a live mailto in public markup,
-       so it will be harvested — that cost was accepted knowingly. -->
-  <p class="footer-optout">
-    Are you a creator on one of these cards?
-    <a class="optout-link" href="mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request">Ask to be removed</a>
-    — no questions asked, and you'll be out of every set within 7 days.
-  </p>
-  <p class="footer-coffee">
-    <a class="coffee-link" href="https://www.buymeacoffee.com/chunchunmaru" target="_blank" rel="noopener noreferrer">
-      <span aria-hidden="true">☕</span> Buy ChunChunMaru a coffee
-    </a>
-  </p>
+           The address is Ash's own, chosen over a dedicated alias: a real inbox that
+           is actually read beats a forwarding address that might not be, and the
+           whole promise is answering quickly. It is a live mailto in public markup,
+           so it will be harvested — that cost was accepted knowingly. -->
+      <p class="footer-optout">
+        Are you a creator on one of these cards?
+        <a class="optout-link" href="mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request">Ask to be removed</a>
+        — no questions asked, and you'll be out of every set within 7 days.
+      </p>
+      <p class="footer-coffee">
+        <a class="coffee-link" href="https://www.buymeacoffee.com/chunchunmaru" target="_blank" rel="noopener noreferrer">
+          <span aria-hidden="true">☕</span> Buy ChunChunMaru a coffee
+        </a>
+      </p>
+    </div>
+  </div>
 </footer>
 
 <div id="reveal" hidden role="dialog" aria-modal="true" aria-label="Pull results">
