@@ -481,6 +481,33 @@
     appearance: none;
     padding-right: 38px;
     font-weight: 500;
+    /* The popup is drawn by the OS, not by us. Chrome derives its colours from
+       the control's own computed background, and .field's is a translucent
+       rgba() — with `appearance: none` on top there is nothing opaque to read,
+       so it fell back to the light system menu against a dark page. Declaring
+       the scheme here is what makes the popup dark; the option rules below are
+       the belt to that braces, since Windows Chrome honours them and some
+       versions still ignore the scheme on a restyled select. */
+    color-scheme: dark;
+  }
+
+  .select-wrap .field option {
+    background-color: #1b1426;
+    color: var(--ink);
+  }
+
+  /* The "Sort by" header. Chrome renders optgroup labels bold-italic grey by
+     default, which reads as a disabled row rather than a heading — so it takes
+     the same mono-caps treatment every other small label on the page uses. */
+  .select-wrap .field optgroup {
+    background-color: #150f1f;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
   }
 
   /* Stored statistics have to be shown in their time context, so the snapshot
