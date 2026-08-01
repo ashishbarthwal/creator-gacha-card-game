@@ -126,13 +126,20 @@
       <div id="coll-filters" class="filter-row" role="group" aria-label="Filter by rarity"></div>
       <div class="tool-sort">
         <div class="select-wrap select-sm">
+          <!-- The optgroup is the "Sort by" header, and it costs nothing: no CSS,
+               no JS, no custom listbox. The selected option deliberately STAYS in
+               the list — a native select's value is held by an option, so removing
+               it would leave the collapsed control showing the wrong sort. The
+               browser already marks the current one, which is the tick. -->
           <select id="coll-sort" class="field" aria-label="Sort cards">
-            <option value="rarity">Rarity</option>
-            <option value="recent">Newest first</option>
-            <option value="atk">ATK</option>
-            <option value="def">DEF</option>
-            <option value="subs">Subscribers</option>
-            <option value="name">Name</option>
+            <optgroup label="Sort by">
+              <option value="rarity">Rarity</option>
+              <option value="recent">Newest first</option>
+              <option value="atk">ATK</option>
+              <option value="def">DEF</option>
+              <option value="subs">Subscribers</option>
+              <option value="name">Name</option>
+            </optgroup>
           </select>
         </div>
       </div>
