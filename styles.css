@@ -491,9 +491,18 @@
     color-scheme: dark;
   }
 
+  /* Options are CHILDREN of the optgroup, so the header's mono-caps below
+     cascades into them unless it is undone here — which is how the collapsed
+     control came to read "Rarity" while the open list read "RARITY". The type
+     reset is the point of this rule; the colours are the lesser half. */
   .select-wrap .field option {
     background-color: #1b1426;
     color: var(--ink);
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 13.5px;
+    letter-spacing: normal;
+    text-transform: none;
   }
 
   /* The "Sort by" header. Chrome renders optgroup labels bold-italic grey by
