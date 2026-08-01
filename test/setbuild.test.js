@@ -14,6 +14,7 @@ import {
   bandHealth,
   pruneStarvedBands,
   assembleSet,
+  applyExcludes,
   PULL_SIZE,
   BAND_HEADROOM,
   DEFAULT_TARGET_SIZE,
@@ -344,5 +345,42 @@ describe('assembleSet — the strip is the last Gate item', () => {
     expect(DEFAULT_TARGET_SIZE).toBeGreaterThanOrEqual(300);
     const { set } = build({ N: 400, R: 300, SR: 150, SSR: 60, UR: 30 });
     expect(set.channels).toHaveLength(DEFAULT_TARGET_SIZE);
+  });
+});
+
+describe('applyExcludes — curation, kept apart from the opt-out', () => {
+  const cards = roster({ SR: 5 });
+
+  it('removes exactly the listed ids and reports them', () => {
+    const { kept, removed } = applyExcludes(cards, ['UC_SR_1', 'UC_SR_3']);
+    expect(kept.map(c => c.id)).toEqual(['UC_SR_0', 'UC_SR_2', 'UC_SR_4']);
+    expect(removed.map(c => c.id)).toEqual(['UC_SR_1', 'UC_SR_3']);
+  });
+
+  it('is a no-op on an empty list, so an absent file cannot silently shrink a set', () => {
+    expect(applyExcludes(cards, []).kept).toHaveLength(5);
+    expect(applyExcludes(cards, new Set()).kept).toHaveLength(5);
+  });
+
+  it('takes an array or a Set, and ignores ids that are not present', () => {
+    expect(applyExcludes(cards, new Set(['UC_SR_0'])).kept).toHaveLength(4);
+    expect(applyExcludes(cards, ['UC_nobody']).removed).toHaveLength(0);
+  });
+
+  /* The load-bearing one. Excluding runs BEFORE the cap, so a removed card frees
+     its slot for the next-best candidate rather than shrinking the band — which
+     is the whole reason this is a build-time filter and not a DB eviction. */
+  it('frees the slot rather than shrinking the band', () => {
+    const deep = roster({ N: 400, R: 200, SR: 120, SSR: 60, UR: 20 });
+    const targetSize = 300;
+    const before = assembleSet(deep, { slug: 's', title: 'S', targetSize, snapshotDate: '2026-08-01' });
+    const { kept } = applyExcludes(deep, deep.filter(c => c.id.startsWith('UC_SR_')).slice(0, 10).map(c => c.id));
+    const after = assembleSet(kept, { slug: 's', title: 'S', targetSize, snapshotDate: '2026-08-01' });
+
+    const srOf = set => set.channels.filter(c => c.subscriberCount === SUBS.SR).length;
+    expect(srOf(after.set)).toBe(srOf(before.set));
+    for (const id of ['UC_SR_0', 'UC_SR_9']) {
+      expect(after.set.channels.some(c => c.id === id)).toBe(false);
+    }
   });
 });

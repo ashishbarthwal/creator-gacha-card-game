@@ -272,6 +272,35 @@ export function pruneStarvedBands(channels, pullSize = PULL_SIZE) {
   return { kept, dropped };
 }
 
+/* CURATION EXCLUDE — deliberately not the opt-out denylist, and deliberately
+   not a candidate-DB operation.
+
+   Two different things want to remove a channel and they must not share a file.
+   An opt-out (catalog/denylist.json) is a creator's request: permanent, evicts
+   from the DB so the id is never re-sourced, and it is one of the five
+   mitigations the legality gate closed on — it has to stay auditable as exactly
+   that. A curation exclude (catalog/excluded.txt) is an editorial call about
+   what a printing is sold on: "recognizable enough to carry a card". It is
+   revisable, carries no promise to anyone, and mixing the two would make the
+   opt-out register unreadable as a record of honored requests.
+
+   It also filters HERE rather than at merge, so the id survives in
+   catalog/candidates.json. Un-excluding is then editing a text file, not
+   re-resolving a handle and spending quota to recover something we threw away.
+
+   Applied before the cap, so an excluded card frees its slot rather than
+   shrinking the band — the next-best candidate is promoted into it. */
+export function applyExcludes(channels, excluded) {
+  const ids = excluded instanceof Set ? excluded : new Set((excluded ?? []).map(String));
+  if (!ids.size) return { kept: channels ?? [], removed: [] };
+  const kept = [];
+  const removed = [];
+  for (const channel of channels ?? []) {
+    (ids.has(String(channel?.id)) ? removed : kept).push(channel);
+  }
+  return { kept, removed };
+}
+
 /* The published Channel record. A positive allowlist for the same reason
    engine/candidates.js uses one: a blocklist would start publishing whatever
    field the seam grows next, silently. `country` is absent by construction. */

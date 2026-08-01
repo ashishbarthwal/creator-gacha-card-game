@@ -1,0 +1,122 @@
+# Curation exclude — channels held OUT of a printing.
+#
+# THIS IS NOT THE OPT-OUT DENYLIST. catalog/denylist.json records creators who
+# ASKED to be removed: permanent, evicts from the candidate DB, and one of the
+# five mitigations the legality gate closed on — it has to stay readable as a
+# register of honored requests and nothing else. This file is an editorial call
+# about what a printing is sold on, it is revisable, and it promises no one
+# anything. Never move an entry between the two files.
+#
+# Ids stay in catalog/candidates.json on purpose. The filter runs at build time
+# (engine/setbuild.js, applyExcludes), so un-excluding a channel is deleting a
+# line here — not re-resolving a handle and spending quota to recover an id we
+# threw away.
+#
+# Excluding frees the slot rather than shrinking the band: applyExcludes runs
+# before capBands, so the next-best candidate is promoted into it.
+#
+# THE STANDARD, stated so it can be argued with: a card works when a player
+# recognizes the name. Subscriber count is a poor proxy for that — it is what
+# rarity derives from, and a 2M-subscriber channel with a single concentrated
+# audience reads as filler next to a 2M channel with worldwide reach. That is a
+# launch-traction judgement, not a quality one, and it is worth revisiting once
+# there are players whose reactions can settle it.
+#
+# FORMAT  one UC id per line; # comments and blank lines ignored (parseRosterLines).
+# ADDED   2026-08-01, before the first deploy.
+
+# ── Study/revision niche — the case that prompted this. Real subscribers, but a
+#   study-notes audience does not travel; nobody outside it recognizes the name.
+UC01sF0wMt4tB2O9krpJ_8Tg  # Study To Success [2.1M]
+UC7Q1WF_ncbiUjcn64imTB-g  # Smartest Workers [3.5M]
+UCE0kcuDlwjfP2982jVH6WkQ  # Pan The Organizer [1.1M]
+UCHzcS9Hm5dieyRWDMY-earw  # Busy Works Beats [1.7M]
+
+# ── Audience concentrated in one non-anglophone market. Not a judgement on the
+#   channel — a card only lands if the player knows who it is, and these are
+#   invisible to the launch audience.
+UC2qkcv3NvWo-kyosiLTDAGg  # Nguyễn Chí Thanh [3.8M]
+UCj8MrQPTFj08bCg_G0WLFVg  # Pinoy Videoke Tambayan [2.4M]
+UC3D_rVuy7NliNQ95e6dCxow  # VelBros Tamil [1.1M]
+UCN0ZqGH6bK0Q4rfbRkhPA-A  # Vua Phim Review [1.4M]
+UC7z2JQHX3LZ1XfX6ZLhWVTw  # ANHVGTA [1.7M]
+UC7D6l_yvwbmaG_wWnVmKO0A  # IamfromKorea [3.2M]
+UCvVsP5iWLOVx4jtUY82ngYw  # SLIZHENKOV l HD [1.1M]
+UCUrYBZGlEOSD1_ds_HcNd6A  # Xataka [1.8M]
+UC4fn1t8clOY76_BeWNJg4TQ  # DHIARCOM [3.4M]
+UC5fNDc5_Tcp3xAZVHs-DfZg  # Egan Usup [1.1M]
+UC29yQAP_TeMVhNVmaD4bpkQ  # ALABAYCHIC [2.2M]
+UCWkVgfMFZkJLQ6uB113Xq1A  # Leti Sha [3.3M]
+UCxEyrf1Ud59fvH9A5mNGwIg  # Her 86m2 [2.4M]
+UCmF8AOhYRX-3JbEQ3GDlF6g  # AMAZING Carlo Balingit - BMD CREW [1.0M]
+UChYs-_zjKRYhdMddjx-NPLw  # Singh in USA [1.2M]
+UCPhtj9zhGihRTmvI6e69MMg  # GAMING PC WALA [1.1M]
+UCjgR3eFc12cbn5UeIDm8Acg  # GamerFleet Shorts [2.0M]
+UCprwkXd8S2ynQZxZXgyr4mg  # Premfn [1.2M]
+UCaafcCrTB2_rWT4QmGoPasQ  # Billyhan_ [1.8M]
+UCEI99Jl2Gjt6Oxi-d_si10g  # Ted Kunchok [1.4M]
+UCcng5aBy0ZmX7g2PfHf4gJA  # Ali Andreea [1.4M]
+UC86HDzuWc6p_A1nNWYfv3Jw  # Angelo Marasigan [5.0M]
+UCPf3hAGEPILvDnILzBTHpZA  # Arinaga Family [6.8M]
+UC1pYX1-7lIyaoLBMK_WbF6A  # Nest Pixelart [1.2M]
+UC6eGs0jNNgPnHI2alYnFElQ  # EJrM FILMS [1.2M]
+UCVFuV6wGM1Ktuc9M5IK_63w  # Kartier [1.9M]
+UCpgeLBgOycAKaI718Negp2A  # Jalin Siu [1.9M]
+UCoAhQW80unvY9GkI3X5cyWA  # Lyndice [1.8M]
+UCVXKdSXb9LASC7H2CRHyPQA  # Isabel Giannuzzi  [2.8M]
+UCCKs3glbBFWtZFFrAawVViA  # Annag [4.3M]
+
+# ── News and political commentary. KEYWORD_SEEDS was written to avoid exactly this
+#   (engine/discover.js) — these arrived when the vocabulary widened in WP9 and
+#   should have been caught then.
+UCw8Fc5R0Q5yyS3KrDCPM3xg  # Times Now World [1.3M]
+UCJdKr0Bgd_5saZYqLCa9mng  # The Rubin Report [3.2M]
+
+# ── Aggregators, clip farms and shorts churn. High subscriber counts from volume
+#   rather than from anyone following a person — the failure mode the band cap
+#   cannot see, because it sorts on subscribers alone.
+UCcqa2nmuSt_YpPQFRFmV88g  # Proud Opinions  [4.5M]
+UCc6TgL_PICrupEX2tAk_yNA  # SamZone [4.6M]
+UCsa7w3Kjl8CAbHPVoVQ903Q  # TechBro [4.7M]
+UCdAeRRjq6vjnAkxatZVxxxg  # RM Videos [4.2M]
+UCG67Fgo8Sxm4G4TMIFjXhjQ  # ProGamingStudio ツ [4.2M]
+UCOrd4AWNd6lOgv0UWv84H2g  # King Crane [3.9M]
+UCcR4cyQyAF-guvk7Wm5Lbqg  # Caters Clips [3.8M]
+UCTBjtACFlDmd-g6Gtva9biQ  # pigmie [3.5M]
+UCtaMRYGIXKhRpI86D2CqTEA  # Ash Magic [3.5M]
+UCwOGO9gT1y0IvzPqKal4loQ  # VTubers [3.4M]
+UCSnNUFvvfLRmVVytvF0EYDQ  # Cherry Pop Productions [3.2M]
+UCd_IS6lI0n8jjiN2deVvsEA  # Hip Hop/R&B Lyrics [2.8M]
+UCuCeBh-8KJyrbqm_gLOSpBg  # Laxx [2.6M]
+UCQnn8TkicIjaOBRGkEx7_6w  # Z gaming [2.1M]
+UCPvRdfUooqCf0zPOYvbBzVA  # mryeester [2.0M]
+UCcW055_DGSkCEGWoKsW7gFQ  # scribblejuice [1.9M]
+UCdbetV_5wxUnBTdb_d51qoA  # Synthet [1.5M]
+UCRYOj4DmyxhBVrdvbsUwmAA  # optimum [1.5M]
+UCajk3AGLzBN-PYFACIhIGGw  # Water Ragdolls [1.2M]
+UCR0mlyeUejxLzvljUrb-ItQ  # DrawzillaZZZ [1.1M]
+UCl2Ae8IzmEusR43OL9HNcKQ  # Batman Arkham Videos [1.1M]
+UCDcp8e85Pp4Ymn2AJw23SPg  # Angel2Up [1.1M]
+UCMLMUbtO4PCIVN8I7Dzcn3Q  # Holly Laing [1.1M]
+UCiU62OZdeYaOWzryECkxROA  # Erika Diane [1.7M]
+UCDp_AG19oYqkaRivTtFp_Mw  # SEFTV [1.6M]
+UCcX0VwKvhbfzrPJtlugegBg  # EYreacts [2.7M]
+UCPN6irtK3KIT2xUdQYQmh5Q  # Jason Maher [2.1M]
+UC8BLc91ZdQZyr3Wj3IEALaQ  # Arcade Matt Shorts [2.0M]
+UC_RVotI0xW-wZq4q3jJPJvA  # The Izzys [1.4M]
+UCEeH57P89hPQ1Sp2TavfICA  # Parker Burton [1.3M]
+UCFTjC8OaMv_kP5frj9UU1Rw  # ENXGMA [1.1M]
+UCr1nLIQFpNV5DxD22qxGsyQ  # Nicole Laeno [3.7M]
+UCeC_faDcDFeo8qiJiYWcR2Q  # Addie Bowley [4.5M]
+UCpp1GoykvTBuPiZt3FiFHjg  # SoupTimmy [6.4M]
+UCMOB6uDg7e-h8OuCw8dK2_Q  # ALTER [3.9M]
+UCwjRtYeHwmzKBPoIMax7StQ  # SKWAD Fitness [4.3M]
+UChNMDQstHsVQGMlBAWDyBEg  # Thee BlackBadger [3.7M]
+UCxH12tSiXAE8d5qB0vOT7yA  # Jack's Dining Room  [1.0M]
+UCG7J20LhUeLl6y_Emi7OJrA  # The Studio [1.1M]
+UC9wvQsn9VGQsX9uFWEuQW4A  # CubeHead [1.4M]
+UC883IVbvcI7SPx8kffHjWxw  # Deligracy [1.2M]
+UCjRkUtHQ774mTg1vrQ6uA5A  # Boulder Creek Railroad [1.2M]
+UCQo7Kkt6UOnPP114Xwi5Qeg  # TheFlightMike [1.1M]
+UCLLHnS6pKU4GdGEZjysogqQ  # Boylei Hobby Time [1.1M]
+

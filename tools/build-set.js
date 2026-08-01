@@ -34,8 +34,8 @@ import { dirname, resolve } from 'node:path';
 
 import { fetchChannelsByIds } from '../src/data/search.js';
 import { passesRegion, regionReport, DEFAULT_EXCLUDE_COUNTRIES } from '../src/engine/discover.js';
-import { hydratableIds, batchIds, refreshPools, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
-import { assembleSet, DEFAULT_TARGET_SIZE } from '../src/engine/setbuild.js';
+import { hydratableIds, batchIds, refreshPools, parseRosterLines, splitPin, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
+import { assembleSet, applyExcludes, DEFAULT_TARGET_SIZE } from '../src/engine/setbuild.js';
 import { refreshEntry, appendRefreshEntry } from '../src/engine/freshness.js';
 import { RARITY_ORDER, rarityFromSubs } from '../src/engine/core.js';
 
@@ -43,6 +43,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const CANDIDATES_PATH = resolve(ROOT, 'catalog/candidates.json');
 const DENYLIST_PATH = resolve(ROOT, 'catalog/denylist.json');
+const EXCLUDED_PATH = resolve(ROOT, 'catalog/excluded.txt');
 const BUILT_DIR = resolve(ROOT, 'sets/built');
 const REFRESH_LOG_PATH = resolve(ROOT, 'catalog/refresh-log.json');
 
@@ -113,11 +114,18 @@ async function main() {
   const region = regionReport(hydrated);
   const allowed = hydrated.filter(c => passesRegion(c));
 
+  /* The curation exclude: editorial, revisable, and kept well away from the
+     opt-out denylist above — see applyExcludes for why they are separate files.
+     Read as a roster so it takes UC ids with `# why` comments beside them. */
+  const excludeText = await readFile(EXCLUDED_PATH, 'utf8').catch(() => '');
+  const excludeIds = new Set(parseRosterLines(excludeText).map(e => splitPin(e).input));
+  const { kept: curated, removed: excludedCards } = applyExcludes(allowed, excludeIds);
+
   /* Pinned candidates survive the cap ahead of everything else — the roster's
      answer to "which cards is this set sold on", which a hash cannot supply. */
   const pinned = new Set(db.candidates.filter(c => c?.pin).map(c => String(c.id)));
 
-  const { set, dropped, capped, targets } = assembleSet(allowed, {
+  const { set, dropped, capped, targets } = assembleSet(curated, {
     slug, title, series, targetSize, pinned, snapshotDate: new Date().toISOString().slice(0, 10),
   });
 
@@ -126,6 +134,12 @@ async function main() {
 
   console.log(`  hydrated ${hydrated.length}${vanished ? ` (${vanished} vanished — deleted or terminated)` : ''}`);
   console.log(`  region exclude [${DEFAULT_EXCLUDE_COUNTRIES.join(', ')}]: ${hydrated.length - allowed.length} removed, ${region.undeclared} undeclared (unseeable)`);
+  /* Named, not just counted. A curation exclude is a judgement call someone
+     should be able to disagree with at a glance — a bare number hides which. */
+  if (excludeIds.size) {
+    console.log(`  curation exclude: ${excludedCards.length} removed of ${excludeIds.size} listed`);
+    for (const ch of excludedCards) console.log(`      − ${ch.title}`);
+  }
   /* Per band: what shipped, against what a printing of this size wants. The
      shortfall column is the whole sourcing to-do list — it says which band to
      point the next Magic Search run at, and the cap column says which band has
