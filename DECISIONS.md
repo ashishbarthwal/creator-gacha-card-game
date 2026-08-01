@@ -1609,3 +1609,46 @@ would type — "mukbang workshop tour" returned zero uploaders and burned a full
 the empty modifier now takes ~20% of draws and six craft-only modifiers were dropped.
 
 </details>
+
+## A handle is not an identity (2026-08-02)
+
+<details>
+<summary><b>Model recall works as a third sourcing route — it is a recognition signal of the same kind as a ranking, at zero quota</b> — but it exposed a failure mode worse than a miss: five handles resolved to real channels that were not the intended ones.</summary>
+
+The list route (see "Recognition is sourced, not searched") had a ceiling: published rankings
+bottom out around 20M subscribers. A third route was tried against the same candidate DB —
+names recalled from a language model's training data rather than read off a page.
+
+**Why this is the same kind of signal, not a new kind.** Training data is, for this narrow
+purpose, a compressed index of which channels were written about enough to be remembered.
+That is recognition, which is exactly the thing the code cannot compute and the reason
+`legends.txt` exists as a hand-maintained file in the first place. It costs no quota to query
+and, like a ranking, it supplies IDENTITY only — `build-set.js` re-hydrates every statistic,
+so a stale recollection mints an identically fresh card.
+
+**Result: 68 handles, 68 units, 57 resolved, 52 kept — SR 34 · SSR 18 · R 0.** The R 0 is not
+a disappointment; it is the route's stated limit holding. Rankings stop near 20M and training
+data thins below ~1M, where recalled handles turn into confabulated ones. The commons gap is
+search's job and no amount of recall will close it.
+
+**THE FINDING, and the reason this entry exists.** A wrong handle normally 404s and costs one
+unit. Five instead resolved to a *real channel that was not the intended one*: squatters
+sitting on abandoned famous handles (`@Tfue` → "RealTfue", 207 subs; `@JonTron` → 114;
+`@CleetusMcFarland` → 612; `@JeenieWeenie` → 10), plus one creator's secondary VODs channel
+(`@BadBoyHalo` → 56K).
+
+These merge **silently**. The ids were live, they passed the region filter, and they seated
+themselves in the candidate DB as N-band filler under famous names — the band that is 55% of
+every pull. Nothing in the pipeline could have caught it, because every check the pipeline
+runs was satisfied. They were found only because the printed subscriber counts were absurd,
+and removed by id afterwards.
+
+**The rule that follows: scan the printed subscriber counts, not just the failure lines.** A
+handle is not an identity — it is whoever holds the name *today*. And the risk is concentrated
+exactly where intuition says it should be safest: guessed handles for the most famous
+creators, because an abandoned famous handle is precisely what a squatter takes.
+
+Miss rate was 11 of 68 — 16%, against the ~10% the earlier passes saw. Recall guesses handles
+from display names the same way a human does, and is wrong in the same places.
+
+</details>

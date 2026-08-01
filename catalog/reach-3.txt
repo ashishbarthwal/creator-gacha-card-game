@@ -1,0 +1,173 @@
+# Reach roster, pass 3 — recalled from model training data, not read off a list.
+#
+# WHY THIS PASS EXISTS
+# reach-2.txt established that a published ranking already encodes the recognition
+# the code cannot compute. This pass uses the same principle with a different
+# source: an LLM's training data is, for this narrow purpose, a compressed index
+# of which channels were written about enough to be remembered. That makes it a
+# recognition signal of the same kind as a ranking, and it costs zero quota to
+# query.
+#
+# ITS LIMIT, STATED UP FRONT. Recall is reliable for IDENTITY and unreliable for
+# NUMBERS — subscriber counts and ranks drift and the model's cutoff is fixed.
+# That is the same trade reach-2.txt already accepted and for the same reason:
+# build-set.js re-hydrates every statistic, so identity is the only thing a
+# roster has to get right. Band comments below are therefore guesses, unenforced.
+#
+# WHAT IT CANNOT DO, WHICH IS THE CURRENT GAP. Nothing here reaches R
+# (100K-1M). Published rankings bottom out around 20M and training data thins out
+# below ~1M, where recalled handles turn into confabulated ones. The commons
+# shortfall is search's job and this file does not touch it.
+#
+# SELECTION. Diffed mechanically against all 526 handles in legends.txt,
+# reach.txt and reach-2.txt (including the commented failed-resolve block), so
+# every line below is new. Same exclusions as reach-2: no news or political
+# commentary, no non-English, no India-based, no channels built around child
+# performers, no deceased creators, no fame-is-an-abuse-case.
+#
+# DELIBERATELY NOT ADDED: more record-label and music-artist channels. Recall
+# offers plenty of 10M-50M ones (Coldplay, Dua Lipa, The Weeknd, Imagine
+# Dragons), and DECISIONS.md records that labels falling from 8 of 22 to 4 of 26
+# was progress. Adding them back would buy band depth with the exact card nobody
+# is chasing.
+#
+# NO PINS, per reach.txt's convention — this is depth, not chase cards. Several
+# lines below would survive a pin argument (@BeastPhilanthropy, @ZackDFilms,
+# @DailyDoseOfInternet); make that call after the resolve reports real bands.
+#
+# USE   node tools/add-candidates.js catalog/reach-3.txt --dry-run
+#       node tools/add-candidates.js catalog/reach-3.txt
+# COST  68 handles = 68 quota units.
+
+# ── Faceless and Shorts-native ───────────────────────────────────────────────
+# The category with no likeness question at all, which is the same property
+# legends.txt credits animation with. Worth over-weighting for that reason alone,
+# and all four of the large ones here are English-first.
+@ZackDFilms             # animated explainers, Shorts-native, very large
+@DailyDoseOfInternet    # narrated clip roundup, faceless, huge
+@CorpseHusband          # voice only, never shown his face
+@SMG4                   # machinima/animation, long-running
+@GlitchProductions      # Murder Drones / Amazing Digital Circus
+@CasvandePol            # animation
+@CircleToonsHD          # animation
+
+# ── Stunt and spectacle — the Dude Perfect adjacency ─────────────────────────
+@HowRidiculous          # Australian, drop tests — closest peer to Dude Perfect
+@MattStonie             # competitive eating
+@BeastPhilanthropy      # MrBeast's charity channel, large in its own right
+@TheActionLab           # physics demos — fits the craft/science vocabulary
+@HydraulicPressChannel  # Finnish but effectively English-language
+@CrazyRussianHacker     # US-based, long-running experiment channel
+@WhistlinDiesel         # machinery destruction — flag: stunt-injury adjacent,
+                        # cut this line if that reads too close to the reach-2
+                        # "fame is a crisis" exclusion
+
+# ── Cars ─────────────────────────────────────────────────────────────────────
+# A whole vertical the rosters reach only through reach-2's restoration block.
+# Object-centric rather than face-centric, which suits the likeness posture.
+@ChrisFix               # DIY repair — strong craft-vocabulary fit
+@DonutMedia
+@SupercarBlondie
+@carwow
+@ScottyKilmer
+@TheStradman
+@Goonzquad
+# @CleetusMcFarland    # SQUATTED — resolved to a 612-sub impostor, see below
+@MightyCarMods          # Australian
+
+# ── Comedy, sketch and legacy entertainment ──────────────────────────────────
+@CollegeHumor           # now Dropout; the channel is still large
+@AnthonyPadilla         # post-Smosh interview channel
+@SmoshGames             # sibling channel to the pinned @Smosh
+# @JonTron             # SQUATTED — resolved to a 114-sub impostor, see below
+@WongFuProductions
+@MythicalKitchen        # Mythical's food channel, sibling to @GoodMythicalMorning
+@TylerOakley
+@LelePons
+@AnwarJibawi
+@RudyMancuso
+@HannahStocking
+@SamandColby            # exploration/horror duo
+# @JeenieWeenie        # SQUATTED — resolved to a 10-sub impostor, see below
+
+# ── Gaming depth ─────────────────────────────────────────────────────────────
+@MrFreshAsian           # Fresh — Australian Fortnite
+# @Tfue                # SQUATTED — resolved to "RealTfue", 207 subs, see below
+@LDShadowLady           # UK, Minecraft
+@ExplodingTNT
+@Loserfruit             # Australian
+@jschlatt
+@Skeppy
+# @BadBoyHalo          # resolved to his VODs channel (56K), not the main one
+@Behzinga               # the Sidemen member the roster is missing
+@Deji
+@Jynxzi
+@Clix
+@GameToons
+@camman18
+@BriannaPlayz
+@JackSucksAtLife
+@NickEh30
+@FaZeClan
+@AMPExclusive
+
+# ── Craft and art — the closest fits to KEYWORD_SEEDS ────────────────────────
+@MoriahElizabeth        # craft/art at a scale search never surfaced
+@KarinaGarcia
+@simplynailogical       # nail art, Canadian
+
+# ── Education institutions ───────────────────────────────────────────────────
+# Same category as the already-held @TED, @NatGeo, @NASA: institutional, no
+# individual's likeness on the card.
+@TEDEd                  # separate channel from the pinned @TED
+@khanacademy
+@MinuteEarth            # sibling to @minutephysics, already held
+@Discovery
+
+# ── Beauty and lifestyle ─────────────────────────────────────────────────────
+@BretmanRock
+@AlishaMarie
+@Zoella                 # UK
+@ThatcherJoe            # UK
+@NikiandGabi
+
+# ── Food ─────────────────────────────────────────────────────────────────────
+@SamTheCookingGuy
+
+# ── RESULT OF THE 2026-08-02 RUN: 57/68 resolved, 52 kept ────────────────────
+# Bands: N 5 · R 0 · SR 34 · SSR 18 · UR 0 — before the five N entries were
+# pulled back out, so the roster's real yield is SR 34 · SSR 18. The R 0 is not a
+# disappointment, it is the point restated: this route cannot reach the commons.
+#
+# A SECOND FAILURE MODE, WORSE THAN A MISS, AND NEW TO THIS PASS. A wrong handle
+# usually 404s and costs 1 unit. Five instead resolved to a REAL channel that was
+# not the intended one — handle squatters on abandoned names, plus one creator's
+# secondary VODs channel. Those merge silently: the ids were live, passed the
+# region filter, and landed in the candidate DB as N-band filler under famous
+# names. Caught only because the printed subscriber counts were absurd
+# (612, 114, 207, 10, 55.6K) and removed by id afterwards.
+#
+# The lesson for any future roster: SCAN THE PRINTED SUBSCRIBER COUNTS, not just
+# the failure lines. A handle is not an identity — it is whoever holds the name
+# today. Guessed handles for very famous creators are the highest-risk case,
+# because an abandoned famous handle is exactly what a squatter takes.
+#
+#   removed: UCWIwjSEvAHMBCanNf6dlseQ  @CleetusMcFarland -> "Cleetus McFarland" 612
+#            UCNqENNwS0IHYNJmHEyhsP5w  @JonTron          -> "jontron" 114
+#            UCQBIR8Bo9AVVWwiAItWOBXQ  @Tfue             -> "RealTfue" 207
+#            UClNjoj-BiTw3E8CV3rDgxKw  @JeenieWeenie     -> "jeenieweenie" 10
+#            UCcDG6An0m2QST7KuBZfUUjg  @BadBoyHalo       -> "BadBoyHaloVODS" 55.6K
+#
+# ── Handles that FAILED to resolve (2026-08-02) — fix before re-running ───────
+# 11 of 68, so this pass missed at 16% against the ~10% the earlier passes saw.
+# Confirm the real handle on the channel page rather than guessing again; each
+# guess costs a unit. Uncomment as they are corrected.
+#
+# @GlitchProductions  @CasvandePol  @DonutMedia  @CollegeHumor  @AnthonyPadilla
+# @WongFuProductions  @AnwarJibawi  @MrFreshAsian  @GameToons  @KarinaGarcia
+# @Zoella
+#
+# Likely fixes, unverified and NOT to be run until checked: Glitch is @GLITCH,
+# Donut Media rebranded to @donut, CollegeHumor's channel moved to Dropout,
+# Zoella's channel is under her own name. Fresh, Wong Fu, Anwar Jibawi, Anthony
+# Padilla, GameToons, Karina Garcia and Cas van de Pol need looking up.
