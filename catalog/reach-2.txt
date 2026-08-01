@@ -1,0 +1,210 @@
+# Reach roster, pass 2 — sourced from public lists, not from search.
+#
+# WHY THIS PASS EXISTS, AND WHY IT COST NO SEARCH QUOTA
+# Magic Search costs 100 units a call and ranks by keyword relevance, which does
+# not correlate with fame — that is how the first printing ended up with a
+# study-notes channel in SR. A published ranking already encodes recognition,
+# which is the thing we could not compute. So the names here were read off
+# public lists at zero YouTube quota, and the only spend is 1 unit per handle at
+# resolution: roughly 20-50x more usable candidates per unit than search.
+#
+# Staleness does not matter here, which is the part worth writing down. A list
+# supplies IDENTITY only. tools/build-set.js re-hydrates every statistic from the
+# API on each build, so a year-old ranking mints an identically fresh card. That
+# is a property of the seam, not luck.
+#
+# SOURCES
+#   en.wikipedia.org/wiki/List_of_most-subscribed_YouTube_channels
+#     — carries language and country columns, so English can be filtered BEFORE
+#       spending a unit. Used for the UR gaps below.
+#   en.wikipedia.org/wiki/List_of_YouTubers
+#     — fetched as ?action=raw; the rendered page truncates around section H,
+#       the wikitext does not. Used for SR/SSR depth.
+#
+# WHAT WAS DELIBERATELY LEFT OUT
+#   - News and political commentary (DeFranco, Crowder, Destiny, Breaking Points,
+#     Sargon, Viva Frei). Same restriction KEYWORD_SEEDS was written around.
+#   - Non-English channels, and India-based creators the region filter drops
+#     anyway — listing them would spend a unit to be rejected.
+#   - Creators who have died (Technoblade, Etika, Reckful, Christina Grimmie).
+#     A gacha card is a collectible with a pull animation; that is the wrong
+#     frame for a memorial, and the opt-out cannot be exercised by someone who
+#     is gone.
+#   - Channels whose fame is an abuse case or an active health crisis
+#     (8 Passengers, ImJayStation, Eugenia Cooney).
+#
+# ── UR-band gaps from the top-100 list. English, creator-owned, not yet held ──
+# The top 100 is otherwise Hindi, Korean, Spanish, Portuguese, Arabic, Urdu or
+# India-based, which is the supply wall stated plainly rather than assumed.
+@TopperGuild
+@Cristiano
+@ToysAndColors
+@Pinkfong
+@CelineDept
+@LooLooKids
+@MrBeast2
+@BillionSurpriseToys
+@MashaAndTheBear
+@SierraandRhiaFAM
+
+# ── Handles pass 1 got wrong. Two of these are top-100 channels ──────────────
+@LikeNastyaofficial
+@KidsDianaShow
+@ScienceAsylum
+@8BitRyan
+@Slogo
+@SkyDoesMinecraft
+@NorrisNuts
+@psychicpebbles
+@HowItShouldHaveEnded
+
+# ── Science, engineering, education ──────────────────────────────────────────
+@vlogbrothers
+@PeriodicVideos
+@SixtySymbols
+@SabineHossenfelder
+@Potholer54
+@ACapellaScience
+@Vihart
+@brainscoop
+@ReligionForBreakfast
+@AnswerinProgress
+@GeographyNow
+@GeoWizard
+@JimBrowning
+@Coffeezilla
+@EpicGardening
+@XylaFoxlin
+@JeriEllsworth
+@Thoisoi2
+@ZDoggMD
+@DrEkberg
+@LexFridman
+
+# ── Making, cars, restoration ────────────────────────────────────────────────
+@RichRebuilds
+@DougDeMuro
+@HooviesGarage
+@Shmee150
+@chrisharrisoncars
+@UnnecessaryInventions
+@Blendtec
+@DemolitionRanch
+@VetRanch
+@AntsCanada
+
+# ── Gaming ───────────────────────────────────────────────────────────────────
+@LazarBeam
+@DrDisRespect
+@Shroud
+@Asmongold
+@KaiCenat
+@theRadBrad
+@LazyGameReviews
+@GameMakersToolkit
+@JacobGeller
+@NakeyJakey
+@MaximilianDood
+@WolfeyVGC
+@SmoothMcGroove
+@GamingHistorian
+@JoCat
+@ProZD
+@Yogscast
+@HatFilms
+@Zerkaa
+@TBJZL
+@NaDeSHoT
+@FaZeRug
+@Nerdcubed
+@GawrGura
+@QTCinderella
+@AnyAustin
+@StarWarsTheory
+@ChrisMD
+
+# ── Animation and comedy ─────────────────────────────────────────────────────
+@Eddsworld
+@cyriak
+@FelixColgrave
+@DavidFirth
+@JoelHaver
+@BrianDavidGilbert
+@Kallmekris
+@AnnoyingOrange
+@boburnham
+@TayZonday
+@BartBaker
+@MirandaSings
+@RomanAtwood
+@StuartEdge
+@JiDion
+@Mega64
+@IDidaThing
+@AnnaAkana
+@SethEverman
+@EvanEdinger
+@ashens
+@BlimeyCow
+
+# ── Music ────────────────────────────────────────────────────────────────────
+@RoomieOfficial
+@331Erock
+@ParryGripp
+@schmoyoho
+@kinagrannis
+@JackConte
+@DanBull
+@Boyinaband
+@theneedledrop
+@AndrewHuang
+
+# ── Food ─────────────────────────────────────────────────────────────────────
+@CookingWithLynja
+@StrictlyDumpling
+@koreanenglishman
+@TrashTaste
+@TheAnimeMan
+
+# ── Tech and reviews ─────────────────────────────────────────────────────────
+@Jaclynhill1
+@MannyMua733
+@GigiGorgeous
+@GibiASMR
+
+# ── Vlog, travel, adventure ──────────────────────────────────────────────────
+@AbroadinJapan
+@SamChui
+@EvaZuBeck
+@GhibOjisan
+@Apetor
+@FunForLouis
+@ConnorFranta
+@JoeyGraceffa
+@AlfieDeyes
+@DolanTwins
+@AddisonRae
+@charlidamelio
+@DixieDAmelio
+@AmandaCerny
+@ShaneDawsonTV
+@MyLifeAsEva
+@nigahiga
+@danisnotonfire
+@LadBaby
+@DutchPilotGirl
+@CartNarcs
+@TommyEdisonXP
+@StevenHe
+@WheezyWaiter
+@MrBeat
+@AdamB
+@LindsayEllis
+@RoosterTeeth
+@REACT
+@Deestroying
+@DDG
+@glozell1
+@Atrioc
+@HalfasInteresting
+@JetLagTheGame

@@ -1,0 +1,280 @@
+# Reach roster — recognizable creators for the SR and SSR bands.
+#
+# WHY A SECOND ROSTER FILE
+# catalog/legends.txt answers "who is a chase card" and aims at 10M+, because
+# search structurally cannot reach the top bands. This file answers a different
+# question that turned out to matter just as much: who does a player actually
+# RECOGNIZE. Those come apart hardest between 1M and 10M, where search produces
+# plenty of channels and almost none of them are names anyone knows.
+#
+# The evidence is the first 1,200-card printing. Every recognizable name in SSR
+# came from legends.txt; the bottom half of SR came from keyword search and read
+# as filler — study-notes channels, clip farms, and creators whose audience sits
+# entirely in one non-anglophone market. Those are now held out in
+# catalog/excluded.txt, and this file refills the slots they freed.
+#
+# THE BAR
+#   - Recognizable to an English-speaking player without explanation.
+#   - Production value or a distinct personality, not volume. Subscriber count is
+#     what rarity DERIVES from, so it cannot also be the test for whether a card
+#     is worth pulling.
+#   - No news, no political commentary, no person-named channels whose fame is
+#     controversy — the original KEYWORD_SEEDS restriction, kept deliberately
+#     even though the vocabulary around it widened in WP9.
+#
+# COST  1 quota unit per handle. This roster is ~1 unit a name and reaches
+#       exactly the bands search cannot — search is 100 units a call and lands
+#       the filler this file exists to replace.
+#
+# USE   node tools/add-candidates.js catalog/reach.txt --dry-run
+#       node tools/add-candidates.js catalog/reach.txt
+#
+# NOTE  The India exclude applies here exactly as everywhere else, and pins are
+#       NOT set in this file — these are depth, not chase cards. Add a leading !
+#       only if a name should outrank its band in the cap.
+#
+# ── Science and engineering, the production-value tier ───────────────────────
+@smartereveryday
+@SciShow
+@crashcourse
+@NileRed
+@NileBlue
+@LEMMiNO
+@RealEngineering
+@PracticalEngineeringChannel
+@SteveMould
+@TierZoo
+@pbsspacetime
+@thethoughtemporium
+@AppliedScience
+@BranchEducation
+@physicsgirl
+@Vsauce2
+@Vsauce3
+@TheScienceAsylum
+@joescott
+@melodysheep
+@BeSmart
+@DrBecky
+@astrumspace
+@SimonClark
+@PrimitiveTechnology
+
+# ── Making, building, machining ──────────────────────────────────────────────
+@theslowmoguys
+@colinfurze
+@StuffMadeHere
+@WilliamOsman
+@MichaelReeves
+@NightHawkInLight
+@bigclivedotcom
+@arduinoversusevil2025
+@jimmydiresta
+@BlacktailStudio
+@FixThisBuildThat
+@InheritanceMachining
+@machinethinking
+@LauraKampf
+@SimoneGiertz
+@EstherlovesYOU
+
+# ── History and explainer ────────────────────────────────────────────────────
+@OverSimplified
+@SamONellaAcademy
+@billwurtz
+@InternetHistorian
+@Wendigoon
+@FredrikKnudsen
+@BarelySociable
+@Nexpo
+@HistoryMatters
+@KingsandGenerals
+@extracredits
+@TheOperationsRoom
+@Simplehistory
+@AtunSheiFilms
+@UsefulCharts
+
+# ── Film, media and effects ──────────────────────────────────────────────────
+@CorridorCrew
+@Corridor
+@CaptainDisillusion
+@Nerdwriter1
+@ThomasFlight
+@patrickhwillems
+@FoldingIdeas
+@SuperEyepatchWolf
+@HelloFutureMe
+@screenrant
+@CinemaSins
+@HISHEdotcom
+@WIRED
+@insider
+@AccentedCinema
+
+# ── Gaming, the names a player will actually know ────────────────────────────
+@SSundee
+@ItsFunneh
+@CaptainSparklez
+@GameTheory
+@penguinz0
+@videogamedunkey
+@LetsGameItOut
+@RTGame
+@DougDoug
+@Northernlion
+@Jerma985
+@Vinesauce
+@GameGrumps
+@ScottTheWoz
+@xQc
+@DisguisedToast
+@Sykkuno
+@Fundy
+@Sapnap
+@KarlJacobs
+@Quackity
+@WilburSoot
+@Ranboo
+@tubbo
+@Ph1LzA
+@8-BitRyan
+@KubzScouts
+@Berleezy
+@Slogoman
+@Crainer
+@MooseCraft
+@LaurenzSide
+@Gloom
+@SkyDoesEverything
+@AntVenom
+@Failboat
+@Blitz
+@TheRussianBadger
+@Bluedrake42
+
+# ── Commentary and sketch ────────────────────────────────────────────────────
+@jacksfilms
+@KurtisConner
+@DannyGonzalez
+@DrewGooden
+@codyko
+@NoelMiller
+@EddyBurback
+@JarvisJohnson
+@KurtisTown
+
+# ── Animation ────────────────────────────────────────────────────────────────
+@SomethingElseYT
+@LetMeExplainStudios
+@illymation
+@TerminalMontage
+@Piemations
+@Vivziepop
+@OneyPlays
+@ZachHadel
+@Shgurr
+@Emirichu
+
+# ── Music ────────────────────────────────────────────────────────────────────
+@RickBeato
+@AdamNeely
+@Davie504
+@TwoSetViolin
+@andrewhuang
+@jacobcollier
+@MarcRebillet
+@PostmodernJukebox
+@PTXofficial
+@walkofftheearth
+@peterhollens
+@SunghaJung
+@ThePianoGuys
+@lindseystirling
+@AlanWalkerMusic
+@Polyphia
+@SetTheTone
+
+# ── Food ─────────────────────────────────────────────────────────────────────
+@bonappetit
+@epicurious
+@foodwishes
+@GugaFoods
+@SousVideEverything
+@TastingHistory
+@HowToCookThat
+@internetshaquille
+@ProHomeCooks
+@BrianLagerstrom
+@AndyCooks
+@mrnigelng
+@JKenjiLopezAlt
+@AlvinZhou
+@BerylShereshewsky
+@FutureCanoe
+@Chefsteps
+
+# ── Tech ─────────────────────────────────────────────────────────────────────
+@JerryRigEverything
+@austinevans
+@UrAvgConsumer
+@ijustine
+@GamersNexus
+@Hardwareunboxed
+@bitwit
+@PaulsHardware
+@rossmanngroup
+@SnazzyLabs
+@TechLinked
+@ShortCircuit
+@Techquickie
+@ColdFusion
+@Fireship
+@TraversyMedia
+@TheCodingTrain
+@SuperSaf
+@ThioJoe
+
+# ── Sport and fitness ────────────────────────────────────────────────────────
+@athleanx
+@JeffNippard
+@ChloeTing
+@PamelaRf1
+@blogilates
+@THENX
+@JesseJamesWest
+@SamSulek
+@MagnusMidtbo
+@gcn
+@redbull
+@NFL
+@Formula1
+@Olympics
+@F2Freestylers
+@ThatsAmazing
+
+# ── Vlog, travel, film-making ────────────────────────────────────────────────
+@PeterMcKinnon
+@MattiHaapoja
+@saradietschy
+@DrewBinsky
+@KaraandNate
+@LostLeBlanc
+@MikeBoyd
+@RyanTrahan
+@ZachChoi
+@TheNorrisNuts
+@SimonWilson
+
+# ── Kids and family, for reach rather than for taste ─────────────────────────
+@RyansWorld
+@Blippi
+@SISvsBRO
+@VladandNiki
+@LikeNastya
+@DianaandRoma
+
+# ── Mystery and horror narration ─────────────────────────────────────────────
+@Top5s
+@Chills
+@NickCrowley
