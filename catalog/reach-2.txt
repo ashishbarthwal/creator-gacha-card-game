@@ -208,3 +208,20 @@
 @Atrioc
 @HalfasInteresting
 @JetLagTheGame
+
+# ── Handles that FAILED to resolve (2026-08-02) — fix before re-running ───────
+# Guessed from display names; ~10% of guesses miss. Each miss costs 1 quota unit,
+# so confirm the real handle on the channel page rather than guessing again.
+# Uncomment as they are corrected.
+#
+# From reach.txt:  @TheScienceAsylum @HISHEdotcom @8-BitRyan @KubzScouts @Slogoman
+#                  @SkyDoesEverything @DannyGonzalez @JarvisJohnson @Vivziepop
+#                  @ZachHadel @ProHomeCooks @AlvinZhou @THENX @MagnusMidtbo
+#                  @F2Freestylers @RyanTrahan @TheNorrisNuts @LikeNastya
+# From reach-2.txt: @MashaAndTheBear @SierraandRhiaFAM @SkyDoesMinecraft @Vihart
+#                  @Asmongold @LazyGameReviews @GameMakersToolkit @FaZeRug @ChrisMD
+#                  @JoelHaver @BartBaker @EvanEdinger @FunForLouis @DolanTwins
+#                  @ShaneDawsonTV @nigahiga @danisnotonfire @LadBaby
+#
+# NOTE: @LikeNastyaofficial and @KidsDianaShow resolved on the second attempt and
+# are live above — both are top-100 channels, so the misses are worth chasing.
