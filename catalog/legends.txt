@@ -155,7 +155,6 @@
 @EthanChlebowski
 @emmymade
 @NickDiGiovanni
-@alvinzhou
 
 # Art / music
 @ProkoTV
@@ -226,3 +225,108 @@
 @jesser
 @NBA
 @ESPN
+
+# ── SSR/UR depth for a 1,200-card printing (2026-08-01) ──────────────────────
+# The printing target moved from 400 to ~1,200 cards, which wants UR 22 and
+# SSR 79 per set. We had UR 17 and SSR 53, so the top two bands were the binding
+# constraint on how large a set can be.
+#
+# WHY THIS IS ALL HAND-TYPED AND COSTS NO SEARCHES. A handle resolves for 1 unit
+# from the 10,000/day bucket; a search costs 100 from a separate 100/day bucket
+# that is nearly exhausted. Curation is the only way to grow these bands anyway —
+# keyword search structurally cannot reach 10M+ channels.
+#
+# UR IS NEAR ITS CEILING AND THAT IS NOT A SOURCING FAILURE. English-language,
+# creator-owned, non-India, not built around child performers, 50M+ subscribers
+# is a set of roughly 15-30 channels worldwide. Past that the only 50M+ names
+# left are record labels, kids channels and non-anglophone creators — the exact
+# categories deliberately left unpinned. So UR grows by a handful here and the
+# printing size is capped accordingly.
+#
+# Animation channels are called out because they are the one category that
+# carries no likeness question at all — the "face" is a drawing the creator owns.
+
+# ── UR candidates (50M+) ─────────────────────────────────────────────────────
+# Unpinned: these are label and studio channels, real 50M+ but not what anyone is
+# chasing. They sit in the DB and fill only if a printing runs short.
+@MOVIECLIPS
+@Eminem
+@Marshmello
+@brunomars
+@Rihanna
+@katyperry
+
+# ── SSR: gaming ──────────────────────────────────────────────────────────────
+!@AliA
+!@Lachlan
+!@PopularMMOs
+!@Kwebbelkop
+!@W2S
+@Slogo
+@stampycat
+@MiniMinter
+@Vikkstar123
+@MrMuselk
+@Syndicate
+@Grian
+@ThatMumboJumbo
+@pokimane
+@TimTheTatman
+@Valkyrae
+
+# ── SSR: animation — no likeness question, the art is the creator's own ──────
+!@theodd1sout
+!@JaidenAnimations
+!@alanbecker
+@Domics
+@SomethingElseYT
+@ExplosmEntertainment
+
+# ── SSR: entertainment ───────────────────────────────────────────────────────
+!@ZHC
+!@StokesTwins
+!@BeastReacts
+!@CollinsKey
+!@DavidDobrik
+!@lizakoshy
+!@LillySingh
+@BenAzelart
+@Wengie
+@Azzyland
+@Niko
+@BetaSquad
+@YesTheory
+@TryGuys
+
+# ── SSR: lifestyle and beauty ────────────────────────────────────────────────
+!@jamescharles
+!@NikkieTutorials
+@RosannaPansino
+@safiyany
+@MichelleKhare
+
+# ── SSR: food ────────────────────────────────────────────────────────────────
+!@gordonramsay
+!@BuzzFeedTasty
+@markwiens
+@SortedFood
+
+# ── SSR: science and explainer ───────────────────────────────────────────────
+!@AsapSCIENCE
+!@CGPGrey
+@SciShow
+@RealLifeLore
+@Wendoverproductions
+@johnnyharris
+
+# ── SSR: film, and the big institutional channels ────────────────────────────
+!@casey
+!@NatGeo
+!@TED
+@BBCEarth
+@NASA
+@UFC
+@NFL
+@Formula1
+@Netflix
+@BuzzFeedVideo

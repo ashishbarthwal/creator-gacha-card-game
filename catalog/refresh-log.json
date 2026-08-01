@@ -7,6 +7,20 @@
       "slug": "series-1",
       "cards": 400,
       "snapshotDate": "2026-07-31"
+    },
+    {
+      "at": "2026-08-01T06:52:35.714Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 400,
+      "snapshotDate": "2026-08-01"
+    },
+    {
+      "at": "2026-08-01T07:16:49.624Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 1200,
+      "snapshotDate": "2026-08-01"
     }
   ]
 }
