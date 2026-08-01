@@ -1,13 +1,21 @@
-/* data/starter — the bundled starter set: eight fictional channels with
-   generated avatars and zero network. It is the built-in sampler, the app's
-   default pool, and the offline fallback — always available even if the
-   fetchable set manifest (sets/index.json) cannot be loaded.
+/* data/demo — the bundled demo set: eight fictional channels with generated
+   avatars and zero network. It is the built-in sampler, the app's default pool,
+   and the offline fallback — always available even if the fetchable set
+   manifest (sets/index.json) cannot be loaded.
 
    Authored as a full set envelope so it flows through the same parseSet →
    toCard path as any fetched set; nothing downstream can tell it apart. It
    ships inside the JS bundle rather than as a fetched file precisely so the
    default view paints instantly with no network round-trip. One channel hides
-   its subscriber count on purpose, keeping that branch exercised by real use. */
+   its subscriber count on purpose, keeping that branch exercised by real use.
+
+   Named "Starter Set" from WP4 until 2026-08-01, when it went back to "Demo" —
+   "starter" reads as the beginner deck of a real game, which oversells eight
+   invented channels sitting next to a 1,200-card Series 1. The WP4 fold that
+   produced it is unchanged; only the label is. The `UCstarter-…` channel ids are
+   deliberately NOT renamed: a saved collection keys on channel id, so changing
+   them would orphan any demo cards already in someone's binder to rename a
+   string no user ever sees. */
 
 /* The generated-avatar artwork moved to engine/emblem.js when the avatar-source
    flag landed (WP8): the emblem build needs exactly this picture for real
@@ -21,10 +29,10 @@ const avatar = (initial, hue) => emblemFor({}, { initial, hue });
 /* No snapshotDate: these are invented channels, not a real snapshot, so the
    card view shows no "stats as of <month>" label — the absence signals the
    built-in sampler apart from a real, dated Series. */
-export const STARTER_SET = {
-  slug: 'starter',
-  title: 'Starter Set',
-  series: 'Starter',
+export const DEMO_SET = {
+  slug: 'demo',
+  title: 'Demo Set',
+  series: 'Demo',
   snapshotDate: '',
   channels: [
     {

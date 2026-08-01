@@ -33,7 +33,7 @@ describe('daysSince', () => {
   });
 
   it('is null — never NaN or 0 — for a missing or junk date', () => {
-    /* The starter set legitimately carries no snapshotDate. Reading that as
+    /* The demo set legitimately carries no snapshotDate. Reading that as
        "zero days old" would call an undated set the freshest thing we have. */
     for (const bad of ['', null, undefined, 'not a date', {}]) {
       expect(daysSince(bad, NOW)).toBeNull();

@@ -8,7 +8,7 @@ const YT_ENDPOINT = 'https://www.googleapis.com/youtube/v3/channels';
 /* customUrl is the API's handle field, but it is not guaranteed to be
    handle-shaped: older channels return a bare, lowercased vanity string
    ("mkbhd") while the modern format is "@mkbhd". Normalize to the "@name"
-   shape the Channel typedef promises, so live matches the starter set and sets. */
+   shape the Channel typedef promises, so live matches the demo set and sets. */
 function normalizeHandle(customUrl) {
   const raw = String(customUrl ?? '').trim();
   if (!raw) return '';

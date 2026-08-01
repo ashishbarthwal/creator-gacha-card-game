@@ -36,7 +36,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /* Whole days between an ISO day string (or Date, or ms) and `now`.
    Returns null for anything unparseable rather than NaN, so a caller can tell
-   "no date" from "zero days" — the starter set legitimately carries no
+   "no date" from "zero days" — the demo set legitimately carries no
    snapshotDate, and reading that as "0 days old" would be wrong twice over. */
 export function daysSince(dateish, now = Date.now()) {
   if (dateish === null || dateish === undefined || dateish === '') return null;

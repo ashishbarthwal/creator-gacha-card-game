@@ -51,7 +51,7 @@ No build step, no dependencies — plain ES modules under `src/`, served as-is.
     setups (notably Windows) serve it as `text/plain`, which browsers reject for modules.
     GitHub Pages / Netlify serve it correctly, so deployment is unaffected.
 - **Sets mode** is the default — pick a card set and pull with no API key at all. The bundled
-  **starter set** ships fictional channels with generated avatars and zero network, so the
+  **demo set** ships fictional channels with generated avatars and zero network, so the
   default view paints instantly and works offline. Pull ×1 / ×10, watch the reveal, build a
   collection.
 - **Live mode** pulls real channels. It needs your own free
@@ -67,9 +67,9 @@ Add channels by `@handle`, channel URL, or `UC…` id. (Vanity `/c/` URLs aren't
 
 Two structural ideas do the heavy lifting:
 
-**The data seam.** The bundled `starter` set, fetched `sets` (curated JSON snapshots), and
+**The data seam.** The bundled `demo` set, fetched `sets` (curated JSON snapshots), and
 `live` all produce an *identical* channel object shape, so nothing downstream can tell them
-apart. This is why the app runs offline, why tests never need an API key, and why the starter
+apart. This is why the app runs offline, why tests never need an API key, and why the demo
 set is a real adapter rather than a hack. Adding the `sets` source needed no changes to the
 gacha, reveal, render, or collection code — it's just another pool behind the seam.
 
@@ -88,7 +88,7 @@ input (@handle | URL | UC id)
    resolve to channelId
         │
    ┌──────┼────────┐           ← the data seam
- starter  sets    live (YouTube Data API v3)
+ demo     sets    live (YouTube Data API v3)
  (bundled)(JSON)  (user key)
    └──────┼────────┘
         │
@@ -103,7 +103,7 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-209 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+271 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery
@@ -147,7 +147,7 @@ into a tested, modular, deployable project in dependency order (full detail in
       a click-to-enlarge inspector, and the inline CSS split out to `styles.css`.
 - [x] **WP4 — Card sets.** A sets adapter behind the seam, a `sets/index.json` manifest, and a
       **Sets** banner mode that pulls from curated static JSON with no API key. Demo mode was
-      folded into a bundled starter set, so the default view paints instantly and works offline.
+      folded into a bundled demo set, so the default view paints instantly and works offline.
       The pull became two-stage (band first, then card), so drop rates follow the weight table
       instead of whatever shape the roster happens to have.
 - [x] **WP5 — Magic Search.** Keyword → channel discovery: a pure sourcing core

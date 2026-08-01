@@ -8,13 +8,13 @@ import { bandsFrom } from '../engine/gacha.js';
 import { selectChannels, SEARCH_TIERS } from '../engine/discover.js';
 import { state, currentPool, setSetsPool } from '../state.js';
 import { IS_DEV, gateDevElement } from '../config.js';
-import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, STARTER_SET, discoverChannels } from '../data/index.js';
+import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, DEMO_SET, discoverChannels } from '../data/index.js';
 import { escapeHtml } from './util.js';
 
-/* The bundled starter set is offered as the first, always-present option. Its
+/* The bundled demo set is offered as the first, always-present option. Its
    picker value is this sentinel (real sets use their file path), so selecting
    it skips the fetch and loads from memory. */
-const STARTER_VALUE = '@starter';
+const DEMO_VALUE = '@demo';
 
 /* Magic Search (dev affordance): bulk-discover channels by keyword through the
    live API and drop them into the Live pool so they can be pulled. Like Dev Pull,
@@ -158,27 +158,27 @@ function setMode(mode) {
   renderPool();
 }
 
-/* The picker is seeded once: the bundled starter set goes in first and loads
+/* The picker is seeded once: the bundled demo set goes in first and loads
    synchronously (no fetch, so the default view paints instantly and still works
    offline), then the fetchable-set manifest is appended when it arrives. If
-   that fetch fails, the starter set is untouched and remains pullable. */
+   that fetch fails, the demo set is untouched and remains pullable. */
 let setsSeeded = false;
 
 function ensureSets() {
   if (setsSeeded) return;
   setsSeeded = true;
   const opt = document.createElement('option');
-  opt.value = STARTER_VALUE;
-  opt.textContent = STARTER_SET.title;
+  opt.value = DEMO_VALUE;
+  opt.textContent = DEMO_SET.title;
   setSelect.appendChild(opt);
-  selectStarter();          // synchronous: setsPool is ready before renderPool runs
+  selectDemo();             // synchronous: setsPool is ready before renderPool runs
   appendManifestSets();     // async: offer the fetchable sets once loaded
 }
 
-/* Load the bundled starter set from memory, through the same parseSet → toCard
-   path a fetched set uses. No snapshot label — the starter set isn't dated. */
-function selectStarter() {
-  setSetsPool(parseSet(STARTER_SET));
+/* Load the bundled demo set from memory, through the same parseSet → toCard
+   path a fetched set uses. No snapshot label — the demo set isn't dated. */
+function selectDemo() {
+  setSetsPool(parseSet(DEMO_SET));
   setMeta.textContent = '';
   renderPool();
 }
@@ -212,14 +212,14 @@ async function appendSetsFrom(url, { warnOnFail }) {
       setSelect.appendChild(opt);
     }
   } catch {
-    // The starter set still works; the extra sets just aren't offered.
+    // The demo set still works; the extra sets just aren't offered.
     if (warnOnFail) showStatus('Could not load the additional set list.', true);
   }
 }
 
 async function loadSelectedSet() {
   const value = setSelect.value;
-  if (value === STARTER_VALUE) return selectStarter();
+  if (value === DEMO_VALUE) return selectDemo();
   showStatus('Loading set…');
   try {
     const set = await loadSet(value);

@@ -10,11 +10,11 @@
    room changes, flipping it is a config change and a redeploy instead of a
    rewrite.
 
-   The artwork is deliberately the starter set's, which shipped in WP4 and has
+   The artwork is deliberately the demo set's, which shipped in WP4 and has
    been looked at on a real screen: a two-stop gradient disc carrying the
    channel's initial. Reusing a proven visual beats inventing a second one for
    the fallback path, and it means the emblem build looks like the app rather
-   than like a degraded version of it. data/starter.js now imports this instead
+   than like a degraded version of it. data/demo.js now imports this instead
    of keeping its own copy.
 
    Pure and headless — it returns a string, touches no DOM, and runs unchanged
@@ -47,7 +47,7 @@ export function initialFor(title) {
 const XML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' };
 const escapeXml = s => String(s).replace(/[&<>"']/g, c => XML_ESCAPES[c]);
 
-/* `hue` and `initial` are overridable so the starter set can keep the art
+/* `hue` and `initial` are overridable so the demo set can keep the art
    direction it was authored with — those eight channels are invented, their
    colours were chosen to spread across the wheel and have been looked at, and
    deriving them from a fabricated id instead would repaint a reviewed visual for

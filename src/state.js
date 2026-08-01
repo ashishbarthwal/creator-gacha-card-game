@@ -17,7 +17,7 @@ export const state = {
   mode: 'sets',                                // Sets is the default; Live is opt-in
   apiKey: '',                                  // memory only, by design
   livePool: [],
-  setsPool: [],                                // filled with the starter set on init
+  setsPool: [],                                // filled with the demo set on init
   currentSet: null,                            // { slug, title, snapshotDate } once loaded
   /* channel id -> { card, count }. Restored from localStorage at module load,
      which is early enough that the first renderCollection() already has it. */
@@ -30,7 +30,7 @@ export function currentPool() {
 
 /* Load a parsed set (from data/sets.parseSet) as the active sets pool. Channels
    become cards through the same pure bridge as live, so nothing downstream can
-   tell the bundled starter set, a fetched set, and live apart. */
+   tell the bundled demo set, a fetched set, and live apart. */
 export function setSetsPool(set) {
   state.setsPool = set.channels.map(toCard);
   state.currentSet = { slug: set.slug, title: set.title, snapshotDate: set.snapshotDate };

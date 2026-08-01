@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emblemFor, emblemAccent, initialFor } from '../src/engine/emblem.js';
-import { STARTER_SET } from '../src/data/starter.js';
+import { DEMO_SET } from '../src/data/demo.js';
 
 const channel = (over = {}) => ({ id: 'UC_abc123', title: 'A Channel', ...over });
 const decode = uri => decodeURIComponent(uri.replace('data:image/svg+xml;utf8,', ''));
@@ -86,7 +86,7 @@ describe('emblemAccent', () => {
   });
 });
 
-describe('overrides — the starter set keeps its authored art direction', () => {
+describe('overrides — the demo set keeps its authored art direction', () => {
   it('uses an explicit hue and initial when given', () => {
     const svg = decode(emblemFor({}, { hue: 212, initial: 'P' }));
     expect(svg).toContain('hsl(212,72%,52%)');
@@ -97,9 +97,9 @@ describe('overrides — the starter set keeps its authored art direction', () =>
     expect(decode(emblemFor({}, { hue: -40 }))).toContain('hsl(320,72%,52%)');
   });
 
-  it('still backs every starter channel, so there is one generator not two', () => {
-    expect(STARTER_SET.channels).not.toHaveLength(0);
-    for (const ch of STARTER_SET.channels) {
+  it('still backs every demo channel, so there is one generator not two', () => {
+    expect(DEMO_SET.channels).not.toHaveLength(0);
+    for (const ch of DEMO_SET.channels) {
       expect(ch.avatarUrl).toMatch(/^data:image\/svg\+xml;utf8,/);
     }
   });

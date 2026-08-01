@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSet } from '../src/data/sets.js';
-import { STARTER_SET } from '../src/data/starter.js';
+import { DEMO_SET } from '../src/data/demo.js';
 import { RARITY_ORDER, toCard } from '../src/engine/core.js';
 
 function validRaw() {
@@ -73,9 +73,9 @@ describe('parseSet — channel normalization', () => {
   });
 });
 
-describe('the bundled starter set is a valid set', () => {
+describe('the bundled demo set is a valid set', () => {
   it('parses cleanly and every channel becomes a valid card', () => {
-    const set = parseSet(STARTER_SET);
+    const set = parseSet(DEMO_SET);
     expect(set.channels.length).toBeGreaterThan(0);
     for (const ch of set.channels) {
       expect(RARITY_ORDER).toContain(toCard(ch).rarity);
@@ -83,7 +83,7 @@ describe('the bundled starter set is a valid set', () => {
   });
 
   it('keeps a hidden-subscriber channel, so that branch stays exercised', () => {
-    const hidden = parseSet(STARTER_SET).channels.filter(c => c.hiddenSubscriberCount);
+    const hidden = parseSet(DEMO_SET).channels.filter(c => c.hiddenSubscriberCount);
     expect(hidden.length).toBeGreaterThan(0);
     expect(hidden.every(c => !('subscriberCount' in c))).toBe(true);
     expect(hidden.every(c => toCard(c).rarity === 'N')).toBe(true);

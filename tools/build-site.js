@@ -60,8 +60,13 @@ async function main() {
      this script runs on the machine that HAS one. */
   await rm(to('src/config.local.js'), { force: true });
 
+  /* The committed manifest ships EMPTY, and that is not an oversight. It used to
+     carry the fictional "Arcade Legends" sample, which was scaffolding to prove
+     the fetched-set adapter worked; next to a real 1,200-card Series 1 it was
+     just a second fake option on a public site, so it was deleted (2026-08-01).
+     The empty file stays because banner.js fetches it with warnOnFail, and a 404
+     would show a visitor an error about a set list they never asked for. */
   await cp(from('sets/index.json'), to('sets/index.json'));
-  await cp(from('sets/sample-series.json'), to('sets/sample-series.json'));
 
   if (!await exists(from('sets/built'))) {
     console.error('No sets/built — run  node tools/build-set.js  first.');
