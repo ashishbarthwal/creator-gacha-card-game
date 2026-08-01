@@ -99,15 +99,58 @@ export const KEYWORD_SEEDS = [
   'vlog', 'day in my life', 'morning routine', 'travel', 'food review',
   'street food', 'car review', 'supercar', 'reaction', 'prank',
   'fashion haul', 'skincare', 'makeup tutorial', 'home tour', 'productivity',
+
+  /* 2026-08-02 — the mainstream half, and the reason it had to grow.
+     WP9 added recognition topics but left 64 hobby seeds against 54 popular
+     ones, so a random draw was still ~54% craft and a wildcards run came back
+     with a Rubik's-cube channel on 26K subscribers. That was defensible while
+     the commons were pure fodder; it stopped being defensible once the commons
+     turned out to be 55% of everything a player ever sees. A common nobody
+     recognizes is not neutral — it is most of the game.
+     Still excluded, unchanged and on purpose: news, politics, person-named
+     channels, and the India-heavy verticals the region filter would drop
+     anyway (cricket, Bollywood) — spending 100 units to source rejects. */
+  'music video', 'song cover', 'guitar cover', 'live performance', 'rap',
+  'comedy sketch', 'stand up comedy', 'try not to laugh', 'tier list',
+  'storytime', 'true crime', 'mystery solved', 'documentary', 'top 10',
+  'movie review', 'trailer breakdown', 'anime', 'manga', 'cartoon',
+  'funny moments', 'gaming montage', 'speedrun world record', 'game mods',
+  'survival game', 'mobile game', 'horror gameplay', 'minecraft build',
+  'science experiment', 'space', 'history explained', 'psychology',
+  'how it works', 'engineering explained', 'facts', 'language learning',
+  'coding', 'programming tutorial', 'ai explained', 'personal finance',
+  'football highlights', 'wwe', 'ufc', 'formula 1', 'tennis', 'baseball',
+  'car build', 'motorcycle', 'off road', 'racing',
+  'dog training', 'cats', 'pets', 'wildlife', 'aquarium',
+  'life hacks', 'oddly satisfying', 'experiment', 'camping', 'survival',
+  'meal prep', 'easy recipe', 'restaurant review', 'mukbang', 'shopping haul',
+  'room makeover', 'cleaning motivation', 'family vlog', 'toy review',
 ];
 
 /* The empty modifier is in the list deliberately — a bare topic is a perfectly
    good query, and keeping it in the draw means roughly one search in N stays
    broad instead of every one being narrowed. */
 export const KEYWORD_MODIFIERS = [
-  '', 'tutorial', 'for beginners', 'asmr', 'timelapse', 'challenge', 'review',
-  'behind the scenes', 'workshop tour', 'first attempt', 'explained', 'tips',
-  'gone wrong', 'diy', 'process', 'day in the life', 'setup tour', 'masterclass',
+  /* The empty modifier appears FOUR times, not once, and that is the fix rather
+     than a typo. `pick` is uniform, so weight here is repetition.
+
+     Measured 2026-08-02: crossing 185 mostly-mainstream seeds with craft-shaped
+     modifiers generated queries no human would type — "mukbang workshop tour"
+     returned zero uploaders and burned a full 100 units. The cross-product got
+     worse exactly as the seed list got better, because the modifiers were
+     written when every seed was a craft. A bare topic is the broadest, most
+     natural query available and it never reads as nonsense, so it now takes
+     ~22% of draws instead of ~6%. */
+  '', '', '', '',
+  /* Universal — these read naturally after almost any seed. */
+  'tutorial', 'for beginners', 'explained', 'review', 'tips', 'challenge',
+  'reaction', 'best', 'guide', 'compilation', 'highlights', 'gone wrong',
+  /* Genre-shaped but still common YouTube phrasing. */
+  'asmr', 'diy', 'timelapse', 'day in the life',
+  /* Dropped 2026-08-02: 'workshop tour', 'first attempt', 'process',
+     'masterclass', 'behind the scenes', 'setup tour'. Each is fine after
+     'blacksmithing' and meaningless after 'ufc' or 'mukbang', and the seed list
+     is now 65% the latter. */
 ];
 
 /* One keyword: seed x modifier. Pure and rng-injected like buildSearchParams,

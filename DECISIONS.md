@@ -1506,3 +1506,106 @@ Sizing, measured rather than assumed: one card serializes to 281 bytes, so a ful
 collection is ~80KB against a typical 5MB budget.
 
 </details>
+
+## The public picker is two sets, and one of them is honest about being fake (2026-08-01)
+
+<details>
+<summary><b>"Arcade Legends" is deleted; "Starter Set" is renamed back to "Demo Set"</b> — What ships is Series 1 plus one clearly-labelled sampler. A second fictional set was scaffolding that would have read as content.</summary>
+
+Two changes to what a first-time visitor sees, both about the same thing: a public site should
+not offer fake decks that look like real ones.
+
+**`sets/sample-series.json` — "Sample Series — Arcade Legends" — is deleted.** It existed to
+prove the fetched-set adapter worked, back when there was no real set to fetch. `series-1.json`
+now proves that on every page load, so the sample was doing nothing but sitting in the picker
+as a second fictional option next to a 1,200-card deck. Nothing depended on the file:
+`test/sets.test.js` uses an inline fixture that merely shares its slug, and `build-site.js` was
+the only thing copying it.
+
+The committed `sets/index.json` now ships **empty**. That looks like an oversight and is not —
+`banner.js` fetches it with `warnOnFail: true`, so deleting the file would show a visitor an
+error about a set list they never asked for. An empty manifest fetches fine and appends nothing.
+
+**The bundled set goes back to being called the Demo Set.** WP4 folded the old standalone Demo
+mode into a bundled set and renamed it "Starter Set" in the process. That name was right when it
+was the only set in the app; it is wrong now. "Starter" is trading-card language for the
+beginner deck of a real game, which oversells eight invented channels sitting one dropdown row
+below Series 1. "Demo" says what it is. The WP4 fold — one code path, a real set behind the
+seam, not a special case — is entirely unchanged. Only the label moved.
+
+Renamed all the way through (`data/starter.js` → `data/demo.js`, `STARTER_SET` → `DEMO_SET`,
+slug `starter` → `demo`) rather than only in the UI string, because a module named for a thing
+the app no longer calls it is exactly the drift this repo claims not to have.
+
+**The `UCstarter-…` channel ids are deliberately NOT renamed.** A saved collection keys on
+channel id, so changing them would orphan any demo cards already in a binder — a real cost to
+rename a string no user will ever see. The inconsistency is the cheaper side of that trade and
+is commented where it lives.
+
+What did *not* change, and was the thing worth checking: the demo set stays in the picker and
+stays bundled. It is the offline fallback and the instant first paint — it ships inside the JS
+rather than as a fetched file precisely so the default view needs no network. Shipping Series 1
+alone would hand a visitor on a bad connection an empty banner.
+
+Still open, and deliberately not bundled into this: **Series 1 is not yet the default
+selection.** The demo set seeds the picker first because it loads synchronously, so it is also
+what stays selected. That is the remaining half of the deployment-structure item.
+
+</details>
+
+## Recognition is sourced, not searched (2026-08-02)
+
+<details>
+<summary><b>Public ranking lists replace keyword search for every band above the commons — measured at ~1.2 quota units per candidate against ~11.5</b> — and a curation exclude, kept deliberately separate from the opt-out denylist, holds out the channels a ranking would never have surfaced.</summary>
+
+Two sourcing routes were run against each other in one evening, on the same candidate DB.
+
+| route | spend | candidates | per candidate |
+|---|---|---|---|
+| public lists → `add-candidates.js` | 372 units | 316 | **1.2** |
+| Magic Search → `search.list` | ~1,206 units | 105 | **11.5** |
+
+**Why the gap is structural and not a tuning problem.** Keyword relevance does not correlate
+with fame. A published ranking already encodes the recognition the code cannot compute — that
+is the whole of it. The first 1,200-card printing proved the negative case: every recognizable
+name in SSR came from `legends.txt`, and the bottom half of SR came from search and read as
+filler. A 2.1M-subscriber study-notes channel is not a bad channel; it is a card nobody
+recognizes, sitting in a band that is 12% of every pull.
+
+**Staleness is a non-issue, by construction.** A list supplies IDENTITY only. `build-set.js`
+re-hydrates every statistic on each build, so a year-old ranking mints an identically fresh
+card. This is a property of the seam paying off in a place it was not designed for.
+
+**Search keeps exactly one job: the commons.** No "top YouTubers" list ranks sub-100K
+channels, and N is 55% of every pull. So the expensive tool is now aimed only where it is the
+only tool — and where recognition matters least, since no player is disappointed by an
+unfamiliar common.
+
+**The curation exclude is a separate file from the opt-out denylist, and that is load-bearing.**
+`catalog/denylist.json` records creators who ASKED to be removed: permanent, evicts from the
+DB, and one of the five mitigations the legality gate closed on. It has to remain readable as a
+register of honored requests and nothing else. `catalog/excluded.txt` is an editorial call
+about what a printing is sold on — revisable, and it promises no one anything. Mixing them
+would make the opt-out unauditable at the exact moment someone asks us to prove we honor it.
+
+It filters at build time (`applyExcludes`, before `capBands`) rather than at merge, so the id
+survives in `candidates.json` and un-excluding is deleting a line rather than re-resolving a
+handle. Excluding frees the slot instead of shrinking the band: the next-best candidate is
+promoted into it.
+
+**What did not get fixed, stated rather than buried.** The UR band is a genuine world-supply
+wall, not a sourcing gap — of the ~23 English creator-owned channels above 50M, the set already
+holds nearly all of them, and the Wikipedia top 100 is otherwise Hindi, Korean, Spanish,
+Portuguese, Arabic, Urdu or India-based. Record labels fell from 8 of 22 to 4 of 26, but three
+of the five new arrivals are nursery-rhyme channels, which trades one kind of
+recognizable-but-unwatched card for another. Genuinely better, not solved.
+
+**The sourcing vocabulary went mainstream in the same pass**, and the reason is the commons
+finding above. `KEYWORD_SEEDS` was 64 hobby seeds against 54 popular ones, so a random draw was
+still ~54% craft — defensible while commons were pure fodder, indefensible once they turned
+out to be most of what a player sees. Now 65% mainstream. The modifier list was cut back at the
+same time: crossing mainstream seeds with craft-shaped modifiers generated queries no human
+would type — "mukbang workshop tour" returned zero uploaders and burned a full 100 units — so
+the empty modifier now takes ~20% of draws and six craft-only modifiers were dropped.
+
+</details>
