@@ -194,9 +194,28 @@ with no SSR and no UR in it.
 - [X] **Measured: broad topics triple the India exclusion rate** — 34.0% excluded over 521
       hydrated channels (81.4% declared), against 8.6–13.3% on hobby/craft. Strengthens the
       gate's reliance on the filter and is a real yield cost of broadening.
-- [X] **Series 1 built: 400 cards, all five bands healthy.** 622 candidates → 13 quota units to
-      hydrate. Drop rates over 100,000 simulated pulls: N 55.14 · R 26.97 · SR 11.93 ·
-      SSR 4.93 · UR 1.03 against a 55/27/12/5/1 table.
+- [X] **Printing size raised 400 → 1,200 (2026-08-01).** 400 was sized to a 622-candidate
+      roster; with 1,348 the binding question changed. Two things measured first: scaling does
+      **not** dilute recognition (the 5M+ tier holds at 13–14% at every size — the opposite of
+      what was expected), and payload is not a constraint (458KB raw, **131KB gzipped**).
+      What binds is UR supply: the cap wants 22 at 1,200 and 34 at 2,000, while English
+      creator-owned 50M+ channels number ~15–30 worldwide.
+- [X] **The seeded rotation was broken and is fixed.** `hashOf(seed + ':' + id)` offsets every
+      id by the same constant (measured: `-28629151` for every id), and adding a constant does
+      not reorder a sort — so consecutive printings shared **64%** of a band against a 14%
+      design target. The old test asserted the subsets were "not identical", which 64% overlap
+      passes. Now hashed separately + murmur3 finalizer, re-measured at 14.3–15.1%, and the
+      test asserts the *rate* rather than mere inequality.
+- [X] **Series 1 built: 1,200 cards, all five bands full.** 1,348 candidates.
+      `N 608 · R 327 · SR 164 · SSR 79 · UR 22`. Rates over 200,000 simulated pulls:
+      N 54.94 · R 26.95 · SR 12.03 · SSR 5.06 · UR 1.02. Completion 7,725–8,120 pulls per band.
+- [ ] **Open — the UR band carries record labels.** At 22 slots and 8 pins, the remainder fills
+      with Bieber / Swift / Sheeran / Ariana / Eminem / Marshmello / BLACKPINK. Not a
+      regression (8 slots = 8 pins exactly) but the supply wall showing in the product. Choose:
+      pin more, shrink UR and the printing, or accept labels as filler.
+- [ ] **Roster depth for Series 2.** Rotation needs ~7× the per-printing count (overlap = k/R).
+      Have 1,348; comfortable rotation at 1,200/printing wants ~3,000+. Not urgent — minimum
+      roster is simply the printing size, and ×7 only matters at the second printing.
       - UR: MrBeast · WWE · PewDiePie · Alan's Universe · Mark Rober · Zhong · Dude Perfect ·
         IShowSpeed. SSR carries Markiplier, Dream, Sidemen, KSI, Ninja, MKBHD, LTT, CoryxKenshin,
         Logan/Jake Paul, Zach King, Vsauce, Kurzgesagt and Veritasium.

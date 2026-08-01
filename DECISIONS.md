@@ -1326,6 +1326,69 @@ rebuild and the one no clock would ever catch.
 
 </details>
 
+## A printing is 1,200 cards, and the rotation was broken (2026-08-01)
+
+<details>
+<summary><b>The seeded rotation shared 64% of a band between printings, where the design called for 14%</b> — <code>hashOf(`${seed}:${id}`)</code> shifts every id by the same constant, and adding a constant does not reorder a sort.</summary>
+
+The band cap keeps `k` of a band by hashing `slug:channelId` and taking the lowest, so a
+different slug was supposed to select a different subset — that is what makes surplus "a later
+printing's chase cards" rather than dead weight.
+
+It did not work. `hashOf` accumulates `h = h*31 + ch` left to right, so prepending a different
+seed offsets **every** id's hash by the same constant. Measured directly: the difference between
+`hash("series-1:"+id)` and `hash("series-2:"+id)` was `-28629151` for every id tested. Adding a
+constant preserves sort order everywhere except the single wraparound point, so consecutive
+printings shared **64%** of an 8-card UR band against a design target of 14%.
+
+The test did not catch it because it asserted the two subsets were *not identical*, which a 64%
+overlap satisfies comfortably. That is the lesson worth keeping: it tested **different** when the
+property that mattered was **how different**. The replacement asserts the measured overlap rate
+against the model, and would fail on the old hash.
+
+Fixed by hashing seed and id separately, combining them, and running the result through a
+murmur3 finalizer so a one-bit change avalanches. Re-measured at 14.3–15.1% against an ideal
+`k/R` of 14.3%.
+
+That ratio is what makes roster depth answerable: **expected overlap between consecutive
+printings is k/R**, so a roster of 7k repeats about one card in seven.
+
+</details>
+
+<details>
+<summary><b>A printing is 1,200 cards, and UR supply is what caps it</b> — Scaling does not dilute recognition; the ceiling is that English creator-owned 50M+ channels barely exist.</summary>
+
+400 was chosen when the roster was 622 candidates and the question was "what can we fill".
+With the roster at 1,348 the real question is what a set should be, and 400 is too small — a
+dedicated player completes every band in ~2,100 pulls.
+
+Two things measured before deciding:
+
+- **Scaling up does not dilute recognition.** The 5M+ tier holds at 13–14% of the set at every
+  size, because the cap allocates by completion-equalisation and those ratios are
+  scale-invariant. A bigger set carries proportionally the same share of recognizable cards and
+  more of them absolutely — 36 at 400, 101 at 1,200. The opposite was expected.
+- **Payload is not a constraint.** 391 bytes a card, and the host gzips: 1,200 cards is 458KB
+  raw and **131KB** over the wire.
+
+What does bind is UR. The cap wants UR 22 at 1,200 cards, 28 at 1,600 and 34 at 2,000 — and
+English-language, creator-owned, non-India, non-child-performer channels above 50M subscribers
+number roughly 15–30 *in the world*. Past ~1,600 the band could only be filled with record
+labels and kids channels, and a UR band that ships short completes FASTER than the commons,
+which inverts the point of a chase card.
+
+So 1,200: `N 608 · R 327 · SR 164 · SSR 79 · UR 22`, every band completing within 7,725–8,120
+pulls. Three times the content of the 400-card set, still inside supply.
+
+**Open, and visible in the shipped set:** at 22 UR slots and only 8 pins, the remainder is filled
+by the unpinned label channels — Bieber, Swift, Sheeran, Ariana, Eminem, Marshmello, BLACKPINK.
+Not a regression (at 8 slots the pins filled it exactly) but the supply wall showing up in the
+product rather than in an estimate. Either pin more, shrink UR and the printing with it, or
+accept labels as filler. Recorded rather than quietly resolved, because the pins are a statement
+about what the set is sold on.
+
+</details>
+
 ## Share is scrapped, after being built (2026-08-01)
 
 <details>
