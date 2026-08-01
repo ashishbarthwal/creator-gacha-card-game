@@ -154,6 +154,30 @@ describe('capBands — the surplus becomes a later printing, not waste', () => {
     expect(urs(one)).not.toEqual(urs(two));
   });
 
+  it('rotates at about k/R, not merely "not identical"', () => {
+    /* The version of this test that only asserted the two subsets differed
+       passed against a hash where consecutive printings shared 64% of the band.
+       hashOf(`${seed}:${id}`) shifted every id by the same constant, which
+       preserves sort order — so the rotation was almost entirely cosmetic and
+       nothing failed. Overlap is now measured against the model that justifies
+       the roster depth: a roster of R repeats k/R of a k-card band. */
+    const k = 8, R = 56;
+    const channels = roster({ N: 200, R: 120, UR: R });
+    let shared = 0;
+    const runs = 40;
+    for (let i = 0; i < runs; i++) {
+      const pick = seed => new Set(
+        capBands(channels, { targetSize: 400, seed }).kept
+          .filter(c => c.id.startsWith('UC_UR')).map(c => c.id));
+      const a = pick(`series-${i}`);
+      const b = pick(`series-${i + 1}`);
+      shared += [...b].filter(id => a.has(id)).length;
+    }
+    const rate = shared / runs / k;
+    expect(rate).toBeGreaterThan(0.05);   // not pathologically disjoint
+    expect(rate).toBeLessThan(0.30);      // and nowhere near the 0.64 the old hash gave
+  });
+
   it('keeps a pinned card the hash would have dropped', () => {
     /* The exact failure that motivated pins: the first 400-card build hashed
        PewDiePie, Mark Rober and Dude Perfect out of UR and kept five record

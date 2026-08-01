@@ -156,6 +156,30 @@ function hashOf(text) {
   return h;
 }
 
+/* The selection key: which cards a given printing keeps.
+
+   The obvious implementation — hashOf(`${seed}:${id}`) — was WRONG, and wrong in
+   a way that looked right and passed a test. Because `h = h*31 + ch` accumulates
+   left to right, prepending a different seed shifts every id's hash by the SAME
+   constant, and adding a constant preserves sort order everywhere except the one
+   wraparound point. Measured: two printings shared 64% of their UR band where
+   the design called for 14%. The test only asserted the two subsets were not
+   identical, which a 64% overlap satisfies comfortably.
+
+   So the seed and the id are hashed separately, combined, and then run through a
+   murmur3 finalizer so a one-bit change in either avalanches across the whole
+   word. Re-measured at 14.3-15.1% against an ideal of k/R = 14.3%.
+
+   The expected overlap between consecutive printings is k/R — the per-printing
+   count over the roster depth — which is what makes "how deep should the roster
+   be" answerable: a roster of 7k repeats about one card in seven. */
+function selectionHash(seed, id) {
+  let h = (hashOf(id) ^ Math.imul(hashOf(seed), 0x9e3779b1)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 2246822507) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
 /* Trim each band to its target, keeping a deterministic subset.
 
    Which cards survive is decided by hashing `seed:channelId` and keeping the
@@ -188,8 +212,8 @@ export function capBands(channels, { targetSize = DEFAULT_TARGET_SIZE, pullSize 
       const pa = pins.has(String(a.id)) ? 0 : 1;
       const pb = pins.has(String(b.id)) ? 0 : 1;
       if (pa !== pb) return pa - pb;
-      const ha = hashOf(`${seed}:${a.id}`);
-      const hb = hashOf(`${seed}:${b.id}`);
+      const ha = selectionHash(seed, a.id);
+      const hb = selectionHash(seed, b.id);
       return ha - hb || (a.id < b.id ? -1 : 1);   // tie-break so the order is total
     });
     kept.push(...ranked.slice(0, target));
