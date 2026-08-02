@@ -4,7 +4,7 @@
 > A browser-based gacha game where a channel's numbers *become* the card.
 
 **▶ Play it: [creator-gacha.netlify.app](https://creator-gacha.netlify.app)** — no signup, no API key,
-19,874 cards.
+11,494 cards.
 
 [![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
 

@@ -5,9 +5,9 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.netlify.app — 19,874 cards (uncapped, the whole pool) ·
+**Now:** LIVE at https://creator-gacha.netlify.app — 11,494 cards (uncapped, minus institutions) ·
 19,968 candidates · deployed 2026-08-03.
-**Next:** SSR depth (SSR is the wall at 92.8 lw, R is no longer binding), then deploy.
+**Next:** SSR depth (SSR is the wall at 71.8 lw after the institution cut took 84 SSR).
 
 ---
 

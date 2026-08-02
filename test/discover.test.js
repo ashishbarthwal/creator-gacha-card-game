@@ -13,6 +13,8 @@ import {
   harvestChannelIds,
   passesFloor,
   passesRegion,
+  looksInstitutional,
+  withoutInstitutions,
   regionReport,
   mergeRegionReports,
   assignPool,
@@ -458,5 +460,84 @@ describe('passesRegion — the local-risk exclude', () => {
   it('respects a custom exclude list, and [] disables it', () => {
     expect(passesRegion(channel({ country: 'US' }), ['US', 'CA'])).toBe(false);
     expect(passesRegion(channel({ country: 'IN' }), [])).toBe(true);
+  });
+});
+
+/* A person gets a card, an institution does not (2026-08-03). The rule is about
+   risk: a creator has no reason to mind, while a company has a trademark budget
+   and a policy about its marks.
+
+   The authoritative screen is Wikidata's P31 in tools/wikidata-sweep.js — this
+   is only the backstop for channels no encyclopedia describes. So the tests that
+   matter most are the NEGATIVE ones: a name screen's real failure mode is
+   deleting a creator nobody notices is missing. */
+describe('looksInstitutional — the sourcing-time backstop', () => {
+  const t = title => ({ title });
+
+  it('catches legal-entity suffixes', () => {
+    for (const name of ['Rexam Plc', 'Labcorp Inc', 'Acme Ltd', 'Siemens GmbH', 'Widget Corp']) {
+      expect(looksInstitutional(t(name))).toBe(true);
+    }
+  });
+
+  it('catches institutions and record labels', () => {
+    for (const name of ['La Sierra University', 'The Royal Institution', 'Ultra Records',
+      'Bank of America', 'Morris Museum', 'Wildlife Foundation', 'Dental Association']) {
+      expect(looksInstitutional(t(name))).toBe(true);
+    }
+  });
+
+  /* THE IMPORTANT HALF. Every one of these is a real creator whose channel name
+     contains a word a lazier screen would have matched. "Media", "Studios",
+     "Network", "Group", "Productions" and "Official" are absent from the pattern
+     on purpose — they are as common in a solo creator's name as a corporation's. */
+  it('leaves creators alone, including the ones that read corporate', () => {
+    for (const name of ['Traversy Media', 'Let Me Explain Studios', 'YMH Studios',
+      'Corporate Natalie', 'Incredible Journeys', 'MrBeast', 'Arctic Monkeys',
+      'Smosh', 'LinusTechTips', 'Mark Rober']) {
+      expect(looksInstitutional(t(name))).toBe(false);
+    }
+  });
+
+  /* THE ACCEPTED FALSE POSITIVE, pinned rather than hidden. A name screen cannot
+     tell "Institute of Human Anatomy" — a real creator channel run by one
+     anatomist — from an actual institute, because the name is the only evidence
+     it has. This is the cost of the backstop and the reason it is only a
+     backstop: Wikidata's P31 gets these right, and a wrongly-screened creator is
+     recovered by deleting their line from catalog/excluded.txt.
+
+     The test exists so the cost stays VISIBLE. If someone later widens the
+     pattern with "media" or "studios", this block is where they should be forced
+     to think about how many more of these they are creating. */
+  it('over-cuts a creator whose name contains an institution word — known cost', () => {
+    expect(looksInstitutional(t('Institute of Human Anatomy'))).toBe(true);
+    expect(looksInstitutional(t('Ltd Edition Cars'))).toBe(true);
+  });
+
+  it('only matches on a word boundary — "Inc" inside a word is not a company', () => {
+    expect(looksInstitutional(t('Incredible Journeys'))).toBe(false);
+    expect(looksInstitutional(t('Lincoln Sings'))).toBe(false);
+    expect(looksInstitutional(t('Journeys Inc'))).toBe(true);
+  });
+
+  it('survives a missing or malformed title without throwing', () => {
+    for (const bad of [undefined, null, {}, { title: null }, { title: 42 }]) {
+      expect(() => looksInstitutional(bad)).not.toThrow();
+    }
+  });
+
+  it('withoutInstitutions filters a batch', () => {
+    const kept = withoutInstitutions([t('MrBeast'), t('Yale University'), t('Vsauce'), t('Sony Records')]);
+    expect(kept.map(c => c.title)).toEqual(['MrBeast', 'Vsauce']);
+  });
+
+  it('selectChannels applies it alongside the floor and the region exclude', () => {
+    const ok = { title: 'Vsauce', subscriberCount: '500000', viewCount: '900000', videoCount: '40' };
+    const org = { title: 'Stanford University', subscriberCount: '500000', viewCount: '900000', videoCount: '40' };
+    expect(selectChannels([org, ok]).map(c => c.title)).toEqual(['Vsauce']);
+    /* Off by a flag rather than absent — a future roster that deliberately wants
+       brands needs a way to say so. */
+    expect(selectChannels([org, ok], { allowInstitutions: true }).map(c => c.title))
+      .toEqual(['Stanford University', 'Vsauce']);
   });
 });

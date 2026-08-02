@@ -36,7 +36,7 @@ import { dirname, resolve as resolvePath } from 'node:path';
 import { resolveChannelInput } from '../src/data/resolve.js';
 import { fetchLiveChannel } from '../src/data/youtube.js';
 import { fetchChannelsByIds } from '../src/data/search.js';
-import { passesRegion } from '../src/engine/discover.js';
+import { passesRegion, looksInstitutional } from '../src/engine/discover.js';
 import { parseRosterLines, splitPin, mergeCandidates, poolCounts, batchIds, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
 import { rarityFromSubs, RARITY_ORDER } from '../src/engine/core.js';
 
@@ -134,8 +134,16 @@ async function main() {
      exemption from the local-risk hedge — and the honest consequence is that
      several of the largest channels on YouTube are India-based and will be
      dropped here. Reported rather than silent, since that is a real cost. */
-  const allowed = found.filter(c => passesRegion(c));
-  const excluded = found.length - allowed.length;
+  const regional = found.filter(c => passesRegion(c));
+  const excluded = found.length - regional.length;
+
+  /* A person gets a card, an institution does not — refused here rather than
+     admitted and cleaned up later, because the 2026-08-03 pass had to remove
+     8,379 of them from a live deck and that is not a job worth repeating.
+     Reported by name: a roster is hand-written, so a name being dropped from one
+     is a thing its author should see rather than a number. */
+  const institutional = regional.filter(c => looksInstitutional(c));
+  const allowed = regional.filter(c => !looksInstitutional(c));
 
   const denylist = (await readJson(DENYLIST_PATH)) ?? [];
   const db = (await readJson(CANDIDATES_PATH)) ?? { version: CANDIDATE_DB_VERSION, candidates: [] };
@@ -147,6 +155,10 @@ async function main() {
 
   console.log(`\n  resolved ${found.length}/${entries.length - invalid.length}`);
   if (excluded) console.log(`  region exclude dropped ${excluded}`);
+  if (institutional.length) {
+    console.log(`  institution screen dropped ${institutional.length} (a person gets a card, an institution does not):`);
+    for (const ch of institutional) console.log(`      − ${ch.title}`);
+  }
   console.log(`  this roster: ${RARITY_ORDER.map(r => `${r} ${rarity[r]}`).join(' · ')}`);
   console.log(`  +${added} added · ${evicted} evicted · ${rejected} denied -> ${candidates.length} candidates`);
   console.log(`  pinned: ${candidates.filter(c => c.pin).length} (survive the band cap ahead of everything else)`);

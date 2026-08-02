@@ -44,6 +44,42 @@ Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+)
 5. **Unofficial.** Footer must carry a disclaimer: not affiliated with or endorsed by
    YouTube or Google. (Wikigacha does the same for Wikipedia.)
 
+## Who gets a card
+
+**A person gets a card. An institution does not.** (2026-08-03)
+
+This is a **risk** rule, not a taste one, and it decides every sourcing run from here on.
+A creator like KSI has no reason to mind being on a card. A company, university, trade
+association or studio has a trademark budget, a legal team and a written policy about its
+marks. The downside is asymmetric — one side sends a thank-you, the other sends a letter —
+and personalities are the one thing this project is not short of, so there is no cost to
+refusing. Getting this wrong once meant pulling **8,379 cards out of a live deck**.
+
+- **KEPT** — humans, and performer-shaped groups: bands, duos, musical ensembles, comedy
+  troupes, channels whose Wikidata type is literally "YouTube channel".
+- **CUT** — businesses, public companies, nonprofits, universities and school districts,
+  government agencies, museums, record labels, publishers, think tanks, advocacy groups,
+  sports clubs, TV series and channels, video games and their developers, brands.
+
+**A band is a performer; its record label is not.** That one line is the whole rule, and it
+is why the screen is a positive KEEP list of performer types rather than "anything that is
+not a human" — the latter throws away every band in the deck.
+
+Two mechanisms enforce it, and they are not interchangeable:
+
+1. **`tools/wikidata-sweep.js` — authoritative.** Screens on Wikidata's **P31** ("instance
+   of"), which asks what a thing IS rather than what it is called, so it knows "Traversy
+   Media" is one man and "Rexam Plc" is not. Runs before any quota is spent.
+2. **`looksInstitutional()` in `engine/discover.js` — backstop.** A narrow name screen for
+   channels no encyclopedia describes (keyword-search results, hand rosters). It reads only
+   a name, so it is deliberately narrow: **never** widen it with "media", "studios",
+   "network", "group", "entertainment" or "official" — those are as common in a solo
+   creator's channel name as in a corporation's, and a false positive here deletes a real
+   creator silently. The known over-cuts are pinned in `test/discover.test.js`.
+
+`catalog/excluded.txt` cleans up whatever still gets through. It is editorial and revisable —
+deleting a line puts the card back — and must never be confused with the opt-out denylist.
+
 ## Scope boundaries
 
 Currently out of scope: battles, decks, pity system, `/c/` vanity URL resolution

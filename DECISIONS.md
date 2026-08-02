@@ -2058,3 +2058,73 @@ Three tests pin it, including one asserting that a merely-large target still cap
 does not — the distinction the fix exists to make.
 
 </details>
+
+## A person gets a card. An institution does not. (2026-08-03)
+
+<details>
+<summary><b>8,379 cards — 42% of the printing — removed, and every future sourcing run screens
+for it.</b> The reasoning is about who has a legal department, not about who makes a good card.</summary>
+
+I raised this as a quality problem: five of ten cards in a screenshot were Fraser Institute, QS
+Top Universities, Wi-Fi Alliance and iZotope, and a Wikipedia article plus a channel does not mean
+anyone wants the card. **Ash reframed it as a risk problem, and that framing is better.** A
+creator like KSI has no reason to mind being on a card. A company, university or trade association
+has a trademark budget, a legal team and a written policy about its marks. The downside is
+asymmetric — one side sends a thank-you, the other sends a letter — and there are far more
+personalities available than slots to put them in, so refusing costs nothing.
+
+That distinction also survives disagreement in a way "is this a good card" does not. It is the
+difference between an aesthetic judgement and a decision rule.
+
+**The line is drawn structurally.** Every card was looked up on Wikidata by channel id (P2397)
+and classified on **P31, "instance of"** — what a thing IS, not what it is called, which is why it
+knows "Traversy Media" is one man and "Rexam Plc" is not. 17,636 of 19,874 cards had an item; of
+those only **5,952 were `human`**.
+
+**A BAND IS A PERFORMER, AND THAT IS THE WHOLE RULE IN A LINE.** Arctic Monkeys and The White
+Stripes stay for the same reason KSI does; their record label goes. This is why the screen is a
+positive KEEP list of performer-shaped types — human, musical group, rock band, duo, comedy
+troupe, "YouTube channel" — rather than "anything that is not a human", which would have deleted
+every band in the deck.
+
+| | cut | kept |
+|---|---|---|
+| N | 6,735 | 6,426 |
+| R | 1,137 | 3,041 |
+| SR | 421 | 1,708 |
+| SSR | 84 | 287 |
+| UR | 2 | 32 |
+
+Deck: **19,874 -> 11,494**. N takes almost all of it, which makes sense — an encyclopedia has an
+article for every school district in America and for very few small creators. The 2,238 cards with
+no Wikidata item were KEPT: they are the sub-100K commons keyword search found, individuals who
+simply have no article.
+
+**TWO MECHANISMS, AND THEY ARE NOT INTERCHANGEABLE.** The exclude file fixes today's deck and
+prevents nothing, which is the half that would have rotted:
+
+1. `tools/wikidata-sweep.js` — the P31 screen, authoritative, before any quota is spent. This also
+   promotes the reach-5 route from a throwaway script into committed code; the most important
+   sourcing route in the project had been living nowhere and could not be re-run or corrected.
+2. `looksInstitutional()` in `engine/discover.js` — a name screen, for channels no encyclopedia
+   describes.
+
+**THE NAME SCREEN'S FAILURE MODE IS THE ONE TO GUARD, and it is the opposite of the sweep's.**
+A missed brand reaches a curation exclude and gets cut later. A wrongly-matched creator is
+deleted silently and nobody ever learns their name. So the pattern carries only unmistakable
+legal suffixes and institution words, and **"media", "studios", "network", "group",
+"entertainment" and "official" are deliberately absent** — Traversy Media, Let Me Explain Studios
+and YMH Studios are one person each. The known over-cuts ("Institute of Human Anatomy", a real
+creator channel; "Ltd Edition Cars") are pinned in a test named as a known cost, so that anyone
+widening the pattern later has to walk past the evidence.
+
+**What this closes off.** "Notable enough for a Wikipedia article" is no longer sufficient to be
+a card, and it was the entire reach-5 admission test. Notability now decides only whether someone
+is *findable*; being a person decides whether they are *eligible*. Any future sourcing route has
+to answer both.
+
+**A rebuild, not a rule the tooling merely knows.** The build ran through the ordinary path and
+the deck is live at 11,494 cards. WWE, Netflix, Red Bull, Peppa Pig, National Geographic, 191
+record labels, 226 universities and 149 school districts are out of the game.
+
+</details>

@@ -315,6 +315,60 @@ export const SEARCH_TIERS = {
    is self-declared and frequently absent, and an unknown country can't be
    excluded, so this is a supplement to the real protections (no monetization,
    opt-out), never a substitute. Pass exclude: [] to disable. */
+/* ─────────────────────────────────────────────────────────────────────────────
+   A PERSON GETS A CARD. AN INSTITUTION DOES NOT.  (2026-08-03)
+
+   The rule is about risk, not taste. A creator has no reason to mind being on a
+   card; a company, university or trade association has a trademark budget, a
+   legal team and a written policy about its marks. The downside is asymmetric —
+   one side sends a thank-you, the other sends a letter — and personalities are
+   the one thing this project is not short of. So institutions are refused at
+   sourcing time and there is no shortage to justify keeping them.
+
+   THE AUTHORITATIVE TEST IS NOT HERE, and that is worth being clear about. What
+   a channel IS gets decided by Wikidata's P31 ("instance of") in
+   tools/wikidata-sweep.js, which asks a database instead of guessing — it knows
+   Rexam Plc is a public company and that "Traversy Media" is one man. That
+   screen runs before a quota unit is spent and removed 8,379 cards on the day
+   this was written.
+
+   THIS function is the backstop for everything the sweep cannot see: keyword
+   search results, hand-written rosters, and channels with no Wikidata item at
+   all. It only reads a NAME, so it is deliberately narrow — unmistakable legal
+   suffixes and institution words, nothing more.
+
+   WHAT IS DELIBERATELY ABSENT, because a name screen's failure mode is
+   over-cutting: "media", "studios", "network", "group", "entertainment", "news",
+   "productions" and "official". Every one of them is as common in a solo
+   creator's channel name as in a corporation's — Traversy Media, Let Me Explain
+   Studios, YMH Studios. A false positive here silently deletes a real creator
+   and nobody ever finds out, which is worse than letting one brand through to
+   the curation exclude. */
+export const INSTITUTION_NAME = new RegExp(
+  '(?:^|[\\s\\-–—,.(])(?:' + [
+    // legal-entity suffixes — these are never a person
+    'inc', 'llc', 'l\\.l\\.c', 'ltd', 'limited', 'plc', 'gmbh', 'b\\.v', 'n\\.v',
+    'corp', 'corporation', 'incorporated', 'holdings', 'pvt',
+    // institutions
+    'university', 'universität', 'college', 'polytechnic', 'institute', 'institution',
+    'foundation', 'association', 'alliance', 'federation', 'society', 'council',
+    'committee', 'bureau', 'ministry', 'municipality', 'school district',
+    'museum', 'library', 'hospital', 'clinic', 'observatory', 'laboratory',
+    // commerce that is unambiguous
+    'bank', 'insurance', 'airlines', 'airways', 'motors', 'pharmaceuticals',
+    'records', 'recordings', 'publishing', 'publishers',
+  ].join('|') + ')(?:$|[\\s\\-–—,.)])', 'i');
+
+export function looksInstitutional(channel) {
+  return INSTITUTION_NAME.test(String(channel?.title ?? ''));
+}
+
+/* Convenience for the sourcing tools, which all want "drop the institutions"
+   rather than "tell me about each one". */
+export function withoutInstitutions(channels) {
+  return (channels ?? []).filter(c => !looksInstitutional(c));
+}
+
 export const DEFAULT_EXCLUDE_COUNTRIES = ['IN'];
 
 export function passesRegion(channel, exclude = DEFAULT_EXCLUDE_COUNTRIES) {
@@ -378,10 +432,15 @@ export function mergeRegionReports(reports) {
    whatever order the caller passes, so when the caller hands channels in the
    search's viewCount rank, the cap keeps the top-ranked qualifiers. Short-
    circuits once `cap` are found. */
-export function selectChannels(channels, { floor = DEFAULT_FLOOR, cap = 5, exclude = DEFAULT_EXCLUDE_COUNTRIES } = {}) {
+export function selectChannels(channels, { floor = DEFAULT_FLOOR, cap = 5, exclude = DEFAULT_EXCLUDE_COUNTRIES, allowInstitutions = false } = {}) {
   const kept = [];
   for (const channel of channels) {
     if (kept.length >= cap) break;
+    /* The institution screen sits with the floor and the region exclude because
+       it answers the same kind of question — is this a card at all — and every
+       caller that wanted those wants this too. Off by a flag rather than absent,
+       so a future roster that deliberately wants brands has a way to say so. */
+    if (!allowInstitutions && looksInstitutional(channel)) continue;
     if (passesFloor(channel, floor) && passesRegion(channel, exclude)) kept.push(channel);
   }
   return kept;

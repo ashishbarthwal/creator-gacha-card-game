@@ -35,6 +35,20 @@
       "slug": "series-1",
       "cards": 19874,
       "snapshotDate": "2026-08-02"
+    },
+    {
+      "at": "2026-08-02T20:37:40.161Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 11494,
+      "snapshotDate": "2026-08-02"
+    },
+    {
+      "at": "2026-08-02T20:37:58.889Z",
+      "event": "deploy",
+      "slug": "series-1",
+      "cards": 11494,
+      "snapshotDate": "2026-08-02"
     }
   ]
 }
