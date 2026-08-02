@@ -1,0 +1,377 @@
+# Reach roster, pass 4 — Wikipedia's List of YouTubers, resolved through Wikidata.
+#
+# WHY THIS PASS EXISTS
+# The R band (100K-1M) is the deck's binding constraint: 388 cards against the
+# 408 a 24th lower wall needs, while every other band already clears it. Neither
+# existing route reaches R. Published rankings bottom out near 20M (reach.txt,
+# reach-2.txt) and model recall thins below ~1M, where recalled handles turn into
+# confabulated ones (reach-3.txt). Both routes rank by SIZE, and nothing ranks by
+# size at 100K.
+#
+# Wikipedia's List of YouTubers ranks by NOTABILITY instead, which is the signal
+# we actually want and is uncorrelated with subscriber count — a creator with a
+# Wikipedia article and 300K subscribers is exactly the R-band card a player
+# recognizes. 947 rows, 906 of them carrying an article link.
+#
+# THE PART THAT MATTERS MOST: THESE ARE IDs, NOT GUESSED HANDLES.
+# Every line below came from Wikidata property P2397 (YouTube channel ID) on the
+# creator's own Wikidata item, reached from the enwiki article link. So this pass
+# structurally cannot repeat reach-3.txt's failure, where five guessed handles
+# resolved to squatters sitting on abandoned famous names and merged silently as
+# N-band filler. There is no guessing step here to be wrong.
+#
+# It is also ~50x cheaper. Handles cost 1 quota unit each; UC ids batch 50 to a
+# unit, so this entire roster resolves for about 6 units against reach-3's 68.
+#
+# SELECTION, in the order applied:
+#   - dropped rows with no Wikidata channel id           (947 -> 587 people)
+#   - dropped deceased creators                          (-21)
+#   - kept only English-speaking territories             (-150)
+#   - dropped on a note-pattern screen: politics, news,
+#     activism, convictions, abuse, child performers     (-42)
+#   - dropped ids already in the candidate DB            (-131)
+#   - then read all 336 survivors by hand and cut 53 more,
+#     listed at the foot of this file with the reason for each
+#
+# Same exclusions as reach-2 and reach-3. The India region exclude runs again at
+# fetch time on FRESH country data regardless of what this file says.
+#
+# WHAT THIS ROSTER CANNOT DO. It is a notability list, so it still says nothing
+# about the sub-100K commons — no encyclopedia has an article on a 40K-subscriber
+# channel. N remains search's job.
+#
+# Bands below are UNKNOWN and deliberately unannotated: the list carries no
+# subscriber figures (only 3 of 734 items had even a stale one on Wikidata), and
+# build-set.js re-hydrates every statistic anyway. Identity is all a roster owes.
+#
+# ── 283 channel ids ──────────────────────────────────────────────────────────
+UC2PA-AKmVpU6NKCGtZq_rKQ  # Abigail Thorn — Philosophy Tube
+UC4_Ssc1v_P5SrrFjbVG821Q  # Adam Beales — Adam B
+UCKlhpmbHGxBE6uw9B_uLeqQ  # Adam Dahlberg — SkyDoesMinecraft
+UCq54nlcoX-0pLcN5RhxHyug  # Adam Montoya — SeaNanners Gaming Channel
+UC0W6NYJ_y7cd3laVfaSOl0A  # Adam Saleh
+UCLmgAMopHwSvxWgjOxwyxaQ  # Adore Delano (Danny Noriega) — DannyNoriega
+UCDLk9X7V0T4t731oke1IU3Q  # Alejandro Saab — KaggyFilms
+UCa7nT-pEV7Aeh-ntjecu7xw  # Alex Aiono
+UCOP2b00_AN1-K2EySfDKzww  # Alex Bale — Alex Bale Films
+UCgyaiV9E2FMQledEJBefYQA  # Alexis Jordan
+UChP_wYifMcFth31PNjkzGgA  # Alexis Jordan
+UCvQczq3aHiHRBGEx-BKdrcg  # Ali Kabbani — Myth
+UCagHkTCCSbohFMJln7JYqMQ  # Ally Law
+UC8THb_fnOptyVgpi3xuCd-A  # Amanda Lee — LeeandLie
+UCi2ub3My1EBOWz4qQQgd5jw  # Amber Lee Ettinger — barelypolitical
+UCbDkzVJjlP12aXlEH_wpNmg  # Andrew Callaghan — All Gas No Brakes
+UCapBE4qj6uqAAiIcq5skiVw  # Andy McKee
+UCnxQ8o9RpqxGF2oLHcCn9VQ  # Anthony Fantano — theneedledrop
+UCPJHQ5_DLtxZ1gzBvZE99_g  # Anthony Padilla — AnthonyPadilla
+UCD1dhGtHVyd3ImGKrVSou0g  # Anthony Padilla, Ian Hecox, Shayne Topp, Courtney Miller, Noah Grossman, Keith Leak Jr., Damien Haas, and Olivia Sui — Smosh
+UCrv1Jwqqo_Xc7iJiwTGi5mg  # Ariel Rebecca Martin — Baby Ariel
+UCXwXB7a3cq9AERiWF4-dK9g  # Ash Hardell
+UC1sqAR9qukJuI5fCra6mP-A  # Austin Mahone
+UCdT7yHXJ-D7GzGiuDzDKM9w  # Austin Mahone
+UCDxHZMxsidcgQQn_7Tdsp7w  # Baba Ali — ummahfilms
+UCLWMMWUO-0cHgQakksJNwKQ  # Barbie Parsons — Barbie the Welder
+UCazMm3tOCkYrIGE_17j0mVg  # Bartholomew Baker — Bart Baker
+UCmA-0j6DRVQWo4skl8Otkiw  # Ben Potter — Comicstorian
+UCNF0LEQ2abMr0PAX3cfkAMg  # Benjamin Lupo — DrLupo
+UCxDZs_ltFFvn0FDHT6kmoXA  # Benjamin Rich — bald and bankrupt
+UCxqV2u6alqV9QDzQsOwbiog  # Benny and Rafi Fine — REACT
+UCc6W7efUSkd9YYoxOnctlFg  # Bethany Mota
+UCeATCXpa1wVcGWSl9rWmI2g  # Bill Wurtz
+UC1SYjjZDZRvjedNnaFBn1aA  # Blaire — QTCinderella
+UC4f_rZQPef5GlWhdl44DTrw  # Blaire — QTCinderella
+UCnVqum8VA-5TBYcsVhXtMwg  # Blaire — QTCinderella
+UCVhz5S_qdfcDBcU4V-_fVtw  # Brandon Hardesty — UndoTube
+UCRTNrJE86bHQQYkYQ8ZX3VA  # Brent Rivera
+UCO42ciP_nkDcOlATRjLXCqQ  # Brooke Brodack
+UCGwPbAQdGA3_88WBuGtg9tw  # Bunny Meyer — grav3yardgirl
+UCSvzb90XLo2f-j7sfwQsrYA  # Bunny Meyer — grav3yardgirl
+UCEodFwnfPXdkzVPJZmuzAIg  # C.W. Lemoine
+UCi5iiEyLwSLvlqnMi02u5gQ  # Caitlin Doughty — Caitlin Doughty – Ask A Mortician
+UCFly13NwHZZB-y0FkIDATwA  # Caitlin Hill — S Facts
+UCLe_q9axMaeTbjN0hy1Z9xA  # Caleb Hammer — Financial Audit
+UC6pzgnZ75lEnsOCLi64Vx2g  # Calum McSwiggan
+UC5X8wA2pn9sbD765c-rmkMg  # Camille and Kennerly Kitt — Camille and Kennerly
+UCvbLpfvAnGTpyO0tnw0YKGQ  # Candice Hutchings — Edgy Veg
+UCmQXOAse-VnzuXHebX5I77g  # Charlotte McDonnell (formerly Charlie McDonnell) — charlieissocoollike
+UC2ZkhMUYD37tboIJJgMz-MA  # Chloé Hayden
+UCF80Rerxz1knbBZgxJv8-fA  # Christine Gambito — HappySlip
+UCQ-YJstgVdAiCT52TiBWDbg  # Christopher Dixon — ChrisMD
+UCdmcAwbdiXQWs9d4Qd4KzDw  # Colin Furze — colinfurze
+UCzGuqFL0gdE6rqSDB5Wa23Q  # Corey Vidal
+UC3xb-OOrMI9X9rNDTFuUlCg  # Cory Williams — SMP Films
+UCLat8CECTXsvUTsclmDdFGw  # Cory Williams — SMP Films
+UCqEZdtqi4IlzmASqAjHGiHg  # Cory Williams — SMP Films
+UC6E2mP01ZLH_kbAyeazCNdg  # Coyote Peterson — Brave Wilderness
+UCHTM9IknXs4ZHzwHqDjakoQ  # D'Angelo Wallace — dangelowallace
+UCNo1zLUBp0gwDmuXvB7OOww  # D'Angelo Wallace — dangelowallace
+UCqWxviU8cjjHZsTLWgPFZuA  # D'Angelo Wallace — dangelowallace
+UCs7yDP7KWrh0wd_4qbDP32g  # Dan Avidan — Ninja Sex Party
+UCkSj-DR2aS3_wPmAE7d7Qlg  # Dan Brown — pogobat
+UCljCD9VDAO7TWUCyb69SL-Q  # Dane Boedigheimer — Dane Boe
+UCo_Y5cYiYh2qn1_Wy4SG_aA  # Daniel Hardcastle — OfficialNerdCubed
+UCwfFfKK8h1PBJkbv1tJjWJg  # Daniel Hardcastle — OfficialNerdCubed
+UCGjylN-4QCpn8XJ1uY-UOgA  # Daniel Howell — Daniel Howell (formerly )
+UCnZx--LpG2spgmlxOcC-DRA  # Daniel Thrasher
+UCrPhcbDwqWRc-3tteE2BS6g  # Danielle Jones — Mama Doctor Jones
+UCz_cDc_2arKIb6SlJoqFT0w  # Danny and Michael Philippou — RackaRacka
+UC2mQG51F8wu7njF84D-49cA  # Danny Gonzalez
+UCoo-9GEm2mpyYIXSptrKIpA  # Danny Gonzalez
+UCRQuJo_ikVr425dQ2j9dfLQ  # Danny Gonzalez
+UCSUf5_EPEfl4zlBKZHkZdmw  # Danny Gonzalez
+UC5QjibX9jYUAZGE9diXpiKA  # Darryl Dwayne Granberry Jr. — DDG
+UCNzszbnvQeFzObW0ghk0Ckw  # Dave Plummer — Dave's Garage
+UCtb6a_CnmGbSns9G8W2Ny0w  # Dave Plummer — Dave's Garage
+UCVh3F18ZFTrLZvkUTvsZEMw  # David Michael Moses — FatherDavidMichael
+UCkreGa7A99rho2K1bKXO4YA  # Dennis Roady — howtoPRANKitup
+UCMgQwzHQrefJYo5GTIvhV0w  # Dennis Roady — howtoPRANKitup
+UCO-WnxCevYLBjlvdXEyqggw  # Dennis Roady — howtoPRANKitup
+UChme4r90em8WXH9vPcBBbWg  # Derek Muller — Veritasium
+UC1tBlhr7wCsLvoPD9cHTxlw  # Derrick Acosta, Rocco Botte, Shawn Chatfield — Mega64
+UCYo4DGKIw8UmIQXbTuP3JsQ  # Derrick Acosta, Rocco Botte, Shawn Chatfield — Mega64
+UCyMbSEhV3uamzZNBp16Ykpg  # DeStorm Power — DeStorm
+UCpa-Zb0ZcQjTCPP1Dx_1M8Q  # Devin Stone — LegalEagle
+UCq0EGvLTyy-LLT1oUSO_0FQ  # Eddie Woo
+UCuNy42Y5egf07cSiHbF23wg  # Edward Pratt — Ed Pratt
+UCGAY8t6KCq0tXyBFfjXeHZw  # Edwin Rodriguez
+UCK5G-rUDSKKUXeMkrL7Bs1w  # Elizabeth Zharoff — The Charismatic Voice
+UCIJ6_pI8ZBc_xVMPYzwQz9g  # Emile Rosales — chuggaaconroy
+UCEmM7OESxvBZs9bSKSOSQiA  # Emily Graslie
+UCebpq6lNn_oV_Y2XiRzR3Vg  # Emma Blackery — EmmaBlackery
+UCG6zBb8GZKo1XZW4eHdg-0Q  # Eric Morino — PointCrow
+UCqUI9eP8vFWH3LTIJoGor4w  # Eric Stanley
+UCzS3SUOllRmBRnc4Xmqhm_w  # Eugene Lee Yang, Keith Habersberger, Ned Fulmer, and Zach Kornfeld — The Try Guys
+UCsbTG6lBt0ZMJCsFoR-Rh9w  # Evan Fong — VanossGaming
+UCmDTrq0LNgPodDOFZiSbsww  # Felix Lengyel — xQcOW
+UCDsO-0Yo5zpJk575nKXgMVA  # Freddie Wong and Brandon Laatsch — Rocket Jump
+UCNqr0MNa_pVynP_5_5gswyA  # Freddie Wong and Brandon Laatsch — Rocket Jump
+UCfBpv6ahDMg7kEClQuMpzzw  # Gabbie Hanna
+UCP4oSek0INl_x4to9CSBANA  # Gary Brolsma — NewNuma
+UCd18OhMfRmjMjzSHP7Zrzmw  # Geoff Marshall
+UCIiBf-JbtCazHSFqXV4JgoA  # Grace Helbig — itsgrace
+UCo4S-ThBT3KDDHAMvKw2SQg  # Graeme Parker — The Hoof GP
+UCUQYeJ6D3qDlQkMboh-8-xw  # Greg Benson — MediocreFilms
+UCvB3solmhqtgDeLpD-yTtfg  # Greg Kinman — Hickok45
+UCVLMS691o0TQZked8ESG9pw  # Greyson Chance
+UCh_f6r5SZpzP8t2ZsjUPZVg  # Greyson Chance
+UCJQL1Fai-9GlVunsbP4x8Pg  # Hannah Hart
+UCz981RxgS-A2ID99W8wXzTA  # Harley Morenstein — EpicMealTime
+UC59ZRYCHev_IqjUhremZ8Tg  # Harry Mack
+UCcnAEyz9VnlBL1DiQqliJkQ  # Harry Mack
+UC4HIr9OKBX_yGjonR1uTiBw  # Humza Arshad — HumzaProductions
+UC4USoIAL9qcsx5nCZV_QRnA  # Ian Jomha — iDubbbzTV
+UCXH3RLvIK4bYsq949EHQhpA  # Iman Crosson — Alphacat
+UC5zSySQab9SA6Wz569WDgqw  # Ingrid Nilsen
+UC733wqgq7RmafDY7qEACsBg  # Ironmouse
+UCF3yjqc-HcchI9IfptJr9Yw  # Ironmouse
+UChgPVLjqugDQpRLWvC7zzig  # Ironmouse
+UCubY8F0qByZdyWUlk3b29-Q  # Ironmouse
+UCgpgOLjKKDVQfDNFNUHckuQ  # Jack Baran
+UCe_ijwgvhtHQwQ55vsXDY8w  # Jack Stauber — JackStauber
+UCsDl6A77CrbkSJLtxQFVDGw  # Jack Vale — jackvalefilms
+UCzJIliq68IHSn-Kwgjeg2AQ  # Jackie Aina
+UCBODyKF0JMbUd6D9Bklyzbw  # Jacob Rabon IV — Alpharad
+UC-5Dn8-Nt42gSQVwtZw4e6A  # Jamie Grace — jGracePro
+UCoxhG-qlQyYpdMjRByVJ73Q  # Jason Ethier — ImJayStation
+UC4QobU6STFB0P71PMvOGN5A  # Jawed Karim — Jawed
+UCPszuZ3hR89D4NqFd7g3mDQ  # Jawed Karim — Jawed
+UCSH7DIh3q-iMH_OdysUi8nQ  # JC Caylen
+UCmraHp1nkUsFWLqR7SWToIg  # Jeff Wittek
+UC9gFih9rw0zNCK3ZtoKQQyA  # Jenna Mourey — JennaMarbles
+UCfl_9KvN0Mjre_JmSDmbBlA  # Jeremy Wang — Disguised Toast
+UC7gHHtlv-Oyll1jbsJh8qJA  # Jess Greenberg — JessGreenberg1
+UCT8em_4jMv_X5gph11BLR6w  # Jesse Riedel — Jesser
+UCgefQJC5UgbWJHDxBqB4qVg  # Jesse Wellens and Jeana Smith — PrankvsPrank
+UC8pOnl4XYXcKfZ_aWBO0o_A  # Jidon Adams — JiDion
+UCvFroKGvBjvALxCTFzZXL5w  # Jo Beckwith — Footless Jo
+UCiICWeJJWMYMiITpB_mFBjQ  # Joe Bereta and Luke Barats — BaratsAndBereta
+UCckIJbG_MpYWWwlB6QfDKXg  # Joe Santagato
+UCvNGMZ-FXlihsMECs-J1LUw  # Joe Santagato
+UCVIFCOJwv3emlVmBbPCZrvw  # Joel Haver
+UCE4hoGDQruxi8_hUqB6tLVw  # Joey Graceffa — JoeyGraceffa
+UCS_BD8cjFA8juZogPH5hEjg  # Joey Graceffa — JoeyGraceffa
+UCW2ntjGGk1Pc_8weif4VxTA  # Joey Graceffa — JoeyGraceffa
+UC3CBOpT2-NRvoc2ecFMDCsA  # Joey Santore — Crime Pays But Botany Doesn't
+UChIUP-_S3PzypasXVsY1kJQ  # John and Hank Green — vlogbrothers
+UCOT2iLov0V7Re7ku_3UBtcQ  # John and Hank Green — vlogbrothers
+UCeR0n8d3ShTn_yrMhpwyE1Q  # John Jurasek — TheReportOfTheWeek
+UCpCWvDDoumrtOUsV9p2A0Qg  # Jonathan Tomines — The Toe Bro
+UCDEsQa71VXh7tXn4SpFu9Lg  # Julia Nunes — jaaaaaaa
+UCy0Pr5u-MwGXXzp_GDd4m_g  # Julie Nolke
+UCzOEJREOXANNXcFf2OP8hZg  # Kassem Gharaibeh — KassemG
+UC67SGAcDCxdw4RwwZMgYfLQ  # Kelsey Impicciche — Kelsey Impicciche (formerly Kelsey Dangerous)
+UCDZESjYAwh-ws7ZSZZ8DKeg  # Kevin Strahle — skippy62able
+UCplkk3J5wrEl0TNrthHjq4Q  # Kurt Hugo Schneider — KurtHugoSchneider
+UC0zNoCMMiPEAst0JrwUht0w  # Larry Vickers — Vickers Tactical
+UCKMugoa0uHpjUuq14yOpagw  # Laura Lee — laura88lee
+UCoziFm3M4sHDq1kkx0UwtRw  # Lauren Mountain — Glam&Gore
+UCap97Ue8K_BpKlrvQRYd6JA  # Lauren Riihimaki — LaurDIY
+UCG1h-Wqjtwz7uUANw6gazRw  # Lindsay Ellis
+UCSmzp7CfaocWFguJy8zaxqA  # Lisa Donovan — LisaNova
+UCJEKLqGtMPKa5H8dpiADGAQ  # Lisa Lavie — lisalavie1
+UChoTvF02Cv74FF72OaJtTMA  # Liza Koshy
+UCRYe4G08okte96rmocFNU1g  # Loren Gray Beech — Loren Gray
+UCVrvnobbNGGMsS5n2mJwfOg  # Louis Cole — FunForLouis
+UCfAEEhKikW1676DCa_0OWLA  # Louise Pentland — sprinkleofglitter
+UCyLLL4Al34gr3XH2_h4db5g  # Loveliveserve
+UCyoEZ7icpGsUlki08Is8v9g  # Loveliveserve
+UC7RGwnsSAEClqqxJ9MxUhyQ  # Lucas Cruikshank — Fred
+UCToAs5lBgStZgoDNW2r4_PQ  # MacGyver the Lizard — MacGyverLizard
+UCsIF9vk-I_PV1P-ShDFA84A  # Made With Lau — MadeWithLau
+UCaKlUuO3JLNDryhBwM7udyQ  # Maria Aragon — rojuanearagon
+UCqGbmzCfCTcGy2RdYRJFRPw  # Marié Digby — MarieDigby
+UCp4CS32R7Gj5oVdyILmRaLA  # Mark Hoyle — LadBaby
+UCVBXTHC8cAKUHyK3LytUzHA  # Mark Hoyle — LadBaby
+UCMmgu60G09zrL9JsrFZYgqA  # Marsh Family — MarshFamilySongs
+UCpV5A65O3mvaJmlc669cI1A  # Mary Spender
+UCR_SOhBL-5BSaIuqhj1U18g  # Mathew and Savanna Shaw — MatandSavanna
+UCSju5G2aFaWMqn-_0YBtq5A  # Matt Parker — standupmaths
+UCCCysu6ecuB4TFqzkyxLJaA  # Matthew David Morris — MattyBRaps
+UCmdY1pHB-KbFYxOyhwjVeQw  # Matthew David Morris — MattyBRaps
+UCAaegDUlb7doIKo0Rc1F08g  # Matthew Patrick — The Game Theorists
+UCHYoe8kQ-7Gn9ASOlmI0k6Q  # Matthew Patrick — The Game Theorists
+UC3sznuotAs2ohg_U__Jzj_Q  # Matthew Patrick — The Game Theorists
+UCd4t3EEUy0LUOM4MTdjpNHA  # Matthew Patrick — The Game Theorists
+UCuI9WIhxx-bDwHj5tF2FqIA  # Matthew Rinaudo — Mizkif
+UCCgLSOuGQVAfB3GcNAgGCUg  # Matthew Rinaudo — Mizkif
+UChl76B7zqfMcNzfMi9vJruw  # Matthew Rinaudo — Mizkif
+UCo4OWVwJoGoJ5YyqUhIbTNQ  # Matthew Rinaudo — Mizkif
+UCXhSCMRRPyxSoyLSPFxK7VA  # Matthew Santoro
+UC5I2hjZYiW9gZPVkvzM8_Cw  # Matthew Taylor — Techmoan
+UC-0Urs9tifl-7DDE1RLbBHQ  # Mazzi Maz — TheMazziMaz
+UChWmYNTHQpLmJdkScwNrgcA  # Megan Nicole — megannicolesite
+UC4IgEVgl6t18-89GPekZtAw  # Meghan Camarena — strawburry17
+UCFari28bQmSVIbmzDjbiS7Q  # Meghan Camarena — strawburry17
+UCLXoO5B2TUO0tc-q9U_C8PQ  # Melody Oliveria — bowiechick
+UCkan4ZKlryf94OFFZc53Ojg  # Michael Agrusso — ItsJustSomeRandomGuy
+UCmteEZzq7A2qVtXPMeYhAHg  # Michael Grzesiek — Shroud
+UCm6g2GP912ku4lPd-155-Vw  # Michael van Erp — CyclingMikey
+UC7XFgbOyFBoGxssEwGvkKig  # Miles McKenna — MilesChronicles
+UC8cR6SrZaU6c-2G3Swdl8Lw  # Natalie Tran — communitychannel
+UCoIHSA_29SbDCljYGMYjaew  # Nataly Dawn — natalydawn
+UC_fGtUvYTzYWXVQUwGXleDg  # Nathan Barnatt — Nathan
+UCLHmLrj4pHHg3-iBJn_CqxA  # Neuro-sama
+UCo59TbTB8i1Xt41rE71ll4g  # Neuro-sama
+UC4DxaTVFBBxhXPqZFaXU9yg  # Nicholas Stewart — Jynxzi
+UCyNzZ1wgkOWkzYE0zbs7zhA  # Nicholas Stewart — Jynxzi
+UCeXJQ2GQh4BoRuAEkteU0Wg  # Nick Symmonds — nicksymmonds
+UCEbk5b9N6IkWbBmeKJb4x2w  # Noah Kalina — NK5000
+UClPsjnF7D_Ar1ZSrEsnTxJA  # Noah Timothy Beck — Noah Beck
+UCVtFOytbRpEvzLjvqGG5gxQ  # Olajide Olatunji — KSI
+UCUWhWgXOjE1ET2CRRtgcnQw  # Oli White
+UCFd9e6W-saUSwje3-B2lCVg  # Paige Layle
+UC2_ZUXs5oDv9Crj3f72j9Yw  # Peter Shukoff — nicepeter
+UCHUE4ypXKp7ZkmdWbGJNgJg  # Philip Lester — AmazingPhil
+UCSiPjfAJBgbFlIUsxOWpK0w  # Pomplamoose — PomplamooseMusic
+UCCsj3Uk-cuVQejdoX-Pc_Lg  # Rahat Hossain — MagicOfRahat
+UCGt7X90Au6BV8rf49BiM6Dg  # Ray William Johnson — RayWilliamJohnson
+UCeDbgaLMp43OkNAICMrWYDw  # Rebecca Flint — xBextahx
+UCN3rhkHmloHwqgat8LHk2yg  # Richard Hy — Angry Cops
+UCsW0LA-ThH18OCrT9pa2zfQ  # Ross O'Donovan — RubberNinja
+UC9HGuRGTQvj3_pM7dYiShZA  # Ross Scott — Accursed Farms
+UCJ6KZTTnkE-s2XFJJmoTAkw  # Ross Scott — Accursed Farms
+UCGnSHwhOAczNqhGDiYt0Q8g  # Ryan Trahan
+UCnmGIkw-KdI0W5siakKPKog  # Ryan Trahan
+UCvXhfdmgK8GNJmeActsCzTg  # Ryan Trahan
+UCbAwSkqJ1W_Eg7wr3cp5BUA  # Safiya Nygaard
+UCE4vct4tqxSuG4JH6vMVZSA  # Sam Holmes — Sam Holmes Sailing
+UCEEJv6cJsc_d0NLr0xSj3dA  # Samuel Johnson — brownmarkfilms
+UCWrtsravWX0ANhHiJXNlyXw  # Samuel Tsui — TheSamTsui
+UCgrsF4TYwmrV0QsXb8AoeHQ  # Sandra Lee — Dr. Sandra Lee (aka Dr. Pimple Popper)
+UC9E6r0GuQ7d6G6esolVc5gg  # Sara Niemietz — SaraNiemietz
+UC5qqBFOKTNAzIyE4g3SvuwQ  # Schlatt — jschlattLIVE
+UCeYALIc8NIlBedLaqHYiH7Q  # Schlatt — jschlattLIVE
+UCxXqeNx2u6mLcFiPrX3-G_g  # Schlatt — jschlattLIVE
+UCp8YwJpk7OALmnuJ8d9SUlQ  # Scott Clifton — TheoreticalBullshit
+UCxzC4EngIsMrPmbm6Nxvb-A  # Scott Manley
+UCjinkxv899vPCJ65BWpmPIA  # Scott Wozniak — Scott the Woz
+UCmm3qhYkdW699stV_28TQpw  # Scott Wozniak — Scott the Woz
+UCJZ7f6NQzGKZnFXzFW9y9UQ  # Shay Carl Butler — Shaycarl
+UCLMtDePlMyiqv2XC_ByNEVQ  # Simon Stawski and Martina Sazunic — Eatyourkimchi
+UC28n0tlcNSa1iPe5mettocg  # Stephen Findeisen — Coffeezilla
+UC9WQRw8jgJhag-vkDNTDMRg  # Stephen Findeisen — Coffeezilla
+UCpQLC-evmUAon9BBpcW4kYg  # Steve Cutts
+UC2I6Et1JkidnnbWgJFiMeHA  # Steve Thomas — Steve1989MREInfo
+UCSnqXeK94-iNmwqGO__eJ5g  # Steve Wallis — thestevewallis
+UC-omXuxKA9yEygiG85yI4JQ  # Steven He
+UCuDz-AQO2KuXzjtxoycrnJg  # Steven He
+UC4_bwov47DseacR1-ttTdOg  # Steven Williams — boogie2988
+UCl4RpXZdQUhikTxBghAy1jQ  # Sweet Anita
+UC0VVYtw21rg2cokUystu2Dw  # Tanner Minecraft — SmallAnt
+UCrIIH7yHQugaUuoTZDoEUuQ  # Tanya Burr — pixi2woo
+UCMBli0InHqxEwD4bjAbrHTA  # Taylor Caniff
+UChJI6xOnfQJiI2fxNyZIwGg  # Terra Naomi — terranaomi
+UCjNxszyFPasDdRoD9J6X-sw  # Thomas James Kirk III — TheAmazingAtheist
+UCOYWgypDktXdb-HfZnSMK6A  # Thomas James Ridgewell — TomSka
+UC80Z-cIOdR6upfnrPJ8Q00A  # Thomas Sanders
+UCU8JJqKH0JCyr8T_THGKSaQ  # Thomas Sanders
+UC6xUVN7hFL43GY9Uz7xQvsg  # Thomas Simons — TommyInnit
+UC9gVCa6ap-KDayMRPg5wjIg  # Thomas Simons — TommyInnit
+UCgAyQyy6x3L-tmM1GICelGA  # Thomas Simons — TommyInnit
+UCJ2KvithJYlildF6SnOn5NA  # Thomas Simons — TommyInnit
+UCThP7h0aYpfPVGBKr41tTpQ  # Thomas Simons — TommyInnit
+UCR-ENZ64WL1vB8KU4YzdmTQ  # Tiffany Alvord — TiffanyAlvord
+UC3bO1qGcFovPqFEa-mg4EyA  # Timothy DeLaGhetto — TimothyDeLaGhetto
+UCVa7nsA_blpxzmfZWTPEsLQ  # Tobit "Tobi" Brown — TBJZL
+UCZgCEJCy4I1OO8PqBK2fLCQ  # Tommy and Matthew End — That's Amazing
+UCWcrr8Q9INGNp-PTCLTzc8Q  # Troye Sivan — TroyeSivan
+UCeQR745MWd5jDnD8RLZqVVA  # Tyrone Lindo — GRIMEREPORTTV
+UCOGeU-1Fig3rrDjhm9Zs_wg  # Vi Hart — Vihart
+UCmbnlwXAdGYACzvStDjquaA  # Vikram Singh Barn — Vikkstar123
+UCzfyYtgvkx5mLy8nlLlayYg  # Vivienne Medrano — VivziePop
+UC1n_PfsVqxllCcnMPlxBIjw  # William Gold — Wilbur Soot
+UCU4dU07ZfRopBQroeYdpWIA  # William Gold — Wilbur Soot
+UCaFUrR3oSxOl5Y9y6tvLTEg  # William Lenney — WillNE
+UCbguawtJlHjxXzdAskubQVg  # William Osman
+UCZnwf6GrmZTT8ILYIX-yQcw  # William Sledd — WilliamSledd
+UCSHeOoMayGpuVBHUGCVwFqQ  # Wilson Cleveland — wilsoncleveland
+UCO9kIeDrtsX0j83HbVljzSQ  # Youna Kang — CodeMiko
+UCTfM_BWbdKZKZnREx6-7SiQ  # Ysabella Brave — ysabellabrave
+UCz1QsQ8muaV49t_7SqR4CLw  # Zach King
+#
+# ── Cut by hand from the 336 the automatic screen passed ─────────────────────
+# Recorded with reasons because the screen is a text match over a Wikipedia
+# notes column, and the misses are the interesting part: it catches the word
+# "political" and misses "anti-ideology", catches "abuse" and misses "grooming
+# allegations". A future pass should read the survivors, not trust the regex.
+#
+#   Rucka Rucka Ali — racial parody songs
+#   Colleen Ballinger — grooming allegations
+#   Carl Benjamin — Gamergate and anti-ideology commentary
+#   Rebecca Black — notability is mass bullying of a 13-year-old
+#   Patrick Condell — antitheist political commentary
+#   Eugenia Cooney — notability entangled with an eating disorder
+#   Hannah Pearl Davis — misogynistic commentary
+#   Shane Dawson — sustained controversy record
+#   Belle Delphine — adult-adjacent
+#   Paul Denino — swatting incidents
+#   Ryan Garcia — public crisis episodes
+#   Jean-François Gariépy — race-science adjacent commentary
+#   Adam John Grandmaison — adult film content
+#   Laci Green — sex education and feminist commentary
+#   Brandon Herrera — firearms plus a congressional run
+#   James Jackson — controversy-led notability
+#   Lia Marie Johnson — child performer, later public crisis
+#   Austin Jones — convicted, child exploitation
+#   Kian Lawley — racial slur controversy
+#   Bryan Le — gambling promotion
+#   Shallon Lester — gossip
+#   Dua Lipa — pop star, effectively a label channel
+#   J. J. McCullough — political columnist
+#   Projekt Melody — adult streaming
+#   Tana Mongeau — controversy-led notability
+#   Trisha Paytas — controversy-led notability
+#   Samuel Pepper — sexual harassment allegations
+#   Nicholas Perry — extreme-eating, health exploitation
+#   Adin Ross — gambling promotion and controversy
+#   Anita Sarkeesian — notability is the harassment campaign itself
+#   Peter Schiff — political and financial commentary
+#   Shirley Setia — Bollywood-market, against the India hedge
+#   Joelle Joanie "JoJo" Siwa — content aimed at young children
+#   Tommy Sotomayor — race commentary
+#   Jeffree Star — racism controversies
+#   Winston Sterzel — China political commentary
+#   Toby Turner — sexual assault allegations
+#   Cenk Uygur, John Iadarola, Ana Kasparian, Ben Mankiewicz — political media outlet
+#   Rebecca Watson — skeptic and feminist commentary
+#   Hannah Witton — sexual health content

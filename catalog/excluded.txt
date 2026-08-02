@@ -120,3 +120,29 @@ UCjRkUtHQ774mTg1vrQ6uA5A  # Boulder Creek Railroad [1.2M]
 UCQo7Kkt6UOnPP114Xwi5Qeg  # TheFlightMike [1.1M]
 UCLLHnS6pKU4GdGEZjysogqQ  # Boylei Hobby Time [1.1M]
 
+
+# ── Right person, WRONG CHANNEL. Added 2026-08-02 with the reach-4 roster, which
+#   sourced ids from Wikidata P2397 rather than from guessed handles. That route
+#   cannot hit a squatter — there is no guessing step — but it has its own failure
+#   shape: the property often carries a creator's *secondary* channel, or an
+#   auto-generated one, and those merge just as silently. Derek Muller resolved to
+#   a 2K channel, not Veritasium's 17M.
+#
+#   Found by the rule reach-3.txt wrote down: scan the printed subscriber counts.
+#   14 of 280, so 5% — against the handle route's 16% miss and 7% wrong-identity.
+#   Excluded rather than deleted so a later Wikidata pass cannot silently re-add
+#   them.
+UCbDkzVJjlP12aXlEH_wpNmg  # Andrew Callaghan [188] — secondary
+UCNqr0MNa_pVynP_5_5gswyA  # Freddie Wong [737] — secondary, not RocketJump
+UChme4r90em8WXH9vPcBBbWg  # Derek Muller [2K] — secondary, not Veritasium
+UCO42ciP_nkDcOlATRjLXCqQ  # Brooke Brodack [2K] — abandoned
+UCi2ub3My1EBOWz4qQQgd5jw  # Amber Ettinger [3K] — abandoned
+UCLXoO5B2TUO0tc-q9U_C8PQ  # bowiechick [6K] — abandoned
+UCPszuZ3hR89D4NqFd7g3mDQ  # jawedNOW [72K] — zero videos
+UCzS3SUOllRmBRnc4Xmqhm_w  # Eugene Lee Yang [133K] — zero videos
+UCapBE4qj6uqAAiIcq5skiVw  # Andy Mckee - Topic [5K] — auto-generated
+UCeATCXpa1wVcGWSl9rWmI2g  # Bill Wurtz - Topic [20K] — auto-generated
+UCubY8F0qByZdyWUlk3b29-Q  # Ironmouse - Topic [172K] — auto-generated
+UChP_wYifMcFth31PNjkzGgA  # AlexisJordanVEVO [75K] — label mirror
+UCh_f6r5SZpzP8t2ZsjUPZVg  # GreysonChanceVEVO [250K] — label mirror
+UCdT7yHXJ-D7GzGiuDzDKM9w  # AustinMVEVO [2.8M] — label mirror

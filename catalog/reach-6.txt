@@ -1,0 +1,54 @@
+# Reach roster, pass 6 — false drops recovered from reach-5's anglophone cut.
+#
+# WHY THIS FILE IS 14 LINES AND NOT 2,222
+# reach-5's territory test reads a Wikidata claim (P27/P17/P495). A channel with
+# NO country claim at all therefore failed it the same way a foreign one did —
+# absence and disagreement are not the same thing, and the test could not tell
+# them apart. 2,222 of the 26,036 it cut declare an anglophone country on YouTube
+# itself, so they are the candidates for recovery.
+#
+# Recovering all 2,222 on that signal alone would be wrong, and the list says why
+# at a glance: YouTube's country field is what a channel TYPES IN, and A4
+# (Belarusian), Masha and the Bear (Russian), SOMOY TV (Bangladeshi) and Eros
+# Universe (Indian) all type "US". A self-declaration is good evidence of the
+# India hedge, where declaring it is the relevant fact, and poor evidence of who
+# an audience is.
+#
+# So the recovery is scoped to the band that actually needs it. SSR is the
+# binding band after reach-5 (89 lower walls against R's 245), and the SSR+UR
+# slice of the 2,222 is 44 channels — small enough to READ, which is the standard
+# reach-4 set and reach-5 could not meet. All 44 were read. 14 kept.
+#
+# The 30 dropped were dropped for the reason the cut exists: non-anglophone
+# market (A4, skibidi, aewee, Mamix, Masha and the Bear, Troom Troom, Big Marvel,
+# D Billions, Eros Universe, Gummibär, Jungle Beat), non-anglophone artists
+# (Maluma, David Guetta, DJ Snake, Martin Garrix, Natti Natasha, Sech, Reik, Luan
+# Santana, Pina Records, Biper y sus Amigos, Mariale, 123 Andrés), broadcaster or
+# news outlet (SOMOY TV, NPR Music, Universal Kids, Cartoon Network's non-UK
+# feed, Miraculous Ladybug as an IP channel), one non-anglophone event brand
+# (Tomorrowland), one Asia-market league (ONE Championship), and one on the
+# controversy standard (VitalyzdTv).
+#
+# THE GENERAL POINT, worth keeping: a structural screen's failures are structural
+# too. reach-5's screens are stronger than a regex, and this is the specific,
+# predictable way the strongest of them is wrong. A hand pass over the binding
+# band is the cheapest correction available, and it only works because the band
+# is small — which is also why it is not offered for N.
+#
+# FORMAT  one UC id per line, `# name [subs]` for review.
+# ADDED   2026-08-02.
+
+UCP-Ng5SXUEt0VE-TXqRdL6g  # LEGO [21.8M]
+UCKmmERguliWTynG9OIoDhDw  # Law By Mike [19.4M]
+UCINb0wqPz-A0dV9nARjJlOQ  # The Dodo [18.7M]
+UCv8nzwVPQDRjkPCkEsOdEwA  # Pitbull [17.8M]
+UC-2Y8dQb0S6DtpxNgAKoJKA  # PlayStation [17.2M]
+UC2YnEq5Fc5_zEO6bo0oNzCQ  # melanie martinez [16.3M]
+UC3jOd7GUMhpgJRBhiLzuLsg  # Nicki Minaj [28.3M]
+UCa10nxShhzNrCE1o2ZOPztg  # Trap Nation [30.1M]
+UCJsUvAqDzczYv2UpFmu4PcA  # Nas Daily [14.0M]
+UC8butISFwT-Wl7EV0hUK0BQ  # freeCodeCamp.org [11.8M]
+UCGydrkfIhUDNCotYQI8TJhA  # Cartoon Network UK [11.8M]
+UC73sF-7Ihcs1HpnXEEXZ2ew  # Brooke Monk [11.5M]
+UCdPui8EYr_sX6q1xNXCRPXg  # STORROR [11.0M]
+UCu4X846OSea5YU6S8fIpy1A  # BigDawsTv [10.6M]
