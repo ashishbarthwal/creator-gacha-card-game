@@ -54,7 +54,18 @@ async function main() {
   await mkdir(to('sets'), { recursive: true });
 
   await cp(from('index.html'), to('index.html'));
+  /* The policy pages are named here for the same reason everything else is: the
+     copy is an allowlist, so a page that exists in the repo and not in this list
+     is a page that 404s in production while looking fine locally. Both are gate
+     items (TASKS.md, WP10) and the footer links to them, so a missing one is a
+     broken promise rather than a missing file. */
+  await cp(from('privacy.html'), to('privacy.html'));
+  await cp(from('terms.html'), to('terms.html'));
   await cp(from('styles.css'), to('styles.css'));
+  /* Caching and security headers. It has to travel INSIDE the uploaded folder:
+     this is a direct upload, so Netlify never reads the repo, and netlify.toml's
+     [[headers]] are resolved by a build step that does not run here. */
+  await cp(from('_headers'), to('_headers'));
   await cp(from('src'), to('src'), { recursive: true });
   /* Gitignored, so it is absent from a clean checkout — removed anyway, because
      this script runs on the machine that HAS one. */
@@ -127,6 +138,27 @@ async function main() {
         (status.state === 'unknown' ? 'no snapshotDate, age cannot be established' : `${status.ageDays} days old`));
     }
     console.error('\nFix:  node tools/build-set.js     (re-hydrates every id, ~13 quota units, no searches)');
+    process.exit(1);
+  }
+
+  /* THE DEAD-LINK GUARD, and it is really a guard on the allowlist above. Adding
+     a page means editing two places — the repo and the copy list — and forgetting
+     the second produces a 404 that is invisible locally, where the file is simply
+     there. Rather than trust the next person to remember, ask the assembled site
+     whether every page it links to actually shipped. Same shape as the guards
+     above: cheap, and it only earns its keep on the day someone edits the list
+     without thinking. */
+  const missing = [];
+  for (const f of files.filter(f => f.endsWith('.html'))) {
+    const html = await readFile(f, 'utf8');
+    for (const [, href] of html.matchAll(/href="([^"#?:]+\.html)"/g)) {
+      if (!await exists(resolve(dirname(f), href))) missing.push(`${relative(SITE, f)} -> ${href}`);
+    }
+  }
+  if (missing.length) {
+    console.error('Refusing to build: a shipped page links to a page that did not ship.');
+    for (const m of missing) console.error(`  ${m.replace(/\\/g, '/')}`);
+    console.error('\nFix: add it to the copy allowlist at the top of tools/build-site.js.');
     process.exit(1);
   }
 

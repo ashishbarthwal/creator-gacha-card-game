@@ -40,3 +40,6 @@ sets/*.draft.json
 sets/built/
 # Dev-only picker manifest that surfaces generated drafts in the Sets dropdown.
 sets/index.local.json
+
+# Local Netlify folder
+.netlify

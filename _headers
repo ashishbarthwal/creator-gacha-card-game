@@ -1,0 +1,42 @@
+# Netlify headers. This file, not netlify.toml, is what actually applies here.
+#
+# The deploy is a DIRECT UPLOAD of an assembled folder (`netlify deploy --dir=_site`),
+# so Netlify never reads the repository and never runs a build. A `_headers` file
+# sitting in the uploaded directory is the documented, unambiguous way to attach
+# headers to a file-based deploy — netlify.toml's [[headers]] blocks are resolved
+# by the build system this deploy deliberately does not use. netlify.toml stays
+# as the record of WHY there is no build command; this is the mechanism.
+#
+# tools/build-site.js copies it in by name, like every other shipped file.
+
+# The built set is a dated snapshot, REPLACED on the 25-day refresh rather than
+# edited, and the biggest thing a visitor downloads (~7MB, ~2MB over the wire).
+# A day of caching means a returning player pays that once. It must never exceed
+# the refresh cadence, or a browser could serve a snapshot older than the 30-day
+# policy cap allows.
+/sets/*
+  Cache-Control: public, max-age=86400
+
+# The app's own code is small and changes whenever a fix ships. Netlify serves it
+# with an ETag, so `no-cache` means "revalidate", not "re-download" — a 304 costs
+# a round trip and nothing else. Without it, a CSS fix could sit invisible behind
+# a stale cache on the machines of the few people actually playing.
+/src/*
+  Cache-Control: public, no-cache
+
+/*.html
+  Cache-Control: public, no-cache
+
+# Modest on purpose: no backend, no session, no cookie, so most of the usual list
+# has nothing to protect here. These three do real work.
+#   nosniff          the app serves JSON sets and ES modules; don't let a browser
+#                    guess a content type for either
+#   frame-options    nothing here should be framed by another site, least of all
+#                    a page carrying creators' names and faces
+#   referrer-policy  matches the referrerPolicy="no-referrer" already set on every
+#                    card avatar — requests to Google's image CDN should not carry
+#                    this site's URL, and this extends that to everything else
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer

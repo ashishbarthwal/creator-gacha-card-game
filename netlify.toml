@@ -1,0 +1,24 @@
+# Netlify configuration.
+#
+# THERE IS NO BUILD COMMAND HERE, AND THAT IS THE POINT. The deploy is a DIRECT
+# UPLOAD of a directory assembled on the operator's own machine
+# (tools/build-site.js), because building the site requires hydrating channel ids
+# into live statistics, which requires an API key, and the built set can never be
+# committed — a set file in git is permanent, which satisfies neither YouTube's
+# 30-day cap on stored statistics nor a promise that a creator's removal is
+# actually performable.
+#
+# So Netlify never builds anything and never sees the repository. It receives a
+# finished folder. If a `command` ever appears below, that reasoning has been
+# reversed and it should be argued with first.
+#
+# GitHub Actions still runs the test suite on every push, which needs no key.
+#
+# HEADERS ARE NOT HERE. They are in `_headers`, which tools/build-site.js copies
+# into the uploaded folder. netlify.toml's [[headers]] blocks are resolved by the
+# build system, and this deploy has no build — so declaring them here would look
+# correct in the repo and apply to nothing on the CDN. That failure is silent,
+# which is exactly the kind worth writing a paragraph about.
+
+[build]
+  publish = "_site"

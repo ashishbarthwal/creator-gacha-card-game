@@ -1,0 +1,144 @@
+<!doctype html>
+<!--
+  Privacy policy. Short because the architecture is short: no backend, no
+  accounts, no analytics, no cookies. Every claim below is a claim about code in
+  this repository rather than about a policy someone intends to follow, which is
+  the only kind of privacy promise a client-side app is in a position to make.
+
+  It is also a stated prerequisite of any future YouTube API quota audit
+  (TASKS.md, WP10), which is why it exists before the first deploy rather than
+  after the first complaint.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Privacy — Creator Gacha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="doc-page">
+
+<header class="site-head">
+  <div class="brand">
+    <span class="play-glyph"></span>
+    <h1><a href="index.html">Creator Gacha</a></h1>
+  </div>
+  <p class="tagline">Privacy</p>
+</header>
+
+<main class="doc">
+  <p class="doc-updated">Last updated 3 August 2026</p>
+
+  <h2>The short version</h2>
+  <p>
+    Creator Gacha has no server. It is a folder of static files — HTML, CSS and JavaScript —
+    served by a CDN and run entirely in your browser. There is nothing on our side to store
+    anything <em>in</em>, which is why the rest of this page is mostly a list of things that
+    do not happen.
+  </p>
+
+  <h2>What we collect</h2>
+  <p><strong>Nothing.</strong> No accounts, no sign-in, no analytics, no tracking pixels, no
+  advertising, no cookies, no local telemetry of any kind. We do not know that you visited.</p>
+
+  <h2>Your YouTube API key</h2>
+  <p>
+    The game does not ask you for one. Cards ship with the site, so there is nothing to set up
+    and no key to supply. A developer-only Live mode still exists behind a URL flag, and if a
+    key is ever entered there, this is what happens to it:
+  </p>
+  <ul>
+    <li>is held in the page's memory for as long as the tab is open, and nowhere else;</li>
+    <li>is <strong>never</strong> written to localStorage, a cookie, or any other storage;</li>
+    <li>is <strong>never</strong> sent to us — we have nowhere to send it to;</li>
+    <li>is sent only to <code>googleapis.com</code>, as part of the requests you asked for.</li>
+  </ul>
+  <p>
+    Closing or reloading the tab discards it.
+  </p>
+
+  <h2>Your collection</h2>
+  <p>
+    Cards you pull are saved in your browser's <code>localStorage</code>, on your device. They
+    are never transmitted anywhere. They are not readable by us, and they do not sync between
+    your devices — a collection is per-browser.
+  </p>
+  <p>
+    <strong>You can delete it at any time</strong> with the "Clear collection" button on the
+    main page, or by clearing site data in your browser. A copy of your data that you have no
+    way to remove is not really yours, so the button is part of the promise rather than a
+    convenience.
+  </p>
+
+  <h2>What your browser contacts</h2>
+  <ul>
+    <li><strong>Our CDN host</strong> — to serve the page and the card sets. Like every web
+      host, it processes your IP address in order to answer the request. We do not receive,
+      query or retain those logs.</li>
+    <li><strong>Google Fonts</strong> (<code>fonts.googleapis.com</code>,
+      <code>fonts.gstatic.com</code>) — for the three typefaces the design uses.</li>
+    <li><strong>Google's image CDN</strong> (<code>*.ggpht.com</code> /
+      <code>*.googleusercontent.com</code>) — creator profile pictures on cards are loaded from
+      YouTube's own servers rather than copied onto ours. They are requested with
+      <code>referrerPolicy="no-referrer"</code>.</li>
+    <li><strong>googleapis.com</strong> — not contacted while playing. Only the developer-only
+      Live mode reaches it, only with a key entered there, and only when a channel is asked
+      for.</li>
+  </ul>
+  <p>
+    Each of those sees a request from your browser and applies its own privacy policy, which we
+    do not control. That is the honest boundary of what this page can promise.
+  </p>
+
+  <h2>Creator data on the cards</h2>
+  <p>
+    Cards are built from public YouTube channel statistics — subscriber, view and video counts,
+    channel name and profile picture. They are refreshed on a fixed cadence and the published
+    snapshot is never older than 30 days, matching YouTube's cap on stored statistics.
+  </p>
+  <p>
+    <strong>If you are a creator and want off, you are off.</strong> Write to
+    <a href="mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request">ashish.barthwal.cs@gmail.com</a>
+    and you will be removed from every set within 7 days, with no questions asked and no proof
+    of identity required. The removal is permanent: your channel id goes on a denylist that
+    blocks it from every future build, so it cannot quietly return the next time cards are
+    sourced.
+  </p>
+
+  <h2>Children</h2>
+  <p>
+    This is not a service directed at children, and it collects nothing from anyone. There is
+    no monetisation of any kind in the game — no purchases, no currency, no paid pulls, no ads.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    If this policy changes, the date at the top changes with it. The full revision history is
+    public in the project's git log.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    <a href="mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20privacy">ashish.barthwal.cs@gmail.com</a>
+  </p>
+
+  <p class="doc-back"><a href="index.html">← Back to the game</a></p>
+</main>
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-legal">
+      <p>Fan project. Not affiliated with or endorsed by YouTube or Google. Channel data via the YouTube Data API.</p>
+    </div>
+    <div class="footer-links">
+      <p><a href="index.html">Game</a> · <a href="terms.html">Terms</a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
