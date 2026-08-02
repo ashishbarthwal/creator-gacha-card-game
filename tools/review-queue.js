@@ -35,6 +35,9 @@
 
    Run:   node tools/review-queue.js              (merge the latest snapshot in)
           node tools/review-queue.js --status     (how far through you are)
+          node tools/review-queue.js --bands R,N --out reports/review-queue-RN.txt
+                                                  (the bands review skips, kept
+                                                   on disk and ready to mark)
    Then:  node tools/reinstate.js --from reports/review-queue.txt
 
    No key, no network, no quota. */
@@ -48,7 +51,7 @@ import { RARITY_ORDER } from '../src/engine/core.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const SNAPSHOT = resolve(ROOT, 'reports/dropped-review.txt');
-const QUEUE = resolve(ROOT, 'reports/review-queue.txt');
+const DEFAULT_QUEUE = 'reports/review-queue.txt';
 
 /* `UC...  # Name [23.3M] SSR   <- anything you typed` , optionally +marked. */
 const LINE = /^(\+?)\s*(UC[\w-]{22})\s*#\s*(.*?)\s*\[([^\]]*)\]\s*(\w+)\s*(.*)$/;
@@ -91,6 +94,10 @@ function arg(flag, fallback = null) {
 async function main() {
   const statusOnly = process.argv.includes('--status');
   const bands = new Set(String(arg('--bands', REVIEW_BANDS.join(','))).split(',').map(b => b.trim().toUpperCase()));
+  /* --out keeps the R/N list as its own standing file rather than making the
+     working queue swap contents depending on the last flag someone typed. Two
+     files, each with a stable meaning, beats one file with a mode. */
+  const QUEUE = resolve(ROOT, arg('--out', DEFAULT_QUEUE));
 
   const snapshot = parse(await readFile(SNAPSHOT, 'utf8').catch(() => ''));
   const existing = parse(await readFile(QUEUE, 'utf8').catch(() => ''));
@@ -167,7 +174,7 @@ async function main() {
   await mkdir(resolve(ROOT, 'reports'), { recursive: true });
   await writeFile(QUEUE, out.join('\n') + '\n');
 
-  console.log(`reports/review-queue.txt — ${rows.length} channels`);
+  console.log(`${arg('--out', DEFAULT_QUEUE)} — ${rows.length} channels`);
   if (added) console.log(`  +${added} newly dropped since the last merge`);
   if (skipped) console.log(`  ${skipped} in bands not under review (${[...bands].join('/')} only) — still excluded, just not listed`);
   if (gone.length) console.log(`  −${gone.length} no longer excluded (reinstated, or the screen changed)`);
@@ -176,7 +183,7 @@ async function main() {
     const n = rows.filter(r => r.band === band).length;
     if (n) console.log(`    ${band.padEnd(4)} ${String(n).padStart(5)}`);
   }
-  console.log('\nMark lines with +, then:  node tools/reinstate.js --from reports/review-queue.txt');
+  console.log(`\nMark lines with +, then:  node tools/reinstate.js --from ${arg('--out', DEFAULT_QUEUE)}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

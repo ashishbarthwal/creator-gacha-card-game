@@ -32,12 +32,14 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative } from 'node:path';
 
 import { refreshStatus, daysSince, lastEntry, REFRESH_DAYS, POLICY_DAYS } from '../src/engine/freshness.js';
+import { parseRosterLines, splitPin } from '../src/engine/candidates.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
 const BUILT_DIR = resolve(ROOT, 'sets/built');
 const CANDIDATES_PATH = resolve(ROOT, 'catalog/candidates.json');
+const EXCLUDED_PATH = resolve(ROOT, 'catalog/excluded.txt');
 const DENYLIST_PATH = resolve(ROOT, 'catalog/denylist.json');
 const DRAFT_PATH = resolve(ROOT, 'sets/magic-search.draft.json');
 const REFRESH_LOG_PATH = resolve(ROOT, 'catalog/refresh-log.json');
@@ -116,6 +118,32 @@ async function main() {
     if (lastBuild && db.updated && db.updated > lastBuild.at.slice(0, 10)) {
       console.log('             ! roster changed since the last build — rebuild to include it');
       bump(1);
+    }
+
+    /* ── THE NO-DATA-LOSS INVARIANT ────────────────────────────────────────
+       An exclude holds a card OUT of a printing; it must never be the thing
+       that loses it. Deleting a line from catalog/excluded.txt has to be
+       enough to bring a card back, and that is only true while the id is still
+       in the candidate DB.
+
+       Ash asked for this guarantee in words ("don't wanna lose any data
+       here"), which is exactly the kind of promise that rots silently — an
+       exclude list and a candidate DB drift apart one careless edit at a time,
+       and nobody notices until a card cannot be recovered. So it is checked on
+       every status run rather than remembered.
+
+       An orphan means an id is excluded but no longer sourceable: recovering
+       that channel would cost a fresh sourcing run to rediscover it. */
+    const excludeText = await readFile(EXCLUDED_PATH, 'utf8').catch(() => '');
+    const excludedIds = parseRosterLines(excludeText).map(e => splitPin(e).input);
+    const known = new Set((db.candidates ?? []).map(c => String(c.id)));
+    const orphans = excludedIds.filter(id => !known.has(id));
+    const shipping = known.size - excludedIds.filter(id => known.has(id)).length;
+    console.log(`             ${excludedIds.length} held out by catalog/excluded.txt · ${shipping} shipping · recoverable by deleting a line`);
+    if (orphans.length) {
+      console.log(`             ! ${orphans.length} excluded id${orphans.length === 1 ? '' : 's'} NOT in the candidate DB — those cards cannot be brought back without re-sourcing`);
+      for (const id of orphans.slice(0, 5)) console.log(`               ${id}`);
+      bump(2);
     }
   }
 
