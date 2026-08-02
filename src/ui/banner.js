@@ -28,9 +28,11 @@ const MS_CAP = 5;
 
 const modeSetsBtn = document.getElementById('mode-sets');
 const modeLiveBtn = document.getElementById('mode-live');
+const modeToggle = document.querySelector('.mode-toggle');
 const setsControls = document.getElementById('sets-controls');
 const setSelect = document.getElementById('set-select');
 const setMeta = document.getElementById('set-meta');
+const setCount = document.getElementById('set-count');
 const liveControls = document.getElementById('live-controls');
 const apiKeyInput = document.getElementById('api-key');
 const addInput = document.getElementById('add-input');
@@ -86,6 +88,21 @@ function renderPool() {
   const ready = pool.length > 0;
   packBtn.disabled = pullBtnDev.disabled = !ready;
   packBtn.classList.toggle('is-ready', ready);
+  renderSetCount(pool);
+}
+
+/* Dev-only deck size. Reads the pool that is actually loaded rather than the
+   manifest, so it reports what the app can pull right now — which is the number
+   worth seeing while sourcing, and the one that catches a stale built set still
+   sitting in _site. Gated in init(); hidden elements keep updating harmlessly. */
+function renderSetCount(pool) {
+  if (!setCount) return;
+  const label = state.mode === 'live'
+    ? 'Banner'
+    : (setSelect.options[setSelect.selectedIndex]?.textContent ?? 'Set');
+  setCount.textContent = pool.length
+    ? `${label} — ${pool.length.toLocaleString()} cards`
+    : `${label} — empty`;
 }
 
 function renderChips(pool) {
@@ -138,6 +155,16 @@ function setMode(mode) {
    that fetch fails, the demo set is untouched and remains pullable. */
 let setsSeeded = false;
 
+/* Seeding demo FIRST is what makes the first paint instant and offline-safe, and
+   it also used to decide what a visitor played: whatever is selected when the
+   manifest arrives stays selected, so a deployed build opened on eight fictional
+   channels standing in front of a real Series.
+
+   So the demo keeps its job as the thing that loads first, and loses its job as
+   the thing that stays. The moment a real set is offered, it takes over — unless
+   the visitor already chose for themselves, which always outranks this. */
+let userPickedSet = false;
+
 function ensureSets() {
   if (setsSeeded) return;
   setsSeeded = true;
@@ -158,23 +185,32 @@ function selectDemo() {
 }
 
 async function appendManifestSets() {
-  await appendSetsFrom('sets/index.json', { warnOnFail: true });
+  const offered = [];
+  offered.push(...await appendSetsFrom('sets/index.json', { warnOnFail: true }));
   /* Sets minted by tools/build-set.js. Never committed (a set file in git is
      permanent, which would break both the 30-day statistics cap and the promise
      that a removal is performable), so CI builds them at deploy and they arrive
      through their own manifest rather than the committed one. Probed on every
      host, unlike the dev manifest below — this is the production path. Silent on
      failure, since a checkout with nothing built yet is the normal local state. */
-  await appendSetsFrom('sets/built/index.json', { warnOnFail: false });
+  offered.push(...await appendSetsFrom('sets/built/index.json', { warnOnFail: false }));
   /* Dev-only: a gitignored sets/index.local.json lets local build tools (e.g.
      tools/magic-search.js) surface their generated draft sets in the picker
      without touching the committed manifest. Probed only in dev, so a deployed
      build never makes the doomed request — same spirit as the config.local.js
      pre-fill above. */
   if (IS_DEV) await appendSetsFrom('sets/index.local.json', { warnOnFail: false });
+
+  /* Promote the first real set over the demo. Deliberately NOT the last one: the
+     dev manifest is appended after the production one, so "last" would mean a
+     local Magic Search draft outranks Series 1 on the one machine that builds
+     both. First offered is first published, which is the ordering that means
+     something. */
+  if (offered.length && !userPickedSet) selectSet(offered[0]);
 }
 
 async function appendSetsFrom(url, { warnOnFail }) {
+  const added = [];
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error();
@@ -184,11 +220,22 @@ async function appendSetsFrom(url, { warnOnFail }) {
       opt.value = s.file;
       opt.textContent = s.title;
       setSelect.appendChild(opt);
+      added.push(s.file);
     }
   } catch {
     // The demo set still works; the extra sets just aren't offered.
     if (warnOnFail) showStatus('Could not load the additional set list.', true);
   }
+  return added;
+}
+
+/* Point the picker at a set and load it. Split out of the change handler so the
+   auto-promotion above goes through the identical path a click does, including
+   its failure handling — a promotion that loaded sets by a second route would be
+   a second route to get wrong. */
+function selectSet(file) {
+  setSelect.value = file;
+  return loadSelectedSet();
 }
 
 async function loadSelectedSet() {
@@ -203,6 +250,14 @@ async function loadSelectedSet() {
   } catch (err) {
     setMeta.textContent = '';
     showStatus(err.message, true);
+    /* Fall back to the set that cannot fail. A failed load leaves the pool on
+       whatever was there before, so without this the picker would name a set the
+       player is not pulling from — and after the auto-promotion above, "before"
+       is the demo set anyway. Saying so is better than showing Series 1 over a
+       demo pool. */
+    setSelect.value = DEMO_VALUE;
+    selectDemo();
+    return;
   }
   renderPool();
 }
@@ -277,7 +332,7 @@ async function onMagicSearch(tierKey) {
 export function initBanner({ onPull, onDevPull }) {
   modeSetsBtn.addEventListener('click', () => setMode('sets'));
   modeLiveBtn.addEventListener('click', () => setMode('live'));
-  setSelect.addEventListener('change', loadSelectedSet);
+  setSelect.addEventListener('change', () => { userPickedSet = true; loadSelectedSet(); });
   apiKeyInput.addEventListener('input', () => { state.apiKey = apiKeyInput.value.trim(); });
   addBtn.addEventListener('click', onAddChannel);
   addInput.addEventListener('keydown', e => { if (e.key === 'Enter') onAddChannel(); });
@@ -321,6 +376,23 @@ export function initBanner({ onPull, onDevPull }) {
   gateDevElement(msRow);
   gateDevElement(msInputRow);
   gateDevElement(pullBtnDev);
+  gateDevElement(setCount);
+
+  /* LIVE MODE IS DEV-ONLY (2026-08-03). Hiding the toggle hides the whole mode:
+     Live's controls are already shown by setMode, which never runs for a mode
+     the player cannot select.
+
+     It was the app's original premise — bring your own key, pull any channel —
+     and sets made it vestigial. A player is asked for a Google Cloud API key to
+     reach a worse version of what the front page already does with 19,874 cards
+     and no setup. That is a wall in front of the game, not a feature.
+
+     GATED, NOT DELETED, and the reason is not sentiment: the in-page Magic
+     Search and the key field live inside these controls, and they are how
+     sourcing runs get driven from the browser. `?dev=1` keeps all of it. The
+     live adapter (data/youtube.js) is untouched either way — tools/add-candidates
+     imports it, so it is pipeline code, not UI. */
+  gateDevElement(modeToggle);
 
   /* Local dev convenience: if a gitignored src/config.local.js exists and
      exports a YOUTUBE_API_KEY, pre-fill the Live API field so testing live
