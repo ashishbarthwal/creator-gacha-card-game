@@ -3,6 +3,9 @@
 > Pull collectible trading cards minted from real YouTube channel stats.
 > A browser-based gacha game where a channel's numbers *become* the card.
 
+**▶ Play it: [creator-gacha.netlify.app](https://creator-gacha.netlify.app)** — no signup, no API key,
+19,874 cards.
+
 [![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
 
 A fan tribute to [Wikigacha](https://en.wikipedia.org/wiki/Wikigacha) (Harusugi, Feb 2026),
@@ -40,6 +43,9 @@ Rarer cards are weighted to pull less often, and hit ATK/DEF harder.
 
 ## Run it
 
+It's already running at **[creator-gacha.netlify.app](https://creator-gacha.netlify.app)** —
+the rest of this section is for running it locally.
+
 No build step, no dependencies — plain ES modules under `src/`, served as-is.
 
 - **Serve the folder** with any static server, then open `index.html`. The app is ES
@@ -53,12 +59,16 @@ No build step, no dependencies — plain ES modules under `src/`, served as-is.
   **demo set** ships fictional channels with generated avatars and zero network, so the
   default view paints instantly and works offline. Pull ×1 / ×10, watch the reveal, build a
   collection.
-- **Live mode** pulls real channels. It needs your own free
-  [YouTube Data API v3](https://developers.google.com/youtube/v3/getting-started) key,
-  pasted into the app. The key lives only in the page's memory — it is never stored,
-  never logged, and never sent anywhere except `googleapis.com`.
+- **Live mode** is now **dev-only** (`?dev=1`). It pulls arbitrary real channels with your own
+  free [YouTube Data API v3](https://developers.google.com/youtube/v3/getting-started) key,
+  pasted into the app, and it is also where in-page Magic Search lives. The key stays in the
+  page's memory — never stored, never logged, never sent anywhere except `googleapis.com`.
+  It went behind the flag on 2026-08-03: asking a player for a Google Cloud key to reach a
+  thinner version of what the front page already does is a wall in front of the game. The
+  live adapter itself is untouched — `tools/add-candidates.js` runs on it.
 
-Add channels by `@handle`, channel URL, or `UC…` id. (Vanity `/c/` URLs aren't supported yet.)
+  In dev, add channels by `@handle`, channel URL, or `UC…` id. (Vanity `/c/` URLs aren't
+  supported yet.)
 
 ---
 
@@ -160,21 +170,38 @@ into a tested, modular, deployable project in dependency order (full detail in
 - [x] **WP7a — Creator opt-out.** A real contact route in the footer and a stated policy:
       removal honored within 7 days, no identity check. Shipped deliberately *before* the first
       real-creator set, since an opt-out that arrives after one is already too late.
-- [~] **WP7 — Set-build pipeline.** Two committed artifacts and one that never is.
+- [x] **WP7 — Set-build pipeline.** Two committed artifacts and one that never is.
       `catalog/candidates.json` holds channel IDs, our own tags and the opt-out denylist —
       never channel data, because anything in git is permanent and could satisfy neither the
       30-day storage cap nor a promised removal. `build-set.js` hydrates those IDs into a full
       set, re-runs the region filter on *fresh* data, and writes to a gitignored `sets/built/`.
       The published record is assembled from a positive allowlist, so a self-declared `country`
-      cannot reach a shipped file by omission. Sets are minted in CI at deploy.
-      *Pending:* the 25-day refresh workflow, and a sourcing route that can actually reach the
-      SSR/UR bands — the hobby/craft keyword vocab tops out around SR.
+      cannot reach a shipped file by omission. Sets are minted at deploy, on the one machine
+      that can hold an API key without writing to a git history.
 - [x] **WP12 — Pull reveal theatre.** Built out of sequence: the pull is the moment the game is
       *for*, and it was the weakest thing on screen. Rarity-escalated flip order, a beam
       telegraph, specular sweep, SR+ twinkling stars, and a three-beat UR finish — all CSS, with
       a reduced-motion path that stays still but keeps the rarity halo.
-- [ ] **Next.** Production hardening (dev affordances gated, avatar-source flag), localStorage
-      persistence, card→PNG export, then deploy with a privacy policy and terms page.
+- [x] **WP8 — Production hardening.** Dev affordances gated behind a runtime dev/prod flag
+      (hostname-detected, since there is no build step to compile a constant into), and an
+      avatar-source switch that can swap every real profile picture for a generated emblem
+      without a fork. That switch is what makes shipping real faces a reversible decision
+      rather than a permanent one.
+- [x] **WP9 — The decks + persistence.** A band cap so a chase card stays reachable, pins so a
+      set's headline cards can't be hashed out, seeded printing rotation, a localStorage
+      collection that reconciles against the loaded set, a refresh alarm (warn at 25 days,
+      refuse at 30), and the curation exclude.
+- [x] **WP10 — Deploy.** Live at
+      [creator-gacha.netlify.app](https://creator-gacha.netlify.app). Direct upload of a
+      locally assembled `_site`, never a CI build — the set has to be hydrated with a real API
+      key and can never be committed. Four guards run before anything uploads: no drafts, no
+      `country` field, nothing past the 30-day statistics cap, no page linking to a page that
+      didn't ship. Plus a [privacy policy](privacy.html) and [terms](terms.html).
+- [x] ~~**Card → PNG export.**~~ Built, then **scrapped before shipping**. An exported image
+      outlives a removal request, so the feature quietly broke the opt-out promise. Deleted
+      rather than hidden behind a flag.
+- [ ] **Next.** SSR-band depth (the binding constraint at 92.8 lower walls), Series 2 rotation,
+      and procedural creator emblems to dissolve the likeness question entirely.
 
 ---
 

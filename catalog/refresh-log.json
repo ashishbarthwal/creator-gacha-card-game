@@ -2,67 +2,11 @@
   "note": "Refresh ledger — dates and counts only, never creator data. Written by tools/build-set.js and npm run deploy. See src/engine/freshness.js.",
   "entries": [
     {
-      "at": "2026-07-31T19:18:06.577Z",
-      "event": "build",
+      "at": "2026-08-02T20:08:16.047Z",
+      "event": "deploy",
       "slug": "series-1",
-      "cards": 400,
-      "snapshotDate": "2026-07-31"
-    },
-    {
-      "at": "2026-08-01T06:52:35.714Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 400,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T07:16:49.624Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 1200,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T17:40:43.307Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 400,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T17:41:01.270Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 1200,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T17:59:15.558Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 1200,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T18:04:47.042Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 1351,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T18:10:21.982Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 1442,
-      "snapshotDate": "2026-08-01"
-    },
-    {
-      "at": "2026-08-01T18:10:47.609Z",
-      "event": "build",
-      "slug": "series-1",
-      "cards": 1442,
-      "snapshotDate": "2026-08-01"
+      "cards": 19874,
+      "snapshotDate": "2026-08-02"
     }
   ]
 }

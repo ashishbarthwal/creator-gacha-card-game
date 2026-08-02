@@ -65,11 +65,17 @@ Two things matter structurally:
 and **live** sources produce an identical channel object shape, so nothing downstream can
 tell them apart. This is why the app works offline (the demo set is bundled, not
 fetched), why the tests never need an API key, why the demo set is a real set behind the
-seam rather than a hack, and why versioned card sets ship as plain static files. There are
-two user-facing modes — **Sets** (default; demo set + any fetched sets in a picker) and
-**Live** (bring-your-own-key). The old standalone "Demo" mode was folded into this bundled
-set in WP4 and carried the name "Starter Set" until 2026-08-01, when it took the "Demo"
-label back — the fold is unchanged, only the label (see DECISIONS.md).
+seam rather than a hack, and why versioned card sets ship as plain static files. The old
+standalone "Demo" mode was folded into this bundled set in WP4 and carried the name
+"Starter Set" until 2026-08-01, when it took the "Demo" label back — the fold is unchanged,
+only the label (see DECISIONS.md).
+
+**There is one user-facing mode: Sets.** **Live** (bring-your-own-key) went dev-only on
+2026-08-03 — it still exists behind `?dev=1`, because the in-page Magic Search and the key
+field live in its controls, but a player never sees a mode toggle. Note what this does NOT
+change: locked decision 3 is about hosting, and the live adapter (`data/youtube.js`) is
+still live pipeline code — `tools/add-candidates.js` imports it. The seam still has three
+sources; only the UI stopped offering one of them.
 
 **The pure core.** `rarityFromSubs` and `statsFrom` are pure and deterministic — no I/O,
 no randomness, no DOM. They sit between the seam and everything stateful. This is the

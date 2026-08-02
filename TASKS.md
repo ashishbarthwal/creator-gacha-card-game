@@ -5,36 +5,40 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** deck 1,442 cards · 1,769 candidates · nothing deployed.
-**Next:** commons sourcing (below the wall — 23 R short of 1 lw), then deploy.
+**Now:** LIVE at https://creator-gacha.netlify.app — 19,874 cards (uncapped, the whole pool) ·
+19,968 candidates · deployed 2026-08-03.
+**Next:** SSR depth (SSR is the wall at 92.8 lw, R is no longer binding), then deploy.
 
 ---
 
 ## Open
 
 ### WP10 — Deploy + README
-- [ ] **Netlify direct upload + live link.** Tooling built and locally verified;
-      `npm run deploy` builds the set, assembles `_site`, runs the draft/`country`/staleness
-      guards and uploads. Never run against Netlify yet.
-- [ ] **Series 1 as the default selection.** The demo set seeds the picker first because it
-      loads synchronously, so it is also what stays selected — a visitor lands on eight
-      fictional cards. Promote the built set once it arrives; keep demo as the offline fallback.
-- [ ] Deployment structure: how the decks and their manifest arrive, given built sets are
-      never committed.
+- [X] **Netlify direct upload + live link.** LIVE at https://creator-gacha.netlify.app
+      (2026-08-03). `_headers` ships inside `_site` rather than living in `netlify.toml` —
+      a direct upload has no build step to resolve the toml's `[[headers]]`, so they would
+      have applied to nothing. Brotli confirmed on the wire.
+- [X] **Series 1 as the default selection.** The demo set still seeds first (synchronous,
+      offline-safe) and now hands over the moment a real set is offered, unless the visitor
+      already picked one themselves.
+- [X] Deployment structure: built sets arrive through their own `sets/built/index.json`,
+      written beside them and uploaded in the same folder.
+- [X] **Privacy policy page** + **Terms of service page** — both shipped, linked in the
+      footer, and pinned by a new build guard that refuses to publish a page linking to a
+      page that did not ship.
 - [ ] **Schedule the refresh on Ash's machine.** Task Scheduler weekly, "run as soon as
       possible after a missed start". The guard makes a miss safe rather than silent.
-- [ ] README: screenshots · live demo · test-suite pointer
-- [ ] **Privacy policy page** — the app takes a user's API key, and a stated prerequisite of
-      any future quota audit. Easy to write honestly: no backend, no accounts, no analytics,
-      key in memory only, collection local-only and never transmitted.
-- [ ] **Terms of service page** — same audit prerequisite. Carries the unofficial disclaimer
-      and the opt-out route in one place rather than only in the footer.
+      **Now load-bearing:** a real deploy is public, so the 30-day cap is running against
+      something a stranger can read.
+- [ ] README: **screenshots** (live demo + test pointer done)
 
 ### WP9 — remaining
 - [ ] **Browser check on persistence** — not testable from the suite (localStorage + DOM).
-- [ ] **Roster depth for Series 2.** Rotation needs ~7x the per-printing count. Surplus is
-      currently all in the top bands (151 SR, 35 SSR, 7 UR) and **zero in R** — backwards,
-      since commons are 55% of pulls and so are what a returning player notices repeating.
+- [ ] **Roster depth for Series 2.** Rotation needs ~7x the per-printing count. The reach-5
+      Wikidata sweep (2026-08-02) ended R's run as the binding band; **SSR binds now**, at 92.8
+      lower walls against R's 245. UR is world-supply capped and will never be met. The next
+      sourcing pass goes at SSR (10M–50M), where a notability sweep is already exhausted and
+      the route is curated rosters.
 
 ### WP11 — Procedural Creator Emblems  (proposed, not started)
 Replaces the creator's profile picture with a deterministic generated emblem, dissolving the
@@ -56,8 +60,9 @@ work. Shared with Repo Gacha, which also cannot use real logos.
 These happen repeatedly and do not earn a work package. Do them, note anything surprising in
 DECISIONS.md, move on.
 
-- **Sourcing runs.** Public lists for SR/SSR/UR (~1.2 quota units per candidate), keyword
-  search for the sub-100K commons only (~11.5). See `catalog/legends.txt`, `reach*.txt`.
+- **Sourcing runs.** The Wikidata P2397 sweep is the default route now (~0.02 units per
+  candidate, `catalog/reach-5.txt`); public lists for SR/SSR/UR (~1.2); keyword search for the
+  sub-100K commons only (~11.5). See `catalog/legends.txt`, `reach*.txt`.
 - **Curation exclusions.** `catalog/excluded.txt` — editorial, revisable, and never to be
   confused with the opt-out denylist.
 - **Printing size changes** and rebuilds at the 25-day cadence.

@@ -1698,3 +1698,325 @@ colour the pull controls own) because it needs a Google Cloud key and is noise f
 this build targets. Deleting a working feature to tidy a screen is the wrong trade.
 
 </details>
+
+## Notability is the third recognition signal, and the only one that reaches R (2026-08-02)
+
+<details>
+<summary><b>Wikipedia's List of YouTubers, resolved to channel ids through Wikidata, moved the R band from 22.7 to 27.6 lower walls for 6 quota units</b> — and because it sources ids rather than guessed handles, it structurally cannot repeat this morning's squatter failure.</summary>
+
+R (100K–1M) was the deck's binding band, and neither existing route could reach it. Published
+rankings bottom out near 20M ("Recognition is sourced, not searched") and model recall thins
+below ~1M ("A handle is not an identity"). The reason is the same for both: **they rank by
+SIZE**, and nothing ranks by size at 100K.
+
+**The insight is that notability is a different axis from size.** Wikipedia's List of YouTubers
+is a notability list — a creator with an article and 300K subscribers is exactly the R-band card
+a player recognizes, and the article does not care how many subscribers they have. That makes it
+a recognition signal of the same kind as a ranking, aimed at the band rankings cannot see.
+
+**Ids, not handles, and that is the load-bearing part.** Each of the 947 rows links an enwiki
+article; each article's Wikidata item carries property **P2397, the YouTube channel id**. So the
+pipeline reads an id off a database instead of guessing a handle off a display name. This
+morning's failure — five guessed handles resolving to squatters on abandoned famous names,
+merging silently as N-band filler — has no analogue here, because there is no guessing step to
+be wrong.
+
+| route | spend | candidates | per candidate |
+|---|---|---|---|
+| Wikidata ids → `add-candidates.js` | **6 units** | 280 | **0.02** |
+| public lists → `add-candidates.js` | 372 | 316 | 1.2 |
+| model recall → `add-candidates.js` | 68 | 52 | 1.3 |
+| Magic Search → `search.list` | ~1,206 | 105 | 11.5 |
+
+Handles cost 1 unit each; ids batch 50 to a unit. The whole roster resolved for the price of six
+handles.
+
+**THE NEW FAILURE SHAPE, since every route has one.** The id route cannot hit a squatter, but
+P2397 frequently carries a creator's *secondary* channel, an auto-generated one, or a label
+mirror. Derek Muller resolved to a 2K channel rather than Veritasium's 17M; Freddie Wong to a
+737-subscriber channel rather than RocketJump. Also three `- Topic` auto-channels, three VEVO
+mirrors and two zero-video placeholders. **14 of 280 — 5%**, against the handle route's 16% miss
+and 7% wrong-identity.
+
+These are the right *person* and the wrong *channel*, which is a different defect but the
+identical symptom: a famous name seated in the commons. They were caught by the rule reach-3.txt
+wrote down — **scan the printed subscriber counts, not just the failure lines** — which is worth
+noting because the rule was written for a failure mode this route does not have, and caught this
+one anyway. They went to `catalog/excluded.txt` rather than being deleted, so a later Wikidata
+pass cannot silently re-add them.
+
+**The automatic editorial screen was not sufficient, and the misses are instructive.** A
+note-pattern regex over the Wikipedia notes column cut 42 rows, then reading all 336 survivors by
+hand cut **53 more**. It catches "political" and misses "anti-ideology"; catches "abuse" and
+misses "grooming allegations"; catches "convicted" and misses "controversial". A text screen over
+an encyclopedia's prose is a first pass, never the decision. Every hand cut is listed with its
+reason at the foot of `catalog/reach-4.txt`.
+
+**Where the wall moved, measured on the candidate pool.** It moved twice in one session, which is
+the useful part of the record:
+
+| | N | R | SR | SSR | UR | binding |
+|---|---|---|---|---|---|---|
+| before | 25.6 | **22.7** | 65.6 | 40.0 | 33.0 | R |
+| after reach-4 | **25.6** | 27.6 | 65.6 | 40.0 | 33.0 | N |
+| after the commons run | 52.4 | **27.6** | 65.6 | 40.0 | 33.0 | R |
+
+So R is the binding band again, but ~5 lower walls higher than it started. Closing a wall moves
+the wall; it does not remove it.
+
+**The printing was deliberately NOT enlarged.** The pool would now support 1,612 cards, and it
+stays at 1,200. "A printing is 1,200 cards" already settled this on UR world-supply: the cap
+wants 28 UR at 1,600 against roughly 15–30 qualifying channels *in existence*, so a bigger
+printing buys commons at the price of filling UR with labels and nursery rhymes. This pass
+therefore buys **Series 2 rotation depth**, not a bigger Series 1 — which is the WP9 open item,
+and worth saying plainly so the numbers are not read as a shipping win.
+
+**What did not get fixed.** Rotation wants ~7x the per-printing count per band. Against that:
+N 1,676 of 4,256 (39%), R 469 of 2,289 (20%), SR 525 of 1,148 (46%), SSR 160 of 553 (29%),
+UR 33 of 154 (21%, and world-supply capped, so it will never be met). One printing's worth of
+rotation depth is still a long way off, and R is where the next pass has to go.
+
+**The commons run behaved as documented and is worth one line.** Seven `--tier wildcards` batches,
+~8,500 units, +966 sub-100K candidates at ~9 units each — better than the 11.5 baseline because
+`MS_PER_QUERY` was raised from 5 to 30, which stops a 100-unit search from discarding most of what
+it harvested. The names are unrecognizable, as expected and as accepted: no player is disappointed
+by an unfamiliar common.
+
+**What this closes off.** "Search is the only tool below the rankings" is no longer true, and no
+future sourcing plan should assume it. Notability lists reach R at roughly 1/600th of search's
+cost per candidate, so search's remaining job narrows again — to the sub-100K commons alone,
+where no encyclopedia has an article and nothing else can reach.
+
+</details>
+
+## The cap comes off: a printing is the whole pool (2026-08-02)
+
+<details>
+<summary><b>Reverses "A printing is 1,200 cards" the same day the sourcing passes tripled the pool</b> — Series 1 is now 2,973 cards, every available candidate, and band completion is no longer equalised.</summary>
+
+Ash's call, made after the trade was stated. Recorded because it reverses a decision from
+yesterday rather than extending one.
+
+**What changed to make it reasonable.** 1,200 was chosen when the pool was 1,348 candidates and
+the cap was doing real work — it decided *which* of a small surplus shipped. After the reach-4
+notability pass and seven commons batches the pool is 3,067, so the cap was now holding back
+1,773 cards that had already been fetched, filtered and paid for. Sitting on more than half the
+deck to preserve a completion curve nobody has played against yet is a worse bet than putting it
+in front of the first players.
+
+Built with `--target 3911`, the smallest target at which no band caps — computed from the pure
+`bandTargets`, so finding it cost nothing.
+
+    set: 2973 cards — N 1786 · R 469 · SR 525 · SSR 160 · UR 33
+
+**THE COST, stated because it is real and was accepted rather than missed.** The band cap existed
+to equalise completion: at 1,200 every band completed within 7,725–8,120 pulls. That property is
+now gone. The set is the pool's shape, not a designed shape — N is 60.1% of the set and UR is
+1.1% — so **UR completes far sooner than SR**, which is the inversion "Sizing a printing" warned
+about. A player who chases will finish the chase band first.
+
+**What is NOT affected, and this is why the cost is survivable.** Drop rates are unchanged. The
+pull is two-stage — band first, then card within the band (WP4) — so the weight table governs what
+a pack feels like regardless of how many cards sit in each band. Set composition moves *completion
+time*, never *pull odds*. If the pull had been one-stage this reversal would have silently rewritten
+the game's rarity, which is a decent argument for the two-stage design in hindsight.
+
+**What this closes off.** The 1,200 figure and its completion-equalisation argument are dead as a
+default; anything wanting them back has to argue against a live set. The UR supply wall is
+untouched and unrelated — it capped how far the *cap* could be raised, and with no cap there is
+nothing for it to bind. It returns the moment a target is reintroduced.
+
+**Revisit when there are players.** This is the first decision in the project settled on "ship it
+and see" rather than on a measurement, which is appropriate — completion pacing is a question about
+people, and there are none yet.
+
+</details>
+
+## The list was the bottleneck, not the method: sweeping the property instead (2026-08-02)
+
+<details>
+<summary><b>reach-4 read one Wikipedia list of 947 rows through Wikidata P2397. This queries P2397 directly — 66,908 ids for zero Wikidata quota — and takes the candidate pool from 3,067 to 19,954</b>, which ends R's run as the binding band.</summary>
+
+This morning's entry established notability as the third recognition signal and the only one that
+reaches R. It then used that insight on a single hand-compiled page. **P2397 is a property on
+~67,000 Wikidata items, and reach-4 touched 947 of them** — so the finding was right and the
+application was 1.4% of it.
+
+The sweep queries the property itself: every item carrying a YouTube channel id *and* an English
+Wikipedia article. Same notability test, applied to everything that passes it.
+
+| | reach-4 | reach-5 |
+|---|---|---|
+| source | one list, hand-copied | SPARQL over P2397 |
+| swept | 947 rows | 66,908 ids |
+| kept | 280 | 16,887 |
+| YouTube quota | 6 units | 1,326 units |
+| per candidate | 0.02 | **0.02** |
+
+The per-candidate rate is identical at 70x the volume, which is the property of an id-based route
+worth naming: it does not get more expensive as it gets bigger. Search costs 11.5.
+
+**THE SCREEN IS STRUCTURAL, AND THAT IS THE REAL UPGRADE.** reach-4 learned that a regex over an
+encyclopedia's prose "catches 'political' and misses 'anti-ideology'". A Wikidata claim does not
+have that failure mode, so the entire editorial line moved into the SPARQL itself — no death date,
+no Indian citizenship, no public office held, no political party, no criminal conviction, no
+politician/journalist/news-presenter/adult/televangelist occupation. Those run **before a single
+quota unit is spent**, which also makes them free.
+
+Then, against live stats: the engine's own `DEFAULT_FLOOR` (-15,939), `- Topic` and VEVO mirrors
+(-5,530), the region exclude (-126), a title-level editorial screen (-175). The 5,530 auto-channels
+are reach-4's documented "right person, wrong channel" defect showing up at scale — it was 5% of
+280 there and 8% of 65,006 here, so the defect rate held and the screen for it worked.
+
+**THE ANGLOPHONE CUT IS THE LARGEST SINGLE FILTER AND IT REMOVES REAL CREATORS.** A second free
+Wikidata pass kept only channels tied to an English-speaking territory (P27/P17/P495), cutting
+**26,036** — more than the floor did. It drops JuegaGerman, Fernanfloo, Luccas Neto, Masha and the
+Bear: enormous channels, none of them worse than what stayed.
+
+They fail the standard `catalog/excluded.txt` already states — *"a card works when a player
+recognizes the name"* — against an anglophone launch audience. That file was already excluding
+channels one at a time for exactly this reason ("audience concentrated in one non-anglophone
+market"). Doing it structurally is the same judgement made **before** the quota is spent instead of
+after. It is revisable, and a second-language printing is where it gets revised. The 26,036 are not
+lost — they were swept, screened and set aside.
+
+**Country comes from Wikidata, not from YouTube, and this is a rule worth keeping.** YouTube's
+`country` is self-declared and ABSENT for 11,398 of the 43,236 channels that reached the cut — a
+quarter. It cannot carry a decision that size. Wikidata's citizenship claim is present and sourced,
+so the territory test reads that, and YouTube's field keeps the one job a self-declaration is the
+right instrument for: the India exclude, where what someone declares *is* the relevant fact.
+
+**Where the wall moved.** Lower walls, on the built set:
+
+| | N | R | SR | SSR | UR |
+|---|---|---|---|---|---|
+| before | 55.8 | **27.6** | 65.6 | 40.0 | 33.0 |
+| after | 411 | 245 | 266 | **89** | 34 |
+
+R was the binding band through three sourcing passes and is now third. **SSR binds instead**, at 89
+— the first time the wall has landed above R, and the next pass has to go there. UR moved by one
+card and will not move: it is world-supply capped, exactly as "A printing is 1,200 cards" said.
+
+**THE LIMIT, stated because it is the honest weakness of this pass.** reach-4 hand-read all 336
+survivors and cut **53 the automatic screen had missed** — one in six. 16,887 cannot be hand-read,
+so this roster ships without that pass. The structural screens are strictly stronger than the regex
+they replace, but "stronger than a regex" is not "equivalent to a person reading it", and the
+expectation should be that some cards here would not survive review. `catalog/excluded.txt` is the
+instrument, and it works after the fact rather than before. **This is the first sourcing pass whose
+output is too large to review by hand, and that is a permanent change in how this pool is curated,
+not a one-off.**
+
+**What it costs at the wire.** The uncapped printing is 19,860 cards — 7.4MB of JSON, **2.0MB
+gzipped**, which is what a host serves. Left uncapped per "The cap comes off" rather than quietly
+reversing a decision made yesterday; `--target` is the lever if a first paint on mobile turns out to
+matter more than deck size. Nothing about drop rates changes either way — the pull is two-stage.
+
+**What this closes off.** "Source a notability list" is no longer the shape of the work; the list
+was scaffolding around a database query. Any future recognition source should be checked for whether
+it is a *property* before it is treated as a *page*. The remaining sourcing jobs are narrow and
+named: SSR depth, and the sub-100K commons where no encyclopedia has an article.
+
+</details>
+
+## A structural screen fails structurally: recovering reach-5's false drops (2026-08-02)
+
+<details>
+<summary><b>reach-5's territory test could not distinguish "has a foreign country claim" from "has no
+country claim", so 2,222 anglophone channels were cut as foreign. Recovered 14 — by reading all 44
+in the binding band, not by trusting the signal.</b></summary>
+
+The test read Wikidata P27/P17/P495. A channel whose item carries no country claim at all failed it
+identically to one carrying a foreign claim. **Absence and disagreement are not the same thing**,
+and the filter had no way to say so.
+
+2,222 of the 26,036 cut declare an anglophone country on YouTube itself. Recovering all of them on
+that signal would reverse the cut rather than correct it, and the list says why immediately: A4
+(Belarusian), Masha and the Bear (Russian), SOMOY TV (Bangladeshi) and Eros Universe (Indian) all
+declare "US". **YouTube's country is what a channel types in** — good evidence for the India hedge,
+where the declaration is itself the relevant fact, and poor evidence of who an audience is. That
+asymmetry is why reach-5 read country from Wikidata in the first place, and it did not stop being
+true here.
+
+**So the recovery was scoped to the band that needed it, at a size a person can read.** SSR binds
+after reach-5 (89 lower walls against R's 245). The SSR+UR slice of the 2,222 is **44 channels** —
+small enough to meet reach-4's standard of hand-reading every survivor, which reach-5 explicitly
+could not. All 44 read; 14 kept: LEGO, PlayStation, The Dodo, freeCodeCamp, Law By Mike, STORROR,
+Brooke Monk, BigDawsTv, Trap Nation, Nas Daily, Cartoon Network UK, Nicki Minaj, Pitbull, Melanie
+Martinez. The 30 dropped were dropped for the reason the cut exists. Cost: 1 quota unit.
+
+SSR 357 -> 371 (89 -> 92.8 lower walls). Small, and the size is the point: **the recovery is worth
+doing precisely where the numbers are small enough to check, which is the opposite of where the
+sweep was worth doing.**
+
+**What this closes off.** "Structural screens don't have the regex's failure mode" was the argument
+for reach-5's design and it is still right — but it was read too broadly. A structural screen has
+its OWN failure mode, and it is predictable from the claim's semantics: whatever the claim cannot
+express, the filter silently treats as a negative. Every future claim-based screen should be asked
+one question before it ships — *what does a missing claim look like to this test?* — and the answer
+should decide whether a hand pass over the binding band is scheduled alongside it.
+
+</details>
+
+## The first deploy, and three things it changed on the way out (2026-08-03)
+
+<details>
+<summary><b>Live at creator-gacha.netlify.app.</b> Getting there reversed two UI decisions and
+caught one deploy trap that would have failed silently.</summary>
+
+**THE SILENT TRAP: headers in `netlify.toml` apply to nothing here.** The natural place to put
+cache and security headers is `netlify.toml`, and it would have been wrong. `[[headers]]` blocks
+are resolved by Netlify's **build system**, and this deploy is a direct upload of a folder
+assembled locally — there is no build for them to be resolved by. They would have looked correct
+in the repo, been committed, reviewed, and applied to nothing. `_headers` ships inside `_site`
+instead, copied by name like every other file, and is confirmed applying on the wire
+(`Cache-Control: public,max-age=86400` on the set, `nosniff`/`DENY`/`no-referrer` everywhere).
+Netlify serves the deck as **Brotli**, so the 7.4MB set is smaller over the wire than the 2.0MB
+gzip estimate.
+
+**A new guard, because the copy allowlist grew a second failure mode.** Adding a page means
+editing the repo AND `build-site.js`'s allowlist, and forgetting the second produces a 404 that
+is invisible locally — the file is simply there. So the build now asks the assembled site
+whether every page it links to actually shipped, and refuses if not. Same shape as the existing
+guards: cheap, and it only pays off the day someone edits the list without thinking.
+
+**Netlify's new default is private, and it is worth writing down.** New Free teams get
+`sso_login: true` on every project — the site deploys correctly and then answers 401 to the
+world. The site-level API call to clear it returns 422 if `sso_login_context` is included and
+succeeds with `{"sso_login": false}` alone. Also: `Preview access` was set to **team only**
+rather than public, and that is a policy decision, not a preference. Netlify keeps every past
+deploy permanently reachable at its own URL, so public previews would leave tonight's snapshot
+world-readable forever — statistics that pass the 30-day cap today and violate it in a month.
+The staleness guard only governs the deploy being made, never the ones already on the CDN.
+
+**REVERSAL 1: the collection's filter chips are permanent.** They used to appear at 12 cards and
+only for bands the player held, on the argument that "offering a UR filter to someone with no UR
+is a button whose only outcome is an empty grid". The empty grid is now the point — the five
+bands are the shape of the game, and a new player should be able to read what they are chasing
+off the binder before they own any of it. The empty tray also names the band ("No R cards in
+your collection yet") instead of the generic "nothing matches those filters", because the player
+can already see which chip they pressed. The chips stay identical whether held or not: marking
+the empty ones would smuggle the progress readout back in through CSS, having just removed it
+from the markup. Search became permanent for the same reason a beat later. Only sort still waits
+for 12 cards — ordering is the one question that genuinely does not arise at four.
+
+**REVERSAL 2: Live mode is dev-only.** It was the app's original premise — bring your own key,
+pull any channel — and sets made it vestigial. Asking a player for a Google Cloud API key to
+reach a thinner version of what the front page already does with 19,874 cards and no setup is a
+wall in front of the game, not a feature. Gated with `gateDevElement`, not deleted, and the
+reason is not sentiment: the in-page Magic Search and the key field live inside those controls
+and are how sourcing gets driven from a browser. `?dev=1` restores all of it.
+
+**What this does NOT change, stated because it looks like it should.** Locked decision 3 names
+"users bring their own YouTube Data API key" and is about HOSTING — client-side only, no
+backend. That is untouched. `data/youtube.js` is untouched too: `tools/add-candidates.js`
+imports it, so the live adapter is sourcing pipeline, not UI. The seam still has three sources;
+the UI stopped offering one of them.
+
+**The gacha was checked rather than trusted.** One million pulls against the deployed deck:
+N 55.05 · R 27.01 · SR 11.95 · SSR 4.99 · UR 1.01, against a table of 55/27/12/5/1. The
+interesting column is composition: UR is **0.2%** of the set and drops at **1%**. Under the
+one-stage pull those would have compounded to ~0.09%. The uncapped printing made the set 66% N
+and moved the drop rates by nothing at all — which is exactly what "The cap comes off" promised
+and the first time it has been measured against a live deck.
+
+</details>
