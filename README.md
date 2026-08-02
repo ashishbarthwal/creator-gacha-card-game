@@ -9,8 +9,7 @@ A fan tribute to [Wikigacha](https://en.wikipedia.org/wiki/Wikigacha) (Harusugi,
 which plays the same trick with Wikipedia article metrics. This one does it with YouTube:
 subscriber count sets a card's rarity, view count drives its attack, video count its defense.
 
-**This is a portfolio piece, not a business.** Built by an SDET moving into AI engineering,
-so the derivation logic is deliberately pure and deterministic — it exists partly to be
+**This is a portfolio piece, not a business.** The derivation logic is deliberately pure and deterministic — it exists partly to be
 tested in public.
 
 <!-- TODO: add a screenshot of a pull/reveal here once the visuals are locked -->
