@@ -561,6 +561,19 @@
   #set-select { cursor: pointer; }
   #set-meta { font-family: var(--font-mono); }
 
+  /* The dev deck-size readout. Styled to look like an instrument rather than
+     part of the game: mono, dimmer than the snapshot stamp above it, and never
+     competing with the pack for attention. `[hidden]` is what config.js sets
+     outside dev, and a <p> would otherwise still take a line box. */
+  #set-count {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    opacity: 0.55;
+    margin-top: 0.15rem;
+  }
+  #set-count[hidden] { display: none; }
+
   /* buttons */
   .btn {
     font-family: var(--font-body);
@@ -929,7 +942,10 @@
   }
 
   /* ---- collection toolbar --------------------------------------------------
-     Hidden until the binder is large enough to need it (ui/collection.js). */
+     Always present: the rarity chips and the search box ship from the first
+     visit. Only sort is still held back until the binder is large enough to need
+     it (ui/collection.js), so at low card counts this row is the search field
+     and the chips with the divider under them. */
   .coll-tools {
     display: flex;
     flex-wrap: wrap;
@@ -1458,6 +1474,21 @@
 
   .footer-legal { max-width: 62ch; }
 
+  /* Privacy and Terms. Dimmer than the opt-out on purpose — they are the links
+     that have to EXIST, not the ones anybody is looking for, and the opt-out is
+     the one line down here with a promise attached to it. */
+  .footer-docs { margin-top: 10px; }
+
+  .footer-docs a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .footer-docs a:hover,
+  .footer-docs a:focus-visible { color: var(--ink); border-bottom-color: currentColor; }
+
   .footer-optout { margin-top: 0; }
 
   /* Underlined by default, unlike the coffee link one line below it. The two
@@ -1684,4 +1715,83 @@
 
   @media (prefers-reduced-motion: reduce) {
     .inspect-box { animation: none; }
+  }
+
+  /* ───────────────────────────────────────────────────────────────────────────
+     THE DOCUMENT PAGES — privacy.html and terms.html.
+
+     They reuse the site's header, footer and palette so a visitor never feels
+     handed off to a legal appendix that forgot it was part of the same thing,
+     but they drop the panel chrome entirely: a policy is prose, and prose wants
+     a measure and some air, not a card. Nothing here is loaded by index.html
+     beyond these few rules, which is why it sits at the end rather than being
+     threaded through the layout section above. */
+  .doc-page .brand h1 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .doc {
+    max-width: 74ch;
+    padding-top: 26px;
+    padding-bottom: 56px;
+    line-height: 1.72;
+    color: color-mix(in srgb, var(--ink) 88%, transparent);
+  }
+
+  .doc h2 {
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--ink);
+    margin-top: 34px;
+    margin-bottom: 10px;
+  }
+
+  .doc p { margin-bottom: 12px; }
+
+  .doc ul {
+    margin: 0 0 14px 0;
+    padding-left: 20px;
+    list-style: disc;
+  }
+
+  .doc li { margin-bottom: 6px; }
+
+  .doc strong { color: var(--ink); }
+
+  .doc code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+
+  .doc a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in srgb, var(--red) 60%, transparent);
+    transition: text-decoration-color 0.15s ease;
+  }
+
+  .doc a:hover,
+  .doc a:focus-visible { text-decoration-color: var(--red); }
+
+  /* Dated at the top, in the mono face the stats use — it is a fact about the
+     document, and the same typographic move the card snapshot stamp makes. */
+  .doc-updated {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+
+  .doc-back {
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
   }

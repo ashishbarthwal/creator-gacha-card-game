@@ -17,9 +17,13 @@ const collTools = document.getElementById('coll-tools');
 const collSearch = document.getElementById('coll-search');
 const collFilters = document.getElementById('coll-filters');
 const collSort = document.getElementById('coll-sort');
+const collSortBox = document.querySelector('.tool-sort');
 
-/* Below this the toolbar is furniture — you can see everything you own without
-   help, and a search box over nine cards just adds a control to ignore. */
+/* Below this SORT is furniture: ordering only becomes a question once the binder
+   is too big to take in at a glance. Search and the rarity chips used to sit
+   behind this threshold too and no longer do — a control that appears partway
+   through a session reads as the UI changing shape under the player, and both of
+   those answer questions worth asking at any size. */
 const TOOLS_AT = 12;
 
 /* How the player is currently looking at their own collection. Deliberately not
@@ -119,6 +123,23 @@ function byRarity(a, b) {
     || toCount(b.card.channel.subscriberCount) - toCount(a.card.channel.subscriberCount);
 }
 
+/* What the empty grid says. "Nothing matches those filters" is accurate and
+   tells the player nothing they did not just do — they can see which chip they
+   pressed. Naming the band turns the empty tray into an answer: an R filter over
+   a binder with no R says there are no R cards, which is the question the click
+   asked.
+
+   Written from the view rather than from a string per case, so the search and
+   rarity filters compose instead of one silently winning. The query is set as
+   TEXT, never markup — it is the one thing here a player typed. */
+function emptyMessage() {
+  const { rarity, q } = view;
+  const band = rarity ? `${rarity} cards` : 'cards';
+  if (q) return `No ${band} match “${collSearch.value.trim()}”.`;
+  if (rarity) return `No ${band} in your collection yet.`;
+  return 'Nothing matches those filters.';
+}
+
 function matches(item) {
   if (view.rarity && item.card.rarity !== view.rarity) return false;
   if (!view.q) return true;
@@ -128,12 +149,21 @@ function matches(item) {
 
 /* Chips carry no counts. A rarity filter is a way to FIND a card; printing "SSR
    3" next to it turns the binder back into a progress readout, which is exactly
-   what this pass removed from the hero. Only bands the player actually holds get
-   a chip — offering a UR filter to someone with no UR is a button whose only
-   outcome is an empty grid. */
-function renderFilters(items) {
-  const held = new Set(items.map(item => item.card.rarity));
-  const bands = [...RARITY_ORDER].reverse().filter(r => held.has(r));
+   what this pass removed from the hero. That still holds.
+
+   WHAT CHANGED (2026-08-03): every band gets a chip from the first visit, held or
+   not. This reverses "offering a UR filter to someone with no UR is a button
+   whose only outcome is an empty grid" — the empty grid is now the point. The
+   five bands ARE the game's shape, and a new player who has never pulled should
+   be able to read what they are chasing off the binder itself. An empty UR tray
+   says "there is a UR band and you have none of it", which is the more useful
+   answer to the question someone asks by clicking it.
+
+   The chips stay IDENTICAL whether or not the band is held — no dimming, no
+   count, no check. Marking the empty ones would smuggle the progress readout
+   back in through styling, having just removed it from the markup. */
+function renderFilters() {
+  const bands = [...RARITY_ORDER].reverse();
   collFilters.innerHTML =
     `<button class="filter-chip${view.rarity ? '' : ' on'}" type="button" data-rarity="all" aria-pressed="${!view.rarity}">All</button>` +
     bands.map(r =>
@@ -145,11 +175,12 @@ function renderFilters(items) {
 export function renderCollection() {
   const items = [...state.collection.values()];
 
-  /* A filter that no longer has anything behind it (the last SSR was cleared,
-     the set changed) would otherwise strand the grid on an empty view with no
-     obvious way back. */
-  if (view.rarity && !items.some(item => item.card.rarity === view.rarity)) view.rarity = null;
-
+  /* There used to be a reset here: a filter with nothing behind it snapped back
+     to All, so the grid could not strand on an empty view "with no obvious way
+     back". It is gone, because the chips are now permanent and the way back is
+     always on screen — All sits at the head of the row and the active chip reads
+     as pressed. Keeping the reset would have made an empty band unselectable,
+     which is the one thing this change exists to allow. */
   const shown = items.filter(matches).sort(SORTS[view.sort] ?? byRarity);
 
   collGrid.innerHTML = '';
@@ -166,11 +197,21 @@ export function renderCollection() {
      Clear button next to it makes good on, and the only place the player is told
      where their collection actually lives. */
   collSummary.textContent = items.length ? 'Saved in this browser' : '';
+  /* The two empty states answer two different questions, and which one is true
+     is decided by the COLLECTION, not by the grid. An empty binder says "pull to
+     start" even with a band selected — "nothing matches those filters" would be
+     technically true and useless to someone who has never pulled. */
   collEmpty.hidden = items.length > 0;
   collClear.hidden = items.length === 0;
   collNone.hidden = !items.length || shown.length > 0;
+  if (!collNone.hidden) collNone.textContent = emptyMessage();
 
-  const showTools = items.length >= TOOLS_AT;
-  collTools.hidden = !showTools;
-  if (showTools) renderFilters(items);
+  /* The toolbar is always present now, and so are the two controls a player
+     reaches for on purpose: the rarity chips and the search box. Only SORT keeps
+     the threshold, and it is the one control the argument still fits — ordering
+     is a question about a binder too big to scan, while searching and filtering
+     are questions about a binder of any size. */
+  collTools.hidden = false;
+  if (collSortBox) collSortBox.hidden = items.length < TOOLS_AT;
+  renderFilters();
 }

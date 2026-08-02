@@ -51,6 +51,13 @@
           <select id="set-select" class="field" aria-label="Card set"></select>
         </div>
       </div>
+      <!-- Dev-only since 2026-08-03, so a player never sees a mode toggle at
+           all — just the set picker. Live mode asks for a Google Cloud API key
+           to reach a thinner version of what the front page already does, which
+           is a wall in front of the game rather than a feature. Gated by
+           src/config.js (WP8), not deleted: Magic Search and the key field live
+           inside the Live controls and are how sourcing is driven from the
+           browser. `?dev=1` brings it all back. -->
       <div class="mode-toggle" role="group" aria-label="Data source">
         <button id="mode-sets" class="mode-btn active" type="button">Sets</button>
         <button id="mode-live" class="mode-btn" type="button">Live API</button>
@@ -102,6 +109,12 @@
       <p id="status" class="status" role="status" aria-live="polite"></p>
       <button id="pull-dev" class="btn debug" type="button" title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
       <p id="set-meta" class="stamp"></p>
+      <!-- Deck size while sourcing. Dev-only on purpose: DECISIONS.md
+           ("The player is not shown the machine") took the set-size line off the
+           banner because a denominator turns a sealed pack into a checklist.
+           That argument is about the PLAYER, and it is unchanged — this is the
+           operator's readout of what the last build actually produced. -->
+      <p id="set-count" class="stamp dev-stamp"></p>
     </div>
   </section>
 
@@ -115,11 +128,18 @@
       <button id="coll-clear" type="button" class="linkish" hidden>Clear collection</button>
     </div>
 
-    <!-- Tools appear only once the binder is big enough to be hard to scan.
-         They are the one thing here that survived the cut, because finding your
-         own card is a need a player actually has — unlike knowing the set size
-         or the drop table, which were only ever facts about the machine. -->
-    <div id="coll-tools" class="coll-tools" hidden>
+    <!-- Finding your own card is a need a player actually has — unlike knowing
+         the set size or the drop table, which were only ever facts about the
+         machine. That is why this row survived the cut.
+
+         The RARITY FILTERS and the SEARCH BOX show from the first visit, before
+         a single pull: the five bands are the shape of the game, an empty UR
+         tray answers "what am I chasing" better than a hidden control does, and
+         a toolbar that grows controls partway through a session reads as the UI
+         changing shape underneath the player. Only SORT still waits for a binder
+         big enough to be hard to scan (12 cards) — ordering is the one question
+         here that genuinely does not arise at four cards. -->
+    <div id="coll-tools" class="coll-tools">
       <div class="tool-search">
         <input id="coll-search" class="field" type="search" placeholder="Search your cards" spellcheck="false" aria-label="Search your collection">
       </div>
@@ -157,8 +177,19 @@
        are not buried in the middle of a paragraph wall. -->
   <div class="footer-grid">
     <div class="footer-legal">
+      <!-- The API-key sentence came out when Live mode went dev-only: a player
+           has no key field to reach, so reassuring them about a key they were
+           never asked for describes a machine they cannot see. The claim itself
+           is unchanged and still documented in the privacy policy, which is
+           where it belongs now. -->
       <p>Fan project. Not affiliated with or endorsed by YouTube or Google. Channel data via the YouTube Data API.
-      Your API key lives only in this page's memory: it is never logged, never persisted, and never sent anywhere except googleapis.com.</p>
+      No accounts, no tracking — your collection is saved in this browser and nowhere else.</p>
+      <!-- The two pages are a WP10 gate item and a stated prerequisite of any
+           future quota audit. They sit under the legal paragraph rather than
+           beside the opt-out link, because the opt-out is the one thing here a
+           person acts on and it should not have to share a column with links
+           nobody clicks. -->
+      <p class="footer-docs"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
     </div>
     <div class="footer-links">
       <!-- WP7a — the creator opt-out. This ships BEFORE the first real-creator set,
