@@ -12,8 +12,8 @@ A fan tribute to [Wikigacha](https://en.wikipedia.org/wiki/Wikigacha) (Harusugi,
 which plays the same trick with Wikipedia article metrics. This one does it with YouTube:
 subscriber count sets a card's rarity, view count drives its attack, video count its defense.
 
-**This is a portfolio piece, not a business.** The derivation logic is deliberately pure and deterministic — it exists partly to be
-tested in public.
+**This is a portfolio piece, not a business.** The derivation logic is deliberately pure and
+deterministic — it exists partly to be tested in public.
 
 <!-- TODO: add a screenshot of a pull/reveal here once the visuals are locked -->
 
@@ -55,10 +55,10 @@ No build step, no dependencies — plain ES modules under `src/`, served as-is.
   - `python -m http.server` **only** if your OS maps `.js` to `text/javascript`; some
     setups (notably Windows) serve it as `text/plain`, which browsers reject for modules.
     GitHub Pages / Netlify serve it correctly, so deployment is unaffected.
-- **Sets mode** is the default — pick a card set and pull with no API key at all. The bundled
-  **demo set** ships fictional channels with generated avatars and zero network, so the
-  default view paints instantly and works offline. Pull ×1 / ×10, watch the reveal, build a
-  collection.
+- **Sets mode** is the only mode a player sees — pick a card set and pull, with no API key and
+  no setup at all. The bundled **demo set** ships fictional channels with generated avatars and
+  zero network, so the first paint is instant and works offline; the real Series takes over the
+  moment it loads. Pull ×1 / ×10, watch the reveal, build a collection.
 - **Live mode** is now **dev-only** (`?dev=1`). It pulls arbitrary real channels with your own
   free [YouTube Data API v3](https://developers.google.com/youtube/v3/getting-started) key,
   pasted into the app, and it is also where in-page Magic Search lives. The key stays in the
@@ -112,7 +112,7 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-271 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+275 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery
@@ -196,7 +196,8 @@ into a tested, modular, deployable project in dependency order (full detail in
       locally assembled `_site`, never a CI build — the set has to be hydrated with a real API
       key and can never be committed. Four guards run before anything uploads: no drafts, no
       `country` field, nothing past the 30-day statistics cap, no page linking to a page that
-      didn't ship. Plus a [privacy policy](privacy.html) and [terms](terms.html).
+      didn't ship. Plus a [privacy policy](https://creator-gacha.netlify.app/privacy.html) and
+      [terms](https://creator-gacha.netlify.app/terms.html).
 - [x] ~~**Card → PNG export.**~~ Built, then **scrapped before shipping**. An exported image
       outlives a removal request, so the feature quietly broke the opt-out promise. Deleted
       rather than hidden behind a flag.
@@ -211,7 +212,9 @@ A few decisions are deliberately locked (see [`DECISIONS.md`](DECISIONS.md) for 
 
 - **No monetization in the game.** No paid pulls, currency, perks, or ads. The one exception
   is a passive Buy Me a Coffee link that never unlocks anything in-game.
-- **Client-side only.** Static hosting, users bring their own API key, no backend.
+- **Client-side only.** Static hosting, no backend, no accounts, no database. Cards ship as
+  static JSON, so a player needs no API key — the key only ever exists on the machine that
+  builds a set.
 - **No build step.** Plain ES modules, served as-is. Vitest is a dev-only dependency.
 
 ---
