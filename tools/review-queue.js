@@ -18,11 +18,16 @@
    channel that is no longer excluded (you reinstated it, or the screen changed)
    is dropped from the queue so the file only ever shows live decisions.
 
-   GROUPED BY BAND, BIGGEST FIRST, and that ordering is the whole usability
-   argument. Recognition is what review is FOR, and it lives at the top: every
-   decision worth arguing about is in the UR/SSR/SR section, which is a few
-   hundred lines. The 6,000 school districts sit at the bottom under N, where
-   they can be ignored forever without the file lying about what it contains.
+   ONLY UR, SSR AND SR ARE LISTED (Ash, 2026-08-03). Recognition is what review
+   is FOR, and below SR there is none to recover: an R-band institution is a 300K
+   trade body nobody has heard of, and N is 6,767 school districts. Reviewing to
+   SR is 607 lines instead of 8,524, and the 607 contain every decision that can
+   change how the game feels.
+
+   The unreviewed bands stay EXCLUDED but stay LISTED, in catalog/excluded.txt —
+   `--bands UR,SSR,SR,R,N` brings them back into the queue. A decision not to
+   look is not a decision to delete, and keeping the ids is what preserves the
+   difference.
 
    Gitignored, like everything carrying titles and subscriber counts. Your
    decisions become id deletions in catalog/excluded.txt, which is what git
@@ -66,8 +71,26 @@ function subsValue(s) {
   return Number(m[1]) * (m[2] === 'M' ? 1e6 : m[2] === 'K' ? 1e3 : 1);
 }
 
+/* REVIEW STOPS AT SR (Ash, 2026-08-03). R and N are not worth a person's
+   attention: an R-band institution is a 300K-subscriber trade body nobody
+   recognizes, and the N section is 6,767 school districts. The value of review
+   is concentrated where recognition is, and that is SR and above — 607 lines
+   instead of 8,524.
+
+   The bands below are still EXCLUDED, just not reviewed; the ids sit in
+   catalog/excluded.txt and can be recovered any time by widening this flag. A
+   decision not to look is not the same as a decision to delete, and keeping them
+   listed is what preserves the difference. */
+const REVIEW_BANDS = ['UR', 'SSR', 'SR'];
+
+function arg(flag, fallback = null) {
+  const i = process.argv.indexOf(flag);
+  return i === -1 ? fallback : (process.argv[i + 1] ?? fallback);
+}
+
 async function main() {
   const statusOnly = process.argv.includes('--status');
+  const bands = new Set(String(arg('--bands', REVIEW_BANDS.join(','))).split(',').map(b => b.trim().toUpperCase()));
 
   const snapshot = parse(await readFile(SNAPSHOT, 'utf8').catch(() => ''));
   const existing = parse(await readFile(QUEUE, 'utf8').catch(() => ''));
@@ -83,7 +106,11 @@ async function main() {
      overwrite the other's job. */
   const merged = new Map();
   let added = 0;
+  let skipped = 0;
   for (const [id, row] of snapshot) {
+    /* Filtered here rather than at write time, so the counts reported below are
+       about the queue a person actually has to read. */
+    if (!bands.has(row.band)) { skipped++; continue; }
     const prior = existing.get(id);
     if (prior) merged.set(id, { ...row, marked: prior.marked, note: prior.note });
     else { merged.set(id, row); added++; }
@@ -114,9 +141,11 @@ async function main() {
     '# build and this file is merged, not replaced. (reports/dropped-review.txt is',
     '# the raw snapshot and IS replaced every time; do not mark that one.)',
     '#',
-    '# Read top-down and stop when you get bored: it is sorted so every decision',
-    '# worth arguing about is in the first few hundred lines. The N section at the',
-    '# bottom is mostly school districts and municipal channels.',
+    `# ONLY ${[...bands].join(', ')} ARE LISTED. R and N are excluded from the game but not`,
+    '# from the file that records them — an R-band institution is a 300K trade body',
+    '# nobody recognizes, and N is 6,767 school districts. They stay in',
+    '# catalog/excluded.txt and come back any time with:',
+    '#     node tools/review-queue.js --bands UR,SSR,SR,R,N',
     '#',
     '# Not committed — these lines carry titles and subscriber counts, which are',
     '# channel data. Only the ids in catalog/excluded.txt enter git.',
@@ -140,6 +169,7 @@ async function main() {
 
   console.log(`reports/review-queue.txt — ${rows.length} channels`);
   if (added) console.log(`  +${added} newly dropped since the last merge`);
+  if (skipped) console.log(`  ${skipped} in bands not under review (${[...bands].join('/')} only) — still excluded, just not listed`);
   if (gone.length) console.log(`  −${gone.length} no longer excluded (reinstated, or the screen changed)`);
   console.log(`  ${marked.length} currently marked to reinstate`);
   for (const band of [...RARITY_ORDER].reverse()) {
