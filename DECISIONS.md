@@ -2158,3 +2158,47 @@ they conflict, no field ordering resolves it — surface the conflicts and read 
 never many, and the ones there are turn out to be the interesting cards.
 
 Deck: 11,494 -> **11,444**.
+
+## The machine proposes, Ash disposes (2026-08-03)
+
+<details>
+<summary><b>Every filtration now writes a ranked review list, and a human overrules it.</b> Ash's
+call, after the institution screen cut Sidemen-shaped channels and I had to hand-read 72 to put 21
+back.</summary>
+
+The institution screen is right about school districts, universities and record labels, and it
+will never be right about **Sidemen and OfflineTV** — creator collectives that incorporate, and
+which Wikidata therefore files as "organization". I resolved 72 such conflicts by hand and Ash's
+response was the correct generalisation: *"the distinction won't be easy to make each time by you.
+Let me do that then. After each filtration, gimme the dropped channels and I'll tell which ones to
+add."*
+
+**That is the right division of labour, and worth stating as a principle rather than a workflow.**
+A structural screen is good at *category* — is this a university — and blind to *purpose*: is this
+fun, would a player light up seeing it. The second question is what the game is FOR, and it is not
+recoverable from any claim in any database. The failure mode of pretending otherwise is silent:
+cards vanish and nobody knows which.
+
+    node tools/build-set.js    -> reports/dropped-review.txt, ranked by subscribers
+       Ash marks lines with a leading +
+    node tools/reinstate.js    -> deletes those ids from catalog/excluded.txt
+    npm run deploy             -> the cards are back
+
+**Ranked by size, because that is the axis review actually runs on.** A name worth arguing about
+is a name someone recognizes; the 6,000 school districts at the bottom will never be read and do
+not need to be. The list is 8,524 long and the top 200 contain every decision that matters.
+
+**TWO FILES, AND THE SPLIT IS THE SAME ONE THE CANDIDATE DB IS BUILT ON.** The review list
+carries titles and subscriber counts — channel data — so it is written to gitignored `reports/`.
+Ash's edits land in `catalog/excluded.txt`, which is ids only and safe to commit. A reviewable
+artifact and a committable one are not the same file, and merging them would quietly put
+statistics into git forever, breaking the 30-day cap and the promise that a removal is
+performable. Costs no quota: the channels were hydrated moments earlier in the same build.
+
+The `+` marker echoes the `!` pin marker the roster files already use — one leading character,
+easy to type, impossible to add by accident.
+
+**What this closes off.** No screen in this project gets to be the last word again. Anything that
+removes cards in bulk owes a list of what it removed, in an order a person can actually read.
+
+</details>

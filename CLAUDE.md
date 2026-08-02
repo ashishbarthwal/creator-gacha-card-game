@@ -80,6 +80,25 @@ Two mechanisms enforce it, and they are not interchangeable:
 `catalog/excluded.txt` cleans up whatever still gets through. It is editorial and revisable —
 deleting a line puts the card back — and must never be confused with the opt-out denylist.
 
+### The machine proposes, Ash disposes
+
+**Every filtration produces a review list, and Ash reads it.** The screens above decide the
+easy 95% — a school district is not a judgement call. But *"Sidemen and OfflineTV are
+fun-oriented and belong in the game"* is a judgement about what the game is **for**, and no
+Wikidata claim encodes it. Do not make that call silently; surface it.
+
+```
+node tools/build-set.js      → writes reports/dropped-review.txt (ranked by size)
+   Ash marks lines with a leading +
+node tools/reinstate.js      → deletes those ids from catalog/excluded.txt
+npm run deploy               → the cards are back
+```
+
+The two files are split for the reason everything here is split: the review list carries
+titles and subscriber counts (**channel data — gitignored, never committed**), while
+`catalog/excluded.txt` is ids only and safe for git. Ranked by subscribers because that is
+the axis review runs on — a name worth arguing about is a name someone recognises.
+
 ## Scope boundaries
 
 Currently out of scope: battles, decks, pity system, `/c/` vanity URL resolution

@@ -131,6 +131,48 @@ async function main() {
   const excludeIds = new Set(parseRosterLines(excludeText).map(e => splitPin(e).input));
   const { kept: curated, removed: excludedCards } = applyExcludes(allowed, excludeIds);
 
+  /* THE REVIEW FILE — every card the excludes dropped, ranked by size, for a
+     person to overrule.
+
+     Ash's call (2026-08-03), and it is the right division of labour: the
+     institution screen decides the easy 95% mechanically, but "Sidemen and
+     OfflineTV are fun-oriented and should stay" is a judgement about what the
+     game is FOR, and no P31 claim encodes that. So the machine proposes and a
+     human disposes, on every filtration rather than once.
+
+     Ranked by subscribers because that is the axis review actually runs on: a
+     name worth arguing about is a name someone recognizes, and the 6,000 school
+     districts at the bottom will never be read by anyone. Marking is a leading
+     `+`, echoing the `!` pin convention the roster files already use.
+
+     WRITTEN TO reports/, WHICH IS GITIGNORED, AND THAT IS NOT INCIDENTAL. This
+     file carries titles and subscriber counts — channel data, which the whole
+     candidate-DB design exists to keep out of git (30-day statistics cap, and a
+     removal that must be performable). The ids Ash edits live in
+     catalog/excluded.txt, which is ids only and safe to commit. Costs no quota:
+     these channels were already hydrated a few lines above. */
+  await mkdir(resolve(ROOT, 'reports'), { recursive: true });
+  const fmtSubs = v => (!Number.isFinite(v) ? '—' : v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'K' : String(v));
+  const review = [...excludedCards].sort(
+    (a, b) => Number(b.subscriberCount ?? 0) - Number(a.subscriberCount ?? 0));
+  await writeFile(resolve(ROOT, 'reports/dropped-review.txt'), [
+    '# Cards the curation exclude dropped from this build — ranked by size.',
+    '#',
+    `# ${review.length} channels, ${new Date().toISOString().slice(0, 10)}.`,
+    '#',
+    '# TO PUT A CARD BACK: put a + at the start of its line, save, then run',
+    '#     node tools/reinstate.js',
+    '# That deletes the id from catalog/excluded.txt and the next build ships it.',
+    '#',
+    '# Not committed, and deliberately so: these lines carry titles and',
+    '# subscriber counts, which are channel data. Only the ids in',
+    '# catalog/excluded.txt enter git.',
+    '',
+    ...review.map(ch => `${ch.id}  # ${String(ch.title).replace(/[\r\n#]/g, ' ').trim()} `
+      + `[${ch.hiddenSubscriberCount ? 'hidden' : fmtSubs(Number(ch.subscriberCount))}] `
+      + `${rarityFromSubs(ch.subscriberCount, ch.hiddenSubscriberCount)}`),
+  ].join('\n') + '\n');
+
   /* Pinned candidates survive the cap ahead of everything else — the roster's
      answer to "which cards is this set sold on", which a hash cannot supply. */
   const pinned = new Set(db.candidates.filter(c => c?.pin).map(c => String(c.id)));
@@ -148,7 +190,10 @@ async function main() {
      should be able to disagree with at a glance — a bare number hides which. */
   if (excludeIds.size) {
     console.log(`  curation exclude: ${excludedCards.length} removed of ${excludeIds.size} listed`);
-    for (const ch of excludedCards) console.log(`      − ${ch.title}`);
+    /* Named only while the list is short enough to read. Past that it is a wall
+       of text nobody scans, and reports/dropped-review.txt is the readable form. */
+    if (excludedCards.length <= 25) for (const ch of excludedCards) console.log(`      − ${ch.title}`);
+    console.log(`      → reports/dropped-review.txt — mark a line with + and run tools/reinstate.js to put one back`);
   }
   /* Per band: what shipped, against what a printing of this size wants. The
      shortfall column is the whole sourcing to-do list — it says which band to
