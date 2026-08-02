@@ -88,11 +88,17 @@ fun-oriented and belong in the game"* is a judgement about what the game is **fo
 Wikidata claim encodes it. Do not make that call silently; surface it.
 
 ```
-node tools/build-set.js      → writes reports/dropped-review.txt (ranked by size)
-   Ash marks lines with a leading +
-node tools/reinstate.js      → deletes those ids from catalog/excluded.txt
+node tools/build-set.js      → reports/dropped-review.txt   SNAPSHOT, replaced every build
+node tools/review-queue.js   → reports/review-queue.txt     WORKING COPY, merged, keeps marks
+   Ash marks lines with a leading + (and notes, if useful)
+node tools/reinstate.js --from reports/review-queue.txt
 npm run deploy               → the cards are back
 ```
+
+**Mark the queue, never the snapshot.** Review takes days, not one sitting, and the snapshot
+is rewritten by every build — `review-queue.js` merges into a file that keeps your marks,
+grouped by band and biggest first, so every decision worth arguing about is in the first few
+hundred lines.
 
 The two files are split for the reason everything here is split: the review list carries
 titles and subscriber counts (**channel data — gitignored, never committed**), while
