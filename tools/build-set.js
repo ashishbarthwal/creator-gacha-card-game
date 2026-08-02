@@ -35,7 +35,7 @@ import { dirname, resolve } from 'node:path';
 import { fetchChannelsByIds } from '../src/data/search.js';
 import { passesRegion, regionReport, DEFAULT_EXCLUDE_COUNTRIES } from '../src/engine/discover.js';
 import { hydratableIds, batchIds, refreshPools, parseRosterLines, splitPin, CANDIDATE_DB_VERSION } from '../src/engine/candidates.js';
-import { assembleSet, applyExcludes, DEFAULT_TARGET_SIZE } from '../src/engine/setbuild.js';
+import { assembleSet, applyExcludes, DEFAULT_TARGET_SIZE, UNCAPPED } from '../src/engine/setbuild.js';
 import { refreshEntry, appendRefreshEntry } from '../src/engine/freshness.js';
 import { RARITY_ORDER, rarityFromSubs } from '../src/engine/core.js';
 
@@ -72,7 +72,17 @@ async function main() {
   const slug = arg('--slug', 'series-1');
   const title = arg('--title', 'Series 1');
   const series = arg('--series', 'Creator Gacha');
-  const targetSize = Number(arg('--target', DEFAULT_TARGET_SIZE)) || DEFAULT_TARGET_SIZE;
+  /* THE DEFAULT IS UNCAPPED, and the default is the part that matters.
+     "The cap comes off" (2026-08-02) made the printing the whole pool, but the
+     default here stayed at 400 — so every by-hand build passed --target and the
+     unattended one did not. The scheduled refresh's first run republished the
+     live site at 400 cards instead of 19,874, having done exactly what it was
+     told. A decision that only holds when someone remembers a flag is not a
+     decision the tooling actually carries.
+     `--target <n>` still caps deliberately; `--target 400` reproduces the old
+     behaviour exactly. */
+  const targetArg = arg('--target', null);
+  const targetSize = targetArg === null ? UNCAPPED : (Number(targetArg) || DEFAULT_TARGET_SIZE);
 
   const db = await readJson(CANDIDATES_PATH);
   if (!db?.candidates?.length) {
@@ -144,7 +154,9 @@ async function main() {
      shortfall column is the whole sourcing to-do list — it says which band to
      point the next Magic Search run at, and the cap column says which band has
      surplus already banked for the next printing. */
-  console.log(`  bands (target ${targetSize} cards):`);
+  console.log(targetSize === UNCAPPED
+    ? '  bands (uncapped — the whole pool ships):'
+    : `  bands (target ${targetSize} cards):`);
   let short = 0;
   for (const band of RARITY_ORDER) {
     const target = targets[band];
@@ -161,7 +173,7 @@ async function main() {
     console.log(`  dropped band ${band.rarity}: ${band.count} card${band.count === 1 ? '' : 's'}, needed ${band.needed} — a x10 would have repeated it`);
   }
   console.log(`  set: ${set.channels.length} cards — ${RARITY_ORDER.map(r => `${r} ${rarity[r]}`).join(' · ')}`);
-  if (short) console.log(`  ${short} cards short of a full ${targetSize}-card printing — source more with tools/magic-search.js`);
+  if (short && targetSize !== UNCAPPED) console.log(`  ${short} cards short of a full ${targetSize}-card printing — source more with tools/magic-search.js`);
 
   if (dryRun) return console.log('\n--dry-run: nothing written.');
 

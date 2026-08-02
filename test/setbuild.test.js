@@ -18,6 +18,7 @@ import {
   PULL_SIZE,
   BAND_HEADROOM,
   DEFAULT_TARGET_SIZE,
+  UNCAPPED,
 } from '../src/engine/setbuild.js';
 import { RARITY, RARITY_ORDER } from '../src/engine/core.js';
 
@@ -143,6 +144,34 @@ describe('capBands — the surplus becomes a later printing, not waste', () => {
     const a = capBands(channels, { targetSize: 400, seed: 'series-1' });
     const b = capBands(channels, { targetSize: 400, seed: 'series-1' });
     expect(a.kept.map(c => c.id)).toEqual(b.kept.map(c => c.id));
+  });
+
+  /* REGRESSION, 2026-08-03. "The cap comes off" made the printing the whole
+     pool, but DEFAULT_TARGET_SIZE stayed at 400 — so every by-hand build passed
+     --target and the scheduled refresh, which passes nothing, republished the
+     live site at 400 cards instead of 19,874. It had done exactly what it was
+     told. These pin the fix so the automated path cannot quietly re-cap. */
+  it('UNCAPPED ships every card, trimming nothing', () => {
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const { kept, capped } = capBands(channels, { targetSize: UNCAPPED });
+    expect(kept).toHaveLength(channels.length);
+    expect(capped).toEqual([]);
+  });
+
+  it('UNCAPPED reports each band at its own full depth', () => {
+    const { targets } = capBands(roster({ N: 40, R: 30, UR: 12 }), { targetSize: UNCAPPED });
+    expect(targets).toEqual({ N: 40, R: 30, UR: 12 });
+  });
+
+  /* A big NUMBER is not the same as uncapped, which is why UNCAPPED is a symbol
+     and not a convention. This is the trap the old builds were one sourcing run
+     away from: a target chosen to be "bigger than the pool" starts capping again
+     the moment the pool grows past it, and the build still reports success. */
+  it('a merely-large target still caps, where UNCAPPED does not', () => {
+    const channels = roster({ N: 40, R: 30, UR: 12 });
+    const capped = capBands(channels, { targetSize: 400 });
+    const uncapped = capBands(channels, { targetSize: UNCAPPED });
+    expect(capped.kept.length).toBeLessThan(uncapped.kept.length);
   });
 
   it('selects a different subset for a different slug — the rotation', () => {

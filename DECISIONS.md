@@ -2020,3 +2020,41 @@ and moved the drop rates by nothing at all — which is exactly what "The cap co
 and the first time it has been measured against a live deck.
 
 </details>
+
+## The scheduled refresh republished the site at 400 cards (2026-08-03)
+
+<details>
+<summary><b>A decision that only holds when someone remembers a flag is not a decision the tooling
+carries.</b> The first run of the new Task Scheduler job shrank the live set from 19,874 cards to
+400, having done exactly what it was told.</summary>
+
+`npm run deploy` runs `tools/build-set.js` with no `--target`, which fell through to
+`DEFAULT_TARGET_SIZE = 400`. Every by-hand build since "The cap comes off" had passed a target
+(`--target 3911`, then `--target 30000`); the unattended one could not, because nobody was there
+to type it. So the automation silently reverted a decision made by hand the day before, and
+reported success while doing it.
+
+**It was caught only because the task was fired once on purpose instead of being left to prove
+itself next Sunday.** That is the transferable part: a scheduled job that has never been watched
+run is not automation, it is a hypothesis. The cost of the test was one wrong deploy at 1:48am
+with no players; the cost of not testing was a live site quietly serving 2% of its deck for a
+week.
+
+**The fix is a symbol, not a bigger number.** `targetSize: UNCAPPED` ships the whole pool, and
+`--target` now means "cap deliberately" rather than being the only way to avoid a cap. A large
+number was the obvious fix and is the trap the previous builds were already one sourcing run
+away from: 30,000 works until the pool passes 30,000, at which point capping resumes and the
+build still says it succeeded. A sentinel cannot rot that way, so the CLI default became UNCAPPED
+and the intent stopped depending on anyone's memory.
+
+**What this says about defaults generally, since the same shape will recur.** The constant was
+not wrong when written — 400 was right when the pool was 1,348 and the cap was choosing among a
+small surplus. It became wrong when the decision above it changed, and nothing forced it to move,
+because every human invocation was passing an override that hid it. **An override in every manual
+path is a symptom: it means the default no longer expresses the intent, and the first unattended
+caller will find that out.**
+
+Three tests pin it, including one asserting that a merely-large target still caps where UNCAPPED
+does not — the distinction the fix exists to make.
+
+</details>

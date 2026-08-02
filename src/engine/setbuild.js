@@ -190,9 +190,30 @@ function selectionHash(seed, id) {
    Keyed on the channel id rather than subscriber count on purpose: "keep the
    biggest" would make every printing's top band identical, which is the outcome
    this is here to avoid. */
+/* `targetSize: UNCAPPED` ships the whole pool — every card that survived the
+   excludes, no band trimmed.
+
+   It exists because "The cap comes off" (DECISIONS.md, 2026-08-02) made the
+   whole pool the printing, and a NUMBER cannot express that. Every build since
+   has passed a number chosen to be bigger than the pool (3911, then 30000),
+   which works right up until the pool outgrows it and silently starts capping
+   again — a regression that looks like a successful build.
+
+   The failure this prevents already happened once, on the day it was written:
+   `npm run deploy` passes no --target, fell through to DEFAULT_TARGET_SIZE, and
+   the scheduled refresh republished the live site at 400 cards instead of
+   19,874. An automated job quietly reverted a decision made by hand, which is
+   the exact shape of bug a scheduled task exists to produce. */
+export const UNCAPPED = Symbol('uncapped');
+
 export function capBands(channels, { targetSize = DEFAULT_TARGET_SIZE, pullSize = PULL_SIZE, seed = '', pinned = new Set() } = {}) {
   const pins = pinned instanceof Set ? pinned : new Set(pinned ?? []);
   const bands = bandsOf(channels);
+  /* Not "a very large targetSize": the water-filling in bandTargets would still
+     run and could still trim a band. Uncapped means the cap does not happen. */
+  if (targetSize === UNCAPPED) {
+    return { kept: [...channels], capped: [], targets: Object.fromEntries(bands.map(b => [b.rarity, b.cards.length])) };
+  }
   const targets = bandTargets(bands.map(b => b.rarity), { targetSize, pullSize });
   const kept = [];
   const capped = [];

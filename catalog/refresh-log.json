@@ -7,6 +7,34 @@
       "slug": "series-1",
       "cards": 19874,
       "snapshotDate": "2026-08-02"
+    },
+    {
+      "at": "2026-08-02T20:18:04.689Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 400,
+      "snapshotDate": "2026-08-02"
+    },
+    {
+      "at": "2026-08-02T20:18:22.621Z",
+      "event": "deploy",
+      "slug": "series-1",
+      "cards": 400,
+      "snapshotDate": "2026-08-02"
+    },
+    {
+      "at": "2026-08-02T20:22:04.613Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 19874,
+      "snapshotDate": "2026-08-02"
+    },
+    {
+      "at": "2026-08-02T20:22:24.557Z",
+      "event": "deploy",
+      "slug": "series-1",
+      "cards": 19874,
+      "snapshotDate": "2026-08-02"
     }
   ]
 }
