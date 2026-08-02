@@ -81,6 +81,44 @@ const PERFORMER_TYPES = [
   'Q17558136', // YouTube channel
 ];
 
+/* WHY THIS LIST EXISTS SEPARATELY, and it is the sharp edge of the whole screen.
+   Wikidata gives many items SEVERAL P31 values, so a performer type and a
+   corporate type can both be present. YouTube itself is tagged "YouTube channel"
+   AND "public company" — and on a naive "any performer type keeps it" rule, the
+   corporation gets a card. A tag saying what a thing is ON cannot outrank one
+   saying what it IS.
+
+   The obvious inverse — organisation always wins — is just as wrong, because
+   creator collectives incorporate: Sidemen, NELK, GameGrumps, h3h3Productions,
+   Yes Theory, OfflineTV and Kurzgesagt are all filed as "organization",
+   "business" or "company". Sidemen is KSI, the exact person this rule exists to
+   keep.
+
+   So only UNAMBIGUOUS corporate types veto, and the merely-organisational ones
+   (organization, business, company, enterprise) deliberately do NOT appear here.
+   Those produce a handful of genuine disagreements per sweep — 72 the first time —
+   which is small enough to read, and reading them is the honest answer. */
+const HARD_CORPORATE = [
+  'Q891723',   // public company
+  'Q4830453',  // business ... only via the pairing below, see NOTE
+  'Q18127',    // record label
+  'Q2085381',  // publishing house
+  'Q3918',     // university
+  'Q163740',   // nonprofit organization
+  'Q327333',   // government agency
+  'Q33506',    // museum
+  'Q431603',   // advocacy group
+  'Q7075',     // library
+  'Q15265344', // broadcaster
+  'Q1616075',  // television channel
+  'Q369747',   // video streaming service? (platform-shaped)
+  'Q7278',     // political party
+];
+
+/* NOTE on Q4830453 (business): it vetoes ONLY when the item has no performer
+   type at all, which the sweep already handles by requiring one. Listing it here
+   would cut Wendover Productions and RedLetterMedia, both one person. */
+
 const q = id => 'wd:' + id;
 
 async function sparql(query) {
@@ -124,9 +162,10 @@ SELECT DISTINCT ?item ?itemLabel ?yt WHERE {
    pass over a bounded VALUES list, which is the shape WDQS is fast at. */
 function classifyQuery(items) {
   return `
-SELECT ?item ?performer ?anglo WHERE {
+SELECT ?item ?performer ?corporate ?anglo WHERE {
   VALUES ?item { ${items.map(q).join(' ')} }
   OPTIONAL { ?item wdt:P31 ?k . VALUES ?k { ${PERFORMER_TYPES.map(q).join(' ')} } BIND(1 AS ?performer) }
+  OPTIONAL { ?item wdt:P31 ?c . VALUES ?c { ${HARD_CORPORATE.filter(id => id !== 'Q4830453').map(q).join(' ')} } BIND(1 AS ?corporate) }
   OPTIONAL { ?item (wdt:P27|wdt:P17|wdt:P495) ?p . VALUES ?p { ${ANGLOPHONE.map(q).join(' ')} } BIND(1 AS ?anglo) }
 }`;
 }
@@ -173,6 +212,7 @@ async function main() {
   console.log(`\nClassifying ${found.size} items — performer type and territory...`);
   const items = [...found.values()].map(v => v.item);
   const performer = new Set();
+  const corporate = new Set();
   const anglo = new Set();
   const CHUNK = 250;
   for (let i = 0; i < items.length; i += CHUNK) {
@@ -185,6 +225,7 @@ async function main() {
     for (const r of rows) {
       const id = r.item.value.split('/').pop();
       if (r.performer) performer.add(id);
+      if (r.corporate) corporate.add(id);
       if (r.anglo) anglo.add(id);
     }
     if ((i / CHUNK) % 20 === 0) console.log(`  ${i}/${items.length} — ${performer.size} performers, ${anglo.size} anglophone`);

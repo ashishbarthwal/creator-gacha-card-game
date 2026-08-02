@@ -2128,3 +2128,33 @@ the deck is live at 11,494 cards. WWE, Netflix, Red Bull, Peppa Pig, National Ge
 record labels, 226 universities and 149 school districts are out of the game.
 
 </details>
+
+### Addendum: when two structural signals disagree, the tie-break is a judgement (2026-08-03)
+
+The generated pass shipped with a bug worth keeping on the record, because the fix is not the
+interesting part.
+
+Wikidata gives many items several P31 values, so a channel can be tagged as a performer AND as an
+organisation. The pass resolved that with **"performer wins"** — and **YouTube itself got a card**,
+because its P31 list contains "YouTube channel" next to "public company". A tag describing what a
+thing is ON cannot outrank one describing what it IS.
+
+**The obvious inverse is just as wrong**, which is what makes this worth writing down. Under
+"organisation wins", the casualties are Sidemen, NELK, GameGrumps, h3h3Productions, Yes Theory,
+OfflineTV, Kurzgesagt, Wendover Productions and RedLetterMedia — every one filed as
+"organization", "business" or "company", because **creator collectives incorporate**. Sidemen is
+KSI, the exact person Ash named when setting the rule.
+
+Neither tie-break is right, and the disagreements numbered **72** — small enough to read, which is
+the standard this project already applies whenever a band is small enough to check. 51 cut
+(every Crunchyroll locale, Prime Video, Disney Plus, discovery plus, TIDAL, KIDZ BOP, orchestras,
+NGOs), 21 kept. The sweep tool now vetoes on a narrow HARD_CORPORATE list — public company, record
+label, university, nonprofit, broadcaster — and deliberately omits the merely-organisational types
+that produced the ambiguity, so future sweeps surface the same handful rather than silently
+guessing.
+
+**The transferable point:** a structural screen is only unambiguous while its signals agree. Where
+they conflict, no field ordering resolves it — surface the conflicts and read them. There are
+never many, and the ones there are turn out to be the interesting cards.
+
+Deck: 11,494 -> **11,444**.

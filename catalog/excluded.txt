@@ -9573,3 +9573,79 @@ UCz-mRRcxa_JcQ9QD1JIq2Bg  # Springs Preserve [4K]
 
 # ── membership organization — 1
 UCzvj_tLDwWFgYqiF8j1Phmw  # ACSM [19K]
+
+# ── The tie-break that let 72 through, hand-read (2026-08-03) ──────────────
+#
+# The generated pass above used "performer wins" when Wikidata gave a channel
+# BOTH a performer type and an organisation type. YouTube itself survived on
+# that rule: its P31 list contains "YouTube channel" alongside "public
+# company". A tag saying what a thing is ON cannot outrank one saying what it
+# IS.
+#
+# But a blanket "organisation wins" is just as wrong, and the 72 show why:
+# Sidemen, NELK, GameGrumps, h3h3Productions, Yes Theory, OfflineTV and
+# Kurzgesagt are all filed as "organization", "business" or "company" —
+# because creator collectives incorporate. Sidemen is KSI, the exact person
+# the rule was written to keep.
+#
+# So neither tie-break is right and 72 is small enough to READ, which is the
+# standard this project already uses when a band is small enough to check.
+# 51 cut, 21 kept. The kept ones are creator collectives that happen to be
+# incorporated; the cut ones are platforms (every Crunchyroll locale, Prime
+# Video, Disney Plus, discovery plus), labels, brands, orchestras and NGOs.
+#
+# THE LESSON, since it generalises: when two structural signals disagree, the
+# tie-break is a JUDGEMENT and cannot be resolved by preferring one field.
+# Surface the disagreements and read them — there are never many.
+
+UC3gNmTGu-TTbFPpfSs5kNkg  # Movieclips [66.4M] — video streaming service
+UCBR8-60-B28hp2BmDPdntcQ  # YouTube [45.9M] — online video platform
+UCa10nxShhzNrCE1o2ZOPztg  # Trap Nation [30.1M] — record label
+UCQJWtTnAHhEG5w4uN0udnUQ  # Prime Video [9.4M] — video streaming service
+UC6pGDc4bFGD1_36IKv3FnYg  # Crunchyroll [9.0M] — video streaming service
+UCbertc-gMbkkHuSmg0qwnxw  # Bethel Music [6.1M] — record label
+UCKE0Xnj818IDaHvIcRiq0Bg  # KIDZ BOP [5.4M] — brand
+UCVi2lI40LetxLBKn-rtWC3A  # Crunchyroll Dubs [3.9M] — video streaming service
+UCPgMAS8woHJ_o_OZdTR7kcQ  # Peacock [3.4M] — video streaming service
+UC-5MT-BUxTzkPTWMediyV0w  # Crunchyroll en Español [2.9M] — video streaming service
+UC1Myj674wRVXB9I4c6Hm5zA  # Apple TV [2.4M] — video streaming service
+UCYM3pKj9tFQOXc2XcJmj8Vg  # TV Norge [2.2M] — video streaming service
+UCIrgJInjLS2BhlHOMDW7v0g  # Disney Plus [2.1M] — video streaming service
+UCVc-JLY3Db6-O48y7TS4N7Q  # Crunchyroll Brasil [2.1M] — video streaming service
+UCm9iPGnmMYtZkNQ3IoBIPIA  # ディズニープラス [1.9M] — video streaming service
+UC3swwxiALG5c0Tvom83tPGg  # Two Steps From Hell [1.8M] — business
+UCtc2KycB2DarenRrJCA55bQ  # OutKick [1.7M] — business
+UCfsRp0AAJQII4EIfZeVoeRw  # Animal Watch [1.4M] — business
+UCf2L21tpe1P-Y4QjOXkCIvQ  # Crunchyroll FR [1.3M] — video streaming service
+UC9yobUXOa4WNswj_JLZf8Lg  # Crunchyroll Deutschland [916K] — video streaming service
+UCBXn1nJgmCeM3gt0CI99b6g  # Crunchyroll Presents [667K] — video streaming service
+UCp78sLnyDlzlNmK9Tj1wo3A  # Crunchyroll MENA [492K] — video streaming service
+UC-9EHhfnWiG4lkQgKfxuQHw  # TIDAL [424K] — video streaming service
+UCG1CoynVOh5uj12qpDLQ7fQ  # Fox Nation [382K] — video streaming service
+UCRuEUl3ItCGGo-wCSwG3wbw  # Audiomachine [337K] — enterprise
+UCqoSrYgusd8ZddtMoWhjHYA  # Schwab Network [331K] — video streaming service
+UCQ9U250Y8D-ZJHIAMH9L9SQ  # discovery plus [242K] — video streaming service
+UCJSrnFU1ILHyhJ4Oe9GayGw  # Crunchyroll Россия [157K] — video streaming service
+UCxtJ3kWlca6dHH76-Nd7qNg  # DiscoveryPlusBR [149K] — video streaming service
+UCSZ05t6CcC8sbvPzsoxXcPA  # Acorn TV [99K] — video streaming service
+UCu2PSDlFJWWXYIfyyiWu5hw  # Boston Philharmonic [96K] — nonprofit organization
+UCuvyV3kjlg83J9C7lXPhmAQ  # Kanal 5 Danmark [89K] — video streaming service
+UCenQA9j8kAYwz-GZ4bW_PdA  # Oktoecho officiel [81K] — charitable organization
+UCcsCXfOObWhMyhiiMBhlvIg  # Academy of Ancient Music [68K] — charitable organization
+UCLgx-F0R84EL7PldXlZWtFw  # apollosfirebaroque [64K] — nonprofit organization
+UCQAC2otE5_agzHZPnk3mE5w  # Ellen MacArthur Foundation [63K] — organization
+UCucDAKmKw7J78zSYYNCrzvA  # TV5 Suomi [31K] — video streaming service
+UCVDZOIgzxat3HNXd7h1NhqQ  # Tony Blair Institute for Global Change [16K] — nonprofit organization
+UCWsTcpfvaFh7KeRxvbvJrdg  # band aid 40 [15K] — charitable organization
+UC6k08K1kUykNniiJQ47nbfA  # Paul Smith [15K] — brand
+UCGDUk-XfycFQzrYLLQ_4fzA  # discovery plus Philippines [15K] — video streaming service
+UCDo-rENLqyLp1XLmOjMDteg  # thedallasopera [7K] — nonprofit organization
+UCiQDSdRKaUNFV2HNeyo4W_Q  # discovery plus Italia [6K] — video streaming service
+UCJ0Py0OccvC1pg_2bKlpMfQ  # HBO Max - Reality [5K] — video streaming service
+UCSQcQ2aS5DbLIZYz7E06EFw  # Kansas City Symphony [4K] — nonprofit organization
+UCHqFMdJeNtNKBVcvofXUXcQ  # Foden's Band [3K] — charitable organization
+UCgjWEQtrSW5CVQQBMW1_PqA  # Up with People [3K] — nonprofit organization
+UC9yK9mxYwkI0ntmjrtVrjbg  # OVERSHOOT | Shrink Toward Abundance [3K] — nonprofit organization
+UCP1ajqCAhJqstCumgZ3q9Gg  # Orpheus Chamber Orchestra [3K] — nonprofit organization
+UC23rMR1pSQRakD6rjCv14MQ  # Buffalo Philharmonic Orchestra [2K] — nonprofit organization
+UCS7ecM1ixLFfnRSc0AdbdZg  # Shine Louise Houston [1K] — business
