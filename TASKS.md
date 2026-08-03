@@ -27,8 +27,8 @@ which is part of why the numbers moved).
       Cloudflare Pages' `_headers` syntax is byte-identical to Netlify's, so `_headers` and
       `build-site.js` needed no changes; only the upload command did
       (`wrangler pages deploy` in place of `netlify-cli deploy`). Verified every header rule
-      and the card count match exactly before cutting the workflow over. `netlify.toml` and
-      the Netlify site are left in place, unused, as a rollback path — see DECISIONS.md.
+      and the card count match exactly before cutting the workflow over. The old Netlify
+      site was deleted the same day rather than kept as a rollback — see DECISIONS.md.
 - [X] **Series 1 as the default selection.** The demo set still seeds first (synchronous,
       offline-safe) and now hands over the moment a real set is offered, unless the visitor
       already picked one themselves.

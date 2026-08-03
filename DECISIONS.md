@@ -2477,11 +2477,12 @@ cache, `/src/*` cache, `/*.html` cache, and all three security headers on `/`. A
 the ledger format, the whole seam between build and deploy. The only thing that moved is which CDN
 receives the folder.
 
-**What is left, deliberately not done here:** `netlify.toml` and the Netlify site itself are left
-in place, unused, rather than deleted — a rollback path costs nothing to keep and something to
-rebuild. The old `creator-gacha.netlify.app` deploy currently still serves the correct 24,251-card
-snapshot, but nothing will refresh it again, so it will silently age past the 30-day cap on stored
-statistics with no guard watching it, because the guard only runs at deploy time and nothing will
-deploy there again. Retiring or redirecting that URL is a follow-up, not resolved by this entry.
+**The rollback path was considered and declined.** Leaving the Netlify site live, unused, meant
+`creator-gacha.netlify.app` would keep serving its final snapshot with nothing ever refreshing it
+again — silently ageing past the 30-day cap on stored statistics with no guard watching it, since
+the guard only runs at deploy time. Asked directly, Ash chose the clean break: the Netlify site
+was deleted the same day (`netlify-cli sites:delete`, confirmed by the URL returning 404), and
+`netlify.toml` removed from the repo alongside it. There is now exactly one deploy target, matching
+the seam this project draws everywhere else — one live thing, not a live thing and a decoy.
 
 </details>
