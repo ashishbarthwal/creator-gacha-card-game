@@ -46,5 +46,5 @@ function doDevPull() {
   openReveal(results);
 }
 
-initBanner({ onPull: doPull, onDevPull: doDevPull });
+initBanner({ onPull: doPull, onDevPull: doDevPull, onSetLoaded: renderCollection });
 renderCollection();

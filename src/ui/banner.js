@@ -176,12 +176,21 @@ function ensureSets() {
   appendManifestSets();     // async: offer the fetchable sets once loaded
 }
 
+/* Set by initBanner. Every path that swaps the pool calls it, because loading a
+   set does two things the binder must repaint for: it changes the total a
+   collection is counted against, and `setSetsPool` silently REFRESHES every
+   owned card that is still in print from the new data. Without this the binder
+   kept showing the previous set's numbers until the next pull happened to
+   re-render it. */
+let notifySetLoaded = () => {};
+
 /* Load the bundled demo set from memory, through the same parseSet → toCard
    path a fetched set uses. No snapshot label — the demo set isn't dated. */
 function selectDemo() {
   setSetsPool(parseSet(DEMO_SET));
   setMeta.textContent = '';
   renderPool();
+  notifySetLoaded();
 }
 
 async function appendManifestSets() {
@@ -247,6 +256,7 @@ async function loadSelectedSet() {
     setSetsPool(set);
     setMeta.textContent = set.snapshotDate ? `Stats as of ${set.snapshotDate}` : '';
     showStatus('');
+    notifySetLoaded();
   } catch (err) {
     setMeta.textContent = '';
     showStatus(err.message, true);
@@ -329,7 +339,11 @@ async function onMagicSearch(tierKey) {
   }
 }
 
-export function initBanner({ onPull, onDevPull }) {
+export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
+  /* Announced rather than imported: banner.js has no business reaching into the
+     collection view, and the callback shape is already how this module talks to
+     the app. Held in a module-local so loadSelectedSet can reach it. */
+  notifySetLoaded = onSetLoaded;
   modeSetsBtn.addEventListener('click', () => setMode('sets'));
   modeLiveBtn.addEventListener('click', () => setMode('live'));
   setSelect.addEventListener('change', () => { userPickedSet = true; loadSelectedSet(); });

@@ -196,7 +196,29 @@ export function renderCollection() {
   /* "Saved in this browser" stays. It is not a statistic — it is the promise the
      Clear button next to it makes good on, and the only place the player is told
      where their collection actually lives. */
-  collSummary.textContent = items.length ? 'Saved in this browser' : '';
+  /* THE DENOMINATOR IS BACK, and it reverses a decision on purpose.
+     "The player is not shown the machine" took the set size off the banner
+     because a denominator turns a sealed pack into a checklist, and that was
+     right about the BANNER — the pack is the thing you open, and a total printed
+     next to it is a completion bar attached to the act of pulling.
+
+     The binder is the other half of the game and asks the opposite question. A
+     player looking at their own cards is already counting; refusing them the
+     total does not stop the counting, it just makes the answer unknowable. This
+     is the same reasoning that put a chip on every band from the first visit —
+     the shape of the game is something a player should be able to read.
+
+     Three numbers, because two of them answer different questions: how much of
+     the set have I seen (unique of total), and how much have I pulled (which is
+     larger, and is where duplicates live). */
+  const deck = state.setsPool.length;
+  const unique = items.length;
+  const pulled = items.reduce((n, it) => n + (Number(it.count) || 0), 0);
+
+  const parts = [];
+  if (deck) parts.push(`${unique.toLocaleString()} of ${deck.toLocaleString()} unique`);
+  if (items.length) parts.push(`${pulled.toLocaleString()} pulled`, 'saved in this browser');
+  collSummary.textContent = parts.join(' · ');
   /* The two empty states answer two different questions, and which one is true
      is decided by the COLLECTION, not by the grid. An empty binder says "pull to
      start" even with a band selected — "nothing matches those filters" would be

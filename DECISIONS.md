@@ -2400,3 +2400,41 @@ the range their own type scale supports. When space runs out, it scrolls, drops 
 fewer things — it does not render a card nobody can read.
 
 </details>
+
+## The binder gets a denominator (2026-08-03)
+
+<details>
+<summary><b>Partially reverses "the player is not shown the machine".</b> The set size comes back —
+in the collection, never on the banner — because the pack and the binder ask opposite questions.</summary>
+
+The earlier decision took the set-size line off the hero on the grounds that **a denominator turns
+a sealed pack into a checklist**, and left `#set-count` dev-gated. That reasoning is untouched
+where it was aimed. The pack is the thing you open; a total printed beside it is a completion bar
+bolted onto the act of pulling, and it makes the pack feel like inventory.
+
+**The binder is the other half of the game, and refusing it a total does not stop the counting.**
+A player looking at their own cards is already counting them — that is what a collection is. Withholding
+the denominator does not remove the question, it only makes the answer unknowable, which reads as
+the game hiding something rather than as restraint.
+
+This is the same argument that put a rarity chip on every band from the first visit, held or not:
+**the shape of the game is something a player should be able to read.** An empty UR tray saying
+"there is a UR band and you have none" was the more useful answer; so is "142 of 24,251".
+
+Three numbers, because two of them are different questions:
+
+  142 of 24,251 unique   how much of the set have I seen
+  187 pulled             how much have I drawn — the gap is where duplicates live
+  saved in this browser  unchanged, and still what makes the Clear button honest
+
+**What did NOT move.** `#set-count` on the banner stays dev-gated. The rarity chips still carry no
+counts — printing "SSR 3" beside a filter would smuggle the progress readout back into the place
+this decision keeps clear of it.
+
+**A latent bug fell out of building it.** `setSetsPool` refreshes every owned card still in print
+from newly loaded data, but nothing re-rendered the binder afterwards, so a set load left both the
+refreshed stats and now the denominator stale until the next pull happened to repaint. `initBanner`
+takes an `onSetLoaded` callback rather than importing the collection view, matching how that module
+already talks to the app.
+
+</details>
