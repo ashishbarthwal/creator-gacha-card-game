@@ -2437,6 +2437,19 @@ refreshed stats and now the denominator stale until the next pull happened to re
 takes an `onSetLoaded` callback rather than importing the collection view, matching how that module
 already talks to the app.
 
+### Addendum: the denominator revealed the wrong thing (2026-08-03, same day)
+
+Narrowed within the hour. "142 of 24,251 unique" is honest about the player's own progress and
+dishonest by proximity about something else: it hands out the size of the *entire pool*, including
+the ~8,430 staged-institution cards that are not supposed to be a fact anyone outside the project
+is counting on. A player's own numbers are theirs to see; the machine's total roster size rode along
+as a side effect of showing them, which was the actual mistake — not the earlier reasoning about
+counting being unavoidable, which still holds.
+
+The line is now `142 unique · 187 total · saved in this browser` — unique cards vs. total pulled,
+no set-size denominator at all. Answers the duplicates question exactly as before; says nothing
+about how big the deck is.
+
 </details>
 
 ## Moved to Cloudflare Pages — Netlify's free tier does not fit the cadence (2026-08-03)

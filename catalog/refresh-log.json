@@ -1,5 +1,5 @@
 {
-  "note": "Refresh ledger \u00e2\u20ac\u201d dates and counts only, never creator data. Written by tools/build-set.js and npm run deploy. See src/engine/freshness.js.",
+  "note": "Refresh ledger â€” dates and counts only, never creator data. Written by tools/build-set.js and npm run deploy. See src/engine/freshness.js.",
   "entries": [
     {
       "at": "2026-08-02T20:08:16.047Z",
@@ -136,6 +136,13 @@
     },
     {
       "at": "2026-08-03T11:01:14.940Z",
+      "event": "deploy",
+      "slug": "series-1",
+      "cards": 24251,
+      "snapshotDate": "2026-08-03"
+    },
+    {
+      "at": "2026-08-03T11:39:57.722Z",
       "event": "deploy",
       "slug": "series-1",
       "cards": 24251,
