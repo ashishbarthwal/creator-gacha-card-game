@@ -14,6 +14,7 @@ function item(over = {}) {
       title: 'Test Channel',
       customUrl: '@test',
       country: 'US',
+      publishedAt: '2013-04-05T00:00:00Z',
       thumbnails: { default: { url: 'd.jpg' }, medium: { url: 'm.jpg' }, high: { url: 'h.jpg' } },
       ...over.snippet,
     },
@@ -36,6 +37,7 @@ describe('mapChannelItem — API item to Channel shape', () => {
       viewCount: '678900',
       videoCount: '42',
       country: 'US',
+      publishedAt: '2013-04-05T00:00:00Z',
     });
   });
 
@@ -67,7 +69,17 @@ describe('mapChannelItem — API item to Channel shape', () => {
       viewCount: '0',
       videoCount: '0',
       country: '',
+      publishedAt: '',
     });
+  });
+
+  /* An empty publishedAt has to survive all the way to battle-stats.js, which
+     reads a missing launch date as mid-range maturity rather than a
+     zero-maturity card. Pinned here because this mapper is where the empty
+     string is minted. */
+  it('captures the launch date, empty when the snippet omits it', () => {
+    expect(mapChannelItem(item()).publishedAt).toBe('2013-04-05T00:00:00Z');
+    expect(mapChannelItem({ id: 'UC_x' }).publishedAt).toBe('');
   });
 
   it('captures the self-declared country, empty when unset', () => {

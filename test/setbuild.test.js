@@ -318,8 +318,14 @@ describe('assembleSet — the strip is the last Gate item', () => {
 
   it('publishes the Channel fields the seam expects', () => {
     const { set } = build({ N: 40, R: 30 });
+    /* publishedAt joined this list for the battle axes (engine/battle-stats.js),
+       and it is the allowlist working as designed that this assertion had to be
+       updated by hand to admit it. A launch DATE is not a performance
+       statistic, so it sits outside the 30-day cap the strip exists to honour —
+       the same class of fact as the title or the handle. `country` is still
+       absent, which is the leak this test was originally written to catch. */
     expect(Object.keys(set.channels[0]).sort()).toEqual(
-      ['avatarUrl', 'handle', 'hiddenSubscriberCount', 'id', 'subscriberCount', 'title', 'videoCount', 'viewCount'],
+      ['avatarUrl', 'handle', 'hiddenSubscriberCount', 'id', 'publishedAt', 'subscriberCount', 'title', 'videoCount', 'viewCount'],
     );
   });
 

@@ -10,10 +10,8 @@ don't cover this project's deploy cadence) · 24,359 candidates.
 **The live copy serves the 24,251-card deck; 23,539 is built and committed but NOT yet uploaded** —
 the deploy needs an authenticated `wrangler` session on Ash's machine:
 `npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js`.
-**Next:** single player is feature-complete; the next build is a **1v1 battle system** (proposal
-under discussion — derived stats, classes, hidden archetypes, AI opponent with a strength-matched
-deck). Note it reopens the "battles are out of scope" boundary and possibly the client-only one,
-so it needs a DECISIONS.md entry before code.
+**Next:** WP12 — the battle system. The **pure engine is built and tested** (5v5, auto-resolved,
+power-matched AI); there is **no UI yet**, so it cannot be played. See below.
 
 ---
 
@@ -69,6 +67,28 @@ so it needs a DECISIONS.md entry before code.
       bucket lands hardest exactly where the recognizable institutional channels are. A
       `--tier legends` Magic Search run put 7 back (318 → 325); the cheap routes remain
       exhausted, so real gains still need curated rosters or non-anglophone territories.
+
+### WP12 — Battle system — engine done, no UI
+5v5, auto-resolved, against an AI matched to the player's own team power. Client-side only, so
+locked decision 3 is untouched. Rationale and the three measured failures behind the design are
+in DECISIONS.md.
+- [X] **`engine/battle-stats.js`** — channel → four size-free axes → HP/ATK/DEF/SPD + class.
+      Size buys a compressed *budget*; shape decides where it goes, so rarity does not decide
+      the fight. Attack is flat across all five bands on the live deck.
+- [X] **`engine/battle.js`** — turn resolution, seeded RNG, returns an event log the UI replays
+      (the same shape the reveal already uses: decide first, animate a settled result).
+- [X] **`engine/opponent.js`** — power-matched AI deck at even / uphill / favoured.
+- [X] **46 tests**, including a balance block that asserts the design goals rather than hoping:
+      no class over half the deck, attack independent of size, and a large share of small cards
+      out-rating the median giant (33.5% on the live deck).
+- [X] **`publishedAt` now ships** — it was already inside the `snippet` every hydrate fetches and
+      the allowlist was discarding it. Zero extra quota. Two axes are dead without it.
+- [ ] **A rebuild is needed before the numbers are real.** The live set predates `publishedAt`,
+      so maturity and cadence are on their documented fallbacks until the next `npm run deploy`.
+      Tuning against the real ages is the first job after that.
+- [ ] **UI** — team picker, the battle screen, replaying the event log. Nothing is playable yet.
+- [ ] Decide whether individual matchups should stay deterministic (see DECISIONS.md — currently
+      a fight is decided by composition, not luck, which is what auto-battle means).
 
 ### WP11 — Procedural Creator Emblems  (proposed, not started)
 Replaces the creator's profile picture with a deterministic generated emblem, dissolving the

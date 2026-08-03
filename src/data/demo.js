@@ -44,6 +44,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '3100000',
       videoCount: '214',
+      publishedAt: '2019-03-12T00:00:00Z',
     },
     {
       id: 'UCstarter-unlisted-archive',
@@ -54,6 +55,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: true,
       viewCount: '5400000',
       videoCount: '97',
+      publishedAt: '2011-06-04T00:00:00Z',
     },
     {
       id: 'UCstarter-midnight-ramen',
@@ -64,6 +66,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '41000000',
       videoCount: '327',
+      publishedAt: '2017-09-21T00:00:00Z',
     },
     {
       id: 'UCstarter-glasshouse-audio',
@@ -74,6 +77,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '88000000',
       videoCount: '156',
+      publishedAt: '2015-02-08T00:00:00Z',
     },
     {
       id: 'UCstarter-kaiju-kitchen',
@@ -84,6 +88,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '512000000',
       videoCount: '388',
+      publishedAt: '2016-11-30T00:00:00Z',
     },
     {
       id: 'UCstarter-orbit-and-oak',
@@ -94,6 +99,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '1200000000',
       videoCount: '240',
+      publishedAt: '2014-05-17T00:00:00Z',
     },
     {
       id: 'UCstarter-daily-meteor',
@@ -104,6 +110,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '9800000000',
       videoCount: '3120',
+      publishedAt: '2013-01-08T00:00:00Z',
     },
     {
       id: 'UCstarter-supernova-plays',
@@ -114,6 +121,7 @@ export const DEMO_SET = {
       hiddenSubscriberCount: false,
       viewCount: '32000000000',
       videoCount: '5480',
+      publishedAt: '2012-07-19T00:00:00Z',
     },
   ],
 };

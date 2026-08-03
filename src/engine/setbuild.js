@@ -334,6 +334,15 @@ function toPublished(channel) {
     hiddenSubscriberCount: Boolean(channel.hiddenSubscriberCount),
     viewCount: String(channel.viewCount ?? '0'),
     videoCount: String(channel.videoCount ?? '0'),
+    /* Channel age, for the battle axes. It costs NOTHING to ship: channels.list
+       already returns it inside the `snippet` part the hydrate always asks for,
+       and this allowlist was simply dropping it. Without it two battle axes
+       collapse — maturity becomes a constant and cadence degrades from "uploads
+       per year" to "total uploads", which re-couples it to channel size.
+       A publication date is not a statistic about a channel's performance, so
+       it sits outside the 30-day statistics cap that keeps built sets out of
+       git; it is the same class of fact as the title or the handle. */
+    publishedAt: String(channel.publishedAt ?? ''),
   };
   /* Omitted rather than zeroed when hidden, matching the live API and the
      typedef — the core reads absence as the bottom band on purpose. */

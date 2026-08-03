@@ -2678,3 +2678,73 @@ back. Thinning the deck for risk and deepening it for play pull in opposite dire
 band, and that tension is not resolved — it is just now visible.
 
 </details>
+
+## Battles are back in scope, and the v1 stat model is not shippable as written (2026-08-04)
+
+<details>
+<summary><b>5v5 auto-resolved battles against a power-matched AI</b> — client-side, no backend, so
+locked decision 3 survives untouched. But five of the proposal's seven stats needed data at 67x
+the deck's entire quota budget, and its own formulas contradicted its own balance principle.</summary>
+
+CLAUDE.md has listed battles under "currently out of scope" since WP0. This reopens that
+deliberately. What it does NOT reopen is **locked decision 3**: the opponent is an AI, the
+simulation is pure client-side JavaScript, and hosting stays a static upload at near-zero cost.
+Only PvP would need a backend, and PvP is not this.
+
+**The proposal, and the two things wrong with it.** Ash's v1 spec described seven core stats
+(Influence, Momentum, Community, Consistency, Virality, Legacy, Stability) feeding six battle
+stats, with classes and hidden archetypes.
+
+*One — the data does not exist at this scale.* Momentum, Community, Virality and Stability all
+need PER-VIDEO statistics. A shipped card carries three numbers, and recent-video data costs a
+`playlistItems.list` call **per channel that cannot be batched**: roughly 33,000 quota units to
+rebuild a 23.5k-card deck against a 10,000/day ceiling, versus the **488 units the whole build
+costs today**. That is not a tuning problem, it is a 67x one, and it would break the weekly
+refresh outright. Those axes are deferred to a Phase 3 that only happens if the loop earns it,
+and would be scoped to a subset rather than the whole deck.
+
+*Two — principle 4 contradicted the formulas.* The spec said "rarity should NOT determine battle
+strength", then derived `HP = Legacy + Influence` and `Attack = Momentum + Influence`. All three
+inputs scale with channel size, so a UR got more health AND more damage, and crit could not
+rescue a small card because crit multiplies an attack that is already larger. The stated vision
+was unreachable from the stated maths.
+
+**The fix is a split, plus Ash's own idea.** Size buys a **budget**, not a bonus, and the budget
+is compressed hard — the largest channel gets about 1.3x the points of the smallest, not 10x.
+Where those points go is decided by **shape**, and every shape axis is a ratio or a duration
+(views per video against what its size predicts, views per subscriber, uploads per year, years
+running) that a channel can score highly on at any size. Then Ash's "comparable strength deck"
+does the rest: the AI is matched to the player's own team power, so fairness is a matchmaking
+property rather than something the stat model has to achieve alone.
+
+**Three findings that only appeared by measuring against the real 23,539-card deck**, each of
+which had already shipped as a bug in an earlier draft of this same work:
+
+- Normalising a card's axes *against each other* does not remove size. Axes that grow with size
+  take a growing SHARE, so the deck came out 82% one class with average HP of 686 at N against
+  1311 at UR — the exact failure the budget split exists to prevent. Size now touches the budget
+  and nothing else.
+- `punch` had to become a RESIDUAL against a frozen trend line. Raw views-per-video ran 38 at N
+  against 99 at UR; measured against what a channel of that size normally achieves, attack is
+  flat across all five bands (107/107/107/103/104). This is also the axis that produces the
+  reaction the proposal was written around — a mid-sized creator who punches above their weight.
+- The matchmaking rating had to become a **combat rating**, not a weighted sum. Summing budget,
+  attack and health produced opponents rated exactly equal that lost 100% of the time; effective
+  health times damage output, sharing the same mitigation curve combat uses, is what makes an
+  "even match" actually even.
+
+**What we accepted rather than fixed.** A matched fight is decided by team composition, not
+luck: individual matchups resolve at 0% or 100% across hundreds of seeds, and widening per-hit
+damage variance from 0.12 to 0.50 moved the aggregate only 46.2% -> 49.0%. Independent noise
+averages out over the ~25 attacks a 5v5 resolves. That is the auto-battler working as specified —
+Ash chose strategy in team-building, and a coin flip per matchup would make team-building
+pointless — so fairness is asserted **in aggregate across many teams**, which is what a player
+experiences over a session. Making individual fights uncertain would need a structural change
+(targeting randomness, fewer heavier hits), and that is a Phase 2 question.
+
+**Closed off:** the seven-stat model as specified, and any battle design that needs per-video
+data at deck scale. **Left open:** those same axes for a scoped subset later, per-turn choices
+(the engine already returns an event log, so a turn-by-turn resolver would emit the same events),
+and Support/Controller classes, which need the deferred axes to mean anything.
+
+</details>

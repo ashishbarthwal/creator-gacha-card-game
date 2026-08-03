@@ -60,5 +60,9 @@ export function mapChannelItem(item) {
     viewCount: stats.viewCount ?? '0',
     videoCount: stats.videoCount ?? '0',
     country: item.snippet?.country ?? '', // ISO 3166-1 alpha-2, self-declared; often absent
+    // When the channel launched. Already inside the `snippet` part every
+    // hydrate requests, so reading it costs no extra quota. The battle axes
+    // need it to tell "50 uploads a year" from "500 uploads, once, in 2011".
+    publishedAt: item.snippet?.publishedAt ?? '',
   };
 }
