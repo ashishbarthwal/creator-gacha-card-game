@@ -67,18 +67,44 @@ const STARS = {
 const AV = { cx: 0.5, cy: 0.45, r: 0.33 };
 const ASPECT = 7 / 5;
 
+/* How many columns this viewport can show a READABLE card in.
+
+   The count is pinned here rather than left to CSS `auto-fit` for the reason it
+   always was — auto-fit would strand a x1's single card in a five-track grid —
+   but the cap is now viewport-aware, because a fixed 5 was only ever right for
+   a desktop. Five columns inside a 700px tablet works out to 107px per card,
+   which is worse than the 138px phone case that started this. The overlay
+   scrolls now, so rows are cheap and width is not: prefer fewer, bigger cards
+   and let the user scroll.
+
+   Kept in step with the breakpoint in styles.css, which sets the per-track cap
+   and the gaps for the same two tiers. */
+function columnCap() {
+  const w = window.innerWidth;
+  if (w <= 560) return 2;     // phones — Ash's rule: two per row
+  if (w <= 899) return 3;     // tablets and small windows
+  return 5;                   // desktop: a x10 reads as two rows of five
+}
+
+function applyColumns(count) {
+  revealGrid.style.setProperty('--reveal-cols', Math.min(count, columnCap()));
+}
+
 export function openReveal(results) {
   revealTimers.forEach(clearTimeout);
   revealTimers = [];
   revealGrid.innerHTML = '';
-  /* Pin the column count so a x10 is always 5-across; a scrollbar stealing
-     width can't reflow it. Fewer cards use fewer columns. */
-  revealGrid.style.setProperty('--reveal-cols', Math.min(results.length, 5));
+  applyColumns(results.length);
 
   const cells = results.map(result => buildCell(result));
 
   revealEl.hidden = false;
-  revealDone.focus();
+  /* A reopened overlay must start at the top. The scroll position survives
+     `hidden`, so without this a second x10 would open halfway down its own
+     results — with the first row, the one the whole sequence builds toward,
+     already scrolled past. */
+  revealEl.scrollTop = 0;
+  revealDone.focus({ preventScroll: true });
 
   /* Reduced motion: every card is already face-up, so there is no sequence to
      run. Routed through flip() rather than setting .flipped directly so these
@@ -270,6 +296,13 @@ function inspectFromEvent(e) {
 revealGrid.addEventListener('click', inspectFromEvent);
 revealGrid.addEventListener('keydown', e => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectFromEvent(e); }
+});
+
+/* Rotating a phone crosses the 560px breakpoint in one gesture, and the overlay
+   is very much open while it happens. The cell count is read back off the grid
+   rather than remembered, so there is no second copy of it to drift. */
+addEventListener('resize', () => {
+  if (!revealEl.hidden) applyColumns(revealGrid.children.length);
 });
 
 export function closeReveal() {

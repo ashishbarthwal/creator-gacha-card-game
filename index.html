@@ -222,7 +222,11 @@
   <div class="reveal-box">
     <h2 class="reveal-title">Results</h2>
     <div id="reveal-grid" class="reveal-grid"></div>
-    <button id="reveal-done" class="btn primary" type="button">Done</button>
+    <!-- Its own bar, because the button is sticky: it needs a full-width strip to
+         carry the veil that keeps cards legible as they scroll under it. -->
+    <div class="reveal-foot">
+      <button id="reveal-done" class="btn primary" type="button">Done</button>
+    </div>
   </div>
 </div>
 

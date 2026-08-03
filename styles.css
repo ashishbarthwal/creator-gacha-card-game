@@ -836,6 +836,14 @@
     font-family: var(--font-mono);
     font-size: clamp(8px, 3.2cqw, 12px);
     color: var(--muted);
+    /* The name got this treatment and the handle never did, so "@pocketgamer-
+       videos" ran past its box and `.card-inner { overflow: hidden }` sheared it
+       mid-word — a truncation with no ellipsis reads as a rendering fault rather
+       than an abbreviation. One line, cut honestly. */
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .avatar-stage {
@@ -845,12 +853,25 @@
     display: grid;
     place-items: center;
     padding: clamp(2px, 1.5cqw, 8px) 0;
+    /* Let this slot actually shrink. A flex item defaults to min-height:auto, so
+       the stage refused to go below the ring's own height and pushed the stats
+       out through the bottom of the card instead. */
+    min-height: 0;
   }
 
   .avatar-ring {
     position: relative;
     width: 54cqw;
     height: 54cqw;
+    /* THE RING IS A WIDTH-DERIVED SIZE IN A HEIGHT-CONSTRAINED SLOT, which is
+       what buried the subs line: 54cqw is read off the card's WIDTH, but the
+       stage's height is whatever `.card-top` and `.card-bottom` leave over. Let
+       the title wrap to two lines and the ring outgrew its slot and sat on top
+       of "7.6M subs". The container query below removes the cause; these caps
+       are the backstop, and they fail the right way — a ring a few percent oval
+       is a far smaller sin than a statistic nobody can read. */
+    max-width: 100%;
+    max-height: 100%;
     border-radius: 50%;
     padding: clamp(2px, 1.5cqw, 6px);
     background: conic-gradient(from 140deg,
@@ -939,6 +960,49 @@
     font-size: clamp(17px, 9cqw, 34px);
     line-height: 1;
     letter-spacing: 0.5px;
+  }
+
+  /* ---- THE CARD AT SMALL SIZES --------------------------------------------
+     Every font-size above is `clamp(floor, Ncqw, ceiling)`, which scales the
+     card beautifully down to about 240px and then stops: below that the floors
+     take over one after another — the handle at 250px, the name at 240, the
+     tier label at 217, the rarity badge at 211, the ATK/DEF numerals at 189 —
+     until the type has stopped shrinking while the box has not. Two cards per
+     row on a 393px phone lands at ~170px, which is deep inside that range, and
+     the result was a card whose header ate the space its own avatar needed.
+
+     The floors are correct and must not be lowered; 8px type that fits is not
+     an improvement on 8px type that does not. So the card SHEDS DETAIL instead.
+     It already declares `container-type: inline-size`, so it can be asked its
+     own width directly — which is the only honest question here, because the
+     same card renders at 170px in a pull and 300px in the binder and a viewport
+     media query cannot tell those apart. */
+  /* 190px, and the number is chosen to leave the desktop card alone. A x10 at
+     five across caps its tracks at 200px, where the ring still has ~40px of
+     slack and nothing is crowded — so degrading there would be throwing away
+     detail Ash tuned in exchange for nothing. Below ~190px the arithmetic goes
+     the other way and the ring stops fitting. */
+  @container (max-width: 190px) {
+    /* "◆ RED DIAMOND" is `white-space: nowrap`, so it set the width of the whole
+       badge column and left the title about 77px to live in. Dropping it is what
+       buys the name a single line — and the tier is already said, louder, by the
+       rarity badge directly above it and by the frame's own metal. */
+    .tier-label { display: none; }
+
+    /* One line, not two. The second line is what pushed the avatar down into the
+       subs figure; a name that needs two lines at this size was going to be
+       ellipsised either way. */
+    .card-name { -webkit-line-clamp: 1; line-clamp: 1; }
+
+    /* Clear of the ring at this size — at 170px the old `left: 5cqw` put the
+       pill's trailing edge underneath the avatar's left shoulder. */
+    .new-badge, .count-badge { font-size: 8.5px; padding: 1px 4px; border-radius: 5px; }
+    .new-badge { left: 4px; top: 4px; }
+    .count-badge { right: 4px; bottom: 4px; }
+
+    /* Buy the numbers a little room back from the padding they no longer need. */
+    .card-top { padding: 7px 7px 3px; }
+    .card-bottom { padding: 3px 7px 7px; }
   }
 
   /* ---- collection toolbar --------------------------------------------------
@@ -1030,26 +1094,54 @@
   .cards-grid .card.r-UR:hover  { box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
 
   /* reveal overlay */
+
+  /* THE OVERLAY IS THE SCROLL CONTAINER, and this reverses an earlier call.
+     It used to be `overflow: hidden` with the box capped at 92vh, on the
+     reasoning that ten cards have a fixed footprint and the beam/ray glow should
+     be clipped rather than allowed to spawn scrollbars. That holds on a desktop
+     and fails completely on a phone: a fixed footprint inside a fixed height can
+     only be paid for by shrinking the cards, and at 393px it paid by rendering
+     them at 138px — small enough that every clamp() in the card bottomed out at
+     once, so stats sat under the avatar and handles were sheared with no
+     ellipsis. A gacha whose payoff screen crops the payoff is broken.
+
+     So the footprint stops being fixed. Cards get a readable size and the
+     overlay scrolls. What the old comment was actually protecting — no reflow
+     wobble when a scrollbar appears — is kept by `scrollbar-gutter: stable`,
+     which reserves the gutter up front instead of stealing width mid-animation. */
   #reveal {
     position: fixed;
     inset: 0;
     z-index: 50;
-    display: grid;
-    place-items: center;
+    display: flex;
     background: rgba(11, 6, 20, 0.9);
     backdrop-filter: blur(8px);
-    overflow: hidden; /* clip beam/ray glow overflow here, never scroll */
+    overflow-y: auto;
+    /* Horizontal stays clipped: seam glow, bloom and the UR aura's motes all
+       spill sideways by design and must never become a sideways scroll. */
+    overflow-x: hidden;
+    overscroll-behavior: contain;  /* don't chain the scroll to the page behind */
+    scrollbar-gutter: stable;
+    /* Ash's rule: never leave half a row showing at the fold. `proximity` nudges
+       a row into alignment when the user lands near one and otherwise keeps out
+       of the way — `mandatory` would fight the scroll on a screen this tall. */
+    scroll-snap-type: y proximity;
+    scroll-padding: 18px;
   }
 
   #reveal[hidden] { display: none; }
 
   .reveal-box {
-    max-height: 92vh;
-    /* Static — the 10 cards have a fixed footprint; the beam/rays extend past
-       each card by design, so we clip that decorative overflow rather than let
-       it spawn scrollbars (a scrollbar stealing width was the wobble). */
-    overflow: hidden;
-    padding: 32px;
+    /* `margin: auto` rather than the parent's old `place-items: center`. Both
+       centre a box that fits; only this one stays reachable when it does not.
+       Centring via the container's alignment puts overflow above the scrollport
+       with no way to scroll up to it — the classic centred-modal trap, and it
+       would have hidden the first row of a x10 the moment cards grew. */
+    margin: auto;
+    flex: none;               /* never let the centring squeeze the box */
+    display: flex;
+    flex-direction: column;
+    padding: 32px 32px 0;
     text-align: center;
     width: min(96vw, 1160px);
     animation: rise 0.25s ease;
@@ -1066,17 +1158,81 @@
     letter-spacing: 2.5px;
     text-transform: uppercase;
     margin-bottom: 20px;
+    /* Makes the very top a snap point too. Without it the nearest snap position
+       from scrollTop 0 is the first row of cards, and `proximity` would quietly
+       pull the title off screen the moment the overlay opened. */
+    scroll-snap-align: start;
+  }
+
+  /* Done never scrolls out of reach. Sticky rather than fixed so it belongs to
+     the box — when the results fit without scrolling it simply sits under the
+     last row, and it only starts holding station once there is something to
+     scroll. The veil is a gradient, not a flat fill, so a card passing beneath
+     it fades rather than meeting a hard edge; the grid's foot clearance means
+     no card is ever parked under it at rest.
+
+     env(safe-area-inset-bottom) is the gesture bar on a modern phone. Without
+     it the button sits correctly in Chrome's chrome and under the home
+     indicator the moment the URL bar collapses. */
+  .reveal-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+    /* Near-solid under the button itself. The fade is not this element's job —
+       see ::before — because anything that fades here has to be paid for in
+       layout height, and layout height is the resting gap above the button. */
+    background: linear-gradient(to top,
+      rgba(11, 6, 20, 0.98) 0 60%,
+      rgba(11, 6, 20, 0.92));
+  }
+
+  /* The scrim, hung ABOVE the bar and out of flow, so the veil can be as tall as
+     it needs to be while costing the layout nothing. This is what decouples "the
+     button sits on a clean base" from "the last row is not marooned 140px above
+     it" — the two requirements that were fighting when a single padded element
+     tried to do both. */
+  .reveal-foot::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 58px;
+    pointer-events: none;
+    background: linear-gradient(to top,
+      rgba(11, 6, 20, 0.92),
+      rgba(11, 6, 20, 0.55) 45%,
+      transparent);
   }
 
   .reveal-grid {
     display: grid;
-    /* Column count is pinned by JS (--reveal-cols), so the layout never
-       reflows when a scrollbar appears; minmax lets cells shrink a hair
-       instead of dropping a column. */
-    grid-template-columns: repeat(var(--reveal-cols, 5), minmax(0, 200px));
-    gap: 18px;
+    /* Column count is still pinned by JS (--reveal-cols) rather than auto-fit,
+       so a x1 gets one column instead of one card stranded in a five-track grid.
+       reveal.js now caps that count by viewport — 2 on phones, 3 on tablets, 5
+       on desktop — because five columns at 700px is as unreadable as two at
+       393px was. `minmax(0, --reveal-max)` lets a track shrink below its cap
+       when the width simply is not there, and never grow past it. */
+    grid-template-columns: repeat(var(--reveal-cols, 5), minmax(0, var(--reveal-max, 200px)));
+    gap: var(--reveal-gap, 18px);
     justify-content: center;
-    margin-bottom: 24px;
+    /* Clearance for the sticky foot, so the LAST row still lands entirely above
+       the Done button when the scroll bottoms out. Padding on the grid rather
+       than margin on the foot: this space belongs to the scrollable content, so
+       it has to be inside the thing that scrolls. */
+    /* Breathing room under the last row — and only that.
+
+       This was 112px (128 on phones) on the theory that it had to clear the
+       whole sticky bar, which was simply wrong about how sticky works: at
+       maximum scroll a sticky element rests at its natural place in flow, so
+       the bar is already BELOW the last row without any help. The padding was
+       clearing a bar that was no longer overhead, and the result was ~144px of
+       dead space at the bottom of every pull. 32px + the bar's own 16px reads
+       as a finished list instead of an abandoned one. */
+    padding-bottom: calc(var(--reveal-foot-clear, 32px) + env(safe-area-inset-bottom, 0px));
   }
 
   .reveal-cell {
@@ -1085,6 +1241,8 @@
     aspect-ratio: 5 / 7;
     cursor: pointer;
     border-radius: 15px; /* shapes the reveal seam-glow to match the card */
+    /* The snap unit is a card, so a row can never come to rest half off-screen. */
+    scroll-snap-align: start;
   }
 
   .flip { position: relative; z-index: 1; width: 100%; height: 100%; perspective: 900px; }
@@ -1230,7 +1388,13 @@
      Only R+ light it (N never gets the .beaming class); colour per glow tier. */
   .beam {
     position: absolute;
-    inset: -45% 30%;
+    /* Collapsed to the cell unless it is actually lit. The beam is half a card
+       taller than the card at each end, and now that the overlay scrolls, that
+       overhang below the LAST row would count as scrollable content — several
+       hundred pixels of empty space you could scroll into, on a screen whose
+       whole complaint was wasted vertical space. Invisible either way (opacity
+       0 until `.beaming`), so nothing about the effect changes. */
+    inset: 0 30%;
     z-index: 0;
     pointer-events: none;
     border-radius: 50% / 42%;
@@ -1249,7 +1413,7 @@
   /* Back-loaded curve: ease-out spent the beam in its first third and left the
      rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
      into the flip makes the long beams tension instead of waiting. */
-  .reveal-cell.beaming .beam { animation: beam-build var(--beam-ms, 500ms) cubic-bezier(0.5, 0, 0.85, 0.35) forwards; }
+  .reveal-cell.beaming .beam { inset: -45% 30%; animation: beam-build var(--beam-ms, 500ms) cubic-bezier(0.5, 0, 0.85, 0.35) forwards; }
   /* A revealed card never wears its own telegraph. The scheduler already refuses
      to light a beam on a turned card (reveal.js), but that is a rule about
      timing; this makes the state unrepresentable, so no future path can strand a
@@ -1524,7 +1688,21 @@
   }
 
   @media (max-width: 560px) {
-    .reveal-grid { grid-template-columns: repeat(auto-fit, minmax(122px, 138px)); }
+    /* Two per row, and the card gets every pixel that buys. The old rule here
+       capped cells at 138px and let the rest of the width go to padding; on a
+       393px phone that is the difference between a 138px card and a 170px one,
+       which is the difference between the type scale being floored and it
+       merely being small. Padding drops to 12px for the same reason. */
+    .reveal-box { padding: 16px 12px 0; width: min(100vw - 10px, 620px); }
+    .reveal-title { font-size: 18px; letter-spacing: 2px; margin-bottom: 14px; }
+    .reveal-grid {
+      --reveal-gap: 12px;
+      /* Higher than the desktop 200px cap: on a 560px phone two columns have
+         room for it, and 240px puts the card back inside the width its own
+         clamp() scale was designed for. Narrower phones just shrink below it. */
+      --reveal-max: 240px;
+      --reveal-foot-clear: 36px;
+    }
     .coll-tools { gap: 10px 12px; }
     .tool-search { flex-basis: 100%; }
     .select-sm { width: 100%; }
