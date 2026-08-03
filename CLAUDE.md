@@ -77,8 +77,17 @@ Two mechanisms enforce it, and they are not interchangeable:
    creator's channel name as in a corporation's, and a false positive here deletes a real
    creator silently. The known over-cuts are pinned in `test/discover.test.js`.
 
-`catalog/excluded.txt` cleans up whatever still gets through. It is editorial and revisable —
-deleting a line puts the card back — and must never be confused with the opt-out denylist.
+Two exclude files, and the split is about **state, not topic**:
+
+- **`catalog/excluded.txt` — SETTLED.** Always applied. Editorial, revisable, and never to be
+  confused with the opt-out denylist.
+- **`catalog/excluded-institutions.txt` — STAGED.** Read and *reported*, never shipped, until
+  `--apply-staged` / `npm run deploy:filtered` promotes it.
+
+**A curation pass under review must not be able to reach production by default.** This is a
+mistake being corrected: the 8,430 institution ids were appended into the settled file, so an
+unreviewed judgement went live instantly and 42% of the deck vanished from a public site
+before a line of it had been read. Filter, review, *then* publish.
 
 ### The machine proposes, Ash disposes
 

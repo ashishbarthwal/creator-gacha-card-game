@@ -44,6 +44,7 @@ const ROOT = resolve(__dirname, '..');
 const CANDIDATES_PATH = resolve(ROOT, 'catalog/candidates.json');
 const DENYLIST_PATH = resolve(ROOT, 'catalog/denylist.json');
 const EXCLUDED_PATH = resolve(ROOT, 'catalog/excluded.txt');
+const STAGED_PATH = resolve(ROOT, 'catalog/excluded-institutions.txt');
 const BUILT_DIR = resolve(ROOT, 'sets/built');
 const REFRESH_LOG_PATH = resolve(ROOT, 'catalog/refresh-log.json');
 
@@ -129,7 +130,35 @@ async function main() {
      Read as a roster so it takes UC ids with `# why` comments beside them. */
   const excludeText = await readFile(EXCLUDED_PATH, 'utf8').catch(() => '');
   const excludeIds = new Set(parseRosterLines(excludeText).map(e => splitPin(e).input));
-  const { kept: curated, removed: excludedCards } = applyExcludes(allowed, excludeIds);
+
+  /* THE STAGED EXCLUDE — a curation decision under review, which the build reads
+     and does NOT apply.
+
+     This exists because the opposite happened once. 8,430 institution ids were
+     appended straight into catalog/excluded.txt, and since that is the settled
+     list the build always applies, an unreviewed judgement went live
+     immediately: 42% of the deck vanished from a public site before a single
+     line of it had been read. Ash's correction — "keep this filtration thing
+     separate... lets filter and then commit the updated deck later" — is the
+     right shape for any curation pass, not just this one.
+
+     So a staged file is REPORTED, never shipped. The review list below is
+     generated from it, so the loop keeps working at full strength while the live
+     deck stays exactly where it was. `--apply-staged` promotes it when review
+     is done, which is a deliberate act rather than a default. */
+  const stagedText = await readFile(STAGED_PATH, 'utf8').catch(() => '');
+  const stagedIds = new Set(parseRosterLines(stagedText).map(e => splitPin(e).input));
+  const applyStaged = process.argv.includes('--apply-staged');
+
+  const activeIds = applyStaged ? new Set([...excludeIds, ...stagedIds]) : excludeIds;
+  const { kept: curated, removed: excludedCards } = applyExcludes(allowed, activeIds);
+
+  /* What the staged filter WOULD remove, whether or not it was applied — that is
+     the list a person reviews. When staged is applied these are already gone, so
+     read it off the removed set instead of the shipping one. */
+  const stagedPreview = applyStaged
+    ? excludedCards.filter(ch => stagedIds.has(String(ch.id)))
+    : curated.filter(ch => stagedIds.has(String(ch.id)));
 
   /* THE REVIEW FILE — every card the excludes dropped, ranked by size, for a
      person to overrule.
@@ -153,10 +182,13 @@ async function main() {
      these channels were already hydrated a few lines above. */
   await mkdir(resolve(ROOT, 'reports'), { recursive: true });
   const fmtSubs = v => (!Number.isFinite(v) ? '—' : v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'K' : String(v));
-  const review = [...excludedCards].sort(
+  const review = [...stagedPreview].sort(
     (a, b) => Number(b.subscriberCount ?? 0) - Number(a.subscriberCount ?? 0));
   await writeFile(resolve(ROOT, 'reports/dropped-review.txt'), [
-    '# Cards the curation exclude dropped from this build — ranked by size.',
+    `# Cards the STAGED filter (catalog/excluded-institutions.txt) ${applyStaged ? 'removed from' : 'would remove from'} this build.`,
+    '#',
+    `# ${applyStaged ? 'APPLIED — these are not in the live deck.' : 'NOT APPLIED — every one of these is still shipping. Reviewing them changes nothing until'}`,
+    `${applyStaged ? '#' : '#     node tools/build-set.js --apply-staged'}`,
     '#',
     `# ${review.length} channels, ${new Date().toISOString().slice(0, 10)}.`,
     '#',
@@ -188,12 +220,18 @@ async function main() {
   console.log(`  region exclude [${DEFAULT_EXCLUDE_COUNTRIES.join(', ')}]: ${hydrated.length - allowed.length} removed, ${region.undeclared} undeclared (unseeable)`);
   /* Named, not just counted. A curation exclude is a judgement call someone
      should be able to disagree with at a glance — a bare number hides which. */
-  if (excludeIds.size) {
-    console.log(`  curation exclude: ${excludedCards.length} removed of ${excludeIds.size} listed`);
+  if (activeIds.size) {
+    console.log(`  curation exclude: ${excludedCards.length} removed of ${activeIds.size} listed`);
     /* Named only while the list is short enough to read. Past that it is a wall
        of text nobody scans, and reports/dropped-review.txt is the readable form. */
     if (excludedCards.length <= 25) for (const ch of excludedCards) console.log(`      − ${ch.title}`);
     console.log(`      → reports/dropped-review.txt — mark a line with + and run tools/reinstate.js to put one back`);
+  }
+  if (stagedIds.size) {
+    console.log(applyStaged
+      ? `  staged filter: APPLIED — ${stagedPreview.length} institutions removed (--apply-staged)`
+      : `  staged filter: ${stagedPreview.length} institutions would be removed — NOT applied, the deck ships whole`);
+    if (!applyStaged) console.log('     review them in reports/review-queue.txt; apply with  node tools/build-set.js --apply-staged');
   }
   /* Per band: what shipped, against what a printing of this size wants. The
      shortfall column is the whole sourcing to-do list — it says which band to

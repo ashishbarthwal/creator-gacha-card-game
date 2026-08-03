@@ -2202,3 +2202,46 @@ easy to type, impossible to add by accident.
 removes cards in bulk owes a list of what it removed, in an order a person can actually read.
 
 </details>
+
+## Settled and staged: a curation pass must not reach production by default (2026-08-03)
+
+<details>
+<summary><b>The institution filter went live the moment it was written, because it was appended to
+the file the build always applies.</b> Reverted — the deck is back to 19,874 — and the two states now
+live in two files.</summary>
+
+Ash: *"Revert back to 20k and keep this filtration thing separate. Shouldn't it be like that while
+development and testing for us? lets filter and then commit the updated deck later."*
+
+He is right, and the mistake is mine rather than a missing feature. `catalog/excluded.txt` is the
+**settled** list — build-set applies it unconditionally — so appending 8,430 ids to it published an
+unreviewed judgement instantly. **42% of a live deck disappeared before a single line of it had been
+read**, and the review loop built ten minutes later was reviewing a decision that had already
+shipped. That is backwards: review is only review if it precedes the consequence.
+
+    catalog/excluded.txt                SETTLED — always applied            94 ids
+    catalog/excluded-institutions.txt   STAGED  — reported, never shipped 8,430 ids
+
+The build reads both and applies one. It still computes what the staged filter *would* remove and
+writes the review list from that, so the loop keeps working at full strength while the live deck
+stays exactly where it is. `--apply-staged` (`npm run deploy:filtered`) promotes it when review is
+done — a deliberate act, not a default.
+
+**The general rule, and it is not about institutions.** Any bulk curation pass has two states, and
+the tooling has to represent them: *proposed* and *accepted*. Collapsing them into one file makes
+"the machine proposes, Ash disposes" unenforceable, because the machine has already disposed. The
+same split will apply to the next filter, whatever it screens for.
+
+**The cost of reverting, stated because it is not zero.** WWE, Netflix, Red Bull, National
+Geographic and 8,426 others are cards again on a public site, which is exactly the trademark
+exposure the institution rule was written to avoid. Ash's judgement: *"Only me and maybe my friends
+are using it rn so nothing's gonna happen."* Traffic is effectively zero, the exposure window is
+however long review takes, and the filter is one flag away. Recorded rather than argued — but it is
+a real risk being carried on purpose, not an oversight, and it should not outlive the review.
+
+**What did NOT change.** Nothing was deleted: 19,968 candidates, 8,524 held out across two files,
+0 orphans, and `npm run status` fails if an excluded id ever stops being recoverable. The weekly
+scheduled refresh keeps running, and now refreshes STATS without touching deck composition, since
+composition is decided by files a human edits rather than by anything the job does.
+
+</details>

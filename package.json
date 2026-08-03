@@ -2,14 +2,15 @@
   "name": "creator-gacha",
   "private": true,
   "type": "module",
-  "description": "Dev harness only — the shipped app is plain ES modules with zero dependencies and no build step. Vitest runs the test suite against the pure core.",
+  "description": "Dev harness only \u2014 the shipped app is plain ES modules with zero dependencies and no build step. Vitest runs the test suite against the pure core.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "test:report": "node tools/test-report.js",
     "build:site": "node tools/build-site.js",
     "status": "node tools/status.js",
-    "deploy": "node tools/build-set.js && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site && node tools/record-deploy.js"
+    "deploy": "node tools/build-set.js && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site && node tools/record-deploy.js",
+    "deploy:filtered": "node tools/build-set.js --apply-staged && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site && node tools/record-deploy.js"
   },
   "devDependencies": {
     "vitest": "^4.1.10"
