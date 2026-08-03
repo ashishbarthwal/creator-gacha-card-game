@@ -4,7 +4,7 @@
 > A browser-based gacha game where a channel's numbers *become* the card.
 
 **▶ Play it: [creator-gacha.pages.dev](https://creator-gacha.pages.dev)** — no signup, no API key,
-24,251 cards.
+23,000+ cards.
 
 [![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
 
@@ -112,7 +112,7 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-275 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+307 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery

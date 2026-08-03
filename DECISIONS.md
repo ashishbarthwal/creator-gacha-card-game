@@ -2631,3 +2631,50 @@ specificity-order fix from earlier today (the fallback vs. `.lit` tie that let d
 full strength once earned).
 
 </details>
+
+## A partial promotion out of the staged exclude: government and big companies go now, the rest waits (2026-08-03)
+
+<details>
+<summary><b>The staged institution file was split by RISK rather than read in order</b> — a state
+government and a corner-shop-sized nonprofit are not the same exposure, so they stopped sharing a
+queue.</summary>
+
+The staged file held 8,430 ids and the review loop assumed one shape: read it, mark what to keep,
+promote the remainder. At ~526 reviewable entries (UR/SSR/SR — the bands where recognition lives)
+that is days of reading before *anything* moves, and the whole file sits shipping in the meantime.
+
+Ash's call, and it is the correct decomposition: **the queue was never one decision.** "Should the
+State of Nevada's channel be a card" and "should a 40K-subscriber trade association be a card" are
+different questions with different downsides. A state government, a police department and a school
+district have a legal department and a written policy about their marks; so does Netflix. A small
+nonprofit has neither and, in Ash's words, "really won't care." Reviewing them in the same pass
+means the risky 700 wait on the harmless 7,700.
+
+So 725 ids were promoted from staged into `catalog/excluded.txt` (settled, always applied):
+
+- **278 government/municipal**, matched on name across **every band** — the band restriction that
+  makes sense for review makes none for risk. A county sheriff's office has 1K subscribers and a
+  legal department; an N-band card is exactly where these live (261 of the 278 are N).
+- **447 big companies**, restricted to **UR/SSR/SR** — 526 entries, small enough that every line
+  was read rather than pattern-matched. Below SR a "company" is a small business, which is the
+  category Ash said to leave alone.
+
+**73 named exceptions were carved out and are still staged**, because they are the cases a keyword
+cannot judge: personality-run collectives that merely incorporated (FaZe Clan, The Try Guys,
+Corridor Digital/Crew, The Game Theorists, Beta Squad, Achievement Hunter, Hype House) — the exact
+Sidemen-shaped error the P31 screen already documents — plus universities, nonprofits, religious
+orgs, and political/advocacy media. Those stay for a human pass. **The machine proposed 725; it
+did not propose these.**
+
+**What this closes off:** the idea that the staged file is promoted all-or-nothing. It is now a
+queue that can be drained by risk class, and `tools/classify-institutions.js` carries the criteria
+so the next slice is arguable rather than re-derived. What it does NOT close off: the remaining
+~7,705 still ship, deliberately, and still need reading.
+
+**Cost, recorded because it is the real one:** SSR fell 396 → 318 cards. The big-company bucket
+lands hardest exactly where recognizable institutional channels cluster, and SSR was already the
+binding band at 99.0 lower walls. It is 81.25 lw after a small `--tier legends` sourcing run put 7
+back. Thinning the deck for risk and deepening it for play pull in opposite directions in this
+band, and that tension is not resolved — it is just now visible.
+
+</details>

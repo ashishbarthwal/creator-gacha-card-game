@@ -6,11 +6,14 @@ a new guarantee, a new capability. Recurring work goes under Miscellaneous and i
 individually.
 
 **Now:** LIVE at https://creator-gacha.pages.dev (moved off Netlify 2026-08-03 — free-tier credits
-don't cover this project's deploy cadence) — 24,251 cards (whole pool; the institution filter is
-STAGED, not applied) · 24,346 candidates · deployed 2026-08-03.
-**Next:** SSR depth (SSR is still the wall — 99.0 lw now, 77.5 lw once the staged filter is
-applied. The Wikidata sweep's corporate veto was found to be dead code and fixed the same day,
-which is part of why the numbers moved).
+don't cover this project's deploy cadence) · 24,359 candidates.
+**The live copy serves the 24,251-card deck; 23,539 is built and committed but NOT yet uploaded** —
+the deploy needs an authenticated `wrangler` session on Ash's machine:
+`npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js`.
+**Next:** single player is feature-complete; the next build is a **1v1 battle system** (proposal
+under discussion — derived stats, classes, hidden archetypes, AI opponent with a strength-matched
+deck). Note it reopens the "battles are out of scope" boundary and possibly the client-only one,
+so it needs a DECISIONS.md entry before code.
 
 ---
 
@@ -53,15 +56,19 @@ which is part of why the numbers moved).
       a 393px phone, below the width the card's own clamp() scale supports — stats under the
       avatar, handles sheared without an ellipsis. Overlay scrolls, 2/3/5 columns by viewport,
       sticky Done, and the card sheds detail under 190px instead of shearing it.
-- [ ] README: **screenshots** (live demo + test pointer done)
+- [X] **README screenshot** — `docs/pull-reveal.png`, a x10 result showing all five bands
+      (N through UR) in their tier frames. Captured from the bundled demo set, so the shot
+      carries no real creator's face or stats — the one screenshot that can be committed.
 
 ### WP9 — remaining
 - [ ] **Browser check on persistence** — not testable from the suite (localStorage + DOM).
-- [ ] **Roster depth for Series 2.** Rotation needs ~7x the per-printing count. The reach-5
-      Wikidata sweep (2026-08-02) ended R's run as the binding band; **SSR binds now**, at 92.8
-      lower walls against R's 245. UR is world-supply capped and will never be met. The next
-      sourcing pass goes at SSR (10M–50M), where a notability sweep is already exhausted and
-      the route is curated rosters.
+- [ ] **Roster depth for Series 2.** Rotation needs ~7x the per-printing count. **SSR still
+      binds, at 81.25 lw** (325 cards) against SR's 261 and R's 279. UR is world-supply capped
+      and will never be met. The number moved DOWN from 99.0, and not from a sourcing failure —
+      the institution thinning pass (2026-08-03) cut SSR 396 → 318, because the big-company
+      bucket lands hardest exactly where the recognizable institutional channels are. A
+      `--tier legends` Magic Search run put 7 back (318 → 325); the cheap routes remain
+      exhausted, so real gains still need curated rosters or non-anglophone territories.
 
 ### WP11 — Procedural Creator Emblems  (proposed, not started)
 Replaces the creator's profile picture with a deterministic generated emblem, dissolving the
