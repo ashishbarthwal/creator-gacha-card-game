@@ -2586,4 +2586,21 @@ orientation as one permission grant, so this changes which API is asked, not wha
 Still untested on real hardware; still fully tunable (`MOTION_MAX_DEG`, `RETURN_RATE`, `MAX_RATE`
 are each named and isolated in `holo.js`).
 
+### Addendum: the mapping had to be spelled out as a physical rule (2026-08-03, same day)
+
+Second round of hardware feedback: "very simplistic," with the fix specified directly — tilting
+the phone should read as a foil card catching an overhead light, not a generic wobble. **The rule
+made explicit: the highlight sits on whichever edge is tilted NEARER the viewer**, independently on
+each axis. Tilt the phone's top away from your face and the bottom is now the near edge, so the
+highlight moves to the bottom; tilt it toward your face and the highlight moves to the top. Roll
+the phone so its left edge dips away and the highlight moves right; roll the other way and it moves
+left. Vertical rides on `beta` (rotation around the phone's left-right axis), horizontal on `gamma`
+(rotation around its up-down axis) — that much follows from which physical rotation each measures.
+
+What does **not** follow from anything checkable offline is which SIGN of `rotationRate` corresponds
+to "top away" versus "top toward" — that is the sensor's own convention, and it is only verifiable
+on real hardware. `FLIP_VERTICAL` / `FLIP_HORIZONTAL` isolate that one remaining unknown to a single
+multiplier each, independent of one another and of every other constant — flipping one to fix a
+backwards axis touches nothing about smoothness, sensitivity, or the other axis.
+
 </details>

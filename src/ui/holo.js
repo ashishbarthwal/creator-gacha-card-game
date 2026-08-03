@@ -94,6 +94,34 @@ const RETURN_RATE = 1.4;       // per-second spring-back toward centre — undoe
 const MAX_RATE = 3.0;          // hard cap, in -1..1 units per second, on the PAINTED value
 const MAX_DT = 0.1;            // clamp a stalled/backgrounded gap so one frame can't over-integrate
 
+/* ── THE MAPPING, made explicit ─────────────────────────────────────────────
+   First real-hardware feedback: "very simplistic," with a specific fix
+   requested — tilting the phone should read as a physical foil card catching
+   an overhead light, where the edge tilted NEARER the viewer is the edge that
+   lights up, on both axes independently:
+
+     tilt the TOP of the phone away from your face (leaning it back toward
+       flat) -> the BOTTOM is now the near edge -> highlight moves to the
+       BOTTOM. Tilt the top toward your face -> highlight moves to the TOP.
+     roll the phone so its LEFT edge dips away -> the RIGHT is now the near
+       edge -> highlight moves RIGHT. Roll the other way -> highlight LEFT.
+
+   Vertical corresponds to rotation around the phone's left-right axis (beta);
+   horizontal to rotation around its up-down axis (gamma) — that part follows
+   directly from which physical rotation each measures. What does NOT follow
+   from anything checkable offline is which SIGN of rotationRate corresponds
+   to "top away" vs "top toward": that depends on the sensor's own convention,
+   verifiable only on real hardware.
+
+   FLIP_VERTICAL / FLIP_HORIZONTAL are that one remaining unknown, isolated to
+   a single multiplier each. If tilting the top away moves the highlight UP
+   instead of DOWN, flip FLIP_VERTICAL to -1. If rolling left moves the
+   highlight LEFT instead of RIGHT, flip FLIP_HORIZONTAL to -1. Independent of
+   each other and of everything else here — neither touches smoothness,
+   sensitivity, or the other axis. */
+const FLIP_VERTICAL = 1;
+const FLIP_HORIZONTAL = 1;
+
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 /* Cached at module scope: the permission prompt must only ever fire once per
@@ -187,8 +215,8 @@ export function enableDeviceTilt(root) {
       // separate steps rather than folded into one constant because they
       // answer different questions: how far did it just turn, and how eager
       // is it to settle back to flat.
-      angleX = clamp(angleX + r.gamma * dt, -90, 90);
-      angleY = clamp(angleY + r.beta * dt, -90, 90);
+      angleX = clamp(angleX + FLIP_HORIZONTAL * r.gamma * dt, -90, 90);
+      angleY = clamp(angleY + FLIP_VERTICAL * r.beta * dt, -90, 90);
       angleX -= angleX * RETURN_RATE * dt;
       angleY -= angleY * RETURN_RATE * dt;
 
