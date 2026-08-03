@@ -2604,3 +2604,30 @@ multiplier each, independent of one another and of every other constant — flip
 backwards axis touches nothing about smoothness, sensitivity, or the other axis.
 
 </details>
+
+## The white glare spot is removed — the rainbow holo carries the finish alone (2026-08-03)
+
+<details>
+<summary><b>"That white halo ball moving around" was reading as a distraction, not a finish</b> —
+removed everywhere, desktop pointer-hover and phone tilt alike.</summary>
+
+WP3 shipped two coupled layers reading the same pointer/tilt position: `.holo`, a rainbow diagonal
+sweep, and `.glare`, a white radial specular spot underneath it. First real-hardware use of the new
+phone tilt made the glare specifically read as an unwanted moving ball rather than part of the
+card's finish — asked whether that was mobile-specific or a general dislike, Ash's answer was
+everywhere: remove it from both platforms, not just the phone tilt.
+
+**`--mx`/`--my` stay.** They were never glare-exclusive — `.holo`'s `background-position` reads them
+too, which is what gives the rainbow sweep its directionality as a pointer or a tilted phone moves.
+Removing glare meant deleting `--glare-strength` and every rule keyed to `.glare`, not touching the
+producer code in `holo.js` (`enableCardTilt`, `enableDeviceTilt`) at all — both still feed the same
+`--px`/`--py`/`--mx`/`--my` contract, now with one fewer consumer.
+
+**Touch points:** the `<div class="glare">` markup in `card.js`; `--glare-strength` on all four
+rarity bands; `.glare`'s own background rule and UR's warm-tone override; the touch-fallback muted
+opacity; the post-fallback full-strength rule under `.lit`; the reduced-motion transition reset.
+`.holo` untouched at every one of those sites — same opacity gating, same UR override, same
+specificity-order fix from earlier today (the fallback vs. `.lit` tie that let device-tilt render at
+full strength once earned).
+
+</details>

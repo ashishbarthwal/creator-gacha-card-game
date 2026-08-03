@@ -848,7 +848,7 @@
 
   .avatar-stage {
     position: relative;
-    z-index: 3; /* above the holo/glare (z-index 2) so the finish never tints the real avatar */
+    z-index: 3; /* above the holo (z-index 2) so the finish never tints the real avatar */
     flex: 1;
     display: grid;
     place-items: center;
@@ -1746,36 +1746,40 @@
    ---------------------------------------------------------------------------
    Two problems kept separate (PLAN.md): the per-rarity FRAME already lives in
    the .card / .rarity-badge rules above; this block is the FINISH and MOTION —
-   a pointer-tracked specular glare, a masked rainbow holo sweep, and a 3D tilt,
-   all gated by rarity so a pull *feels* rarer the rarer it is.
+   a masked rainbow holo sweep and a 3D tilt, all gated by rarity so a pull
+   *feels* rarer the rarer it is.
 
-   Intensity is three custom properties, set once per rarity band and read by
+   Intensity is two custom properties, set once per rarity band and read by
    the shared rules below, so the gating lives in exactly one place:
      --tilt-max        peak tilt at the card edge
-     --glare-strength  peak opacity of the white specular glare
      --holo-strength   peak opacity of the rainbow holo sweep
-   N leaves all three at zero, so N stays flat and matte no matter what.
+   N leaves both at zero, so N stays flat and matte no matter what.
+
+   The white specular glare (a pointer/tilt-tracked radial highlight, layered
+   under the holo) was removed 2026-08-03 — Ash's call, after trying the phone
+   tilt: "that white halo ball moving around" was reading as a distraction
+   rather than part of the finish, on desktop and mobile alike. The rainbow
+   holo sweep is the finish now; --mx/--my (still fed by both enableCardTilt
+   and enableDeviceTilt in holo.js) exist to move ITS background-position,
+   not to feed a second, separate highlight.
    =========================================================================== */
 
   .card { transition: transform 0.2s ease; }
 
-  .card.r-R   { --tilt-max: 7deg;  --glare-strength: 0.50; --holo-strength: 0;    }
-  .card.r-SR  { --tilt-max: 9deg;  --glare-strength: 0.65; --holo-strength: 0.30; }
-  .card.r-SSR { --tilt-max: 11deg; --glare-strength: 0.80; --holo-strength: 0.50; }
-  .card.r-UR  { --tilt-max: 13deg; --glare-strength: 0.78; --holo-strength: 0.42; }
+  .card.r-R   { --tilt-max: 7deg;  --holo-strength: 0;    }
+  .card.r-SR  { --tilt-max: 9deg;  --holo-strength: 0.30; }
+  .card.r-SSR { --tilt-max: 11deg; --holo-strength: 0.50; }
+  .card.r-UR  { --tilt-max: 13deg; --holo-strength: 0.42; }
 
-  /* Finish layers: painted above the card body (so the shine sweeps across the
+  /* Finish layer: painted above the card body (so the shine sweeps across the
      art and the text) but below the badges at z-index 3, which stay crisp. */
-  .holo, .glare {
+  .holo {
     position: absolute;
     inset: 0;
     z-index: 2;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.25s ease;
-  }
-
-  .holo {
     background: repeating-linear-gradient(115deg,
       rgba(255, 120, 180, 0.5)  0%,
       rgba(120, 220, 255, 0.5) 12%,
@@ -1788,22 +1792,14 @@
     filter: saturate(1.25);
   }
 
-  .glare {
-    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-      rgba(255, 255, 255, 0.5)  0%,
-      rgba(255, 255, 255, 0.1) 22%,
-      transparent 55%);
-    mix-blend-mode: screen;
-  }
-
   /* Lit: JS adds .lit feeding --px/--py (-1..1) for tilt and --mx/--my (%) for
-     the shine position — from a fine pointer (holo.js's enableCardTilt) or,
-     on a phone, from device orientation (enableDeviceTilt). The tilt eases
+     the holo sweep's position — from a fine pointer (holo.js's enableCardTilt)
+     or, on a phone, from device orientation (enableDeviceTilt). The tilt eases
      back to flat when .lit is removed, because transform is transitioned and
      the base rule is untransformed.
 
-     The OPACITY half of this (.holo/.glare strength) is declared further down,
-     after the touch fallback block, on purpose — see the note there. */
+     The OPACITY half of this (.holo strength) is declared further down, after
+     the touch fallback block, on purpose — see the note there. */
   .card.lit {
     transform:
       perspective(800px)
@@ -1812,8 +1808,8 @@
   }
 
   /* UR's signature molten sheen — a warm gold→crimson holo (not the cool
-     rainbow) and a gold glare, so the top tier reads hotter and richer than
-     SSR's diamond instead of competing on the same rainbow. */
+     rainbow), so the top tier reads hotter and richer than SSR's diamond
+     instead of competing on the same rainbow. */
   .card.r-UR .holo {
     background: repeating-linear-gradient(115deg,
       rgba(255, 214, 130, 0.46)  0%,
@@ -1822,12 +1818,6 @@
       rgba(255, 165, 90, 0.46)  36%,
       rgba(255, 214, 130, 0.46) 48%);
     filter: saturate(1.25);
-  }
-  .card.r-UR .glare {
-    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-      rgba(255, 236, 200, 0.55) 0%,
-      rgba(255, 186, 120, 0.12) 22%,
-      transparent 55%);
   }
 
   /* UR only: a low, smouldering flicker at the seam — the "Red Diamond" tier
@@ -1850,28 +1840,25 @@
      requests motion permission — see holo.js). */
   @media (hover: none) {
     .card.r-SR  .holo, .card.r-SSR .holo, .card.r-UR  .holo { opacity: calc(var(--holo-strength) * 0.5); }
-    .card.r-R   .glare, .card.r-SR  .glare,
-    .card.r-SSR .glare, .card.r-UR  .glare { opacity: calc(var(--glare-strength) * 0.4); }
   }
 
-  /* .holo/.glare full strength under .lit — deliberately placed AFTER the
-     touch fallback above rather than beside the rest of the .lit rules, and
-     that placement is load-bearing rather than cosmetic. `.card.lit .holo`
-     and `.card.r-SR .holo` (inside the block above) carry EQUAL specificity —
+  /* .holo full strength under .lit — deliberately placed AFTER the touch
+     fallback above rather than beside the rest of the .lit rules, and that
+     placement is load-bearing rather than cosmetic. `.card.lit .holo` and
+     `.card.r-SR .holo` (inside the block above) carry EQUAL specificity —
      three classes each — so a media query alone does not let one beat the
      other; source order decides the tie. Declaring this AFTER the fallback is
      what lets device-tilt (holo.js's enableDeviceTilt, which adds .lit on a
      phone exactly like pointer-tilt does on desktop) win with the SAME full
      strength pointer-tilt gets, rather than being silently capped at the
-     touch fallback's muted 0.5x/0.4x the moment a phone earns the real thing. */
-  .card.lit .holo  { opacity: var(--holo-strength, 0); }
-  .card.lit .glare { opacity: var(--glare-strength, 0); }
+     touch fallback's muted 0.5x the moment a phone earns the real thing. */
+  .card.lit .holo { opacity: var(--holo-strength, 0); }
 
   /* Reduced motion: no tilt, no shimmer, no fades. JS also skips binding, so a
      reduced-motion desktop simply keeps its cards flat and calm. */
   @media (prefers-reduced-motion: reduce) {
     .card { transition: none; }
-    .holo, .glare { transition: none; }
+    .holo { transition: none; }
     .card.r-UR { animation: none; }
   }
 

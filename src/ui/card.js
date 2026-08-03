@@ -132,7 +132,6 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
         </div>
       </div>
       <div class="holo" aria-hidden="true"></div>
-      <div class="glare" aria-hidden="true"></div>
     </div>`;
   /* YouTube avatar URLs can 403 on a hotlink referer (the referrerpolicy above
      is the usual dodge), and a few channels have no usable thumbnail at all. If
