@@ -1,0 +1,192 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THE WEEKLY REFRESH — rebuilds the deck from live YouTube stats and republishes.
+#
+# WHY THIS EXISTS AND WHY IT REVERSES AN EARLIER DECISION.
+# build-site.js has said since it was written that the deploy runs locally,
+# "because the deploy needs to hydrate channel IDs into live statistics, which
+# needs an API key", and accepted the trade: "the 25-day refresh becomes a chore
+# somebody has to remember instead of a cron job."
+#
+# That trade is no longer payable. YouTube's Developer Policies cap stored
+# statistics at 30 days, the site is public, and the only thing keeping it
+# compliant was a Windows scheduled task on ONE laptop — which cannot run if the
+# laptop is off, and cannot exist if the laptop dies. A compliance obligation
+# with a single point of failure that is a consumer device is not a plan.
+#
+# So the refresh moves here. The stated objection was never really CI itself —
+# it was that the built set cannot be committed, which is still true and still
+# honoured: this workflow builds the set inside the runner and uploads it
+# straight to Netlify. Nothing carrying channel statistics is ever written to
+# git. The only thing committed back is the refresh ledger, which is dates and
+# counts.
+#
+# THE COST, stated plainly: the YouTube API key and a Netlify token now live in
+# GitHub Actions secrets rather than only on Ash's machine. Secrets are masked in
+# logs and are not exposed to pull requests from forks, but this is a real
+# widening of where the key exists, and it is the price of the site staying
+# compliant without anybody being present.
+#
+# The local Windows task is retired — see tools/schedule-refresh.js. Two
+# schedulers publishing the same site would race and double-spend quota.
+# ─────────────────────────────────────────────────────────────────────────────
+name: refresh
+
+on:
+  schedule:
+    # Sundays 06:00 UTC (11:30 IST). Weekly against a 30-day cap gives four
+    # independent chances per policy window — GitHub's scheduler can delay or
+    # occasionally drop a run under load, so the headroom is the point rather
+    # than a nicety. Cron is UTC always; it does not follow daylight saving.
+    - cron: '0 6 * * 0'
+  # Lets Ash run it by hand from the Actions tab — the same path the schedule
+  # takes, so testing it tests the real thing.
+  workflow_dispatch:
+
+# A refresh spends ~400 quota units and publishes. Two at once would race each
+# other to the CDN and double the spend, so a second run waits rather than
+# overlapping. Never cancel-in-progress: a half-finished deploy is worse than a
+# late one.
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed to commit the refresh ledger back — the receipt that the cadence
+      # was kept. Nothing else in the repo is written.
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - run: npm ci
+
+      # A broken engine must not reach the CDN. The suite is seconds and needs no
+      # key, so there is no reason for the deploy path to skip it.
+      - name: Tests
+        run: npm test
+
+      # ── Hydrate ────────────────────────────────────────────────────────────
+      # Reads catalog/candidates.json (ids only) and asks YouTube for current
+      # stats, ~400 quota units against 10,000/day. Writes sets/built/, which is
+      # gitignored and never committed.
+      - name: Build the set from live stats
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: node tools/build-set.js
+
+      # Assembles _site and runs the four guards: no drafts, no `country` field,
+      # nothing past the 30-day cap, no page linking to a page that did not ship.
+      - name: Assemble the site
+        run: node tools/build-site.js
+
+      # ── Publish ────────────────────────────────────────────────────────────
+      # Direct upload of the assembled folder, exactly as the local deploy does.
+      # NETLIFY_SITE_ID is a public identifier, not a secret — the token is the
+      # thing that grants access, and that one is.
+      - name: Deploy to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: c3cde8a0-b7db-4983-a470-a8e3e70b486d
+        run: npx --yes netlify-cli deploy --prod --dir=_site
+
+      # Runs only after a successful upload, so the ledger records deploys that
+      # HAPPENED rather than deploys that were attempted.
+      - name: Record the deploy
+        run: node tools/record-deploy.js
+
+      - name: Build the report
+        id: report
+        run: |
+          node tools/refresh-report.js > refresh-report.txt
+          {
+            echo 'subject<<EOF'
+            node tools/refresh-report.js --subject
+            echo 'EOF'
+            echo 'body<<EOF'
+            cat refresh-report.txt
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo '### 🔄 Refresh complete'
+            echo '```'
+            cat refresh-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── The receipt ────────────────────────────────────────────────────────
+      # Only the ledger and the candidate DB's refreshed pool hints. Both are
+      # dates, counts and ids — never channel data. `git add` names them
+      # explicitly rather than using -A, so a stray file in the runner can never
+      # ride along into history.
+      - name: Commit the refresh ledger
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add catalog/refresh-log.json catalog/candidates.json
+          if git diff --staged --quiet; then
+            echo 'Ledger unchanged — nothing to commit.'
+          else
+            git commit -m 'WP10: Weekly refresh — republished from live stats
+
+          Automated by .github/workflows/refresh.yml. Ledger and pool hints only;
+          the built set is never committed.'
+            git push
+          fi
+
+      - name: Email the report
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_APP_PASSWORD }}
+          from: Creator Gacha Refresh
+          to: ashish.barthwal.cs@gmail.com
+          subject: ${{ steps.report.outputs.subject }}
+          body: ${{ steps.report.outputs.body }}
+
+      # ── Failure is the message that matters most ───────────────────────────
+      # A refresh that fails silently is how the site goes stale and then
+      # non-compliant. This fires for ANY failed step above — expired key,
+      # revoked Netlify token, quota exhausted, a guard refusing to publish — and
+      # says what to do about it. `if: failure()` is what makes it run at all,
+      # since a failed job otherwise stops here.
+      - name: Email the failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_APP_PASSWORD }}
+          from: Creator Gacha Refresh
+          to: ashish.barthwal.cs@gmail.com
+          subject: '⚠️ Creator Gacha refresh FAILED — the live deck is ageing'
+          body: |
+            The weekly refresh did not complete, so the published deck still
+            carries its previous snapshot and is getting older.
+
+            Nothing is broken for visitors yet: build-site.js refuses to publish
+            statistics past the 30-day cap, so the failure mode is a stale site,
+            never a non-compliant one. But the clock is running.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Most likely causes, in the order worth checking:
+              1. YOUTUBE_API_KEY expired, revoked, or out of daily quota
+              2. NETLIFY_AUTH_TOKEN no longer valid
+              3. A build guard refused — check which one in the log
+
+            To fix it by hand from any machine with the repo and a key:
+              npm run deploy
+
+            To see how long there is: npm run status

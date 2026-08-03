@@ -2245,3 +2245,61 @@ scheduled refresh keeps running, and now refreshes STATS without touching deck c
 composition is decided by files a human edits rather than by anything the job does.
 
 </details>
+
+## The refresh moves off the laptop (2026-08-03)
+
+<details>
+<summary><b>Reverses "the deploy runs locally" — the one decision that had a deadline attached to it.</b>
+A compliance obligation on a public site cannot depend on one consumer device being switched on.</summary>
+
+`build-site.js` has said since it was written that the deploy runs locally, because hydrating ids
+into statistics needs an API key, and it accepted the consequence in writing: *"the 25-day refresh
+becomes a chore somebody has to remember instead of a cron job."*
+
+Ash asked the question that dissolves it: **"what if this laptop dies within the next month?"**
+
+Then the site keeps serving statistics until they pass YouTube's 30-day cap, and there is no
+machine left that can refresh them. A Windows scheduled task cannot run while the laptop is off and
+cannot exist once it is gone. Worse, the task registered with `LogonType: Interactive` — it only
+ran while Ash was *logged in*, a condition nobody would have noticed failing until a month had
+passed. Three failure modes, one of them silent, all pointed at a hard deadline.
+
+**The original objection was never really CI.** It was that a built set cannot be committed — a set
+file in git is permanent, which satisfies neither the 30-day cap nor a performable removal. That
+constraint is untouched here: the workflow builds the set **inside the runner** and uploads it
+straight to Netlify. Nothing carrying channel statistics is written to git. The only thing
+committed back is the refresh ledger — dates and counts — which is what makes the receipt survive
+the machine.
+
+**THE COST, which is real and is the reason this was a decision rather than a task.** The YouTube
+key and a Netlify token now exist in GitHub Actions secrets rather than only on one machine.
+They are masked in logs and unavailable to fork pull requests, but the key exists in more places
+than it did, and that is the price of the site staying compliant with nobody present. Stated
+rather than buried, because "we moved it to CI" hides it.
+
+**Weekly, not every 25 days, and the reasoning survives the move.** GitHub's scheduler can delay a
+cron run or drop one under load, so four chances per policy window is the design rather than
+belt-and-braces. `concurrency` never cancels in progress: a half-finished deploy is worse than a
+late one.
+
+**A REPORT, BECAUSE AN UNWATCHED JOB IS A TRUSTED ONE.** `tools/refresh-report.js` emails after
+every run — cards published per deck, the band breakdown, the delta since the previous deploy, and
+the two dates that matter (refresh due, publishing blocked). It leads with the card count and its
+delta rather than a status word, because **"success" is what a broken run says too**: the local
+task's first and only run exited 0 while republishing the site at 400 cards instead of 19,874. A
+count in an email would have caught that on sight.
+
+A failure email fires on any failed step, names the three likely causes in order, and states the
+one-line manual fix. That is the message that actually matters — a silent failure is how a site
+goes stale and then non-compliant.
+
+**What did NOT move.** Manual `npm run deploy` still works from any machine with the repo and a
+key, and is the recovery path. `tools/schedule-refresh.js` stays in the tree, unregistered, as a
+fallback for a machine that has to carry the cadence itself and as the record of why that was not
+enough. Two schedulers must never run at once — they race to the CDN and double the quota.
+
+**What this closes off.** No compliance-bearing process in this project may depend on a single
+machine again. If something has a deadline and a legal cap attached, it belongs somewhere that
+survives hardware.
+
+</details>

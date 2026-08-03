@@ -1,6 +1,23 @@
 #!/usr/bin/env node
-/* tools/schedule-refresh — register (or remove) the Windows scheduled task that
-   keeps the published set inside YouTube's 30-day cap on stored statistics.
+/* tools/schedule-refresh — register (or remove) a Windows scheduled task that
+   refreshes and republishes the deck.
+
+   ── RETIRED AS THE PRIMARY MECHANISM (2026-08-03) ────────────────────────────
+   The weekly refresh now runs in GitHub Actions (.github/workflows/refresh.yml),
+   and the local task is UNREGISTERED. This file stays as a fallback for a
+   machine that needs to carry the cadence itself — a laptop with the key and no
+   CI, say — and as the record of why that arrangement was not good enough.
+
+   THE REASON IT WAS NOT GOOD ENOUGH: a scheduled task cannot run while the
+   laptop is off, and cannot exist at all once the laptop dies. The 30-day cap on
+   stored statistics is a compliance obligation on a PUBLIC site, and pinning it
+   to one consumer device is a single point of failure with a deadline attached.
+   It also ran only while the user was logged in (LogonType Interactive), which
+   nobody would have noticed until a month had passed.
+
+   Do not re-register this alongside the workflow. Two schedulers publishing the
+   same site race each other to the CDN and double the quota spend.
+   ─────────────────────────────────────────────────────────────────────────────
 
    WHY THIS IS A SCRIPT AND NOT A WIKI PAGE. The refresh is the one piece of this
    project that is a CHORE rather than code: build-site.js explicitly accepts

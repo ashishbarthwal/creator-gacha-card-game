@@ -26,10 +26,14 @@ individually.
 - [X] **Privacy policy page** + **Terms of service page** — both shipped, linked in the
       footer, and pinned by a new build guard that refuses to publish a page linking to a
       page that did not ship.
-- [ ] **Schedule the refresh on Ash's machine.** Task Scheduler weekly, "run as soon as
-      possible after a missed start". The guard makes a miss safe rather than silent.
-      **Now load-bearing:** a real deploy is public, so the 30-day cap is running against
-      something a stranger can read.
+- [X] **The weekly refresh runs in GitHub Actions**, not on Ash's machine
+      (`.github/workflows/refresh.yml`). A laptop cannot carry a compliance deadline: it
+      cannot run while off and cannot exist once dead. Builds the set in the runner, uploads
+      straight to Netlify, commits only the ledger, and emails a report every run — with the
+      card count and its delta first, because "success" is what a broken run says too.
+      The local Windows task is unregistered; `tools/schedule-refresh.js` remains as a
+      documented fallback.
+      **Ash's remaining step: add the four repository secrets.**
 - [ ] README: **screenshots** (live demo + test pointer done)
 
 ### WP9 — remaining
