@@ -146,3 +146,741 @@ UCubY8F0qByZdyWUlk3b29-Q  # Ironmouse - Topic [172K] — auto-generated
 UChP_wYifMcFth31PNjkzGgA  # AlexisJordanVEVO [75K] — label mirror
 UCh_f6r5SZpzP8t2ZsjUPZVg  # GreysonChanceVEVO [250K] — label mirror
 UCdT7yHXJ-D7GzGiuDzDKM9w  # AustinMVEVO [2.8M] — label mirror
+
+# ── Institution thinning pass, 2026-08-03 (Ash's criteria) ──────────────────
+# Promoted from catalog/excluded-institutions.txt (STAGED) rather than waiting
+# for full review: government/municipal channels (real trademark/legal risk
+# regardless of size) and big, globally recognizable companies (same risk,
+# and the game does not need them). Small businesses and niche institutions
+# in the staged file are deliberately left alone — see tools/classify-institutions.js
+# for the exact criteria and named exceptions (personality-run collectives,
+# universities, nonprofits, religious/political media held back for a full pass).
+#
+# Government / municipal (278):
+UCLA_DiR1FfKNvjuUpBHmylQ  # NASA [15.0M] SSR
+UC5O114-PQNYkurlTg6hekZw  # United Nations [3.3M] SR
+UCAY-SMFNfynqz1bdoaV8BeQ  # NASA Goddard [1.7M] SR
+UCTkC3Jt91QkqNAE4FGWkEIQ  # The Royal Family [1.5M] SR
+UCkQLMKbkhyCDJmY1MEcXnLQ  # Pinal County Sheriff's Office [1.3M] SR
+UCdNtqpHlU1pCaVy2wlzxHKQ  # Canadian Space Agency [1.1M] SR
+UCmheCYT4HlbFi943lpH009Q  # NASA Johnson [774K] R
+UC6ZhpmNnLxlOYipqh8wbM3A  # U.S. Department of State [494K] R
+UCpuofAxlrUAgnu7QEwKQwxw  # Department of War [340K] R
+UCeQ92NVNJQvuRuQ8GVAlytw  # South Metro Fire Rescue Centennial, Colorado [211K] R
+UCYKfAzPEXMQsGtNfBCNa_BA  # NASA's Marshall Space Flight Center [156K] R
+UC1ZRVOl5MFHIXU4zZr-Oglg  # U.S. Department of Health and Human Services [155K] R
+UCLsYrDS9jYL_dO1g8qe2ctw  # NASA Armstrong Flight Research Center [149K] R
+UCjJtr2fFcUp6yljzJOzpHUg  # NASA's Kennedy Space Center [141K] R
+UCci2YC-BqUN_A6q-aFK4lOw  # Federal Way Public Schools [138K] R
+UCsht1FDJ-B_K09iZo6yJIcA  # United States Air Force [126K] R
+UCager4c99nqQAmdiB7WMZhQ  # Los Angeles Police Department [101K] R
+UC7EGgnYFEIOaAa47ZBpninw  # U.S. Department of Energy [81K] N
+UCZ82FeGyWu0tM0_kBAttAhA  # U.S. Coast Guard [81K] N
+UCvp3wlaAw3Rr59a3Gssz0PA  # U.S. Air Force Academy [78K] N
+UCSv7zzf9wjmqMnk6zzN5gYQ  # NASA Langley Research Center [78K] N
+UCouwSYMDvyp3FhxEElGpjPQ  # Phoenix Police Department [69K] N
+UCjwomG9UlE6H0xqpJcmAsQw  # NASA Glenn Research Center [69K] N
+UCOczO5awBrg7a6n35OEfjqQ  # County of Sutter, CA [67K] N
+UCsP4iQA05tA_F4lgCTlWBFw  # Ministry of Defence [55K] N
+UC_rDxhSLCiwHo4jBBdUwd_A  # Orange County Sheriff's Office [54K] N
+UCpkaznWj_9PIVgO0BRKXu8w  # U.S. Department of Homeland Security [51K] N
+UCS-UChsbvCbIvqtC4pwGdvQ  # Fire Department, City of New York (FDNY) [46K] N
+UChaOpzvcTEImQe9buvwz-SA  # National Museum of the U.S. Air Force [44K] N
+UCNXXjM3fkppSxEQIwBloIvA  # Department of Conservation [37K] N
+UCIK9U-c6_PllykRg3PoZtPA  # School District of Palm Beach County [33K] N
+UCkibG4ONyUmGlnOR3F3qq6Q  # Minnesota Department of Natural Resources [30K] N
+UCXmtnbNO7_no7RekfUIqVcw  # Department of Health and Social Care [29K] N
+UCPuGpQo9IX49SGn2iYCoqOQ  # Ministry of Health - Manatū Hauora [27K] N
+UCFvH-hGEKg2elZ7k-_5eQEg  # California Department of Public Health [26K] N
+UC8ZKS7HcEEgT1IsHJB3eATA  # Virginia Department of Wildlife Resources [26K] N
+UCv5V8WPHyl3qkA4FDjB5r9Q  # Mobile County Public Schools [26K] N
+UCbQjhc6o-sKhDH2RsUJt7Bw  # Metropolitan Nashville Police Department [25K] N
+UCo_Iw5r18go_OArPu07Vfvg  # Pasco Sheriffs Office [25K] N
+UCbJBh2MFKrX6Lf8bJ7_ZGWQ  # Guy's and St Thomas' NHS Foundation Trust [25K] N
+UCNsPBGn59pNSN5LdsCtUbQQ  # Jefferson County Public Schools [24K] N
+UCQE4UZNj8DI-Kw3Rs9Bibgw  # U.S. Department of Education [22K] N
+UCAbQeRpOa1f12BZnXcYQlqw  # City of San Diego [21K] N
+UC_sNVW9aVZoSfmu5sDI3rfg  # US Department of Transportation [20K] N
+UCJSUzdLr48I6r69fxFdK_tw  # Anne Arundel County Public Schools [19K] N
+UCEru6fqOoi-AQeLYnrZnoAw  # Anchorage School District [18K] N
+UCMyd15DT5hztgPUbO1KyyGw  # California Department of Fish and Wildlife [16K] N
+UC4OGHCwtxyBbRojVbW-HXcg  # Pennsylvania Department of Transportation [15K] N
+UC3-Sd7y6-2eKzSLfS3e-Xdw  # San Antonio Police Department [15K] N
+UCfOcdt8rxTlSODdzlQVk_iA  # Chicago Public Schools [15K] N
+UCJq5lN5w2hOlkKKqI9uVFeg  # NASA Earth [15K] N
+UCt2FDbyyFrn_lw1gWwuBfgQ  # U.S. Department of the Treasury [15K] N
+UCS1zJCGJGKui3kqrrv0RXxw  # City of Riverside [15K] N
+UC0811l9hXnCu2GL5oZJn-GQ  # Ministry of Justice [14K] N
+UCZbizCI-jDp1yf-vuKlxNOA  # Leon County Schools [14K] N
+UCgvvGUNQ8vN51GY4kgyKJXw  # California Department of Corrections and Rehabilitation [13K] N
+UCZNx43GNGg5VUPWF3L7l8ZQ  # LBUSD - Long Beach Unified School District [13K] N
+UChP-_GEzDmMoxPEuW-_SCgQ  # Orange County Public Schools [13K] N
+UCGwwGL-YDmX2vaxuthaKftw  # US Department of the Interior [13K] N
+UCLfbnzwVhIdW10LIEnzUY2Q  # N.C. Department of Natural and Cultural Resources [13K] N
+UCGDU53ZSYQBw6of0abcgD6Q  # City of Ottawa [12K] N
+UCN60-7HbSSceqkgze2Rj3eA  # Queensland Department of Education [12K] N
+UC-bTZbj_sh99WaxQKXMCRZg  # Broken Arrow Public Schools [12K] N
+UCutBHggRFn38J-tfVGC2tBw  # County of Los Angeles [12K] N
+UCBHdUT4VBdDTN6MRxFfYTUA  # Spokane Public Schools [12K] N
+UCDR4vawLFLLlpkEyb8clepw  # Department of Foreign Affairs and Trade, Ireland [12K] N
+UCXow6rWVWO7rodM4IGNTMgA  # Pinellas County Schools [11K] N
+UCpeNXxzH1oRTWK9JOap1PyQ  # Dallas Police Department [11K] N
+UCF6qQB_RJgr-ujG86DZwreQ  # Clayton County Public Schools [11K] N
+UCDwNg23atQP7q8z0Xx0WEFw  # United Independent School District [11K] N
+UCBYG3glJvLs6P3-OT7PH9OQ  # Cajon Valley Union School District [10K] N
+UCmzeK2lzaBSAQQr2Q0hPArw  # San Diego Police Department [10K] N
+UC0G4wITo14aaU40ypdrl30g  # Hillsborough County Public Schools [10K] N
+UCfe2rzOnQzgEDvNzRRPUJsA  # Toronto City Council [10K] N
+UCmnz0apVJDqsw8CcU05jKpw  # Tulsa Police Department [10K] N
+UC5pIWJ7JS12PLCAkwIoa8ig  # Prince William County Public Schools [9K] N
+UCfNxwdxPJEO1xhcGL3Xms0Q  # Allen County Public Library [9K] N
+UCUIM3AHCrTgxoFnh4r7z2Cw  # Lawrence Public Schools [9K] N
+UCRmjx8w-PHUVuOtyFtXnUgg  # California Department of Consumer Affairs [9K] N
+UCw5kLIHIJZPjetMjbjLSHQg  # North Carolina Department of Health and Human Services [9K] N
+UCmMAcf_ytC_H54h8wpUGEzA  # New York State Department of Health [8K] N
+UC6PplsvgrMLcD2T3_BJFFjQ  # Indian Prairie School District 204 [8K] N
+UCUyhUCwsv2G8Hzg1Xu3-oNg  # Pennsylvania Department of Labor & Industry [8K] N
+UCoDjF9SgfudvenW7PRsZgFg  # Evergreen Public Schools [8K] N
+UCgrMpAeNVMD1yX0kRsSTB0Q  # Arizona Department of Health Services [8K] N
+UCdAjGelEeYtm52gaq2OXG1g  # West Metro Fire Rescue [8K] N
+UCIk_itomOHTmC-f1xF50-5A  # Cleveland Metropolitan School District [8K] N
+UCeB7MhMSXup3n12W-S7jCkA  # Georgia Department of Public Safety [8K] N
+UCLW59ZOXQ2fBE82SGdgQlhg  # New York Army National Guard [7K] N
+UC-St1Gu0Zzo7q2pb4jk2mXw  # Ministry of Business, Innovation and Employment [7K] N
+UCGCsl4R0vYcEcVMkLBl-cqQ  # Beaverton School District [7K] N
+UC0u1f-HaLsnUr6ya1vZgQ0w  # Chesterfield County Public Schools [6K] N
+UCNIA7ewyUo-ukjJItWfVNCg  # Utah Department of Transportation [6K] N
+UCeDiMzJEUbPgaruDcXnD4Cg  # City of San Jose, CA [6K] N
+UCUR3i_hvk3-3i8vtrPg6v1Q  # Ottawa City Council [6K] N
+UCJ_zuMt30MT2U89kK6ql6dg  # Kenosha Unified School District [6K] N
+UCGyK_qeW-ht2KLTErI-ycJQ  # Ohio Department of Education and Workforce [6K] N
+UCt1NvhseqHr3sfwsEIPn1lA  # Mesa Public Schools [6K] N
+UCM_0pKe-ktTrDYz0xsjIr5g  # Tulsa Public Schools [6K] N
+UCSNFW92Q4q-4enuqwdytIKw  # California Department of Human Resources [6K] N
+UCe-w3tyoN3omoPp8w1QRXYA  # Pennsylvania Department of Human Services [6K] N
+UCDk7XARReoJChTwu1WojgRQ  # U.S. Department of Commerce [6K] N
+UCg6xeOMGV2Koy_CYV5WODMw  # North Carolina Department of Public Instruction [6K] N
+UCxUYIueRXEbuGTwamWkUn5g  # Cobb County School District [6K] N
+UCtM-wAC3F4Co2GNIeLMWS3Q  # Olathe Public Schools [5K] N
+UCu8AwLHSpgiFtKvHi_TFHog  # New York City Council [5K] N
+UCHi4rl8n9OwbpEziIvZC5Mw  # Chesapeake Public Schools [5K] N
+UCtL31Hd0AQgDqBRq54Pbwrw  # Davis School District - Official [5K] N
+UCvfy2OdmpW2kaK_Huvep7Ug  # City of Melbourne [5K] N
+UC-MUvNDIFE4lYVrM36HN2Hw  # School District U-46 [5K] N
+UC2C01lO4mVInYzqqwevFvSw  # New Jersey Department of Environmental Protection [5K] N
+UCK51aFAajaFi6qCGYqVuJdQ  # Tennessee Department of Correction [5K] N
+UCuDSIF_5o78OxB4ahdHEANg  # FL Department of Highway Safety and Motor Vehicles [5K] N
+UCUjnyzyzjhjGtT5hw4FGADw  # Association of the U.S. Army [5K] N
+UCwAHbBLygV4TH_qdzh1JqSA  # Department of Justice, Home Affairs and Migration [5K] N
+UCWlbIySkdJo-I6vpgDs41BQ  # Vancouver Public Schools [5K] N
+UCcKeQ_EQPqmuG0D_NO_QcZA  # Gwinnett County Public Library [5K] N
+UCQVPf0Gc_lWLy5wIQUgFnYA  # Omaha Public Schools [5K] N
+UCXS0w8SMYNK9PfaSJHykQTQ  # Dearborn Public Schools [5K] N
+UCBYbGpgjIoXKHwr4hYUU10g  # Ohio Department of Health [5K] N
+UCanKJb8Yeg1tg3KicJNqHdQ  # Milwaukee Public Schools [5K] N
+UCeFMXl28Zjz3AAi_haw8J-Q  # Johnston County Public Schools [5K] N
+UCmNhzj_PNx2VtdyIU77KDyg  # Shawnee Mission School District [5K] N
+UCb8dUIsat7U7lTjXYPFs_Ww  # Clark County School District [4K] N
+UCb1mUJLQnS2mn0HQW7P6r0Q  # Henderson Police Department [4K] N
+UC4PhcooSNGfRWzrI-gVfxHw  # Department of Industry, Science and Resources [4K] N
+UC0AGdtfuO-5tKrlw8LxmnEQ  # Government of Ireland [4K] N
+UCGoc_42A12lrV3mUQVhUbxA  # Wellington City Council [4K] N
+UCH9MptDo2visFT35UXLfN3g  # Garden Grove Unified School District [4K] N
+UCHdIs5LUWk2rmHQF5Bvpmeg  # Santa Ana Unified School District [4K] N
+UCWegUeCYCc09hCGCJzh5ufA  # Alief Independent School District [4K] N
+UCIV7G_xiYLekqOvqlkcwoVA  # Department of Health Victoria [4K] N
+UCkuDMbt8nsYlMo2p9H-VmLA  # Washington State Department of Natural Resources [4K] N
+UCpt866DjnBVg4v2hwN4oaWA  # Cabarrus County Schools [4K] N
+UCEpLQXIsdIwmdBfrt0-CZnQ  # L'Anse Creuse Public Schools LCPSTV [4K] N
+UCfSvAuffMZHPhojAOdBQLCA  # City of Los Angeles [4K] N
+UCKhPMMVm-98ZlveM0VbnCGA  # Department of Education, Victoria [4K] N
+UC9t9YLscAVJe6xVtZlE-Ktg  # Oklahoma State Department of Education [4K] N
+UCrXM3yhumFuIibPhn0Izvmg  # Department of Agriculture, Food and the Marine [4K] N
+UCeBJRRj7NcXB2lF7s7cl4zg  # Seattle Fire Department [4K] N
+UCIgK0e_ON-Xh16X-05Cyn-w  # Jeffco Public Schools - Colorado [4K] N
+UCmDwaJ_pSekoUStT2MUe_bw  # The School District of Philadelphia [4K] N
+UCQsapjcMuy_EkhMm5FopBhg  # School City of Hammond [4K] N
+UCo98RLSV_HsxWfiCWsfFmBA  # Rockford Public Schools [4K] N
+UCmQG_Yzw_s87Y5LuctCFK9w  # New Hanover County Schools [4K] N
+UCpkTxAtmdBMWU8Mm8XFugQQ  # The Florida Department of Elder Affairs [4K] N
+UCgA8rYLhg6xnYjPMVYRby1w  # Ohio Department of Public Safety [4K] N
+UCHavv47evvPcpKTFPooa-0Q  # Denver Public Schools [4K] N
+UC0MKBRS7teISJ5iGufoc_Iw  # County of Santa Barbara — CSBTV20 [4K] N
+UCUSoPWWpaNo4tZK1LVYyGzg  # St. Johns County Public Library System [4K] N
+UCbM7Ir2W3E2fe8MbpdJ_6tw  # Poudre School District [4K] N
+UC8g_QV36cnJcilp3GH_USug  # U.S. Army Esports [3K] N
+UCodWQ8iXFPmTXGqQRNbvCkg  # Colorado Department of Labor & Employment [3K] N
+UCNp6HGaxLSh5cp91MUfrO9A  # County of San Bernardino [3K] N
+UChkaM3sKzz_bKyOnyKSNl3g  # Council Rock School District [3K] N
+UCqmwITo1GgRZK0-nEI5mmOQ  # North Carolina Department of Revenue [3K] N
+UC9-K4K8yi-7kWZmPSKBYMjg  # New Jersey - Department of the Treasury [3K] N
+UCm6QvVUTi-mbvhkGPkOYtGw  # Waukegan Public Schools [3K] N
+UCF3TJkDHHLWgYXaxAnrIR7w  # West Virginia Department of Education [3K] N
+UCBmiapFfgsjKoaXlwSiWivg  # Richland School District Two [3K] N
+UC-mB6CeApddE7h0VcyiZFZA  # Kern High School District Public Information Office [3K] N
+UCjVgBzoQoBMQugV9ZHNAkJA  # Orange Unified School District [3K] N
+UCYSQsLQx-R7DvYCUVL9GMyA  # Lake Washington School District [3K] N
+UC1K_Im2raZxGwSvT2VMkmkA  # Alexandria City Public Schools [3K] N
+UCBo46SxbCg6_xP3VzhCML3A  # Ministry of Foreign Affairs and Trade [3K] N
+UCdFyjdfqmXgIPJ4wMsQd_Hg  # Ministry of Education NZ [3K] N
+UCXbXZwHzd-I2-OufnXH_YKw  # Oklahoma Department of Corrections [3K] N
+UCzkDUC-IEBl-KQeZLCxgBqw  # Department of Energy, Environment & Climate Action [3K] N
+UCg4195slhlJKYS4S_gpGVLg  # Park Hill School District [3K] N
+UC7QG9UDqK1mCyM9vIrPpooQ  # Christchurch City Council [3K] N
+UC0Ak4Tn8KelvjuoBLl8JHww  # Department of Education WA [3K] N
+UC92DDix2n92jHYMXgTlbJmw  # Beaufort County School District [3K] N
+UCuRNxC3YB6J9oSSFZhIONnw  # Australian Government Department of Education [3K] N
+UCwKx_j5nYj9wAuk1HswHUYg  # Lincoln Public Schools [3K] N
+UCqJbfQHBibbX6F8oeTVQVZw  # Illinois Department of Transportation [3K] N
+UCiG-EHKSvmrQwSEb0yBwpWw  # Community Unit School District 200 [3K] N
+UC1xX0iVf8bh_ewTh_UjAixg  # Washington State Department of Corrections [3K] N
+UCKhLlujgbrx7hsyH5cXTnKQ  # Virginia Department of Health [3K] N
+UC-WiBZF9eiVkEgkBr3ik7Bg  # Durham Public Schools [3K] N
+UCX8JNOtpgZGJNiUE3t6HLJQ  # School District 49 Media [3K] N
+UCv6ATIkF5_u7Z8b06xbA5Ww  # IDEA Public Schools [3K] N
+UCFNf7sCi_dxQy8yyHGN2TBw  # Houston County School District [3K] N
+UCOXWk66_cfg2MClHHv4AAxA  # New Jersey Department of Health [3K] N
+UCl2tDcl2hHFL_cx2f-Q-eQQ  # Nelson City Council [3K] N
+UCVsskUmN7TUq-lFsSnOAxcg  # Ventura County Fire Department [3K] N
+UCgvkKXnp1PjGG9iSjedJPoA  # Troy School District [3K] N
+UCly44dT_nDn9Pu0_nxPvMFw  # Department of Justice Canada [3K] N
+UCPkXQyjAcbOgLoAh2uPT-mg  # Cincinnati Public Schools [3K] N
+UCOh9SLtA6WoGyIsmVw5EXVA  # Department of Education and Youth [3K] N
+UCNWQuaRlKkDpcqSniId2qfg  # Cleveland City Council [3K] N
+UCUTnn--dLLgeqjbOQhrQwXQ  # City of Tulsa Gov [3K] N
+UCvdwBBwGOaZ1RbTEKJDOYNA  # Placentia-Yorba Linda Unified School District [3K] N
+UCH8_Wz8C6R9nAc6JV9vmiAw  # San Juan Unified School District [3K] N
+UCMs2UiYirqwD6HP79ioEwuA  # Maryland Department of Transportation [3K] N
+UCW0xZHhHmRWujnZvSKO5U3A  # NC Department of Public Safety [2K] N
+UC-a7hBg3_hVTtqYG4zQMWJw  # DeKalb County Public Library [2K] N
+UC0AFPAvbnzZOJqyo_4oomWQ  # Comal Independent School District [2K] N
+UCi_8FSURC_7OpuXUzQM4D0Q  # Hamilton City Council [2K] N
+UCeTUc6hmad8GwdZQyGG_HmA  # Boston Public Schools [2K] N
+UC2bWDXcW6FfdxVyR-V34oag  # County of San Mateo [2K] N
+UC_EOjPdG4vVYt37ORHJMaRg  # Killeen Independent School District - KISD [2K] N
+UCZs93-UHAV8yFh-oJN8n5sA  # Colorado Springs School District 11 [2K] N
+UCc8LnsMV46ul9Y2e1iz8JHw  # Ann Arbor Public Schools [2K] N
+UC6evDuIRFD_tQVKG6mQiiJA  # Ventura Unified School District [2K] N
+UCZtpVKe3im6U5ecBE2KtxPg  # Perkiomen Valley School District [2K] N
+UC8zYKc6wNuqWjRxvZrlDEYA  # Department of Enterprise, Tourism and Employment [2K] N
+UCt6sAX_3Kzo4ZxuLJ0r1dww  # Poway Unified School District [2K] N
+UCDNfIyX7scvt3aCEjRaCkrA  # Lawrence Public Schools [2K] N
+UCukqbtqYDaudswAmPGf4CUg  # City of Perth [2K] N
+UCnOUhsMipuGIkvtSmV49nvA  # County of Sacramento [2K] N
+UCrIBiZ0bXHUfnOAj8OAxqtA  # City of Hobart [2K] N
+UC9FY2MGET6BMfTrEXBmrVAA  # David Douglas School District [2K] N
+UCKUS8uS3-5yvEk2yyVWK6hA  # Wisconsin Department of Workforce Development [2K] N
+UChhsHfArI0M9_v2Ycd_37bQ  # State College Area School District [2K] N
+UCjwzxPE7_AVVwOb_hXodoFQ  # Norman Public Schools [2K] N
+UCnCM4yNdQR7eXOP2nxnjXNw  # Hillsboro School District [2K] N
+UC-m6gXx7rL8hwBHmcbgWrXw  # New York State Department of Civil Service [2K] N
+UC2z8JWPppEQ_aNEN02WpvBw  # Kent School District [2K] N
+UCPmmSLMrQ34B6fezdZkvvsA  # Erie's Public Schools [2K] N
+UCLC1IycefFAM3mBsQATf-dQ  # Fulton County Schools TV [2K] N
+UCyJ0-hmcAKNA2VNjByRD8NQ  # New York State Department of State [2K] N
+UCfeTLpbY1tgLwut9_tmGjCw  # Alvord Unified School District [2K] N
+UCPro8_zoHVbc_Cd4euabdiw  # West Virginia Department of Commerce [2K] N
+UCC4N3YUjf9GV6eth3Q3ZTJQ  # County of San Luis Obispo [2K] N
+UCIuKxbBmH-gLa19sfi-wRCw  # Dunedin City Council [2K] N
+UChZj3XBfS9awW19WmcFMPoQ  # Fayetteville Public Schools [2K] N
+UCiFzn9Dh7vbEKxzqR_xBQSw  # Glasgow City Council [2K] N
+UCv_RRgkZ4kjfSSI1sGrqKFw  # Santa Fe Public Schools [2K] N
+UC9BXDQlgknPh6zUgGfr8piA  # County of Sonoma [2K] N
+UCHo-l09YGgt4uKnCWYvt8Pw  # Appleton Area School District [2K] N
+UCXc3A06y362fTZrQxXcR5EA  # Kalamazoo Public Schools Video [2K] N
+UCmRtn3cK-AoHRR09K5Us41A  # Cork City Council [2K] N
+UCiLGq-tOK_jjMCiRS-HMniA  # Coeur d'Alene Public Schools [2K] N
+UCGtriA-PCAKF_pe5S42tplg  # Ministry of Justice [2K] N
+UCNEbq_4TbpVpzdc9PorlSWg  # Department of Transport and Planning [2K] N
+UCvkYipjmcy4I57-Ez5UZgnw  # Cecil County Public Schools [2K] N
+UCeg42agpsybX9TfCu8jz2tA  # Cook County Government [2K] N
+UCjEEoQaYttQGa9Wl5oDd80Q  # Wallingford-Swarthmore School District [2K] N
+UCYdDe8dC-QExPf3o1-0XR4A  # New Zealand Department of Internal Affairs [2K] N
+UCk3BaR0DdO7j_bZSKnIEK4w  # City of Bakersfield, CA. [2K] N
+UCpAlTKiD0xqo_RRlYGqVX6w  # New Mexico Department of Health [2K] N
+UCPFiRu3cySBA5r980NNjeyQ  # Boise School District [2K] N
+UCapaVJFHZtLbVa7r47S3RBg  # Chula Vista Elementary School District [2K] N
+UCf8AsV7RZmW7Gb55qotreQQ  # Lampeter-Strasburg School District [2K] N
+UCAlKpXvM42YrtSDE7yBTAJA  # Cape Coral Police Department [2K] N
+UCc1CruNX3tju0I19XJU-piw  # Maryland Department of Public Safety [2K] N
+UC3foUZMVeQXPfLZEShfxUOA  # Kennewick School District [2K] N
+UCzEPJfI8S6raUqyIUvoVPow  # Oswego Community Unit School District 308 [2K] N
+UCskL91dOTb10vDZqRRRAJPA  # Wichita Police Department [2K] N
+UC8u779bvwRjGXAv82od-80g  # Clermont County Public Library [2K] N
+UCeBrPRhx8O6aNfBovK17WSw  # Department of Health, Tasmania [2K] N
+UCn9EN1M49avPZTkKQdWRy6A  # Oak Park Elementary School District 97 [2K] N
+UCQIUsEYkLwyN2JKCwKt2HGA  # Escondido Union School District [2K] N
+UCnaV_9xHHhpYmd8_mps3jaQ  # ABC Unified School District [2K] N
+UCYHHlBBpMwD94397AVRTgvQ  # Centennial School District [2K] N
+UC7ciVAlNzF0vHlJ9kkMm1HA  # CA Department of Housing & Community Development [2K] N
+UCgP_TKfLi3ltZxWLmtZS52g  # Portage Public Schools [1K] N
+UC2u8uazxdd-ibR8rdYq5K7Q  # Department of Health [1K] N
+UC5ELF-TbsVipv4jEemRg-fw  # Penn Delco School District [1K] N
+UCDl6lojJOtjexM_YNo_I2zw  # Fox Chapel Area School District [1K] N
+UCTrY_4M7gC0xhkutpfA-SsQ  # Methacton School District [1K] N
+UCVCPE7hbwq9oAO-5Nyla2Kw  # NC Department of Administration [1K] N
+UCNLi099wf8EsMZR3YyeIjQg  # County of Monterey [1K] N
+UCde4c26jlE60fWGoNMEOzDQ  # Tauranga City Council [1K] N
+UCje_J8TeKlMlVwAmKLB-wrg  # NYS Department of Agriculture and Markets [1K] N
+UC2A2-kFAV2nvgmmx-0mYlkQ  # Glendale Unified School District [1K] N
+UCA6cVcvO7IBo0AZ26ayQsrg  # Cambridge City Council [1K] N
+UCjDLauCfLfKSkhdDPsf597w  # North Thurston Public Schools [1K] N
+UC1FtBI23XjXEF_YUCSsmuaQ  # School District of Janesville (SDJ) [1K] N
+UCRpgqraDSMd8uW3IlRnTf0w  # Stevens Point Area Public School District [1K] N
+UCInMhKSYVe6veXi6e9AgVxA  # U.S. Army Space and Missile Defense Command [1K] N
+UC_SD8BBJxHoB_t6abDI_Y5Q  # Honolulu Fire Department [1K] N
+UCWNJgxQjN7WuJ9UeaLP3wcg  # Ocean View School District [1K] N
+UC5Yw9mR1DXMBa8Mqy54yjBw  # Colton Joint Unified School District - District Office [1K] N
+UC1MPb2bjIW1isPcK1aCKRVw  # Boulder Valley School District [1K] N
+UCQw4Gj4OqBbhuU8uPg8_GQQ  # Wilmette Public Schools District 39 [1K] N
+UCWEkolOpjOruSK_lbGuhfVA  # Competition Bureau Canada [1K] N
+UCrDHsvyWIAUTKUD4Kxb8rog  # County of Nevada California [1K] N
+#
+# Big companies (447):
+UCJ5v_MCY6GNUBTO8-D3XoAg  # WWE [113.0M] UR
+UCcdwLMPsaU2ezNSJU1nFoBQ  # Baby Shark - Pinkfong Kids’ Songs & Stories [84.9M] UR
+UC3gNmTGu-TTbFPpfSs5kNkg  # Movieclips [66.4M] UR
+UCBR8-60-B28hp2BmDPdntcQ  # YouTube [45.9M] SSR
+UCAOtE1V7Ots4DjM8JLlrYgg  # Peppa Pig - Official Channel [44.3M] SSR
+UCp0hYYBW6IMayGgR-WeoCvQ  # TheEllenShow [37.9M] SSR
+UCkAGrHCLFmlK3H2kd6isipg  # Mr Bean [36.0M] SSR
+UCUe6ZpY6TJ0no8jI4l2iLxw  # Nick Jr. [35.5M] SSR
+UC_aEa8K-EOJ3D6gOs7HcyNg  # NoCopyrightSounds [34.3M] SSR
+UC8-Th83bH_thdKZDJCrn88g  # The Tonight Show Starring Jimmy Fallon [34.1M] SSR
+UCWOA1ZGywLbqmigxE4Qlvuw  # Netflix [33.5M] SSR
+UC4rasfm9J-X4jNl9SvXp8xA  # Ultra Records [32.5M] SSR
+UCT2X19JJaJGUN7mrYuImANQ  # America's Got Talent [31.4M] SSR
+UCrreHSUa5rnuCVDeO8dX4eA  # Peppa Pig Español Latino - Canal Oficial [31.3M] SSR
+UC9trsD1jCTXXtN3xIOIU8gg  # WB Kids [30.9M] SSR
+UCa10nxShhzNrCE1o2ZOPztg  # Trap Nation [30.1M] SSR
+UCoookXUzPciGrEZEXmh4Jjg  # Sesame Street [30.1M] SSR
+UCblfuW_4rakIf2h6aqANefA  # Red Bull [29.0M] SSR
+UCJ0uqCI0Vqr2Rrt1HseGirg  # The Late Late Show with James Corden [28.2M] SSR
+UC-yXuc1__OzjwpsJPlxYUCQ  # WORLDSTARHIPHOP [27.7M] SSR
+UCAuUUnT6oDeKwE6v1NGQxug  # TED [27.7M] SSR
+UCpVm7bg6pXKo1Pr6k5kxG9A  # National Geographic [26.3M] SSR
+UCaWd5_7JhbQBe4dknZhsHJg  # WatchMojo.com [25.8M] SSR
+UCWJ2lWNubArHWmf3FIHbfcQ  # NBA [24.4M] SSR
+UCn_FAXem2-e3HQvmK-mOH4g  # GLITCH [23.2M] SSR
+UCvgfXK4nTYKudb0rFR6noLA  # UFC [22.8M] SSR
+UCP-Ng5SXUEt0VE-TXqRdL6g  # LEGO [21.8M] SSR
+UCJFp8uSYCjXOMnkUyb3CQ3Q  # Tasty [21.3M] SSR
+UCUtZaxDF3hD5VK4xRYFBePQ  # Britain's Got Talent [21.3M] SSR
+UCE_M8A5yxnLfW0KghEeajjw  # Apple [20.7M] SSR
+UCKy1dAqELo0zrOtPkf0eTMw  # IGN [19.9M] SSR
+UCpko_-a4wgz2u_DgDgd9fqA  # BuzzFeedVideo [19.7M] SSR
+UCupvZG-5ko_eiXAupbDfxWw  # CNN [19.7M] SSR
+UCn8zNIfYAQNdrFRrr8oibKw  # VICE [19.2M] SSR
+UCINb0wqPz-A0dV9nARjJlOQ  # The Dodo [18.7M] SSR
+UC-2Y8dQb0S6DtpxNgAKoJKA  # PlayStation [17.2M] SSR
+UCqFzWxSCi39LnW1JKFR3efg  # Saturday Night Live [17.2M] SSR
+UCRXiA3h1no_PFkb1JCP0yMA  # Vogue [16.7M] SSR
+UCTl3QQTvqHFjurroKxexy2Q  # Olympic Games [16.6M] SSR
+UCDCNmuaOXOo25Yn4mbMHhhQ  # Talking Tom & Friends TV [16.2M] SSR
+UC2t5bjwHdUX4vM2g8TRDq5g  # League of Legends [16.0M] SSR
+UCe4LM_eKc9ywRmVuBm5pjQg  # Atlantic Records [16.0M] SSR
+UCBq5hp6DvwWam2XOXw6lYJA  # Awakening Music [15.7M] SSR
+UCCj956IF62FbT7Gouszaj9w  # BBC [15.6M] SSR
+UC9MAhZQQd9egwWCxrwSIsJQ  # HISTORY [15.4M] SSR
+UClVrJwcIy7saPcGc1nct80A  # Fueled By Ramen [15.4M] SSR
+UCrkzfc2yf-7q6pd7EtzgNaQ  # Wild 'N Out [15.4M] SSR
+UCPDXXXJj9nax0fr0Wfc048g  # Dropout [15.3M] SSR
+UCK8sQmJBp8GCxrOtXWBpyEA  # Google [14.5M] SSR
+UCiWLfSweyRNmLpgEHekhoAg  # ESPN [14.5M] SSR
+UCwmZiChSryoWQCZMIQezgTg  # BBC Earth [14.5M] SSR
+UC5ZiUaIJ2b5dYBYGf5iEUrA  # Netflix Latinoamérica [14.3M] SSR
+UCpsSadsgX_Qk9i6i_bJoUwQ  # Just For Laughs Gags [14.2M] SSR
+UCwWhs_6x42TyRM4Wstoq8HA  # The Daily Show [13.9M] SSR
+UC9k-yiEpRHMNVOnOi_aQK8w  # Inside Edition [13.8M] SSR
+UCi-5OZ2tYuwMLIcEyOsbdRA  # Annoying Orange [13.8M] SSR
+UCadtap8RYMNy8w4K9lXhzpQ  # Barbie [13.6M] SSR
+UClG8odDC8TS6Zpqk9CGVQiQ  # Fortnite [13.6M] SSR
+UC6VcWc1rAoWdBCM0JxrRQ3A  # Rockstar Games [13.3M] SSR
+UCGbofRROopWrumVob5w61OA  # Caso Cerrado [13.1M] SSR
+UCftwRNsjfRo08xYE31tkiyw  # WIRED [12.9M] SSR
+UCjmJDM5pRKbUlVIzDYYWb6g  # Warner Bros. [12.9M] SSR
+UCLXo7UDZvByw2ixzpQCufnA  # Vox [12.7M] SSR
+UC9LQwHZoucFT94I2h6JOcjw  # Liverpool FC [12.6M] SSR
+UCUsN5ZwHx2kILm84-jPDeXw  # Comedy Central [12.6M] SSR
+UCbmWOFTbZoDLWqG1rvFnJ0g  # WildBrain Kids [12.5M] SSR
+UCGydrkfIhUDNCotYQI8TJhA  # Cartoon Network UK [11.8M] SSR
+UCNIFiHaLZkYASaWDdkC1njg  # A&E [11.8M] SSR
+UCxAICW_LdkfFYwTqTHHE0vg  # MTV [11.5M] SSR
+UC6yW44UGJJBvYTlfC7CRg2Q  # Manchester United [11.4M] SSR
+UCSVSJ1OCSv5ClFgKFTHIDew  # PAW Patrol Official & Friends [11.3M] SSR
+UCpgxmlXoDtkYzRQ4cJgCT5A  # Power Rangers Official [11.3M] SSR
+UCqhnX4jA0A5paNd1v-zEysw  # GoPro [11.3M] SSR
+UCq0OueAsdxH6b8nyAspwViw  # Universal Pictures [11.1M] SSR
+UCEwIUtFBhaI2L2PuKv0KL2g  # Classic Mr Bean [11.0M] SSR
+UCx27Pkk8plpiosF14qXq-VA  # SpongeBob SquarePants Official [10.8M] SSR
+UCMtFAi84ehTSYSE9XoHefig  # The Late Show with Stephen Colbert [10.7M] SSR
+UCcyq283he07B7_KUX07mmtA  # Business Insider [10.5M] SSR
+UC3XTzVzaHQEd30rQbuvCtTQ  # LastWeekTonight [10.2M] SSR
+UCGIY_O-8vW4rfX98KlMkvRg  # Nintendo of America [10.2M] SSR
+UCG5qGWdu8nIRZqJ_GgDwQ-w  # Premier League [10.0M] SR
+UCaXkIU1QidjPwiAYu6GcHjg  # MS NOW [9.9M] SR
+UCY2jUnU118sVkdj2xafiJ0g  # PJ Masks Official [9.6M] SR
+UCHJuQZuzapBh-CuhRYxIZrg  # Insider [9.6M] SR
+UCjOl2AUblVmg2rA_cRgZkFg  # Top Gear [9.5M] SR
+UCpdK1NLHxEUGXc1gq2NxkTw  # The Voice [9.5M] SR
+UCkzCjdRMrW2vXLx8mvPVLdQ  # Man City [9.4M] SR
+UCQJWtTnAHhEG5w4uN0udnUQ  # Prime Video [9.4M] SR
+UCRwA1NUcUnwsly35ikGhp0A  # Noticias Telemundo [9.3M] SR
+UC_IRYSp4auq7hKLvziWVH6w  # Pixar [9.1M] SR
+UC6pGDc4bFGD1_36IKv3FnYg  # Crunchyroll [9.0M] SR
+UCvQECJukTDE2i6aCoMnS-Vg  # Big Think [8.9M] SR
+UC2iUwfYi_1FCGGqhOUNx-iA  # ScreenRant [8.4M] SR
+UCsEukrAd64fqA7FjwkmZ_Dw  # GQ [8.3M] SR
+UCgPClNr5VSYC3syrDUIlzLw  # Adult Swim [8.3M] SR
+UC9YydG57epLqxA9cTzZXSeQ  # Call of Duty [8.2M] SR
+UCz97F7dMxBNOfGYu3rx8aCw  # Sony Pictures Entertainment [8.2M] SR
+UCvB3solmhqtgDeLpD-yTtfg  # hickok45 [8.1M] SR
+UCJbYdyufHR-cxOuY96KIoqA  # AMP [8.1M] SR
+UC0k238zFx-Z8xFH0sxCrPJg  # Architectural Digest [8.0M] SR
+UC_zEzzq54Rm0iy7lmmZbCIg  # America's Funniest Home Videos [7.9M] SR
+UCM88mtSE0zRTn5ae4EbYcuw  # Pingu - Official Channel [7.8M] SR
+UC74bcC7aGRNz4KoRpJsJNEw  # Nicktoons [7.8M] SR
+UCdtXPiqI2cLorKaPrfpKc4g  # Entertainment Tonight [7.7M] SR
+UCz8K1occVvDTYDfFo7N5EZw  # Law&Crime Network [7.7M] SR
+UCKTWUJqT3NSZ50I49ExjWZQ  # Warner Música [7.5M] SR
+UCJ6td3C9QlPO9O_J5dF4ZzA  # Monstercat Uncaged [7.5M] SR
+UCnLuLSV-Oi0ctqjxGgxFlmg  # Sony Pictures Animation [7.4M] SR
+UCbpMy0Fg74eXXkvxJrtEn3w  # Bon Appétit [7.4M] SR
+UCdN4aXTrHAtfgbVG9HjBmxQ  # Key & Peele [7.3M] SR
+UCiDJtJKMICpb9B1qf7qjEOA  # Adam Savage’s Tested [7.3M] SR
+UCUZzyuAlhHNP3oiuMjn7RfQ  # Kitchen Nightmares [7.2M] SR
+UCcEWv_J2SEU8XO2tEm4Phgw  # Univision [7.2M] SR
+UCmWZB57dUwFfj847-4y63JA  # Blaze and the Monster Machines [7.2M] SR
+UC2kTZB_yeYgdAg4wP2tEryA  # emimusic [7.2M] SR
+UC7nMrW3baKp0dA5Tz9ulVYQ  # Thuy Nga [7.1M] SR
+UCH-_hzb2ILSCo9ftVSnrCIQ  # The Yogscast [7.1M] SR
+UCtI0Hodo5o5dUb67FeUjDeA  # SpaceX [7.0M] SR
+UC2vlpX8sNDBmPcY_1_QSGJg  # tlc uk [6.8M] SR
+UCOpcACMWblDls9Z6GERVi1A  # Screen Junkies [6.8M] SR
+UC0L1suV8pVgO4pCAIBNGx5w  # 60 Minutes Australia [6.7M] SR
+UCYjk_zY-iYR8YNfJmuzd70A  # Epic Meal Time [6.7M] SR
+UC_5niPa-d35gg88HaS7RrIw  # Disney [6.7M] SR
+UCK7tptUDHh-RYDsdxO1-5QQ  # The Wall Street Journal [6.7M] SR
+UCqVDpXKLmKeBU_yyt_QkItQ  # YouTube Originals [6.6M] SR
+UCH6vXjt-BA7QHl0KnfL-7RQ  # Simon's Cat [6.6M] SR
+UCIzXayRP7-P0ANpq-nD-h5g  # The Sun [6.5M] SR
+UCZzwjZPc6R_PbnDgFVMwlvQ  # Capital FM [6.5M] SR
+UCZW5lIUz93q_aZIkJPAC0IQ  # 88rising [6.5M] SR
+UC4i_9WvfPRTuRWEaWyfKuFw  # TNT Sports Football [6.4M] SR
+UC9qgVkKRZUXcgHdf35Z-8dw  # My Little Pony - Official Channel [6.4M] SR
+UCU2PacFf99vhb3hNiYDmxww  # Chelsea Football Club [6.4M] SR
+UC_976xMxPgzIa290Hqtk-9g  # Walt Disney Animation Studios [6.3M] SR
+UCcjhYlL1WRBjKaJsMH_h7Lg  # Epicurious [6.3M] SR
+UCMw2QZuFUZxfFAFZ0hOLrZg  # Netflix Thailand [6.3M] SR
+UCO0akufu9MOzyz3nvGIXAAw  # News24 [6.2M] SR
+UCHQU99yKRd_BQVSci2MZ08w  # Instagram [6.2M] SR
+UCbertc-gMbkkHuSmg0qwnxw  # Bethel Music [6.1M] SR
+UC3DkFux8Iv-aYnTRWzwaiBA  # Peter McKinnon [6.0M] SR
+UCKBnlTTgEnhIXv_c4LvvyMQ  # OWN [6.0M] SR
+UCxLpKibphYqXrXpxAnR8MfA  # MondoMedia [6.0M] SR
+UCoBpC9J2EcbAMprw7YjC93A  # The Amazing World of Gumball [5.8M] SR
+UCkEBDbzLyH-LbB2FgMoSMaQ  # Animal Planet [5.7M] SR
+UC4PziMH5MvvsmqM0VCZTy-g  # The Graham Norton Show [5.7M] SR
+UCbu2SsF-Or3Rsn3NxqODImw  # GameSpot [5.7M] SR
+UCpryVRk_VDudG8SHXgWcG0w  # Arsenal [5.6M] SR
+UCOk55dAgB8VnMlhaTEMeX5A  # Teletubbies - WildBrain [5.5M] SR
+UCH1oRy1dINbMVp3UFWrKP0w  # Good Morning America [5.5M] SR
+UCLRmIdRJgLfmdpJufmBhBuA  # LOL! Network [5.5M] SR
+UCBaW2vcbZiDTA5GeFjSrhQw  # Mr Bean TV [5.5M] SR
+UCnenDeyXGv5IRYsa3QAGdhQ  # Свинка Пеппа Русский - Официальный канал [5.5M] SR
+UCKE0Xnj818IDaHvIcRiq0Bg  # KIDZ BOP [5.4M] SR
+UCqZQlzSHbVJrwrn5XvzrzcA  # NBC Sports [5.4M] SR
+UCdu8QrpJd6rdHU9fHl8J01A  # Hope For Paws - Official Rescue Channel [5.4M] SR
+UCKijjvu6bN1c-ZHVwR7-5WA  # BuzzFeed Unsolved Network [5.3M] SR
+UC6ZFN9Tx6xh-skXCuRHCDpQ  # PBS NewsHour [5.3M] SR
+UCOp8wkVqdrWbFYHjDv946QQ  # TNA Wrestling [5.3M] SR
+UCVTyTA7-g9nopHeHbeuvpRA  # Late Night with Seth Meyers [5.3M] SR
+UCktaw9L-f65LzUUdjmCFkbQ  # Disney Channel [5.3M] SR
+UCqnbDFdCpuN8CMEg0VuEBqA  # The New York Times [5.2M] SR
+UCiifkYAs_bq1pt_zbNAzYGg  # DC [5.2M] SR
+UCn4sPeUomNGIr26bElVdDYg  # NowThis Impact [5.1M] SR
+UCUMZ7gohGI9HcU9VNsr2FJQ  # Bloomberg Originals [5.1M] SR
+UCurvRE5fGcdUgCYWgh-BDsg  # DAZN Boxing [5.1M] SR
+UChDKyKQ59fYz3JO2fl0Z6sg  # TODAY [5.1M] SR
+UCzWQYUVCpZqtN93H8RR44Qw  # Seeker [5.0M] SR
+UCEg25rdRZXg32iwai6N6l0w  # Tottenham Hotspur [5.0M] SR
+UCFN4JkGP_bVhAdBsoV9xftA  # All Elite Wrestling [5.0M] SR
+UCIsbLox_y9dCIMLd8tdC6qg  # Vanity Fair [4.9M] SR
+UCgKkNPU2Ib7_TcyAl8M2S-w  # Warner Bros. Entertainment [4.9M] SR
+UCY9eEaH19ulZmdusctU1ejA  # Glamour [4.9M] SR
+UCQzdMyuz0Lf4zo4uGcEujFw  # GameofThrones [4.9M] SR
+UCosXctaTYxN4YPIvI5Fpcrw  # Coca-Cola [4.8M] SR
+UCtCRIhWVXiQDEp22k8z98-g  # The X Factor USA [4.8M] SR
+UCq7OHvWO6Z3u-LztFdrcU-g  # Illumination [4.5M] SR
+UCF9imwPMSGz4Vq1NiTWCC7g  # Paramount Pictures [4.4M] SR
+UCZGYJFUizSax-yElQaFDp5Q  # Star Wars [4.3M] SR
+UClbYzBq_iCnk4Vg4HF1MhfQ  # Hot Wheels [4.3M] SR
+UCWqPRUsJlZaDp-PVbqEch9g  # Smithsonian Channel [4.3M] SR
+UCXptamDYEVcU4JCio30hYTw  # Peppa Pig Français - Chaîne Officielle [4.3M] SR
+UChWXY0e-HUhoXZZ_2GlvojQ  # Victoria's Secret [4.2M] SR
+UCe9DTWmhhxeKyYHL4mldGcA  # Karate Kid & Cobra Kai [4.2M] SR
+UC3ScyryU9Oy9Wse3a8OAmYQ  # FRONTLINE PBS | Official [4.2M] SR
+UCvJJ_dzjViJCoLf5uKUTwoA  # CNBC [4.2M] SR
+UCaAZ2O-1wvipTqdbFv2cJJQ  # Just Pranks [4.2M] SR
+UCsN32BtMd0IoByjJRNF12cw  # 60 Minutes [4.2M] SR
+UCDj64sior23IP_7xLe8R7sg  # Warner Records [4.1M] SR
+UC0qrcKuayvbMtPj-WXNFylA  # Thomas & Friends [4.1M] SR
+UCOmcA3f_RrH6b9NmcNa4tdg  # CNET [4.1M] SR
+UC0p5jTq6Xx_DosDFxVXnWaQ  # The Economist [4.1M] SR
+UCI7fys0WM62xF2jUlUdq0XQ  # Fender [4.1M] SR
+UC4oVjJptcsvtgIMrdIUQYlQ  # LADbible Stories [4.0M] SR
+UCRzPUBhXUZHclB7B5bURFXw  # Eater [4.0M] SR
+UCLN5ButOQ8y2_TlOIs8_RWw  # Woolly and Tig Official Channel [4.0M] SR
+UCb0xfM3HGOsqPYNAocXXNAQ  # truTV [4.0M] SR
+UCHsRtomD4twRf5WVHHk-cMw  # TierZoo [3.9M] SR
+UCAMPco9PqjBbI_MLsDOO4Jw  # American Idol [3.9M] SR
+UCVi2lI40LetxLBKn-rtWC3A  # Crunchyroll Dubs [3.9M] SR
+UC-r13SLLdZtZNmuC2bMnlmw  # Hasbro [3.9M] SR
+UCzS3-65Y91JhOxFiM7j6grg  # Funny Or Die [3.8M] SR
+UCvm8V4Dwtz0fbPGbpk7RYAg  # BBC News اردو [3.8M] SR
+UCa90xqK2odw1KV5wHU9WRhg  # The Office [3.8M] SR
+UChmpTxQ0Gp8KEJKsqzeg9Lg  # Stranger Things [3.7M] SR
+UCmyjVwYZbp5YPYTUyeopO2g  # Pawn Stars [3.7M] SR
+UC4yQCVlLhTmOqX5kUkAGr0g  # Caillou - WildBrain [3.6M] SR
+UCAJetkuJ2zz92WOJCrQvfkw  # Fireman Sam [3.6M] SR
+UCnSR7_Oq-MdsZxfogsfk-Ug  # Tommy Boy [3.6M] SR
+UCddiUEpeqJcYeBxX1IVBKvQ  # The Verge [3.5M] SR
+UCZOnoLKzoBItcEk5OsES2TA  # Don't Hug Me .I'm Scared [3.5M] SR
+UC_0k7_7tjHe1X99zFyIiy7Q  # Fireman Sam US [3.5M] SR
+UCsZXuHKonP9utl5q2hFCkgA  # Studio C [3.5M] SR
+UCC0aCrsMnk074Tg5JhDj8Qg  # Chikn Nuggit [3.4M] SR
+UC7vVhkEfw4nOGp8TyDk7RcQ  # Boston Dynamics [3.4M] SR
+UCTsgmnXbWotzbR36vU0YPrA  # Teenage Mutant Ninja Turtles [3.4M] SR
+UCPgMAS8woHJ_o_OZdTR7kcQ  # Peacock [3.4M] SR
+UCbzRzJNHx7ZLlJML9BjZQVQ  # Top Rank Boxing [3.4M] SR
+UCCXoCcu9Rp7NPbTzIvogpZg  # Fox Business [3.4M] SR
+UCroNr00O68n25IqSNapMK8w  # Netflix France [3.4M] SR
+UCMoWQ_lvBWARyM7r1B3ZIIg  # Mattel Imagine [3.4M] SR
+UCSv7clgCIk0CBqCPI3yfX7Q  # MelodyAflam - ميلودي أفلام [3.4M] SR
+UCN_u5w69V9wUZYG8WeJWuNg  # Avatar Legends [3.4M] SR
+UCjzEF5kUZypUftfHD1MKuCg  # Lip Sync Battle [3.3M] SR
+UCChcWqwYXCEs657MQ00qVWA  # The Emirates FA Cup [3.3M] SR
+UC7tHXQXWImq_0I3PCQ8Udaw  # Annoying Orange Gaming [3.3M] SR
+UC-SJ6nODDmufqBzPBwCvYvQ  # CBS Mornings [3.3M] SR
+UC8Y-jrV8oR3s2Ix4viDkZtA  # Food Network [3.3M] SR
+UCfAOh2t5DpxVrgS9NQKjC7A  # The Onion [3.3M] SR
+UCIALMKvObZNtJ6AmdCLP7Lg  # Bloomberg Television [3.2M] SR
+UC9SUMV0oYm0XK9H-c3GmKaQ  # Primer Impacto [3.2M] SR
+UCNT2e7Og56vm5_V-yJWvglA  # England [3.2M] SR
+UCxEct2HUBYj_mt4t7qR9UYg  # BondiRescue [3.2M] SR
+UC15jvi08UyONX6hJmVGcw0g  # Crumbl [3.2M] SR
+UCiEEF51uRAeZeCo8CJFhGWw  # Netflix Korea 넷플릭스 코리아 [3.2M] SR
+UCRRxSTgPUY0q_YToaczc2BQ  # Roadrunner Records [3.1M] SR
+UCmSQ47G2NHhcjRAm9Px6R3g  # The Kelly Clarkson Show [3.1M] SR
+UCkvPyGW-gsYucCK37UR0q2g  # Dora & Friends [3.1M] SR
+UCsZsDjpf2Ppv_cT2K6_q2cw  # Refinery29 [3.1M] SR
+UCx-KWLTKlB83hDI6UKECtJQ  # HBO Max [3.1M] SR
+UC6-ymYjG0SU0jUWnWh9ZzEQ  # Wisecrack [3.1M] SR
+UCt7fwAhXDy3oNFTAzF2o8Pw  # theneedledrop [3.1M] SR
+UC8zQiuT0m1TELequJ5sp5zw  # BBC News - Русская служба [3.0M] SR
+UC513PdAP2-jWkJunTh5kXRw  # CrunchLabs [3.0M] SR
+UC7R27sAWc_DqOldtI1JcYhQ  # South Park Studios [3.0M] SR
+UClOf1XXinvZsy4wKPAkro2A  # PlayOverwatch [3.0M] SR
+UCxcTeAKWJca6XyJ37_ZoKIQ  # The Pat McAfee Show [3.0M] SR
+UCy6kyFxaMqGtpE3pQTflK8A  # Real Time with Bill Maher [3.0M] SR
+UCxEmDFo1yUbbxjEb9RjitVA  # Wild Kratts [3.0M] SR
+UC5WjFrtBdufl6CZojX3D8dQ  # Tesla [3.0M] SR
+UCCkOlUJDMmxxMlfWr8NTQFw  # بن 10 | Ben 10 [3.0M] SR
+UC-5MT-BUxTzkPTWMediyV0w  # Crunchyroll en Español [2.9M] SR
+UC8CX0LD98EDXl4UYX1MDCXg  # VALORANT [2.9M] SR
+UCnK9PxMozTYs8ELOvgMNKFA  # Century Media Records [2.9M] SR
+UC5kS0l76kC0xOzMPtOmSFGw  # Chess.com [2.9M] SR
+UCpXBGqwsBkpvcYjsJBQ7LEQ  # Critical Role [2.9M] SR
+UCq4isO8ZYOZfmvGJ-_1UdIA  # GRAMMYS [2.9M] SR
+UComwL29zYKujb1JhkB0EcGA  # River Monsters™ [2.8M] SR
+UCVIVA48Td4JUKj1yBIy_mCg  # H2O - just add water [2.8M] SR
+UC0ZV6M2THA81QT9hrVWJG3A  # Apex Legends [2.8M] SR
+UCTAgbu2l6_rBKdbTvEodEDw  # Nerdist [2.7M] SR
+UCv2ejD5B1xOYtGB2cf80B8g  # Netflix Japan [2.7M] SR
+UCPrONRG9hO1f-OrxW-WH-xg  # PFL MMA [2.7M] SR
+UCZ1Sc5xjWpUnp_o_lUTkvgQ  # The Grand Tour [2.7M] SR
+UCE5mQnNl8Q4H2qcv4ikaXeA  # Hulu [2.7M] SR
+UCaBIVVpHjq6j3tSyxwTE-8Q  # WTA [2.6M] SR
+UCLXzq85ijg2LwJWFrz4pkmw  # Speakeasy [2.6M] SR
+UCM2YmsRUeIbRkqjgNm0eTGQ  # Journeyman Pictures [2.6M] SR
+UCg0FSqPeiGD_lIiPaaAehQg  # Valve [2.6M] SR
+UCGxnmQJquvQwlV_ICDfAKNA  # BabyTV - Nursery Rhymes & Cartoons [2.6M] SR
+UCJCx8aQrdx_ueXPmxTD2odQ  # The Fast Saga [2.5M] SR
+UCNclt7O1bO7hz8Mari68neg  # Peppa Pig Deutsch - Offizieller Kanal [2.5M] SR
+UChFsYLqPUyLiZnfRog6wiZA  # This Morning [2.5M] SR
+UCb3KY97ICfIkDJY_p6d7yig  # Saveafox [2.5M] SR
+UC7htuVs06oduI3xSfTdcxPA  # 48 Hours [2.5M] SR
+UCxNDM5ZhvDa_Z1qTUap7IRw  # BattleBots [2.5M] SR
+UC8nidfOKkcgpO6tfc9OSdBQ  # OWSLA [2.5M] SR
+UCqWhKZdJrvy0yHAamjWQkCA  # Power Rangers [2.4M] SR
+UC1Myj674wRVXB9I4c6Hm5zA  # Apple TV [2.4M] SR
+UCdM8C3ufiI-i-I1XSugKVvg  # The Real Daytime [2.4M] SR
+UCKA96UxTdgFBwGZMGZ-135w  # Ford Motor Company [2.4M] SR
+UCuwUfM8E79h2sqp34Fut6kw  # MTV UK [2.4M] SR
+UCKMYrg58k3muz90hG0OSVhA  # Fearless Records [2.3M] SR
+UC8oimTPVHKiC7oL3QgdKbgg  # Keeping Up With The Kardashians [2.3M] SR
+UC9xKFanu1cSMDruKEHTPjhw  # The Reptile Zoo [2.3M] SR
+UCZng8TYQxSMYuRS7CZd-nvg  # VP Records [2.3M] SR
+UCT5C7yaO3RVuOgwP8JVAujQ  # Taskmaster [2.3M] SR
+UCr7ZFxNlDvb3waeoTN1_3mA  # Teen Vogue [2.3M] SR
+UCSZbXT5TLLW_i-5W8FZpFsg  # Major League Soccer [2.3M] SR
+UCUFgkRb0ZHc4Rpq15VRCICA  # Nike [2.3M] SR
+UCrRttZIypNTA1Mrfwo745Sg  # Paramount Plus [2.3M] SR
+UCcr9tciZbuvJrEVAgIXCp8Q  # Facebook [2.2M] SR
+UCHuiy8bXnmK5nisYHUd1J5g  # NVIDIA [2.2M] SR
+UCOe_y6KKvS3PdIfb9q9pGug  # SomeGoodNews [2.2M] SR
+UCgCudMsK-kxYxB2RgiS3bzQ  # TBS [2.2M] SR
+UCYM3pKj9tFQOXc2XcJmj8Vg  # TV Norge [2.2M] SR
+UCYFQ33UIPERYx8-ZHucZbDA  # Apple Support [2.2M] SR
+UCRucjHjAhJkTifKLltxT12g  # Sam el Bombero en Español [2.2M] SR
+UCU4qlPNKbtQxH3KEiy4_aIA  # Universal Music Group [2.2M] SR
+UCZoC-XeDO7HxbAdeCaRPPCw  # Netflix Malaysia [2.2M] SR
+UCb0tMboxhHE8Jx6-nhJmRPw  # Allure [2.2M] SR
+UCKjU3KzdbJE1EFcHVqXC3_g  # CBC News: The National [2.2M] SR
+UCFtEEv80fQVKkD4h1PF-Xqw  # Microsoft [2.2M] SR
+UCUUUpaMp8DV6KUOfQwoIiLg  # WOWPresents [2.2M] SR
+UCmh7afBz-uWwOSSNTqUBAhg  # Forbes [2.2M] SR
+UCIrgJInjLS2BhlHOMDW7v0g  # Disney Plus [2.1M] SR
+UCVc-JLY3Db6-O48y7TS4N7Q  # Crunchyroll Brasil [2.1M] SR
+UCgFP46yVT-GG4o1TgXn-04Q  # China Uncensored [2.1M] SR
+UCVTomc35agH1SM6kCKzwW_g  # VideoFromSpace [2.1M] SR
+UCuYqi3hOfz6-3Hdp6tEJjAg  # AccuWeather [2.1M] SR
+UCvZHe-SP3xC7DdOk4Ri8QBw  # Bethesda Softworks [2.1M] SR
+UCrXUsMBcfTVqwAS7DKg9C0Q  # YouTube Japan 公式チャンネル [2.1M] SR
+UC7o-UFkoAPCoKxpKOfrs4zQ  # UsefulCharts [2.1M] SR
+UCcOkA2Xmk1valTOWSyKyp4g  # Doctor Who [2.1M] SR
+UC1xwwLwm6WSMbUn_Tp597hQ  # Disney Parks [2.1M] SR
+UCS1SHyxP0UhAg84AKamy3jA  # Peppa Pig Italiano - Canale Ufficiale [2.1M] SR
+UCgLQkRAZsFN6fhqxFyx8qhQ  # Impulse [2.1M] SR
+UCQO0yq_EW1ZRGvtWI3BvJ0g  # Fisher-Price® [2.0M] SR
+UCnkMTsKYqhHm6l6GQzg4szg  # BellatorMMA [2.0M] SR
+UCOsLfEqAwim8MFOhPddwwFw  # R Λ Z Ξ R [2.0M] SR
+UCXZCJLdBC09xxGZ6gcdrc6A  # OpenAI [2.0M] SR
+UC4LADtN8xwppFydHUB1s5uA  # Cosmopolitan [2.0M] SR
+UC_fNP2ettM5ius4BZ6G7MOg  # Al Hiwar TV قناة الحوار [2.0M] SR
+UCsoPu95aN_ODIxTDkfxVtZg  # The Jim Henson Company [2.0M] SR
+UCbLj9QP9FAaHs_647QckGtg  # World of Warcraft [1.9M] SR
+UCgRQHK8Ttr1j9xCEpCAlgbQ  # Variety [1.9M] SR
+UC2JTZJAtJtckj2v0ETYsDHg  # Feuerwehrmann Sam [1.9M] SR
+UCuPivVjnfNo4mb3Oog_frZg  # A24 [1.9M] SR
+UC58em84jwiyM20qR-iqBDZw  # IMSA Official [1.9M] SR
+UCVT1tPkR-fUVlO652EcO3ow  # CBS Sunday Morning [1.9M] SR
+UCHxcqJWQQcoVmVh5eHVqVxg  # GEICO Insurance [1.9M] SR
+UCkSEmKioDTzMU-h3ebEvAkA  # Ever After High [1.9M] SR
+UCm9iPGnmMYtZkNQ3IoBIPIA  # ディズニープラス [1.9M] SR
+UCFVqzO9_qHVckKqNC95o9tw  # Gaia [1.8M] SR
+UCQdCIrTpkhEH5Z8KPsn7NvQ  # Mixmag [1.8M] SR
+UC08wrceRCWhajGG4udhETww  # Investigation Discovery [1.8M] SR
+UCuN9hYw2RpoAW8rZ3VK3isA  # NASCAR [1.8M] SR
+UCzsF1ghKHeif7AmTNlRYAzQ  # Harper's BAZAAR [1.8M] SR
+UCPU28A9z_ka_R5dQfecHJlA  # RTVI Новости [1.8M] SR
+UCf5CjDJvsFvtVIhkfmKAwAA  # Amazon MGM Studios [1.8M] SR
+UCwJfDTNqtM5n-dQBfuuHzYw  # Men's Health [1.8M] SR
+UCRnSnAq44St3dzNdgPpfChA  # Bondi Vet [1.8M] SR
+UCXAi-pPpdtc9uxU39E-PBEQ  # House M.D. [1.8M] SR
+UC3swwxiALG5c0Tvom83tPGg  # Two Steps From Hell [1.8M] SR
+UCtcQ6TPwXAYgZ1Mcl3M1vng  # CrossFit [1.8M] SR
+UC7Dh_sbcNd4BCXQkAqPM1AQ  # Autotrader [1.8M] SR
+UCOOi7JtIMDaYsaUjDBSTSIQ  # Minuscule [1.8M] SR
+UCE560wL2ftkMrQL40LYFUVg  # iamOTHER [1.8M] SR
+UCeZOywU-zg9j3SxYG0FdLtw  # Netflix Türkiye [1.7M] SR
+UC8JT2m0mKEgvEtie3JNKwew  # Naked Science [1.7M] SR
+UCeH6qE4V7n5tVwP7NkdrtJg  # The View [1.7M] SR
+UCApPju22mAlKRO_JT4DODIg  # WEBTOON [1.7M] SR
+UCBp0MdzbxA70fCHlpLCbT6g  # Hoy Día [1.7M] SR
+UCMVlTv8EXJ2ZC-r6YCS1PIg  # Despierta América [1.7M] SR
+UCjonc-9WOA15sLdggTYQGwA  # Baby Jake [1.7M] SR
+UC3xqEEkd-dIUZkQjOEQLsOQ  # Ам Ням [1.7M] SR
+UCBv7HEHuVlNAELGi5XJd85Q  # Apple Music [1.7M] SR
+UCFk7dqVnBayNPbrMtIwtaSw  # MasterClass [1.7M] SR
+UCkozSCYe1posLlfjUhaJOkw  # Magic Secrets Revealed [1.6M] SR
+UC5BTcArAnit9p5W7etFsPsA  # teamfortress [1.6M] SR
+UCywEi7aF6_eVUzjmyCejvpg  # One Chicago [1.6M] SR
+UC8Su5vZCXWRag13H53zWVwA  # TIME [1.6M] SR
+UCooTLkxcpnTNx6vfOovfBFA  # FOX Soccer [1.6M] SR
+UCRLOjeT82M_8CyLj0BqvRaQ  # Shell [1.6M] SR
+UCzrh2s9Vu9wUBf2Y2iIYcgA  # Ink Master [1.6M] SR
+UC0sEIyXXalzD1lbwm3D2xpA  # RuPaul's Drag Race [1.6M] SR
+UCrRK02_CbvPEPrDYMQ1l49w  # Google Play [1.6M] SR
+UC5hk6O61heulo6Ld-ZNP6WA  # MTV's Ridiculousness [1.5M] SR
+UCGbQJy-531_5vfphay-rChQ  # People [1.5M] SR
+UCNq_98Jas6jHzbkPaI08cXQ  # Winx Club Official [1.5M] SR
+UCwxEQgH1SVxwOq-X0IHYpDg  # Playboy [1.5M] SR
+UCnOxaDXBiBXg9Nn9hKWu6aw  # Defected Records [1.5M] SR
+UC5HsrtwsFgFBG_JHxuoUieA  # НаучДок [1.5M] SR
+UCSldglor1t-5E-Gy2eBdMrA  # Metal Blade Records [1.5M] SR
+UCjHz5SVHeMT0AViCYZvsGDA  # NOVA PBS Official [1.5M] SR
+UClVOq27XNy7DnXU7Dc0pJhw  # IPSY [1.5M] SR
+UCWIj8e2_-uK1m886ADSYO6g  # The Drew Barrymore Show [1.5M] SR
+UCgnxoUwDmmyzeigmmcf0hZA  # Uber [1.5M] SR
+UC8ZpFsxodudZcJRBLq6aQTA  # Fania Records [1.4M] SR
+UCcjQhy2dG8IMkBDDtegv23g  # I'm A Celebrity... Get Me Out Of Here! [1.4M] SR
+UC-6OW5aJYBFM33zXQlBKPNA  # Engadget [1.4M] SR
+UCFuU-5B1eKAWaTeLUu3JuyA  # Adventure Time [1.4M] SR
+UCijVIIfFzspulKc7yWA2Qhg  # Friends [1.4M] SR
+UCnhTGM083kfLSNfRSmQjAzg  # Black Rifle Coffee Company [1.4M] SR
+UCoUxsWakJucWg46KW5RsvPw  # Financial Times [1.4M] SR
+UC8T81Q-rEobLa-YuQKj8L1A  # Ministry of Sound [1.4M] SR
+UCGkQCAeRjyP9BpNwVFMaJaw  # WaterTower Music [1.4M] SR
+UCoBMK97ZfZmRCqIwMQYdicA  # iHeartRadio [1.4M] SR
+UCToUNe4i9j_SlKGFl8MrQHg  # Hopeless Records [1.4M] SR
+UCStzHveCf_orXJ-19kiOUog  # Hilton [1.4M] SR
+UCShHFwKyhcDo3g7hr4f1R8A  # World Science Festival [1.4M] SR
+UCY3NEq2LYrmdoGkevo9BH5A  # NFL Films [1.4M] SR
+UCJEKlziKdxoos1qbptjGgLg  # DJ Mag [1.4M] SR
+UC1DZpQ2DDExws9Zvl7UcSkg  # TNT [1.4M] SR
+UC8wXC0ZCfGt3HaVLy_fdTQw  # Digital Trends [1.4M] SR
+UCq18eeL7D9Vd8DhjMcLh9QQ  # Good Morning Britain [1.4M] SR
+UCtWWry0cgjWi9C0Ye9sh6og  # news.com.au [1.4M] SR
+UCKRpedu_xbqTVklkiNxdAHQ  # PrettyLittleThing [1.4M] SR
+UCRZPkuHwaoKwTP3CYPdVldg  # Love Nature [1.4M] SR
+UCyAtL5EG3cdr-te0cEt2qFg  # Curioso come George [1.4M] SR
+UCZ6jURNr1WQZCNHF0ao-c0g  # Shrek [1.4M] SR
+UCfsRp0AAJQII4EIfZeVoeRw  # Animal Watch [1.4M] SR
+UC7kI8WjpCfFoMSNDuRh_4lA  # Pitchfork [1.3M] SR
+UCBnyjFhOn23xjsqOUW4j6OQ  # LAIKA Studios [1.3M] SR
+UCLOIoa2aEGcM-z1hJx4vy4w  # Dancing With The Stars [1.3M] SR
+UCaSgsFdGbwjfdawl3rOXiwQ  # Dead by Daylight [1.3M] SR
+UCcftblae5aEnraa34d1FPQg  # Big Cat Rescue [1.3M] SR
+UCqd2hbtE2N9fb0D2nTrLT1w  # Lowe's Home Improvement [1.3M] SR
+UCb9ME2w6Y_4jChUVlWdltVg  # GKIDS Films [1.3M] SR
+UCdvQi8n5nSPnAVZ-xwJAMAg  # Reality Club [1.3M] SR
+UCf2L21tpe1P-Y4QjOXkCIvQ  # Crunchyroll FR [1.3M] SR
+UC5HJaVyYgo7WPCvIBchRBzQ  # The Problem With Jon Stewart [1.3M] SR
+UCpHaAKu74UHvcYCi2g_PvBQ  # Shout! Studios [1.3M] SR
+UCA698bls2pjQyiqP9N-iaeg  # Pokémon GO [1.3M] SR
+UCJx5KP-pCUmL9eZUv-mIcNw  # GameTrailers [1.3M] SR
+UCyJBuaK-Qqe4N5QNE1xn86A  # Disney Music [1.3M] SR
+UCtwMWJr2BFPkuJTnSvCESSQ  # SHOWTIME [1.3M] SR
+UC-AqLLFKh8QoCsXaPAg4aRQ  # Inked [1.3M] SR
+UCEeMsInLdrUbIkbEcNm7g-A  # Bare Knuckle Fighting Championship [1.3M] SR
+UCGEA1vUDxgkwsToRTEACsvA  # Crayola [1.3M] SR
+UCHbx9IUW7eCeJsC4sBCTNBA  # iFixit [1.3M] SR
+UCTQKT5QqO3h7y32G8VzuySQ  # dota2 [1.3M] SR
+UC4e0hMc3DMMdQ47dkoP0zVQ  # Young Sheldon [1.3M] SR
+UCFH-Qa1s6rQRTrQjFg8N84Q  # BlueWorldTV [1.3M] SR
+UC4l6ZhkOzxIxvCSzDr4HKqg  # Fandango (Stream) [1.2M] SR
+UCyW2DKoc1iH6lmEdDCIJ78w  # WE tv [1.2M] SR
+UCGaOvAFinZ7BCN_FDmw74fQ  # Expedia [1.2M] SR
+UCp8OOssjSjGZRVYK6zWbNLg  # Monstercat Instinct [1.2M] SR
+UCB2aeGGPNj7l5Z71bYNqX-Q  # Woody Woodpecker [1.2M] SR
+UCDUNe-NZaknJOGyulc4Ohvg  # The Ed Sullivan Show [1.2M] SR
+UCG4XUaXP0uhE27acYsJ0Xlg  # PBR [1.2M] SR
+UC_vz6SvmIkYs1_H3Wv2SKlg  # IMDb [1.2M] SR
+UCsD-Qms-AkXDrsU962OicLw  # The New Yorker [1.2M] SR
+UCvRQs8fok3bzfScBDmvFZQw  # Freeway Insurance [1.2M] SR
+UCyscVWiJELkATSuU-RF2NLg  # قناة الحرة - Alhurra [1.2M] SR
+UCl6Sc_rNW7INU9kovV5SuAA  # DreamWorks Madagascar [1.2M] SR
+UC-JblcinswY50lrUdSaRNEg  # Rolling Stone [1.1M] SR
+UClJO9jvaU5mvNuP-XTbhHGw  # TaylorMade Golf [1.1M] SR
+UCtnSBeKEA0swUnGHQ08SibQ  # Comicbook.com [1.1M] SR
+UCC8zWIx8aBQme-x1nX9iZ0A  # Dimension 20 [1.1M] SR
+UCCnWpQ_d4Y0xBHQZpEIdFcA  # MTV Catfish [1.1M] SR
+UCc0YbtMkRdhcqwhu3Oad-lw  # Breaking Bad & Better Call Saul [1.1M] SR
+UCcg16ODvF6o1bd3nXIBw_Jw  # Google Arabia [1.1M] SR
+UCzRDbN7DlgKFC0lzO4YGxCw  # Skins [1.1M] SR
+UCDb0peSmF5rLX7BvuTcJfCw  # Aniplex USA [1.1M] SR
+UCYAJjqIukwm4r3GHEpJDhVw  # NBA 2K [1.0M] SR
+UCHIRBiAd-PtmNxAcLnGfwog  # B&H Photo Video Pro Audio [1.0M] SR
+UCkLXELm63_pH7L-r-548kig  # amazon [1.0M] SR
+UCH47Lk8Qv2Vdr7yu7JHyvug  # Pepsi [1.0M] SR
