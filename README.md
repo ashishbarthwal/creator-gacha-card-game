@@ -15,7 +15,7 @@ subscriber count sets a card's rarity, view count drives its attack, video count
 **This is a portfolio piece, not a business.** The derivation logic is deliberately pure and
 deterministic — it exists partly to be tested in public.
 
-<!-- TODO: add a screenshot of a pull/reveal here once the visuals are locked -->
+![A x10 pull result — five rarity bands, from N to UR, each in its own tier frame](docs/pull-reveal.png)
 
 ---
 

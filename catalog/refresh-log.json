@@ -175,6 +175,13 @@
       "slug": "series-1",
       "cards": 24251,
       "snapshotDate": "2026-08-03"
+    },
+    {
+      "at": "2026-08-03T17:34:03.782Z",
+      "event": "build",
+      "slug": "series-1",
+      "cards": 23526,
+      "snapshotDate": "2026-08-03"
     }
   ]
 }
