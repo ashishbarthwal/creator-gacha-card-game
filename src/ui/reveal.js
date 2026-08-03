@@ -67,6 +67,40 @@ const STARS = {
 const AV = { cx: 0.5, cy: 0.45, r: 0.33 };
 const ASPECT = 7 / 5;
 
+const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ── A tick in the hand when a row lands ───────────────────────────────────
+   The scroll snap already announces that a row arrived, but it announces it to
+   the eye only — and on a phone the thumb is the thing doing the work. 10ms is
+   a tick rather than a buzz; anything longer stops reading as a detent and
+   starts reading as a notification.
+
+   This is progressive enhancement in the strict sense: where it is unavailable
+   nothing is lost and nothing is substituted. Three gates, none optional:
+
+   - `navigator.vibrate` does not exist on iOS in any browser, and exists but
+     does nothing on desktop. Optional-called, so the platform decides and we
+     never branch on a user-agent string.
+   - `prefers-reduced-motion: reduce` is honoured. A haptic is unrequested
+     sensory feedback, which is squarely what that setting is about, and this
+     overlay already collapses its entire animation under it — a buzz that
+     survived that would be the one inconsistent thing left.
+   - Chrome requires sticky user activation before it will vibrate at all. Not
+     a constraint here, since the overlay is unreachable without tapping the
+     pack, but it is why this can never fire on a cold page load. */
+const SNAP_TICK_MS = 10;
+
+/* Armed by the user's input, never by ours. `openReveal` resets scrollTop to 0,
+   and a programmatic scroll changes the snap target exactly as a finger does —
+   without this the overlay would tick once on open, which is not what was asked
+   for and would read as a glitch rather than a detent. */
+let snapArmed = false;
+
+function snapTick() {
+  if (!snapArmed || REDUCE_MOTION.matches) return;
+  navigator.vibrate?.(SNAP_TICK_MS);
+}
+
 /* How many columns this viewport can show a READABLE card in.
 
    The count is pinned here rather than left to CSS `auto-fit` for the reason it
@@ -98,6 +132,7 @@ export function openReveal(results) {
 
   const cells = results.map(result => buildCell(result));
 
+  snapArmed = false;
   revealEl.hidden = false;
   /* A reopened overlay must start at the top. The scroll position survives
      `hidden`, so without this a second x10 would open halfway down its own
@@ -111,7 +146,7 @@ export function openReveal(results) {
      cards still pick up the focusability and label it applies — the inspector
      is reachable here too, since the click/keyboard handlers are delegated on
      the persistent grid rather than bound per cell in the animated path. */
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (REDUCE_MOTION.matches) {
     cells.forEach(({ cell }) => flip(cell));
     return;
   }
@@ -304,6 +339,39 @@ revealGrid.addEventListener('keydown', e => {
 addEventListener('resize', () => {
   if (!revealEl.hidden) applyColumns(revealGrid.children.length);
 });
+
+/* Anything that could be a scroll the user meant arms the tick. Passive, so
+   none of these can delay the scroll they are listening for. */
+for (const evt of ['touchstart', 'wheel', 'keydown']) {
+  revealEl.addEventListener(evt, () => { snapArmed = true; }, { passive: true });
+}
+
+/* `scrollsnapchange` is the event this feature is actually asking for: it fires
+   once the scroll has settled on a NEW snap target, so there is no fling to
+   guess the end of and no polling. Chrome has had it since 129, which covers
+   every browser that also has a vibrator worth speaking of.
+
+   Firefox has `scrollend` but not `scrollsnapchange`, so it gets the same answer
+   a beat later by asking which row is parked at the top and comparing. Nothing
+   else needs a fallback: a browser with neither event has no `navigator.vibrate`
+   either, and the whole path costs nothing there. */
+if ('onscrollsnapchange' in revealEl) {
+  revealEl.addEventListener('scrollsnapchange', snapTick);
+} else if ('onscrollend' in revealEl) {
+  let lastSnapped = null;
+  revealEl.addEventListener('scrollend', () => {
+    /* Cells in one row share an offsetTop, and ties resolve to the first, so
+       this identifies a ROW stably rather than flickering between its two
+       cards. `#reveal` is the offsetParent — it is the only positioned ancestor
+       — which is what makes offsetTop directly comparable to its scrollTop. */
+    let best = null, bestGap = Infinity;
+    for (const cell of revealGrid.children) {
+      const gap = Math.abs(cell.offsetTop - revealEl.scrollTop);
+      if (gap < bestGap) { bestGap = gap; best = cell; }
+    }
+    if (best && best !== lastSnapped) { lastSnapped = best; snapTick(); }
+  });
+}
 
 export function closeReveal() {
   revealTimers.forEach(clearTimeout);
