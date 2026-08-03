@@ -38,6 +38,12 @@ on:
     # occasionally drop a run under load, so the headroom is the point rather
     # than a nicety. Cron is UTC always; it does not follow daylight saving.
     - cron: '0 6 * * 0'
+    # ── TEMPORARY, REMOVE AFTER THE TEST ────────────────────────────────────
+    # A one-off firing on 3 August 2026 at 07:40 UTC, to prove the refresh runs
+    # with the laptop powered off. Testing a scheduled job by waiting for its
+    # real schedule is how the local task shipped a 400-card deck: it ran once,
+    # exited 0, and was wrong. Delete this line once the email arrives.
+    - cron: '40 7 3 8 *'
   # Lets Ash run it by hand from the Actions tab — the same path the schedule
   # takes, so testing it tests the real thing.
   workflow_dispatch:
