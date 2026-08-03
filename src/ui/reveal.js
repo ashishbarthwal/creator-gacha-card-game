@@ -14,10 +14,16 @@
 
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
+import { enableCardTilt, enableDeviceTilt } from './holo.js';
 
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
 const revealDone = document.getElementById('reveal-done');
+
+/* Pointer-tilt on a fine-pointer device (was previously only wired up in the
+   collection grid and the inspector — the reveal screen itself had none, on
+   any platform). Delegated on the persistent grid, like the others. */
+enableCardTilt(revealGrid);
 
 let revealTimers = [];
 
@@ -129,6 +135,13 @@ export function openReveal(results) {
   revealTimers = [];
   revealGrid.innerHTML = '';
   applyColumns(results.length);
+
+  /* Called from here rather than once at module load: opening a reveal is
+     always the result of a tap (the pack), and on iOS the motion-permission
+     prompt only fires when requested synchronously inside a user gesture. The
+     first pull of a session is what asks; enableDeviceTilt no-ops on every
+     call after the first (see holo.js). */
+  enableDeviceTilt(revealGrid);
 
   const cells = results.map(result => buildCell(result));
 

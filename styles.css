@@ -1796,18 +1796,20 @@
     mix-blend-mode: screen;
   }
 
-  /* Lit: JS adds .lit only on a fine pointer with motion allowed, feeding
-     --px/--py (-1..1) for tilt and --mx/--my (%) for the shine position. The
-     tilt eases back to flat on pointer-leave because transform is transitioned
-     and .lit is removed (falling back to the untransformed base rule). */
+  /* Lit: JS adds .lit feeding --px/--py (-1..1) for tilt and --mx/--my (%) for
+     the shine position — from a fine pointer (holo.js's enableCardTilt) or,
+     on a phone, from device orientation (enableDeviceTilt). The tilt eases
+     back to flat when .lit is removed, because transform is transitioned and
+     the base rule is untransformed.
+
+     The OPACITY half of this (.holo/.glare strength) is declared further down,
+     after the touch fallback block, on purpose — see the note there. */
   .card.lit {
     transform:
       perspective(800px)
       rotateX(calc(var(--py, 0) * var(--tilt-max, 0deg) * -1))
       rotateY(calc(var(--px, 0) * var(--tilt-max, 0deg)));
   }
-  .card.lit .holo  { opacity: var(--holo-strength, 0); }
-  .card.lit .glare { opacity: var(--glare-strength, 0); }
 
   /* UR's signature molten sheen — a warm gold→crimson holo (not the cool
      rainbow) and a gold glare, so the top tier reads hotter and richer than
@@ -1842,12 +1844,28 @@
   }
 
   /* Touch / no-hover devices can't poke-holo, so give the rarer bands a gentle
-     static finish instead of nothing — rarity still shows, never looks broken. */
+     static finish instead of nothing — rarity still shows, never looks broken.
+     This is the FALLBACK for when device-tilt is unavailable, declined, or
+     simply not wired up in this view (the scrolling collection grid never
+     requests motion permission — see holo.js). */
   @media (hover: none) {
     .card.r-SR  .holo, .card.r-SSR .holo, .card.r-UR  .holo { opacity: calc(var(--holo-strength) * 0.5); }
     .card.r-R   .glare, .card.r-SR  .glare,
     .card.r-SSR .glare, .card.r-UR  .glare { opacity: calc(var(--glare-strength) * 0.4); }
   }
+
+  /* .holo/.glare full strength under .lit — deliberately placed AFTER the
+     touch fallback above rather than beside the rest of the .lit rules, and
+     that placement is load-bearing rather than cosmetic. `.card.lit .holo`
+     and `.card.r-SR .holo` (inside the block above) carry EQUAL specificity —
+     three classes each — so a media query alone does not let one beat the
+     other; source order decides the tie. Declaring this AFTER the fallback is
+     what lets device-tilt (holo.js's enableDeviceTilt, which adds .lit on a
+     phone exactly like pointer-tilt does on desktop) win with the SAME full
+     strength pointer-tilt gets, rather than being silently capped at the
+     touch fallback's muted 0.5x/0.4x the moment a phone earns the real thing. */
+  .card.lit .holo  { opacity: var(--holo-strength, 0); }
+  .card.lit .glare { opacity: var(--glare-strength, 0); }
 
   /* Reduced motion: no tilt, no shimmer, no fades. JS also skips binding, so a
      reduced-motion desktop simply keeps its cards flat and calm. */

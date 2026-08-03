@@ -2499,3 +2499,57 @@ was deleted the same day (`netlify-cli sites:delete`, confirmed by the URL retur
 the seam this project draws everywhere else — one live thing, not a live thing and a decoy.
 
 </details>
+
+## The phone becomes the pointer (2026-08-03)
+
+<details>
+<summary><b>Device orientation drives the holo tilt on a phone, scoped to the reveal and the
+inspector only.</b> A touchscreen can't hover-track, so until now a phone only ever got the flat,
+muted fallback in styles.css — rarity read, but nothing moved.</summary>
+
+`DeviceOrientationEvent` gives a phone the one input a mouse never had: you can physically turn it.
+`enableDeviceTilt` (`src/ui/holo.js`) maps `beta`/`gamma` onto the exact same `--px`/`--py`/`--mx`/
+`--my` custom properties `enableCardTilt`'s pointermove already feeds, and toggles the same `.lit`
+class — so styles.css has one consumer contract regardless of which input drove it, and every
+rarity gate, the UR molten palette, and reduced-motion already apply unchanged.
+
+**Scoped to the reveal overlay and the inspector, not the scrolling collection grid.** Both are
+full-screen, non-scrolling moments where continuous tilt reads as picking the card up. The grid is
+scrolling content shared across many cards; motion tied to phone orientation there would compete
+with the scroll and was untested at 40+ cards, so it stays on the existing static fallback.
+
+**A x10 reveal shows several cards at once, and a phone has one orientation** — Ash's call: every
+visible card tilts together, broadcasting the same normalized reading to every `.card` under the
+root rather than tracking one "focused" card, so a row of cards catches the light together like a
+binder page turned in your hands.
+
+**iOS gates this behind a permission prompt**, and the prompt only fires if
+`requestPermission()` is called synchronously inside a user gesture — so `enableDeviceTilt` is
+invoked from inside `openReveal`/`openInspect` themselves (both are already gesture-triggered:
+tapping the pack, tapping a card) rather than once at module load like `enableCardTilt`. The very
+first reveal or inspect of a session is what asks; every call after is a no-op (`root.dataset.
+deviceTiltBound` guards the listener, a module-level cached promise guards the prompt itself).
+Android does not gate this and skips straight to listening. Declining or lacking the sensor falls
+back to the existing static finish — never broken, just flat, same as before this shipped.
+
+**A real bug surfaced while wiring this in.** `.card.lit .holo`/`.glare` (full-strength opacity)
+and the touch fallback's muted `.card.r-SR .holo` etc. carry EQUAL CSS specificity — three classes
+each — so a media query alone does not decide the winner; source order does, and the fallback was
+declared later in the file. Device-tilt would have silently rendered at the muted 0.5x/0.4x
+strength forever, the exact bug the whole feature exists to fix. The full-strength rule now sits
+textually after the fallback, which is what lets `.lit` win once it is actually earned.
+
+**Also found while auditing where tilt was wired up: the reveal screen had NONE, on any platform.**
+`enableCardTilt` was only ever called from `collection.js` and `inspect.js`; a desktop pointer
+moving across a freshly-pulled card in the reveal did nothing. Added for parity — the reveal now
+gets real pointer-tilt on desktop too, not just device-tilt on phones.
+
+**Calibrated, not absolute.** The "neutral" angle is captured from however the phone is being held
+the moment tilt activates, and only DEVIATIONS from that baseline drive the effect — an absolute
+reading would leave the shine permanently off-center for anyone who doesn't hold the phone at a
+textbook-neutral angle. ~18° of deviation reads as the full effect, eased toward each new reading
+rather than snapped to raw sensor noise. Untested on real hardware — Ash is asked to report back if
+it feels twitchy, too subtle, or inverted; every constant governing it is named and isolated for
+exactly that reason.
+
+</details>
