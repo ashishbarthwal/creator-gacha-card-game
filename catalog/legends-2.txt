@@ -1,0 +1,244 @@
+# Curated roster #2 — aimed at the band that actually binds.
+#
+# WHY BY HAND, AND WHY THIS BAND. Lower walls are limited by whichever band is
+# thinnest against its per-wall requirement, and that has been SSR (10M-50M, 4
+# cards per wall) since the reach-5 sweep ended R's run. As of 2026-08-03 the
+# deck sits at 92.8 lw pre-filter and 71.3 lw once the staged institution filter
+# is applied; every other band is at 178 or better. Adding N cards moves the
+# headline count and not the headroom, so this file goes at SSR specifically.
+#
+# The Wikidata route cannot reach here. It gates on an English Wikipedia article,
+# and reach-5 already took every anglophone performer that has one — TASKS.md has
+# said the notability sweep is exhausted at SSR since 2026-08-02. What is left is
+# human knowledge of who is big, which is exactly what a curated roster is for.
+#
+# SCREENS APPLIED BY HAND, matching the ones the sweep applies structurally:
+#   - a person or a performer-shaped group only. No companies, networks, labels,
+#     studios, brands, TV formats. A band is a performer; its label is not.
+#   - no politics, no news, no adult, no deceased creators.
+#   - no Indian channels — the standing territory hedge.
+#   - anglophone, matching the sweep's territory narrowing.
+#
+# Names already in the pool cost 1 quota unit each to re-resolve and are then
+# deduped by mergeCandidates, so overlap here is wasteful but harmless. Handles
+# that no longer exist simply fail and are reported.
+#
+# Next:  node tools/add-candidates.js catalog/legends-2.txt
+
+# ── UK: the Sidemen cluster and around it ───────────────────────────────────
+@KSI
+@MoreSidemen
+@SidemenReacts
+@Miniminter
+@Zerkaa
+@Behzinga
+@Vikkstar123
+@wroetoshaw
+@TBJZL
+@CalfreezyExtra
+@Calfreezy
+@ChrisMD
+@NikoOmilana
+@MaxFosh
+@ArthurTV
+@AngryGinge
+@ChunkzOfficial
+@AJShabeel
+@KingKennyTV
+@SharkyOfficial
+@ThatcherJoe
+@AliA
+@Ali-A
+@F2Freestylers
+@ColinFurze
+@TomScottGo
+@SteveMould
+@Numberphile
+@ComputerphileTV
+
+# ── US / CA gaming ──────────────────────────────────────────────────────────
+@Preston
+@UnspeakableGaming
+@TypicalGamer
+@Flamingo
+@KreekCraft
+@Denis
+@LaurenzSide
+@PopularMMOs
+@Grian
+@MumboJumbo
+@SkipTheTutorial
+@Skeppy
+@BadBoyHalo
+@GeorgeNotFound
+@Sapnap
+@TommyInnit
+@WilburSoot
+@Ranboo
+@Tubbo
+@KarlJacobs
+@Quackity
+@Slimecicle
+@Lachlan
+@Muselk
+@Loserfruit
+@NickEh30
+@Fresh
+@Crainer
+@Bionic
+@TheBoyAdrian
+@Sketch
+
+# ── Animation ───────────────────────────────────────────────────────────────
+@JaidenAnimations
+@SomethingElseYT
+@LetMeExplainStudios
+@Domics
+@Emirichu
+@ItsAlexClark
+@TheAMaazing
+@Illymation
+@AlanBecker
+
+# ── Comedy / commentary ─────────────────────────────────────────────────────
+@CodyKo
+@NoelMiller
+@DannyGonzalez
+@DrewGooden
+@KurtisConner
+@JarvisJohnson
+@RyanGeorge
+@jacksfilms
+@AnthonyPadilla
+@SmoshPit
+@SmoshGames
+
+# ── Science, engineering, education ─────────────────────────────────────────
+@SmarterEveryDay
+@minutephysics
+@AsapSCIENCE
+@SciShow
+@CGPGrey
+@physicsgirl
+@ElectroBOOM
+@TheActionLab
+@NileRed
+@NileBlue
+@BeyondTheTrailer
+@MinuteEarth
+@SciShowSpace
+@Vertasium
+@RealEngineering
+@Wendover
+@HalfasInteresting
+@Johnny Harris
+@JohnnyHarris
+
+# ── Tech ────────────────────────────────────────────────────────────────────
+@LinusTechTips
+@JerryRigEverything
+@austinevans
+@Dave2D
+@iJustine
+@ShortCircuit
+@TechLinked
+@MrwhosetheBoss
+
+# ── Food ────────────────────────────────────────────────────────────────────
+@JoshuaWeissman
+@bingingwithbabish
+@adamragusea
+@EthanChlebowski
+@SamTheCookingGuy
+@GugaFoods
+@ChefJeanPierre
+@emmymade
+@ProHomeCooks
+@AlvinZhou
+
+# ── Vlog, stunt, story ──────────────────────────────────────────────────────
+@DannyDuncan69
+@Airrack
+@MrBallen
+@MichelleKhare
+@CleetusMcFarland
+@WhistlinDiesel
+@YesTheory
+@SamandColby
+@Wendigoon
+@WilliamOsman
+@MichaelReeves
+@IDidAThing
+@TomStanton
+@Mikeboyd
+@markiplierMoreMarkiplier
+
+# ── Lifestyle, beauty, fitness ──────────────────────────────────────────────
+@JeffreeStar
+@SafiyaNygaard
+@BaileySarian
+@RosannaPansino
+@emmachamberlain
+@lizakoshy
+@DavidDobrik
+@itsjojosiwa
+@IISuperwomanII
+@AthleanX
+@JeffNippard
+@blogilates
+@NatachaOceane
+
+# ── Family / kids, person-fronted ───────────────────────────────────────────
+@LexiRivera
+@theroyaltyfamily
+@AlanChikinChow
+@JustinFlom
+@RebeccaZamolo
+@MattandRebecca
+@theninjakidz
+@TwiShorts
+
+# ── Music: performers, never labels ─────────────────────────────────────────
+@edsheeran
+@AdeleVEVO
+@SamSmithWorld
+@LewisCapaldi
+@HarryStyles
+@DuaLipa
+@CalvinHarris
+@ArcticMonkeys
+@Coldplay
+@TheWeeknd
+@ImagineDragons
+@twentyonepilots
+@panicatthedisco
+@FallOutBoy
+@GreenDay
+@Muse
+@TheScript
+@JamesArthur
+@AnneMarie
+@RitaOra
+@LittleMix
+@NiallHoran
+@LiamPayne
+@ZaynMalik
+@ShawnMendes
+@CharliePuth
+@JohnLegend
+@BrunoMars
+@SiaMusic
+@Halsey
+@Khalid
+@BillieEilish
+@OliviaRodrigo
+@ConanGray
+@LaufeyMusic
+@HozierVEVO
+@Glass-Animals
+@TameImpalaVEVO
+@FloRida
+@Pitbull
+@MacklemoreLLC
+@LoganPaulVlogs
+@JakePaul

@@ -141,32 +141,71 @@ async function sparql(query) {
    PHASE 1 — the sweep. Deliberately light: only the filters expressible as
    cheap FILTER NOT EXISTS clauses. WDQS has no modulo, so shards are Q-number
    string prefixes, and a shard that times out splits into ten narrower ones. */
-function sweepQuery(prefix) {
+/* WHICH SIDE OF THE NOTABILITY GATE TO SWEEP.
+
+   The en-wiki join is not just a quality screen, it is what makes phase 1 fast —
+   it is the most selective triple in the query. But it is also a CEILING: once
+   reach-5 had taken every anglophone performer with an English article, the route
+   was exhausted by construction, and TASKS.md has said so since.
+
+   `not-en` sweeps the complement — items carrying P2397 that pass every other
+   screen and simply have no English article. Wikidata has plenty: a creator can
+   have an item from a non-English wiki, from a music or film database import, or
+   from a redlink someone catalogued anyway. Sweeping the complement rather than
+   widening to `any` is the point — it never re-walks the ~17k already in the
+   pool, so the result set stays small and every id it returns is new.
+
+   The other screens are untouched. A channel found this way still has to be a
+   performer type and still has to be anglophone: this lowers the notability bar,
+   not the risk bar. */
+const SITELINK_CLAUSE = {
+  en:       '?article schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> .',
+  'not-en': 'FILTER NOT EXISTS { ?article schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> }',
+  any:      '',
+};
+
+/* PHASE 1 IS NOW A PROPERTY SCAN AND NOTHING ELSE, and that is a fix rather than
+   a simplification. The seven FILTER NOT EXISTS clauses used to live here, which
+   worked only because the en-wiki join in front of them was selective enough to
+   cut the row count first. Sweeping the complement removes that join, the
+   filters go from cheap to quadratic, every shard times out, and the recovery
+   path — split into ten and retry — turns one slow query into a thousand. The
+   first `--sitelink not-en` run did exactly that and had to be killed.
+
+   Every screen those filters expressed now rides in phase 2 instead, over a
+   bounded VALUES list, which is the shape WDQS is actually fast at. Nothing is
+   relaxed: the same claims decide the same way, one phase later. */
+function sweepQuery(prefix, sitelink = 'en') {
   return `
 SELECT DISTINCT ?item ?itemLabel ?yt WHERE {
   ?item wdt:P2397 ?yt .
-  ?article schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> .
+  ${SITELINK_CLAUSE[sitelink] ?? SITELINK_CLAUSE.en}
   FILTER( STRSTARTS(STRAFTER(STR(?item), "/Q"), "${prefix}") )
-  FILTER NOT EXISTS { ?item wdt:P570 ?death }                                    # deceased
-  FILTER NOT EXISTS { ?item wdt:P27 wd:Q668 }                                    # India hedge
-  FILTER NOT EXISTS { ?item wdt:P17 wd:Q668 }
-  FILTER NOT EXISTS { ?item wdt:P39 ?office }                                    # held public office
-  FILTER NOT EXISTS { ?item wdt:P102 ?party }                                    # political party
-  FILTER NOT EXISTS { ?item wdt:P1399 ?crime }                                   # convicted of
-  FILTER NOT EXISTS { ?item wdt:P106 ?occ . VALUES ?occ { ${BLOCK_OCCUPATION.map(q).join(' ')} } }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }`;
 }
 
 /* PHASE 2 — what is this thing, and where is it from. Both screens ride in one
    pass over a bounded VALUES list, which is the shape WDQS is fast at. */
+/* Every screen, one row per item.
+
+   BIND(EXISTS{...}) rather than OPTIONAL{...BIND(1)}: an OPTIONAL emits a row per
+   match, so an item with three P31 values and two citizenships used to come back
+   six times, and with nine screens riding along that cross product is what makes
+   a 250-item chunk expensive. EXISTS asks the same question and answers it once. */
 function classifyQuery(items) {
   return `
-SELECT ?item ?performer ?corporate ?anglo WHERE {
+SELECT ?item ?performer ?corporate ?anglo ?dead ?india ?office ?party ?crime ?blockedOcc WHERE {
   VALUES ?item { ${items.map(q).join(' ')} }
-  OPTIONAL { ?item wdt:P31 ?k . VALUES ?k { ${PERFORMER_TYPES.map(q).join(' ')} } BIND(1 AS ?performer) }
-  OPTIONAL { ?item wdt:P31 ?c . VALUES ?c { ${HARD_CORPORATE.filter(id => id !== 'Q4830453').map(q).join(' ')} } BIND(1 AS ?corporate) }
-  OPTIONAL { ?item (wdt:P27|wdt:P17|wdt:P495) ?p . VALUES ?p { ${ANGLOPHONE.map(q).join(' ')} } BIND(1 AS ?anglo) }
+  BIND(EXISTS { ?item wdt:P31 ?k . VALUES ?k { ${PERFORMER_TYPES.map(q).join(' ')} } } AS ?performer)
+  BIND(EXISTS { ?item wdt:P31 ?c . VALUES ?c { ${HARD_CORPORATE.filter(id => id !== 'Q4830453').map(q).join(' ')} } } AS ?corporate)
+  BIND(EXISTS { ?item (wdt:P27|wdt:P17|wdt:P495) ?p . VALUES ?p { ${ANGLOPHONE.map(q).join(' ')} } } AS ?anglo)
+  BIND(EXISTS { ?item wdt:P570 ?d } AS ?dead)
+  BIND(EXISTS { ?item (wdt:P27|wdt:P17) wd:Q668 } AS ?india)
+  BIND(EXISTS { ?item wdt:P39 ?o } AS ?office)
+  BIND(EXISTS { ?item wdt:P102 ?pp } AS ?party)
+  BIND(EXISTS { ?item wdt:P1399 ?cr } AS ?crime)
+  BIND(EXISTS { ?item wdt:P106 ?oc . VALUES ?oc { ${BLOCK_OCCUPATION.map(q).join(' ')} } } AS ?blockedOcc)
 }`;
 }
 
@@ -178,6 +217,12 @@ function arg(flag, fallback = null) {
 async function main() {
   const out = resolve(ROOT, arg('--out', 'catalog/wikidata-sweep.txt'));
   const pending = (arg('--shards') ?? '1,2,3,4,5,6,7,8,9').split(',').map(s => s.trim()).filter(Boolean);
+  const sitelink = arg('--sitelink', 'en');
+  if (!(sitelink in SITELINK_CLAUSE)) {
+    console.error(`--sitelink must be one of: ${Object.keys(SITELINK_CLAUSE).join(', ')}`);
+    process.exit(1);
+  }
+  console.log(`Sweeping P2397 — sitelink mode "${sitelink}".`);
 
   const found = new Map();
   while (pending.length) {
@@ -185,7 +230,7 @@ async function main() {
     let rows = null;
     let err = '';
     for (let attempt = 1; attempt <= 2 && !rows; attempt++) {
-      try { rows = await sparql(sweepQuery(prefix)); }
+      try { rows = await sparql(sweepQuery(prefix, sitelink)); }
       catch (e) { err = e.message; await new Promise(r => setTimeout(r, 3000)); }
     }
     if (!rows) {
@@ -209,11 +254,10 @@ async function main() {
      tied to an English-speaking territory. Both are positive tests: an item that
      fails to classify is dropped rather than waved through, because the whole
      point is that an institution should never need to be noticed to be excluded. */
-  console.log(`\nClassifying ${found.size} items — performer type and territory...`);
+  console.log(`\nClassifying ${found.size} items — performer type, territory, and every exclusion...`);
   const items = [...found.values()].map(v => v.item);
-  const performer = new Set();
-  const corporate = new Set();
-  const anglo = new Set();
+  const verdict = new Map();
+  const yes = v => v?.value === 'true';
   const CHUNK = 250;
   for (let i = 0; i < items.length; i += CHUNK) {
     let rows = null;
@@ -223,19 +267,43 @@ async function main() {
     }
     if (!rows) { console.log(`  chunk at ${i} FAILED — those ids are dropped`); continue; }
     for (const r of rows) {
-      const id = r.item.value.split('/').pop();
-      if (r.performer) performer.add(id);
-      if (r.corporate) corporate.add(id);
-      if (r.anglo) anglo.add(id);
+      verdict.set(r.item.value.split('/').pop(), {
+        performer: yes(r.performer), corporate: yes(r.corporate), anglo: yes(r.anglo),
+        dead: yes(r.dead), india: yes(r.india), office: yes(r.office),
+        party: yes(r.party), crime: yes(r.crime), blockedOcc: yes(r.blockedOcc),
+      });
     }
-    if ((i / CHUNK) % 20 === 0) console.log(`  ${i}/${items.length} — ${performer.size} performers, ${anglo.size} anglophone`);
+    if ((i / CHUNK) % 20 === 0) console.log(`  ${i}/${items.length} classified`);
   }
 
+  /* THE CORPORATE VETO NOW ACTUALLY RUNS, and until this commit it did not.
+     `corporate` was queried, collected into a Set, and never read — the keep
+     rule asked only `performer && anglo`. So the screen this file spends thirty
+     lines justifying as "the sharp edge of the whole screen" was dead code, and
+     the exact case it was written for walked straight through: YouTube, Netflix,
+     NBA, Apple, LEGO, Red Bull, TED and National Geographic are all P31 "YouTube
+     channel" — a performer type — AND P31 public company or broadcaster. They
+     passed as performers because nothing ever asked the second question.
+
+     That is a large part of why 8,430 institutions are sitting in the staged
+     exclude file waiting to be reviewed by hand: they were let in by a sweep
+     that reported itself as having excluded them. Fixing it here stops future
+     sweeps re-importing what the review is currently removing. */
   const swept = found.size;
+  const reasons = { unclassified: 0, notPerformer: 0, corporate: 0, notAnglo: 0, excluded: 0 };
   for (const [yt, v] of [...found]) {
-    if (!performer.has(v.item) || !anglo.has(v.item)) found.delete(yt);
+    const f = verdict.get(v.item);
+    if (!f) { reasons.unclassified++; found.delete(yt); continue; }
+    if (!f.performer) { reasons.notPerformer++; found.delete(yt); continue; }
+    if (f.corporate) { reasons.corporate++; found.delete(yt); continue; }
+    if (!f.anglo) { reasons.notAnglo++; found.delete(yt); continue; }
+    if (f.dead || f.india || f.office || f.party || f.crime || f.blockedOcc) {
+      reasons.excluded++; found.delete(yt); continue;
+    }
   }
-  console.log(`\n  ${swept} swept -> ${found.size} kept (institutions and non-anglophone dropped)`);
+  console.log(`\n  ${swept} swept -> ${found.size} kept`);
+  console.log(`    dropped: ${reasons.notPerformer} not a performer · ${reasons.corporate} corporate veto · ` +
+              `${reasons.notAnglo} non-anglophone · ${reasons.excluded} excluded claim · ${reasons.unclassified} unclassified`);
 
   const lines = [
     '# Generated by tools/wikidata-sweep.js — ids only, screened on Wikidata claims.',
