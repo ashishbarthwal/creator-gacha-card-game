@@ -5,9 +5,12 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.netlify.app — 19,873 cards (whole pool; the institution filter is STAGED, not applied) ·
-19,968 candidates · deployed 2026-08-03.
-**Next:** SSR depth (SSR is the wall at 71.8 lw after the institution cut took 84 SSR).
+**Now:** LIVE at https://creator-gacha.pages.dev (moved off Netlify 2026-08-03 — free-tier credits
+don't cover this project's deploy cadence) — 24,251 cards (whole pool; the institution filter is
+STAGED, not applied) · 24,346 candidates · deployed 2026-08-03.
+**Next:** SSR depth (SSR is still the wall — 99.0 lw now, 77.5 lw once the staged filter is
+applied. The Wikidata sweep's corporate veto was found to be dead code and fixed the same day,
+which is part of why the numbers moved).
 
 ---
 
@@ -18,6 +21,14 @@ individually.
       (2026-08-03). `_headers` ships inside `_site` rather than living in `netlify.toml` —
       a direct upload has no build step to resolve the toml's `[[headers]]`, so they would
       have applied to nothing. Brotli confirmed on the wire.
+- [X] **Moved to Cloudflare Pages, same day.** Netlify's free tier is a one-time 300-credit
+      grant (~15/deploy) that does not refill; this project's actual cadence — a manual deploy
+      per fix plus a weekly automated refresh — burns through it before it would expire.
+      Cloudflare Pages' `_headers` syntax is byte-identical to Netlify's, so `_headers` and
+      `build-site.js` needed no changes; only the upload command did
+      (`wrangler pages deploy` in place of `netlify-cli deploy`). Verified every header rule
+      and the card count match exactly before cutting the workflow over. `netlify.toml` and
+      the Netlify site are left in place, unused, as a rollback path — see DECISIONS.md.
 - [X] **Series 1 as the default selection.** The demo set still seeds first (synchronous,
       offline-safe) and now hands over the moment a real set is offered, unless the visitor
       already picked one themselves.
@@ -29,7 +40,7 @@ individually.
 - [X] **The weekly refresh runs in GitHub Actions**, not on Ash's machine
       (`.github/workflows/refresh.yml`). A laptop cannot carry a compliance deadline: it
       cannot run while off and cannot exist once dead. Builds the set in the runner, uploads
-      straight to Netlify, commits only the ledger, and emails a report every run — with the
+      straight to the CDN, commits only the ledger, and emails a report every run — with the
       card count and its delta first, because "success" is what a broken run says too.
       The local Windows task is unregistered; `tools/schedule-refresh.js` remains as a
       documented fallback.

@@ -97,7 +97,7 @@ export function render(data) {
   lines.push('CREATOR GACHA — REFRESH REPORT');
   lines.push(new Date(data.at).toUTCString());
   lines.push('');
-  lines.push('https://creator-gacha.netlify.app');
+  lines.push('https://creator-gacha.pages.dev');
   lines.push('');
 
   if (!data.decks.length) {

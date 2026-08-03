@@ -38,8 +38,9 @@ Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+)
    no popups, no nags. **Hard rule: the coffee buys Ash a coffee. It never unlocks
    anything in the game.** The moment a donation grants in-game value, every IP and legal
    problem comes back.
-3. **Client-side only.** Static host (GitHub Pages / Netlify). Users bring their own
-   YouTube Data API key. No backend, no server, near-zero hosting cost.
+3. **Client-side only.** Static host (GitHub Pages / Cloudflare Pages / Netlify — currently
+   Cloudflare Pages, moved off Netlify 2026-08-03 for free-tier credit limits). Users bring
+   their own YouTube Data API key. No backend, no server, near-zero hosting cost.
 4. **No build step.** Plain ES modules, served as-is. Vitest runs in dev only.
 5. **Unofficial.** Footer must carry a disclaimer: not affiliated with or endorsed by
    YouTube or Google. (Wikigacha does the same for Wikipedia.)

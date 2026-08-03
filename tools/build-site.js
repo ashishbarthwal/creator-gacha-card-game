@@ -8,8 +8,9 @@
    30-day cap on stored statistics nor a promise that a removal is actually
    performable. So the one machine that can both hold a key and publish without
    writing to a git history is the operator's own, and the site is uploaded
-   straight to the CDN from here (Netlify direct upload) rather than deployed by
-   an Action. GitHub Actions keeps running the test suite, which needs no key.
+   straight to the CDN from here (Cloudflare Pages direct upload, via wrangler)
+   rather than deployed by an Action. GitHub Actions keeps running the test
+   suite, which needs no key.
 
    The trade, stated because it is real: the 25-day refresh becomes a chore
    somebody has to remember instead of a cron job.
@@ -63,8 +64,10 @@ async function main() {
   await cp(from('terms.html'), to('terms.html'));
   await cp(from('styles.css'), to('styles.css'));
   /* Caching and security headers. It has to travel INSIDE the uploaded folder:
-     this is a direct upload, so Netlify never reads the repo, and netlify.toml's
-     [[headers]] are resolved by a build step that does not run here. */
+     this is a direct upload, so the host never reads the repo or runs a build
+     step of its own. The `_headers` file syntax happens to be identical between
+     Netlify and Cloudflare Pages, which is why this file needed no changes when
+     the host did. */
   await cp(from('_headers'), to('_headers'));
   await cp(from('src'), to('src'), { recursive: true });
   /* Gitignored, so it is absent from a clean checkout — removed anyway, because
@@ -166,7 +169,7 @@ async function main() {
   console.log(`_site assembled — ${files.length} files, ${sets.length} set/manifest JSON.`);
   for (const f of sets) console.log(`  ${relative(SITE, f).replace(/\\/g, '/')}`);
   console.log('\nNo drafts, no dev manifests, no country fields.');
-  console.log('Upload:  npx netlify-cli deploy --prod --dir=_site');
+  console.log('Upload:  npx wrangler pages deploy _site --project-name=creator-gacha --branch=main');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

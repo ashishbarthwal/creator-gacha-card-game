@@ -16,15 +16,23 @@
 # So the refresh moves here. The stated objection was never really CI itself —
 # it was that the built set cannot be committed, which is still true and still
 # honoured: this workflow builds the set inside the runner and uploads it
-# straight to Netlify. Nothing carrying channel statistics is ever written to
+# straight to the CDN. Nothing carrying channel statistics is ever written to
 # git. The only thing committed back is the refresh ledger, which is dates and
 # counts.
 #
-# THE COST, stated plainly: the YouTube API key and a Netlify token now live in
+# THE COST, stated plainly: the YouTube API key and a deploy token now live in
 # GitHub Actions secrets rather than only on Ash's machine. Secrets are masked in
 # logs and are not exposed to pull requests from forks, but this is a real
 # widening of where the key exists, and it is the price of the site staying
 # compliant without anybody being present.
+#
+# MOVED OFF NETLIFY 2026-08-03. Netlify's free tier is a one-time credit grant
+# (300 credits, ~15/deploy) that does not refill — the cadence this project
+# actually runs at (a manual deploy per fix plus a weekly automated refresh)
+# burns through it well before it would expire. Cloudflare Pages' free tier has
+# no such ceiling, and its `_headers` file convention is byte-identical to
+# Netlify's, so the migration changed the deploy target and nothing else — see
+# DECISIONS.md.
 #
 # The local Windows task is retired — see tools/schedule-refresh.js. Two
 # schedulers publishing the same site would race and double-spend quota.
@@ -87,14 +95,15 @@ jobs:
         run: node tools/build-site.js
 
       # ── Publish ────────────────────────────────────────────────────────────
-      # Direct upload of the assembled folder, exactly as the local deploy does.
-      # NETLIFY_SITE_ID is a public identifier, not a secret — the token is the
-      # thing that grants access, and that one is.
-      - name: Deploy to Netlify
+      # Direct upload of the assembled folder, exactly as the local deploy does —
+      # `npm run deploy` runs this identical wrangler command by hand, so testing
+      # one tests the other. CLOUDFLARE_ACCOUNT_ID is a public identifier, not a
+      # secret — the token is the thing that grants access, and that one is.
+      - name: Deploy to Cloudflare Pages
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: c3cde8a0-b7db-4983-a470-a8e3e70b486d
-        run: npx --yes netlify-cli deploy --prod --dir=_site
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '36d45deea34dd28d3e7e09d645007795'
+        run: npx --yes wrangler pages deploy _site --project-name=creator-gacha --branch=main
 
       # Runs only after a successful upload, so the ledger records deploys that
       # HAPPENED rather than deploys that were attempted.
@@ -156,7 +165,7 @@ jobs:
       # ── Failure is the message that matters most ───────────────────────────
       # A refresh that fails silently is how the site goes stale and then
       # non-compliant. This fires for ANY failed step above — expired key,
-      # revoked Netlify token, quota exhausted, a guard refusing to publish — and
+      # revoked deploy token, quota exhausted, a guard refusing to publish — and
       # says what to do about it. `if: failure()` is what makes it run at all,
       # since a failed job otherwise stops here.
       - name: Email the failure
@@ -183,7 +192,7 @@ jobs:
 
             Most likely causes, in the order worth checking:
               1. YOUTUBE_API_KEY expired, revoked, or out of daily quota
-              2. NETLIFY_AUTH_TOKEN no longer valid
+              2. CLOUDFLARE_API_TOKEN no longer valid
               3. A build guard refused — check which one in the log
 
             To fix it by hand from any machine with the repo and a key:

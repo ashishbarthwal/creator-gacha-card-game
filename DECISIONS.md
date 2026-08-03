@@ -2438,3 +2438,50 @@ takes an `onSetLoaded` callback rather than importing the collection view, match
 already talks to the app.
 
 </details>
+
+## Moved to Cloudflare Pages — Netlify's free tier does not fit the cadence (2026-08-03)
+
+<details>
+<summary><b>Netlify's free tier is a one-time 300-credit grant that does not refill.</b> This
+project's actual deploy cadence — a manual push per fix plus a weekly automated refresh —
+burns through it well before it would expire.</summary>
+
+Eleven production deploys had already spent 165 of 300 credits (~15/deploy), and today alone
+accounted for roughly eight of those eleven. That is not a slow leak to budget around; it is the
+exact rate the project runs at whenever active work is happening, against an allowance that is
+granted once and never tops up.
+
+**Cloudflare Pages was chosen over the other obvious static host, GitHub Pages, for one concrete
+reason: `_headers`.** This project relies on it for real work — the 24-hour cache on built sets
+that must never outlive the 25-day refresh cadence, the `no-cache` on app code so a fix isn't
+invisible behind a stale cache, and three security headers (`nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`) matching the `referrerPolicy="no-referrer"` already set on every
+card avatar. GitHub Pages has no equivalent — no custom response headers at all. Cloudflare Pages
+adopted the identical `_headers` file syntax Netlify uses, so the migration is a change of upload
+target and nothing else: `_headers` and `tools/build-site.js` needed zero edits.
+
+**Verified before cutting anything over**, not assumed: a manual `wrangler pages deploy` of the
+current `_site` was checked against the live Netlify site for card count (24,251, matched),
+`styles.css` (byte-identical, 74,188 bytes), and every `_headers` rule individually — `/sets/*`
+cache, `/src/*` cache, `/*.html` cache, and all three security headers on `/`. All matched.
+
+**What changed, mechanically:**
+- `package.json`'s `deploy` / `deploy:filtered` scripts: `npx netlify-cli deploy --prod --dir=_site`
+  → `npx wrangler pages deploy _site --project-name=creator-gacha --branch=main`.
+- `.github/workflows/refresh.yml`: the publish step, its secret (`CLOUDFLARE_API_TOKEN` replacing
+  `NETLIFY_AUTH_TOKEN`), and the failure-email's troubleshooting list.
+- Every user-facing URL — README, TASKS.md, the refresh report's email body — now points at
+  `creator-gacha.pages.dev`.
+
+**What did NOT change:** `_headers`, `tools/build-site.js`'s copy logic, the four publish guards,
+the ledger format, the whole seam between build and deploy. The only thing that moved is which CDN
+receives the folder.
+
+**What is left, deliberately not done here:** `netlify.toml` and the Netlify site itself are left
+in place, unused, rather than deleted — a rollback path costs nothing to keep and something to
+rebuild. The old `creator-gacha.netlify.app` deploy currently still serves the correct 24,251-card
+snapshot, but nothing will refresh it again, so it will silently age past the 30-day cap on stored
+statistics with no guard watching it, because the guard only runs at deploy time and nothing will
+deploy there again. Retiring or redirecting that URL is a follow-up, not resolved by this entry.
+
+</details>

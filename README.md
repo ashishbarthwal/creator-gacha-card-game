@@ -3,8 +3,8 @@
 > Pull collectible trading cards minted from real YouTube channel stats.
 > A browser-based gacha game where a channel's numbers *become* the card.
 
-**▶ Play it: [creator-gacha.netlify.app](https://creator-gacha.netlify.app)** — no signup, no API key,
-19,874 cards.
+**▶ Play it: [creator-gacha.pages.dev](https://creator-gacha.pages.dev)** — no signup, no API key,
+24,251 cards.
 
 [![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
 
@@ -43,7 +43,7 @@ Rarer cards are weighted to pull less often, and hit ATK/DEF harder.
 
 ## Run it
 
-It's already running at **[creator-gacha.netlify.app](https://creator-gacha.netlify.app)** —
+It's already running at **[creator-gacha.pages.dev](https://creator-gacha.pages.dev)** —
 the rest of this section is for running it locally.
 
 No build step, no dependencies — plain ES modules under `src/`, served as-is.
@@ -54,7 +54,7 @@ No build step, no dependencies — plain ES modules under `src/`, served as-is.
   - `npx serve` (recommended — correct MIME types out of the box), or
   - `python -m http.server` **only** if your OS maps `.js` to `text/javascript`; some
     setups (notably Windows) serve it as `text/plain`, which browsers reject for modules.
-    GitHub Pages / Netlify serve it correctly, so deployment is unaffected.
+    GitHub Pages / Cloudflare Pages serve it correctly, so deployment is unaffected.
 - **Sets mode** is the only mode a player sees — pick a card set and pull, with no API key and
   no setup at all. The bundled **demo set** ships fictional channels with generated avatars and
   zero network, so the first paint is instant and works offline; the real Series takes over the
@@ -192,12 +192,14 @@ into a tested, modular, deployable project in dependency order (full detail in
       collection that reconciles against the loaded set, a refresh alarm (warn at 25 days,
       refuse at 30), and the curation exclude.
 - [x] **WP10 — Deploy.** Live at
-      [creator-gacha.netlify.app](https://creator-gacha.netlify.app). Direct upload of a
-      locally assembled `_site`, never a CI build — the set has to be hydrated with a real API
-      key and can never be committed. Four guards run before anything uploads: no drafts, no
-      `country` field, nothing past the 30-day statistics cap, no page linking to a page that
-      didn't ship. Plus a [privacy policy](https://creator-gacha.netlify.app/privacy.html) and
-      [terms](https://creator-gacha.netlify.app/terms.html).
+      [creator-gacha.pages.dev](https://creator-gacha.pages.dev) (moved from Netlify
+      2026-08-03 — same direct-upload shape, no credit ceiling). Direct upload of a locally
+      assembled `_site`, never a CI build for the deploy step itself — the set has to be
+      hydrated with a real API key and can never be committed. Four guards run before
+      anything uploads: no drafts, no `country` field, nothing past the 30-day statistics
+      cap, no page linking to a page that didn't ship. Plus a
+      [privacy policy](https://creator-gacha.pages.dev/privacy.html) and
+      [terms](https://creator-gacha.pages.dev/terms.html).
 - [x] ~~**Card → PNG export.**~~ Built, then **scrapped before shipping**. An exported image
       outlives a removal request, so the feature quietly broke the opt-out promise. Deleted
       rather than hidden behind a flag.
