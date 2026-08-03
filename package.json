@@ -9,6 +9,7 @@
     "test:report": "node tools/test-report.js",
     "build:site": "node tools/build-site.js",
     "status": "node tools/status.js",
+    "runs": "node tools/refresh-runs.js",
     "deploy": "node tools/build-set.js && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site && node tools/record-deploy.js",
     "deploy:filtered": "node tools/build-set.js --apply-staged && node tools/build-site.js && npx netlify-cli deploy --prod --dir=_site && node tools/record-deploy.js"
   },
