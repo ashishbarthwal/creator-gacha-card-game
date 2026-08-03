@@ -2552,4 +2552,38 @@ rather than snapped to raw sensor noise. Untested on real hardware — Ash is as
 it feels twitchy, too subtle, or inverted; every constant governing it is named and isolated for
 exactly that reason.
 
+### Addendum: `beta`/`gamma` was the wrong sensor, not the wrong tuning (2026-08-03, same day)
+
+First-hardware feedback: "automatically swiveling left and right too much." Rebuilt on a different
+signal rather than retuned, because the report matches a known property of the original approach
+rather than a miscalibrated constant.
+
+**`DeviceOrientationEvent`'s `beta`/`gamma` are EULER ANGLES**, decomposed from the device's raw
+rotation — and Euler decomposition is numerically unstable near certain orientations. The unstable
+orientation is near-vertical, which is exactly how a phone is held to look at its own screen. A
+tiny real tilt there can produce a large, erratic swing in `gamma`. That is almost certainly the
+"swiveling": not over-sensitivity to real motion, but instability in the representation itself,
+which no amount of retuning `MOTION_MAX_DEG` or `SMOOTHING` would have fixed.
+
+**Rebuilt on `DeviceMotionEvent.rotationRate` — the raw gyroscope**, angular velocity per axis with
+no decomposition step and therefore no singularity. The cost of a raw gyro is drift: integrating
+velocity into an angle accumulates error with no absolute reference, so a naive integration wanders
+off-center forever. Countered with a continuous spring-return term pulling the accumulated angle
+back toward zero every frame — self-corrects instead of drifting, and reads as "the card wants to
+lie flat" rather than "the tilt is broken."
+
+**Smoothness is now a hard guarantee rather than a tuning target.** The painted value moves toward
+the sensor-derived target at a capped rate (`MAX_RATE`, in normalized units/second) — a mathematical
+clamp, not an ease that merely tends toward smooth. Whatever the sensor reports, however jerky the
+real rotation, the visible motion cannot exceed that rate. This was the explicit ask ("keep the
+motion smooth no matter in what jerk acceleration I rotate my phone") and it is now true by
+construction, not by hoping the filtering is aggressive enough.
+
+`requestMotionPermission` moved from gating on `DeviceOrientationEvent.requestPermission` to
+`DeviceMotionEvent.requestPermission` to match the API actually consumed — iOS treats motion and
+orientation as one permission grant, so this changes which API is asked, not what the player sees.
+
+Still untested on real hardware; still fully tunable (`MOTION_MAX_DEG`, `RETURN_RATE`, `MAX_RATE`
+are each named and isolated in `holo.js`).
+
 </details>

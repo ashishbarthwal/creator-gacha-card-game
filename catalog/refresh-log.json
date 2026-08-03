@@ -154,6 +154,13 @@
       "slug": "series-1",
       "cards": 24251,
       "snapshotDate": "2026-08-03"
+    },
+    {
+      "at": "2026-08-03T12:13:22.663Z",
+      "event": "deploy",
+      "slug": "series-1",
+      "cards": 24251,
+      "snapshotDate": "2026-08-03"
     }
   ]
 }

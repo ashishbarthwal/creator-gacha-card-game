@@ -41,10 +41,9 @@ export function enableCardTilt(root) {
 /* ── Device-tilt: the phone IS the pointer ──────────────────────────────────
    A touch screen can't hover-track, so until now a phone only ever got the
    flat, muted, motionless fallback in styles.css's `hover: none` block —
-   rarity still read, but nothing MOVED. `DeviceOrientationEvent` gives a phone
-   the one input a mouse never had — you can physically turn it — and it maps
-   onto the exact same --px/--py/--mx/--my contract pointermove already feeds,
-   so nothing downstream needed to change.
+   rarity still read, but nothing MOVED. This drives the same --px/--py/--mx/
+   --my contract pointermove already feeds, so nothing downstream needed to
+   change — only how the numbers are produced.
 
    SCOPE, DELIBERATELY NARROW. Only wired into the reveal overlay and the
    inspector (reveal.js, inspect.js) — both are full-screen, non-scrolling
@@ -53,18 +52,47 @@ export function enableCardTilt(root) {
    phone orientation there would be constant background movement competing
    with the scroll, untested at 40+ cards, and was deliberately left out.
 
-   iOS GATES THIS BEHIND A PROMPT. Safari and Chrome-on-iOS both require
-   `DeviceOrientationEvent.requestPermission()` — a promise that only resolves
-   if called SYNCHRONOUSLY from within a user-gesture handler (a click), or the
-   browser silently refuses. That is why `enableDeviceTilt` gets called from
-   inside `openReveal`/`openInspect` themselves rather than once at import time
-   the way `enableCardTilt` is: both are already invoked synchronously from a
-   tap (opening a pack, tapping a card), so the very first time either overlay
-   is used doubles as the gesture the permission prompt needs. Android does not
-   gate this at all; the check below simply skips straight to listening. */
+   THE FIRST ATTEMPT USED `DeviceOrientationEvent` (beta/gamma) and it read as
+   "automatically swiveling too much" on a real phone. That is a known property
+   of beta/gamma, not a tuning miss: they are EULER ANGLES, decomposed from the
+   device's raw rotation, and Euler decomposition is numerically unstable near
+   certain orientations — specifically near-vertical, which is exactly how a
+   phone is held to look at its own screen. A tiny real tilt there can produce
+   a large, erratic swing in gamma. That is likely the actual "swiveling":
+   not over-sensitivity, but the representation itself.
 
-const MOTION_MAX_DEG = 18;  // degrees of tilt off the calibrated baseline = full effect
-const SMOOTHING = 0.15;     // 0..1 per frame; lower = smoother and slower to catch up
+   THIS VERSION USES THE RAW GYROSCOPE INSTEAD — `DeviceMotionEvent.
+   rotationRate`, angular VELOCITY around each axis, deg/s. There is no
+   decomposition step and no singularity: it is a direct sensor reading, so the
+   near-vertical instability above cannot occur. The cost of a raw gyro is
+   drift — integrating velocity into an angle accumulates error with no
+   absolute reference, so a naive integration would slowly wander off-center
+   forever. Countered with a continuous SPRING-RETURN term that pulls the
+   accumulated angle back toward zero every frame, so it self-corrects instead
+   of drifting, and reads as "the card wants to lie flat" rather than "the tilt
+   is broken."
+
+   SMOOTHNESS IS A HARD GUARANTEE, not a tuning choice. Whatever the sensor
+   reports — a sudden flick, a glitchy single-frame spike — the value actually
+   painted to the card can only move at a capped rate per frame (MAX_RATE
+   below). That bounds the visible motion regardless of how violent or jerky
+   the real rotation is; it is a mathematical clamp, not a hope that the
+   filtering is aggressive enough.
+
+   iOS GATES MOTION SENSORS BEHIND A PROMPT. Safari and Chrome-on-iOS require
+   `DeviceMotionEvent.requestPermission()`, callable only from inside a
+   user-gesture handler (a click), and that grant covers deviceorientation too
+   — Apple treats motion and orientation as one permission bucket. That is why
+   `enableDeviceTilt` is called from inside `openReveal`/`openInspect`
+   themselves rather than once at import time the way `enableCardTilt` is:
+   both are already gesture-triggered (tapping the pack, tapping a card), so
+   the first use of either doubles as the gesture the prompt needs. Android
+   does not gate this at all. */
+
+const MOTION_MAX_DEG = 24;     // accumulated relative angle for the full effect
+const RETURN_RATE = 1.4;       // per-second spring-back toward centre — undoes gyro drift
+const MAX_RATE = 3.0;          // hard cap, in -1..1 units per second, on the PAINTED value
+const MAX_DT = 0.1;            // clamp a stalled/backgrounded gap so one frame can't over-integrate
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -76,10 +104,10 @@ let motionPermission = null;
 
 function requestMotionPermission() {
   if (motionPermission) return motionPermission;
-  const gate = typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission;
+  const gate = typeof DeviceMotionEvent !== 'undefined' && DeviceMotionEvent.requestPermission;
   motionPermission = !gate
-    ? Promise.resolve(typeof DeviceOrientationEvent !== 'undefined' ? 'granted' : 'unsupported')
-    : gate.call(DeviceOrientationEvent).then(r => r === 'granted' ? 'granted' : 'denied').catch(() => 'denied');
+    ? Promise.resolve(typeof DeviceMotionEvent !== 'undefined' ? 'granted' : 'unsupported')
+    : gate.call(DeviceMotionEvent).then(r => r === 'granted' ? 'granted' : 'denied').catch(() => 'denied');
   return motionPermission;
 }
 
@@ -90,22 +118,37 @@ export function enableDeviceTilt(root) {
   if (!root || root.dataset.deviceTiltBound) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!matchMedia('(hover: none)').matches) return; // fine pointers use enableCardTilt instead
-  if (typeof DeviceOrientationEvent === 'undefined') return;
+  if (typeof DeviceMotionEvent === 'undefined') return;
 
   root.dataset.deviceTiltBound = 'true';
 
   requestMotionPermission().then(state => {
     if (state !== 'granted') return; // declined or unsupported: keep the static CSS finish
 
-    let baseline = null;
-    let targetX = 0, targetY = 0;  // latest normalized reading, -1..1
-    let curX = 0, curY = 0;        // eased value actually painted
+    let angleX = 0, angleY = 0;    // accumulated relative angle (degrees), starts centred
+    let curX = 0, curY = 0;        // the value actually painted, rate-limited toward the angle
+    let lastMotionAt = null;
+    let lastPaintAt = null;
     let raf = null;
 
-    function paint() {
+    function schedule() {
+      if (!raf) raf = requestAnimationFrame(paint);
+    }
+
+    function paint(now) {
       raf = null;
-      curX += (targetX - curX) * SMOOTHING;
-      curY += (targetY - curY) * SMOOTHING;
+      const dt = clamp(((now ?? performance.now()) - (lastPaintAt ?? now)) / 1000, 0, MAX_DT);
+      lastPaintAt = now ?? performance.now();
+
+      const targetX = clamp(angleX / MOTION_MAX_DEG, -1, 1);
+      const targetY = clamp(angleY / MOTION_MAX_DEG, -1, 1);
+      // THE GUARANTEE: curX/curY move toward the target no faster than
+      // MAX_RATE per second, full stop — not an ease that merely tends toward
+      // smooth, a clamp that makes a snap structurally impossible.
+      const step = MAX_RATE * dt;
+      curX += clamp(targetX - curX, -step, step);
+      curY += clamp(targetY - curY, -step, step);
+
       // The overlay clears its contents on close but not until the NEXT open,
       // so a stray reading after close would otherwise keep painting hidden
       // cards — cheap to skip rather than let it run against nothing visible.
@@ -120,21 +163,36 @@ export function enableDeviceTilt(root) {
           card.style.setProperty('--my', my);
         });
       }
-      if (Math.abs(targetX - curX) > 0.0015 || Math.abs(targetY - curY) > 0.0015) {
-        raf = requestAnimationFrame(paint);
+      // Keep animating while EITHER the target hasn't been reached (rate-
+      // limited catch-up in progress) OR the accumulated angle itself is
+      // still relaxing toward zero (the spring-return, which runs even once
+      // curX has caught up to a momentarily-still target).
+      if (Math.abs(targetX - curX) > 0.0008 || Math.abs(targetY - curY) > 0.0008 ||
+          Math.abs(angleX) > 0.05 || Math.abs(angleY) > 0.05) {
+        schedule();
       }
     }
 
-    addEventListener('deviceorientation', e => {
-      if (e.beta === null || e.gamma === null) return;
-      // Calibrated to wherever the phone happens to be held when this first
-      // fires, rather than an absolute angle — nobody holds a phone at a
-      // textbook-neutral angle, and an absolute reading would leave the shine
-      // permanently off-center for anyone who tilts naturally.
-      if (!baseline) baseline = { beta: e.beta, gamma: e.gamma };
-      targetX = clamp((e.gamma - baseline.gamma) / MOTION_MAX_DEG, -1, 1);
-      targetY = clamp((e.beta - baseline.beta) / MOTION_MAX_DEG, -1, 1);
-      if (!raf) raf = requestAnimationFrame(paint);
+    addEventListener('devicemotion', e => {
+      const r = e.rotationRate;
+      if (!r || r.beta === null || r.gamma === null) return;
+
+      const now = performance.now();
+      const dt = clamp((now - (lastMotionAt ?? now)) / 1000, 0, MAX_DT);
+      lastMotionAt = now;
+
+      // Integrate angular velocity into a relative angle, then immediately pull
+      // it back toward zero — the spring-return that keeps a pure gyro
+      // integration from drifting away over a long session. Left as two
+      // separate steps rather than folded into one constant because they
+      // answer different questions: how far did it just turn, and how eager
+      // is it to settle back to flat.
+      angleX = clamp(angleX + r.gamma * dt, -90, 90);
+      angleY = clamp(angleY + r.beta * dt, -90, 90);
+      angleX -= angleX * RETURN_RATE * dt;
+      angleY -= angleY * RETURN_RATE * dt;
+
+      schedule();
     });
   });
 }
