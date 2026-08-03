@@ -5,7 +5,7 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.netlify.app — 19,874 cards (whole pool; the institution filter is STAGED, not applied) ·
+**Now:** LIVE at https://creator-gacha.netlify.app — 19,873 cards (whole pool; the institution filter is STAGED, not applied) ·
 19,968 candidates · deployed 2026-08-03.
 **Next:** SSR depth (SSR is the wall at 71.8 lw after the institution cut took 84 SSR).
 
@@ -34,6 +34,14 @@ individually.
       The local Windows task is unregistered; `tools/schedule-refresh.js` remains as a
       documented fallback.
       **Ash's remaining step: add the four repository secrets.**
+- [X] **`npm run runs` — check the refresh from outside the refresh.** Email cannot report a run
+      that never happened: no run, no steps, no `if: failure()`, no mail — and the build lands in
+      the runner, so the laptop looks identical either way. Verdicts separate `late` (GitHub's
+      scheduler is routinely slow; do nothing) from `missed` from `never ran`.
+- [X] **The pull screen scrolls.** A fixed footprint in a fixed height rendered cards at 138px on
+      a 393px phone, below the width the card's own clamp() scale supports — stats under the
+      avatar, handles sheared without an ellipsis. Overlay scrolls, 2/3/5 columns by viewport,
+      sticky Done, and the card sheds detail under 190px instead of shearing it.
 - [ ] README: **screenshots** (live demo + test pointer done)
 
 ### WP9 — remaining

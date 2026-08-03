@@ -2303,3 +2303,100 @@ machine again. If something has a deadline and a legal cap attached, it belongs 
 survives hardware.
 
 </details>
+
+## Silence is not success: checking that the job ran at all (2026-08-03)
+
+<details>
+<summary><b>The refresh reports by email on every run, which covers "it worked" and "it broke" —
+and not the third case, which is the one that happened: it never ran.</b> A run that does not
+exist has no steps to fail, so no failure mail is sent, and nothing local changes either.</summary>
+
+The one-off cron pushed to prove the refresh survives a powered-off laptop was due at 07:40 UTC.
+At 08:35 the workflow had **zero runs of any kind** — no success mail, no failure mail, no change
+on disk. The reporting built the day before was working exactly as designed and had nothing to say.
+
+**Why no channel could see it.** `if: failure()` needs a run to attach to; GitHub silently
+dropping a firing produces no run, no steps and no notification. And because the workflow builds
+inside the runner and uploads straight to the CDN, a refresh that never happens leaves the laptop
+byte-for-byte identical to one that succeeded. Both `status.js` and `refresh-report.js` open by
+promising they read files only — no key, no network, no quota — which is what makes them safe to
+run on a timer, and is precisely why neither can answer this. **Every channel we had reported
+silence, and silence was indistinguishable from success.**
+
+**`npm run runs` (`tools/refresh-runs.js`) asks GitHub instead.** It reads the crons out of the
+workflow file rather than keeping its own copy — a checker with a private copy of the schedule
+keeps agreeing with itself after somebody edits the YAML — and queries the public Actions API.
+No key, no YouTube quota, no auth: the repo is public, so 60 requests an hour are free.
+
+**It is a separate command, and that is the point.** Folding this into `npm run status` would
+break the file-only promise that makes `status` safe to run fifty times an hour. Two commands,
+two questions: `status` asks whether the live deck is inside the 30-day cap, `runs` asks whether
+the machine that keeps it there is alive.
+
+**Late and missed are different verdicts, on purpose.** GitHub's scheduled trigger is best-effort
+and lowest priority; ten to sixty minutes late is routine rather than exceptional. A checker that
+shouts at minute one would be wrong most times it spoke, and **a checker people learn to ignore is
+worse than no checker** — so there is a 90-minute grace window, and `late` explicitly says that
+doing nothing is the correct action.
+
+**`never` is split out from `missed` because they want opposite fixes.** A missed firing is the
+queue being the queue and the next one will probably land. A workflow with a firing behind it and
+no runs at all is broken and stays broken until somebody touches it — a cron pushed minutes before
+its own fire time, a schedule that never registered, Actions disabled. Collapsing the two would
+have turned this exact failure into "it will come round again on Sunday".
+
+**What this closes off.** A job is not considered reported on because it can send a message when it
+runs. Any unattended job this project depends on needs a check that runs **from outside it** and
+can distinguish *did not happen* from *has nothing to say*.
+
+`src/engine/schedule.js` holds the cron matching and the verdict, pure and `now`-injected like
+`freshness.js`; 21 tests pin it, including the 2026-08-03 case itself. The network and the
+rendering stay in `tools/`, per the rule that a module's home follows from what it may touch.
+
+</details>
+
+## The pull screen scrolls (2026-08-03)
+
+<details>
+<summary><b>Reverses "the reveal has a fixed footprint, so clip it and never scroll".</b> A fixed
+footprint inside a fixed height can only be paid for by shrinking the cards, and on a phone it
+paid by rendering the payoff of the entire game at 138px.</summary>
+
+The reveal overlay was `overflow: hidden` with the box capped at `92vh`, reasoning that ten cards
+occupy a known space and the beam/ray glow should be clipped rather than allowed to spawn
+scrollbars. That is true on a desktop and false everywhere else. Ash's phone reports a 393px
+viewport, where the old rule resolved to two columns of **138px** — and 138px is below the width
+the card's own type scale is built for.
+
+**Why 138px specifically breaks it.** Every size in the card is `clamp(floor, Ncqw, ceiling)`. The
+floors engage one after another as the card narrows — the handle at 250px, the name at 240, the
+tier label at 217, the rarity badge at 211, the ATK/DEF numerals at 189 — so below ~240px the type
+has stopped shrinking while the box has not. The visible consequences were a `white-space: nowrap`
+tier label pinning the badge column, which left the title ~77px, which wrapped it to two lines,
+which shortened the avatar's flex slot, which the ring — sized `54cqw`, off the card's WIDTH —
+then overran, landing on top of the subscriber count. One chain, five symptoms.
+
+**So the footprint stops being fixed.** The overlay scrolls, cards get ~170px on the same phone,
+and the column count is capped by viewport (2 / 3 / 5) rather than pinned at five — five columns
+inside a 700px tablet worked out to 107px per card, worse than the bug being fixed.
+
+**What the old comment was actually protecting is kept.** It was never really about clipping; it
+was that a scrollbar appearing mid-animation steals width and reflows the grid. `scrollbar-gutter:
+stable` reserves that width up front, which solves it without forbidding scroll.
+
+**Centring is `margin: auto` on the box, not `place-items: center` on the container.** Both centre
+a box that fits; only one stays reachable when it does not. Container-level alignment puts the
+overflow *above* the scrollport with no way to scroll up to it — it would have hidden the first row
+of a x10 the instant cards grew.
+
+**The card sheds detail rather than shearing it.** Below 190px a container query drops the tier
+label and clamps the name to one line, and the handle finally gets the ellipsis the name got long
+ago. The floors are not lowered: 8px type that fits is not an improvement on 8px type that does
+not. 190px is chosen to leave the desktop card untouched, where five tracks cap at 200px and
+nothing is crowded.
+
+**What this closes off.** No screen in this project may buy its layout by shrinking the cards past
+the range their own type scale supports. When space runs out, it scrolls, drops detail, or shows
+fewer things — it does not render a card nobody can read.
+
+</details>
