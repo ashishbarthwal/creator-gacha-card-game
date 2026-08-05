@@ -2959,3 +2959,95 @@ measured quantiles, so the fight feels the way the game will rather than the way
 would. Nothing under `prototype/` is in `build-site.js`'s copy allowlist, so none of it ships.
 
 </details>
+
+## Core Set replaces Series 1 — the staged institution filter is cut whole (2026-08-05)
+
+<details>
+<summary><b>All 7,705 staged institution ids promoted to settled — no per-card review</b> — Ash's call: "remove them, they don't add anything, nobody will care."</summary>
+
+`catalog/excluded-institutions.txt` held 7,705 institution ids the Wikidata sweep had screened
+out and staged for review since 2026-08-03, deliberately kept off the live deck until someone
+read them (see "The candidate DB is a directory boundary"). Ash's instruction closed the review
+in one motion rather than working through it: cut the whole list, no exceptions worth carving
+out — a government agency, a nonprofit, a record label carries no card anyone would miss.
+
+Promoted whole into `catalog/excluded.txt` (the settled list `assembleSet` always applies),
+rather than run through `tools/review-queue.js`'s per-card marking flow. The per-line comments
+(name, subscriber count, institution type) were kept as the audit trail, matching every other
+entry in the file. `catalog/excluded-institutions.txt` is now empty and stays that way — the
+staged/settled split is a reusable mechanism for the *next* bulk curation call, not a one-time
+scaffold to delete once used.
+
+Verified zero overlap with the 819 ids already settled (the earlier WP9 partial thinning pass
+never touched this list), so the merge added exactly 7,705 new entries with no double-counting.
+
+</details>
+
+<details>
+<summary><b>Series 1 → Core Set: the deck stops promising a sequence</b> — one deck, refreshed for freshness, not rotated for variety.</summary>
+
+`tools/build-set.js`'s defaults changed from `--slug series-1 --title "Series 1"` to
+`--slug core --title "Core Set"`. Series numbering implied Series 2, Series 3 would follow —
+TASKS.md tracked "Roster depth for Series 2" as an open item — and that was never built and,
+once the institution cut left a stable everyday-recognizable roster rather than a first draft,
+stopped being the plan Ash wants to work toward. "Core Set" is the standard TCG term for
+exactly the shape this project settled into: the always-in-print base set, refreshed on the
+existing 25-day cadence for freshness, as opposed to a numbered expansion players collect
+alongside it.
+
+The rotation machinery this decision retires the LABEL for, not the CODE for: `selectionHash`
+and `capBands`' seeded-subset selection in `engine/setbuild.js` stay exactly as built. They are
+what a future *printing* would use if the project ever adds one, and the mechanism costs
+nothing to leave in place — only the framing that promised a sequel is gone.
+
+</details>
+
+<details>
+<summary><b>The rebuild measured: 24,251 → 15,833 cards, no band starved</b> — every band read "full" against the x10 dupe-avoidance floor the cut could have violated.</summary>
+
+`N 9848 · R 3613 · SR 2024 · SSR 317 · UR 31`, from 24,357 hydrated candidates (488 quota
+units) after the region exclude and the now-permanent institution cut removed 8,524 total
+(curation exclude, all bands combined). `pruneStarvedBands` — the mechanism that exists
+precisely to catch a band left too thin to survive a x10 without repeating — dropped nothing,
+which is the actual answer to "is the deck still balanced": UNCAPPED builds report every
+band's target as whatever survived, so "full" only means something because the prune step
+already ran and found nothing to prune.
+
+UR lost the least, proportionally (34 → 31, −8.8%) — institutions rarely clear 50M subscribers
+on YouTube in the first place. SSR lost the most (396 → 317, −20.0%), which tracks: the earlier
+partial WP9 thinning pass already found that "the big-company bucket lands hardest exactly
+where the recognizable institutional channels are," and this finishes that pass rather than
+discovering anything new.
+
+</details>
+
+<details>
+<summary><b>Unplanned side effect: the rebuild cleared both WP12 battle-system blockers</b> — the live set now carries real dates and real elements, because the hydrate path was already fixed and waiting for a rebuild to run.</summary>
+
+The previous session (see "The battle gets decisions in it") had already wired `CHANNEL_PARTS`
+to request `topicDetails` and fixed `setbuild.js`/`data/sets.js` to carry `publishedAt` and
+`element` through — but no rebuild had run since, so the *live* set still predated both fields
+and every card read Unaligned. This rebuild, run for an unrelated reason (cutting institutions),
+used that already-fixed path: `sets/built/core.json` now carries `publishedAt` on 100% of its
+15,833 cards and a real element distribution (Music 47.5%, Lifestyle 14.7%, Gaming 10.7%,
+Knowledge 10.6%, Comedy 10.5%, Tech 3.6%, Unaligned 2.3%). Sampled and confirmed against a fresh
+`channels.list` re-fetch of eight "Music"-tagged cards — genuinely musicians, not a mapping bug;
+the deck's musician-heavy skew reflects the Wikidata performer-sweep sourcing method, not the
+element classifier.
+
+`tools/battle-balance.js` was hardcoded to `sets/built/series-1.json`; it now reads
+`sets/built/index.json`'s manifest instead, so a future rename doesn't require a second edit.
+
+Measured against the real deck with real ages for the first time: every balance THRESHOLD still
+passes (largest class 40.6% of five, power ratio 1.15, small-cards-out-rating-median-giant
+21.8%, even-match win rate 60.6%), but cadence and devotion now correlate with channel size at
+0.42 and 0.35 — both past the tool's own "stopped being size-free" flag at ~0.25, where the
+prior synthesized-age measurement read 0.39/0.30. The velocity trend and the punch trend were
+both fitted against synthesized ages last session; real ages skew the deck older than assumed
+(median maturity 65 vs. the synthetic estimate of 51). Nothing is broken — every design
+guarantee the balance block asserts still holds — but the anchors deserve a deliberate refit
+against this real data rather than being left on synthesized-age numbers now that real ones
+exist. Not done here: this rebuild's purpose was the institution cut, and a stat retune is
+exactly the kind of change `balance-tool-methodology` says should be deliberate, not a drive-by.
+
+</details>

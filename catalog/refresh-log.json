@@ -189,6 +189,20 @@
       "slug": "series-1",
       "cards": 23539,
       "snapshotDate": "2026-08-03"
+    },
+    {
+      "at": "2026-08-05T11:32:00.293Z",
+      "event": "build",
+      "slug": "core",
+      "cards": 15833,
+      "snapshotDate": "2026-08-05"
+    },
+    {
+      "at": "2026-08-05T11:53:35.843Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15833,
+      "snapshotDate": "2026-08-05"
     }
   ]
 }

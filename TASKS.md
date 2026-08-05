@@ -7,9 +7,11 @@ individually.
 
 **Now:** LIVE at https://creator-gacha.pages.dev (moved off Netlify 2026-08-03 — free-tier credits
 don't cover this project's deploy cadence) · 24,359 candidates.
-**The live copy serves the 24,251-card deck; 23,539 is built and committed but NOT yet uploaded** —
-the deploy needs an authenticated `wrangler` session on Ash's machine:
+**The live copy still serves the old 24,251-card "Series 1" deck. A new build — "Core Set",
+15,833 cards, every staged institution permanently cut — is built locally at
+`sets/built/core.json` but NOT yet uploaded**, pending Ash's go-ahead to push. Once it is:
 `npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js`.
+See "Core Set replaces Series 1" below.
 **Next:** WP12 — the battle system. The **engine is built, deepened and tested**, and there is now
 a **playable prototype** at `prototype/index.html` (local only, never shipped). What is still
 missing is the battle inside the real app. See below.
@@ -31,9 +33,9 @@ missing is the battle inside the real app. See below.
       (`wrangler pages deploy` in place of `netlify-cli deploy`). Verified every header rule
       and the card count match exactly before cutting the workflow over. The old Netlify
       site was deleted the same day rather than kept as a rollback — see DECISIONS.md.
-- [X] **Series 1 as the default selection.** The demo set still seeds first (synchronous,
-      offline-safe) and now hands over the moment a real set is offered, unless the visitor
-      already picked one themselves.
+- [X] **Core Set as the default selection** (renamed from Series 1, 2026-08-05 — see below).
+      The demo set still seeds first (synchronous, offline-safe) and now hands over the moment
+      a real set is offered, unless the visitor already picked one themselves.
 - [X] Deployment structure: built sets arrive through their own `sets/built/index.json`,
       written beside them and uploaded in the same folder.
 - [X] **Privacy policy page** + **Terms of service page** — both shipped, linked in the
@@ -61,21 +63,44 @@ missing is the battle inside the real app. See below.
 
 ### WP9 — remaining
 - [ ] **Browser check on persistence** — not testable from the suite (localStorage + DOM).
-- [ ] **Roster depth for Series 2.** Rotation needs ~7x the per-printing count. **SSR still
-      binds, at 81.25 lw** (325 cards) against SR's 261 and R's 279. UR is world-supply capped
-      and will never be met. The number moved DOWN from 99.0, and not from a sourcing failure —
-      the institution thinning pass (2026-08-03) cut SSR 396 → 318, because the big-company
-      bucket lands hardest exactly where the recognizable institutional channels are. A
-      `--tier legends` Magic Search run put 7 back (318 → 325); the cheap routes remain
-      exhausted, so real gains still need curated rosters or non-anglophone territories.
+- [ ] **SSR depth is still the binding band** on the new Core Set (317 cards). No longer tracked
+      against a "Series 2 rotation" target — see "Core Set replaces Series 1" below, the
+      rotation-depth framing is retired along with series numbering. Real gains still need
+      curated rosters or non-anglophone territories; the cheap sourcing routes remain exhausted.
+
+### Core Set replaces Series 1 (2026-08-05)
+- [X] **All 7,705 staged institution ids permanently cut**, promoted from
+      `catalog/excluded-institutions.txt` (staged) into `catalog/excluded.txt` (settled, always
+      applied) — Ash's call, no per-card review: "remove them, they don't add anything, nobody
+      will care." The staged file is now empty and stays reusable for a future institution
+      sweep.
+- [X] **Renamed Series 1 → Core Set** (`tools/build-set.js` defaults: slug `core`, title
+      `"Core Set"`). Series numbering promised a sequence (Series 2, 3…) never built and no
+      longer planned — one deck, refreshed on the existing 25-day cadence, not rotated.
+- [X] **Rebuilt locally**: 15,833 cards (down from 24,251), every band reads "full" against the
+      x10 dupe-avoidance floor — no starvation from the cut. `N 9848 · R 3613 · SR 2024 ·
+      SSR 317 · UR 31`.
+- [X] **Side effect: both WP12 battle-system blockers cleared for free.** This rebuild used the
+      already-updated hydrate path (`CHANNEL_PARTS` requests `topicDetails`, `setbuild.js` keeps
+      `publishedAt`), so the new `sets/built/core.json` carries **real dates on 100% of cards**
+      and **real elements** (`node tools/battle-balance.js` no longer synthesizes anything).
+- [ ] **New finding from real data, not yet acted on:** cadence and devotion now correlate with
+      channel size at 0.42 and 0.35 — both above the tool's own ~0.25 "stopped being size-free"
+      flag. Every balance THRESHOLD still passes (largest class 40.6%, power ratio 1.15, small-
+      out-rating-giant 21.8%, win rate 60.6%), so nothing is broken, but the anchors were tuned
+      against synthesized ages and real ages read differently (median maturity 65 vs. the
+      synthetic 51 — the deck skews older than assumed). Worth a deliberate retune pass; not
+      done as a side effect of this rebuild.
+- [ ] **Not yet deployed.** `sets/built/core.json` is local only — `npm run deploy` (the
+      `wrangler pages deploy` step) needs a separate go-ahead before real users see this.
 
 ### WP12 — Battle system — engine done, no UI
 5v5, auto-resolved, against an AI matched to the player's own team power. Client-side only, so
 locked decision 3 is untouched. Rationale and the three measured failures behind the design are
 in DECISIONS.md.
-- [X] **`engine/battle-stats.js`** — channel → four size-free axes → HP/ATK/DEF/SPD + class.
+- [X] **`engine/battle-stats.js`** — channel → five size-free axes → HP/ATK/DEF/SPD/MOM + class.
       Size buys a compressed *budget*; shape decides where it goes, so rarity does not decide
-      the fight. Attack is flat across all five bands on the live deck.
+      the fight.
 - [X] **`engine/battle.js`** — turn resolution, seeded RNG, returns an event log the UI replays
       (the same shape the reveal already uses: decide first, animate a settled result).
 - [X] **`engine/opponent.js`** — power-matched AI deck at even / uphill / favoured.
@@ -99,10 +124,10 @@ in DECISIONS.md.
 - [X] **A playable prototype** — `prototype/index.html`. Five packs each side, the opposition
       commits first so you build against something visible, formation, and the event log replayed
       on the cards. Fictional deck, real engine; not in the deploy allowlist.
-- [ ] **A rebuild is needed before the numbers are real.** The live set predates both
-      `publishedAt` and `topicDetails`, so maturity/cadence/velocity are on their documented
-      fallbacks and **every card is Unaligned** — the element layer is inert until the next
-      `npm run deploy`. Refit the velocity trend from real ages after that (the tool prints it).
+- [X] **The rebuild happened** (2026-08-05, as part of the Core Set rename — see above). Real
+      dates and real elements now flow through; the "every card is Unaligned" fallback is gone
+      on the new local build. **Not yet deployed**, so the *live* site is still on the old
+      fallback path until `npm run deploy` runs.
 - [ ] **UI in the real app** — team picker, battle screen, log replay. The prototype is the design,
       not the shipped feature.
 - [ ] Decide whether individual matchups should stay deterministic (see DECISIONS.md — currently

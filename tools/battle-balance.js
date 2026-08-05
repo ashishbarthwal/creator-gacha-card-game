@@ -148,12 +148,20 @@ export function syntheticDeck(n = 4000) {
   return out;
 }
 
+/* Read the manifest rather than a hardcoded filename, so a renamed or
+   re-slugged deck (Series 1 -> Core Set, 2026-08-05) is picked up without a
+   second edit here — the same reason build-set.js's own manifest merge exists. */
+const BUILT_DIR = resolve(ROOT, 'sets/built');
+
 async function loadLiveDeck() {
   try {
-    const raw = await readFile(resolve(ROOT, 'sets/built/series-1.json'), 'utf8');
-    return JSON.parse(raw).channels ?? [];
+    const manifest = JSON.parse(await readFile(resolve(BUILT_DIR, 'index.json'), 'utf8'));
+    const first = manifest?.sets?.[0];
+    if (!first?.file) return { channels: null, slug: null };
+    const raw = await readFile(resolve(ROOT, first.file), 'utf8');
+    return { channels: JSON.parse(raw).channels ?? [], slug: first.slug };
   } catch {
-    return null;
+    return { channels: null, slug: null };
   }
 }
 
@@ -169,8 +177,9 @@ const pct = x => `${(x * 100).toFixed(1)}%`;
 
 async function main() {
   const fights = opt('fights', 360);
-  let deck = flag('synthetic') ? null : await loadLiveDeck();
-  let source = 'sets/built/series-1.json';
+  const live = flag('synthetic') ? { channels: null, slug: null } : await loadLiveDeck();
+  let deck = live.channels;
+  let source = live.slug ? `sets/built/${live.slug}.json` : null;
   if (!deck?.length) { deck = syntheticDeck(4000); source = 'synthetic fixture (4,000 cards)'; }
 
   const dated = deck.filter(c => c.publishedAt).length;

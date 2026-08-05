@@ -24,9 +24,20 @@
    promise. CI rebuilds this at deploy on the 25-day cadence.
 
    Run:   node tools/build-set.js
-          node tools/build-set.js --slug series-1 --title "Series 1"
+          node tools/build-set.js --slug core --title "Core Set"
           node tools/build-set.js --dry-run       (report, write nothing)
-   Key:   YOUTUBE_API_KEY env var, else src/config.local.js. */
+   Key:   YOUTUBE_API_KEY env var, else src/config.local.js.
+
+   THE DECK RETIRED "SERIES 1" FOR "CORE SET", 2026-08-05. Series numbering
+   promised a sequence — Series 2, Series 3 — that was never built and, once
+   the institution thinning made the pool a stable everyday-recognizable roster
+   rather than a first pass, stopped being the plan. Ash's call: one deck,
+   refreshed on the existing 25-day cadence for freshness, not rotated for
+   variety. "Core Set" is the standard TCG term for exactly that — the
+   always-in-print base set, as opposed to a numbered expansion. The rotation
+   machinery in engine/setbuild.js (selectionHash, capBands' seeded subset)
+   stays: it is what a future *printing* would use if this project ever adds
+   one, and ripping it out would cost more than the label change bought. */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -70,8 +81,8 @@ async function loadKey() {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
-  const slug = arg('--slug', 'series-1');
-  const title = arg('--title', 'Series 1');
+  const slug = arg('--slug', 'core');
+  const title = arg('--title', 'Core Set');
   const series = arg('--series', 'Creator Gacha');
   /* THE DEFAULT IS UNCAPPED, and the default is the part that matters.
      "The cap comes off" (2026-08-02) made the printing the whole pool, but the
