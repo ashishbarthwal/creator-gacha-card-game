@@ -2748,3 +2748,214 @@ data at deck scale. **Left open:** those same axes for a scoped subset later, pe
 and Support/Controller classes, which need the deferred axes to mean anything.
 
 </details>
+
+## The battle gets decisions in it (2026-08-05)
+
+<details>
+<summary><b>Elements come from <code>topicDetails.topicCategories</code> — the one genuinely new signal, and it is free</b> — A part costs nothing on a call already being made, and it asks what a channel IS rather than what it is called.</summary>
+
+`channels.list` bills **1 quota unit per CALL, not per part**, so `topicDetails` rides along on
+the `snippet,statistics` every hydrate already requests at zero cost. It returns Wikipedia URLs
+describing what a channel is about — `.../Video_game_culture`, `.../Rock_music` — which
+`engine/element.js` turns into a battle element.
+
+It is structurally the right *kind* of signal, and that is why it was taken over the other two
+free things on the same call. `brandingSettings.keywords` and `snippet.description` are prose the
+creator wrote; reading an element out of them is the name-matching that `looksInstitutional()` is
+deliberately kept narrow to avoid. A topic category is a **claim by a third party about what a
+thing is**, the same shape as the Wikidata P31 screen the sourcing already runs on.
+
+**Six elements, not the five first drawn.** Gaming to Tech to Knowledge to Music to Comedy to
+Lifestyle and back to Gaming, each beating the next. Five is the tidier ring and YouTube's own
+taxonomy does not fit it: with the first five spoken for, Food, Fashion, Fitness, Pets and Travel
+have nowhere honest to go, and those are not a rounding error on YouTube. Sport is the one genuine
+fold — it maps to Gaming, because both are the spectacle of somebody competing, and a seventh
+element to hold it would cost more to explain than it buys. The ring stays a simple cycle, so six
+does not make a player learn more than five would.
+
+**Unaligned is neutral in both directions, not weak.** The claim is sparse and smaller channels
+frequently carry none — precisely the cards the rest of the design works hardest to keep viable.
+So a channel with no claim can neither counter nor be countered. That also means the layer
+degrades to *nothing* rather than to nonsense on a set built before `topicDetails` was requested,
+which is every set that exists today: `tools/battle-balance.js` reports the live deck as 100%
+Unaligned, and it is right to.
+
+**Only the derived element ships**, never the URLs it came from — the same rule WP11 states for
+classification. What a set carries is the answer, not the evidence.
+
+</details>
+
+<details>
+<summary><b>Velocity is a re-expression of axes we already had, and it ships anyway</b> — R-squared 0.77 against the other three; it earns its place on legibility, at a measured cost.</summary>
+
+Subscribers-per-year looks like a free Momentum proxy, and it does separate the channel that
+reached 10M in two years from the one that took fifteen. It is **not new information**. With only
+`{subs, views, videos, age}` there are exactly three independent ratios plus a duration, and all
+four were already spent. The identity is exact in log space:
+
+    log(subs/age) = log(views/videos) + log(videos/age) - log(views/subs)
+                  =     punch         +     cadence     -     devotion
+
+Measured on the live 23,539-card deck, velocity regressed on those three gives **R-squared 0.77
+with coefficients +0.85 / +1.04 / -1.19** — the predicted +1/+1/-1 signature arriving on its own.
+The remaining ~23% is the anchors' differing scales and their clamped tails, not a new signal.
+
+It is kept because **a stat has to be legible as well as informative**, and nothing about "punch
+plus cadence minus devotion" is legible while "won its audience fast" is. The cost was measured
+rather than hoped: it buys a sixth class and a much flatter class distribution (the largest class
+falls from 35% to 26%, and all six are populated).
+
+One specific fear was checked and was wrong: momentum does **not** compound with the glass
+cannon. `corr(mom share, atk share) = -0.13`. It runs against defence (-0.71) and health (-0.55),
+so a Riser buys its ramp with toughness — a trade a player can see, which is the point.
+
+Recorded because the honest version of this decision is "we added a derived stat for
+readability", and the tempting version is "we found a new axis". Only one of those is true.
+
+</details>
+
+<details>
+<summary><b>Three combat layers, in this order: elements, then rows, then class verbs</b> — Each is worth less without the one before it, and a fight with nothing to decide is not a fight.</summary>
+
+The first battle engine had exactly two decisions in it — which five cards, and what order — and
+measured, that was too thin: a power-matched pair resolved 0%/100% and stayed there when per-hit
+variance was widened from 0.12 to 0.50, because a 5v5 runs ~25 attacks and independent noise
+averages out however wide each roll is. The fight was decided entirely by the stats.
+
+- **Elements** give a card a reason to be brought against a *specific* enemy, which is what turns
+  "pick your five best" into "pick your five best against **that**". The only layer needing new
+  data, and that data is free.
+- **Rows** (2 front / 3 back) make slot order a placement rather than a soak queue: the back rank
+  cannot be reached until the front falls, and pays 15% damage for the cover.
+- **Class verbs** — Taunt, Aegis, Backstab, Execute, Snowball, Adaptive. Last, not first, because
+  most of them have nothing to bite on without rows: Aegis protects a rank, Backstab bypasses one.
+
+**The AI commits its five before the player picks, and shows them.** That ordering is the whole
+reason the wheel is worth having — countering an opponent you cannot see is just picking your best
+five again. It costs the matchmaker its usual input (there is no player team yet), so
+`opponent.js` matches against the **ceiling of the player's draft** instead: a player who then
+builds for the matchup rather than for raw power is choosing to field a lower-rated team and beat
+it anyway, which is exactly the outcome the stat design exists to make possible.
+
+</details>
+
+<details>
+<summary><b>Speed had to buy something, because it was buying nothing</b> — The Assassin was the largest class in the deck and a card that had spent its whole budget on turn order.</summary>
+
+Speed decided turn order and only turn order. Measured, that made the **Assassin — 34% of the
+prototype deck, the single largest class — worthless**: median power 165 against a Carry's 427, a
+team of the five best Assassins could reach only 72% of a matched mixed team's rating, and it then
+lost 200 fights out of 200. Two of six classes (Assassin and Riser) were never picked by the
+matchmaker or by a player's auto-pick, and the rating was *correct* to skip them.
+
+The fix is not to rate them higher — that hands a player a card that under-performs its own
+number. HP survives, ATK damages, DEF mitigates, MOM ramps, so **speed acts again**: a chance at a
+second action in the round, anchored on the live deck's spread. Assassins went from 0% to viable
+at 85% of a control team's rating, and `powerOf` now sees the output so the matchmaker fields
+them.
+
+**The bug inside the fix, which is the part worth remembering.** The first threshold sat at SPD 90
+— the deck's median. Every stat is budget-scaled, so a giant's 129 and a small card's 98 land
+either side of it and the ratio between what they earn explodes from 1.3x to 4.9x. The share of
+small cards out-rating the median giant fell from 33.1% to 14.4%, straight through the floor the
+balance block allows. **A threshold near the middle of a distribution is a multiplier on whatever
+that distribution is sorted by; a threshold in its tail is just a floor.** Moved to 20.
+
+</details>
+
+<details>
+<summary><b><code>BUDGET_GAIN</code> 90 to 60, to keep the output where it always was</b> — Every "1 + stat/constant" term in the rating is another size amplifier, and the rating grew from one to three.</summary>
+
+`BUDGET_GAIN` is only the *first* step of the compression. `powerOf` multiplies several
+`1 + something/constant` terms together and every one of those somethings is a budget-scaled stat.
+With one such term (defence) a gain of 90 put the median giant at 1.16x the median small card.
+Momentum and speed added two more, and the same 90 compounded through three amplifiers: the ratio
+went to 1.26 and the headline claim — the share of small cards out-rating the median giant —
+collapsed from 33.1% to 17.0%, a hair above the 15% the balance block allows.
+
+Measured across the live deck, **60 puts it back**: ratio 1.15, overlap 32.0%, attack flat with
+size at 0.95. So the gain came down to hold the OUTPUT constant, not because the design changed
+its mind about what a big channel should be worth. **Retune it whenever a new multiplicative term
+enters `powerOf`, and retune it against `node tools/battle-balance.js` rather than by argument.**
+
+</details>
+
+<details>
+<summary><b>The synthetic test deck is rebuilt from the live deck's quantiles — the third attempt</b> — A fixture that violates the invariant the code is calibrated against tests nothing but the fixture.</summary>
+
+This fixture has now been wrong twice, in opposite directions, and both are the same failure.
+
+Round one drew size and views-per-video from independent cycles, so a 300M-subscriber channel
+could average 300 views a video. Because `punch` is de-sized against a trend fitted to the live
+deck, that drove every large channel's residual to the floor.
+
+Round two fixed punch by construction and left subscriber counts **log-uniform from 1e3 to 3e8**,
+which is nothing like YouTube. The fifth axis exposed it: 42.5% of the deck sat pegged at
+devotion = 100, 28.3% at cadence = 100, and one class took 51%. A fitted log-normal was still not
+enough — the real deck's counts run down to single digits, and clamping at 1,000 deleted the
+bottom two decades, which is exactly the band the headline claim is about (13% against 33%
+measured).
+
+Size and devotion now come from the **live deck's own quantiles**, while views-per-video stays on
+the engine's trend plus noise because that correlation is real and must be reproduced rather than
+sampled away. One further trap: interpolating straight from p99 (13.8M) to the maximum (511M)
+invents hundreds of 100M-subscriber channels where the real deck has **nine** — a quantile table
+is only as honest as its resolution where the curve bends hardest.
+
+A related sampling fix in the same block: the "even match is fair" test ran 9 teams times 40
+seeds and read as a 360-fight sample. It was not. A matched pair resolves near 0% or 100%, so
+re-rolling one matchup forty times is a single observation counted forty times; the effective
+sample was 9, and it swung between 44% and 71% on which nine teams were drawn. 40 teams times 10
+seeds is the same 400 fights and roughly four times the information.
+
+`tools/battle-balance.js` is the companion to all of this: the test asserts "still true", the tool
+says "how true, and where", and it runs against the real deck when one is built.
+
+</details>
+
+<details>
+<summary><b>Two silent data bugs, both structural rather than careless</b> — <code>parseSet</code> dropped <code>publishedAt</code>, and the opponent builder deduped by object rather than by channel.</summary>
+
+**`data/sets.js` was throwing `publishedAt` away.** `setbuild.js` puts it into every published
+record and `normalizeChannel` — written before the field existed — rebuilt the channel without it.
+Two of five battle axes are dead without the date, and the failure is silent: the card still
+renders, it just quietly falls back. This is the cost of a positive allowlist, which is still the
+right shape here for the reason `toCandidate` uses one; the price is that a new field must be
+added in two places or it goes nowhere. `element` would have hit the same wall.
+
+**`opponent.js` fielded the same creator twice.** A pool has one entry per channel; a **draft** is
+the output of five x10 pulls, and a gacha stacks duplicates by design. The draw-without-replacement
+removed the object it picked, which is not the same as removing the channel. Found in the
+prototype, where the opposition turned up with "Grim Grove" standing next to "Grim Grove" — which
+reads as a bug long before it reads as a strategy.
+
+Also fixed, and less a bug than an omission: the opponent builder picked purely on the smallest
+power gap, which looks correct and produces a team of near-clones, because cards of similar rating
+share a shape. The first prototype run fielded **five Carries, four of them Gaming** — dull to
+fight, trivially countered, and carrying no Titan or Bulwark, so the whole formation layer was
+inert on the AI's side. Power matching now decides which cards are *eligible* and variety decides
+between them, inside a 12% window, so `matchQuality` still means what it says.
+
+</details>
+
+<details>
+<summary><b>The arena prototype runs on an invented deck, not the real one</b> — The real set is gitignored and predates <code>topicDetails</code>, so it would leave the element layer inert.</summary>
+
+`prototype/` is a playable page for the whole loop: five packs, the opposition revealed, a
+formation to build, and the event log replayed. It runs on **fictional channels** for two reasons,
+and the second decides it.
+
+The real built set is gitignored on purpose — a set file carries real statistics, which can be
+neither refreshed inside the 30-day cap nor removed on an opt-out once in git history — so a page
+that only works on the machine holding that file is a page nobody else can open. And the real set
+predates `topicDetails`, so every card in it is Unaligned, which would leave the single most
+important thing the prototype exists to evaluate doing nothing at all. Inventing elements for real
+creators to work around that would be fabricating a claim about a real person.
+
+So the channels are invented and their topic claims are **authored rather than faked**: written in
+the real `topicCategories` shape and read by the real `elementFromTopics`, so the prototype
+exercises the shipping code path rather than a stub. The numbers are shaped like the live deck's
+measured quantiles, so the fight feels the way the game will rather than the way a tidy fixture
+would. Nothing under `prototype/` is in `build-site.js`'s copy allowlist, so none of it ships.
+
+</details>

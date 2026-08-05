@@ -16,16 +16,53 @@
    the log is already the interchange format, so a turn-by-turn resolver would
    emit the same events and every renderer would keep working.
 
-   ── WHAT IS DELIBERATELY NOT HERE ─────────────────────────────────────────
-   No healing, no buffs, no debuffs, no per-class abilities. The proposal's
-   Support and Controller classes need Community and Consistency, which need
-   per-video data this project cannot afford yet (see battle-stats.js). Classes
-   here are a READ of a card's shape, not a behaviour switch. Combat depth
-   comes second, after the loop proves it is worth deepening. */
+   ── WHAT THE THREE LAYERS ARE FOR ─────────────────────────────────────────
+   The first version of this file had exactly two decisions in it: which five
+   cards you bring, and what order you slot them. Measured, that was too thin —
+   a power-matched pair resolved 0% / 100% and stayed there when per-hit
+   variance was widened from 0.12 to 0.50, because a 5v5 runs ~25 attacks and
+   independent noise averages out over that many trials however wide each roll
+   is. The fight was decided entirely by the stats, so there was nothing to
+   decide.
 
-import { battleStatsFrom, powerOf, MITIGATION_K, CRIT_MULTIPLIER } from './battle-stats.js';
+   Three layers were added, and the ORDER matters — each one is worth less
+   without the one before it:
+
+     1. ELEMENTS  give a card a reason to be brought against a SPECIFIC enemy,
+        which is what turns "pick your five best" into "pick your five best
+        AGAINST THAT". It is the only one of the three that needs new data, and
+        that data is free (engine/element.js).
+     2. ROWS      make slot order a real placement rather than a soak queue:
+        the back rank cannot be reached until the front falls, and pays for it
+        in damage.
+     3. CLASSES   were labels; now each has a verb. Without rows most of the
+        verbs have nothing to bite on — Aegis protects a rank, Backstab bypasses
+        one — which is why classes come last rather than first.
+
+   ── WHAT IS STILL DELIBERATELY NOT HERE ───────────────────────────────────
+   No healing, no buffs, no debuffs, no targeted player choices mid-fight. The
+   proposal's Support and Controller classes need Community and Consistency,
+   which need per-video data this project cannot afford (see battle-stats.js).
+   Combat depth stops here until the loop proves it is worth deepening. */
+
+import {
+  battleStatsFrom, powerOf, momentumMultiplier,
+  MITIGATION_K, CRIT_MULTIPLIER, ADAPTIVE_BONUS, extraActionChance,
+} from './battle-stats.js';
+import { elementMultiplier, matchupOf } from './element.js';
 
 export const TEAM_SIZE = 5;
+
+/* Slots 0-1 are the front rank, 2-4 the back. Two and three rather than a
+   free split: a formation the player can empty is a formation the player will
+   empty, and "everyone in the back" would delete the layer. The asymmetry is
+   deliberate too — two slots that take every hit and three that pay 15% damage
+   for cover is a trade with an obvious question attached (who can survive
+   there?), which is what a decision needs to be. */
+export const FRONT_SLOTS = 2;
+export const ROWS = ['front', 'back'];
+
+export const rowForSlot = slot => (slot < FRONT_SLOTS ? 'front' : 'back');
 
 /* A fight that cannot end is a hung UI, so rounds are capped and a capped
    fight is decided on remaining health rather than called a draw — two teams
@@ -44,26 +81,75 @@ export const MAX_ROUNDS = 30;
 
 /* A little noise so identical matchups do not always play out identically.
    Deliberately narrow — this is texture, not a coin flip that overturns a
-   well-built team. */
+   well-built team. Widening it was tried and measured; see the header. */
 const VARIANCE = 0.25;
 
+/* The cost of cover. A back-rank attacker is hitting past its own front line,
+   and pays for the protection it is enjoying. Small enough that stacking your
+   damage in the back is a real option, large enough that it is not free. */
+const BACK_RANK_ATTACK = 0.85;
+
+/* ── THE CLASS VERBS ───────────────────────────────────────────────────────
+   One each, and each one bites on the row layer, which is why classes are
+   worth more than the sum of their stats only now that rows exist.
+
+   Exported as data rather than buried in the resolver because the card face
+   has to state what a class DOES — a class the player cannot read is back to
+   being a label. */
+export const CLASS_ABILITY = {
+  Titan: {
+    name: 'Taunt',
+    text: 'Enemy attacks aimed at its rank strike it instead. Assassins ignore this.',
+  },
+  Bulwark: {
+    name: 'Aegis',
+    text: 'While it holds the front rank, the whole back rank takes 25% less damage.',
+  },
+  Assassin: {
+    name: 'Backstab',
+    text: 'Ignores the front rank and hits the enemy’s hardest hitter. +25% on round one.',
+  },
+  Carry: {
+    name: 'Execute',
+    text: 'Deals 60% more to any target below 30% health.',
+  },
+  Riser: {
+    name: 'Snowball',
+    text: 'Its momentum ramp counts double.',
+  },
+  Balanced: {
+    name: 'Adaptive',
+    /* The number is read off the constant rather than typed, so the card face
+       cannot end up describing a bonus the engine stopped giving. */
+    text: `Has no special, and carries +${Math.round((ADAPTIVE_BONUS - 1) * 100)}% on every stat instead.`,
+  },
+};
+
+const AEGIS_REDUCTION = 0.75;
+const EXECUTE_BONUS = 1.60;
+const EXECUTE_THRESHOLD = 0.30;
+const ASSASSIN_OPENER = 1.25;
+
 /* Turn a card into a combatant: battle stats plus the mutable fight state.
-   `card` keeps whatever the caller passed (a channel, a collection entry) so
-   the UI can render a real card from an event without a second lookup. */
-export function toCombatant(channel, now = Date.now()) {
+   `channel` is kept so the UI can render a real card from an event without a
+   second lookup, and `slot` is kept because the row rules and the tie-break in
+   turn order both need to know where a unit stands. */
+export function toCombatant(channel, now = Date.now(), slot = 0) {
   const stats = battleStatsFrom(channel, now);
   return {
     id: String(channel?.id ?? ''),
     title: String(channel?.title ?? ''),
     channel,
     ...stats,
+    slot,
+    row: rowForSlot(slot),
     maxHp: stats.hp,
     currentHp: stats.hp,
   };
 }
 
 export function makeTeam(channels, now = Date.now()) {
-  return channels.slice(0, TEAM_SIZE).map(ch => toCombatant(ch, now));
+  return channels.slice(0, TEAM_SIZE).map((ch, slot) => toCombatant(ch, now, slot));
 }
 
 export function teamPower(team) {
@@ -72,21 +158,78 @@ export function teamPower(team) {
 
 const isAlive = unit => unit.currentHp > 0;
 
-/* Target selection: the first living enemy in team order. Predictable on
-   purpose — a player who put their tank in slot 1 should see it soak first,
-   and "focus the weakest" would make team ORDER the only decision that
-   mattered while making it invisible. */
-function firstAlive(team) {
-  return team.find(isAlive) ?? null;
+/* ── TARGETING ─────────────────────────────────────────────────────────────
+   The whole row layer lives in this one function, which is the point: rows are
+   a rule about WHO GETS HIT, not a modifier scattered through the damage
+   formula. Everything else about a rank — the 15% attack cost, Aegis — is
+   applied where the damage is computed.
+
+   Precedence, and each step is a decision the player made:
+     1. An Assassin ignores the wall entirely and goes for the hardest hitter
+        it can find in the back. That is the counter to stacking your damage
+        behind a Titan, and it is why "Assassins ignore taunt" is not a special
+        case but the definition of the class.
+     2. Otherwise the front rank is the only reachable rank while any of it
+        stands. When it falls, the back rank becomes the front.
+     3. Inside the reachable rank, a living Titan takes the hit. */
+export function pickTarget(attacker, enemies, { ignoreTaunt = false } = {}) {
+  const living = enemies.filter(isAlive);
+  if (!living.length) return null;
+
+  const back = living.filter(u => u.row === 'back');
+  if (attacker?.class === 'Assassin' && back.length) {
+    return back.reduce((best, u) => (u.atk > best.atk ? u : best), back[0]);
+  }
+
+  const front = living.filter(u => u.row === 'front');
+  const rank = front.length ? front : back;
+  if (!ignoreTaunt) {
+    const taunting = rank.find(u => u.class === 'Titan');
+    if (taunting) return taunting;
+  }
+  return rank[0];
+}
+
+/* Is this unit's back rank currently covered? Aegis is a TEAM effect that only
+   works from the front rank, which is the formation decision it exists to
+   create: your Bulwark protects everyone else precisely where it is most
+   exposed. Non-stacking — two Bulwarks are redundant, which is information a
+   player can act on. */
+function aegisActive(team) {
+  return team.some(u => isAlive(u) && u.class === 'Bulwark' && u.row === 'front');
 }
 
 /* One attack. Returns the event rather than mutating and reporting separately,
-   so the log is the single source of truth about what happened. */
-function strike(attacker, defender, rng) {
+   so the log is the single source of truth about what happened. Every
+   multiplier that applied is named in `tags`, so the UI can explain a number
+   instead of just showing it — a 300-damage hit that says why is the
+   difference between a system a player can learn and one they cannot. */
+function strike(attacker, defender, defenderTeam, round, rng) {
+  const tags = [];
+
+  const ramp = momentumMultiplier(attacker, round, attacker.class === 'Riser');
+  if (ramp > 1.001) tags.push(attacker.class === 'Riser' ? 'snowball' : 'momentum');
+
   const mitigation = MITIGATION_K / (MITIGATION_K + defender.def);
+
+  const element = elementMultiplier(attacker.element, defender.element);
+  const matchup = matchupOf(attacker.element, defender.element);
+
+  let situational = 1;
+  if (attacker.row === 'back') { situational *= BACK_RANK_ATTACK; tags.push('reaching'); }
+  if (defender.row === 'back' && aegisActive(defenderTeam)) { situational *= AEGIS_REDUCTION; tags.push('aegis'); }
+  if (attacker.class === 'Carry' && defender.currentHp / defender.maxHp < EXECUTE_THRESHOLD) {
+    situational *= EXECUTE_BONUS; tags.push('execute');
+  }
+  if (attacker.class === 'Assassin') {
+    if (defender.row === 'back') tags.push('backstab');
+    if (round === 1) { situational *= ASSASSIN_OPENER; tags.push('opener'); }
+  }
+  if (defender.class === 'Titan' && defender.row === 'front') tags.push('taunt');
+
   const swing = 1 + (rng() * 2 - 1) * VARIANCE;
   const crit = rng() < attacker.crit;
-  const raw = attacker.atk * mitigation * swing * (crit ? CRIT_MULTIPLIER : 1);
+  const raw = attacker.atk * ramp * mitigation * element * situational * swing * (crit ? CRIT_MULTIPLIER : 1);
   const damage = Math.max(1, Math.round(raw));
 
   defender.currentHp = Math.max(0, defender.currentHp - damage);
@@ -95,25 +238,46 @@ function strike(attacker, defender, rng) {
     type: 'attack',
     attacker: attacker.id,
     attackerTitle: attacker.title,
+    attackerSlot: attacker.slot,
+    attackerClass: attacker.class,
+    attackerElement: attacker.element,
     defender: defender.id,
     defenderTitle: defender.title,
+    defenderSlot: defender.slot,
+    defenderElement: defender.element,
     damage,
     crit,
+    matchup,
+    tags,
     defenderHp: defender.currentHp,
+    defenderMaxHp: defender.maxHp,
     defeated: defender.currentHp === 0,
   };
 }
 
-/* Turn order for one round: everyone alive, fastest first. Ties break on the
-   unit's fixed slot rather than on rng, so a seeded fight is reproducible even
-   when two cards share a Speed — which they often do, since SPD is rounded. */
-function turnOrder(teams) {
+/* Turn order for one round: everyone alive, fastest first, then the fast ones
+   again. Ties break on the unit's fixed slot rather than on rng, so a seeded
+   fight is reproducible even when two cards share a Speed — which they often
+   do, since SPD is rounded.
+
+   THE SECOND PASS IS WHAT SPEED BUYS (see extraActionChance in
+   battle-stats.js). Extra turns are rolled once, here, at the top of the
+   round, and they all sort AFTER every first action rather than interleaving.
+   That ordering is a readability decision as much as a balance one: "everyone
+   acts, then the quick ones act again" is a sentence a player can follow while
+   watching, where a fast unit taking two turns back-to-back before a slower
+   one has moved at all reads as the replay having skipped something. */
+function turnOrder(teams, rng) {
   const units = [];
   for (const [side, team] of teams.entries()) {
-    team.forEach((unit, slot) => { if (isAlive(unit)) units.push({ side, slot, unit }); });
+    team.forEach((unit, slot) => {
+      if (!isAlive(unit)) return;
+      units.push({ side, slot, unit, extra: false });
+      if (rng() < extraActionChance(unit.spd)) units.push({ side, slot, unit, extra: true });
+    });
   }
   return units.sort((a, b) =>
-    b.unit.spd - a.unit.spd || a.side - b.side || a.slot - b.slot);
+    Number(a.extra) - Number(b.extra) || b.unit.spd - a.unit.spd || a.side - b.side || a.slot - b.slot);
 }
 
 function healthFraction(team) {
@@ -136,13 +300,16 @@ export function resolveBattle(teamA, teamB, rng = Math.random) {
     round += 1;
     log.push({ type: 'round', round });
 
-    for (const { side, unit } of turnOrder([teamA, teamB])) {
+    for (const { side, unit, extra } of turnOrder([teamA, teamB], rng)) {
       /* Re-checked every turn: a unit that was alive when the order was fixed
          may have been killed earlier in this same round. */
       if (!isAlive(unit)) continue;
-      const target = firstAlive(side === 0 ? teamB : teamA);
+      const enemies = side === 0 ? teamB : teamA;
+      const target = pickTarget(unit, enemies);
       if (!target) break;
-      log.push({ round, side: side === 0 ? 'a' : 'b', ...strike(unit, target, rng) });
+      const event = strike(unit, target, enemies, round, rng);
+      if (extra) event.tags.push('swift');
+      log.push({ round, side: side === 0 ? 'a' : 'b', ...event });
     }
   }
 
@@ -160,7 +327,12 @@ export function resolveBattle(teamA, teamB, rng = Math.random) {
     winner = fa === fb ? 'draw' : (fa > fb ? 'a' : 'b');
   }
 
-  log.push({ type: 'end', winner, rounds: round });
+  log.push({
+    type: 'end',
+    winner,
+    rounds: round,
+    health: { a: healthFraction(teamA), b: healthFraction(teamB) },
+  });
 
   return {
     winner,
@@ -176,4 +348,24 @@ export function resolveBattle(teamA, teamB, rng = Math.random) {
 /* Convenience for callers holding raw channels rather than combatants. */
 export function battle(channelsA, channelsB, { rng = Math.random, now = Date.now() } = {}) {
   return resolveBattle(makeTeam(channelsA, now), makeTeam(channelsB, now), rng);
+}
+
+/* ── PREVIEW ───────────────────────────────────────────────────────────────
+   What the team-builder needs before a fight is fought: for each of my cards,
+   how does it read against the enemy line-up I can already see? Exported from
+   here rather than computed in the UI so the advice a player is given comes
+   out of the same rules the fight will use. */
+export function matchupPreview(channels, enemyChannels, now = Date.now()) {
+  const enemies = enemyChannels.map(ch => battleStatsFrom(ch, now));
+  return channels.map(ch => {
+    const mine = battleStatsFrom(ch, now);
+    let strong = 0;
+    let weak = 0;
+    for (const foe of enemies) {
+      const verdict = matchupOf(mine.element, foe.element);
+      if (verdict === 'strong') strong += 1;
+      else if (verdict === 'weak') weak += 1;
+    }
+    return { id: String(ch?.id ?? ''), element: mine.element, strong, weak, net: strong - weak };
+  });
 }

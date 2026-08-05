@@ -1,0 +1,477 @@
+/* prototype/arena — styles for the battle prototype.
+
+   Self-contained rather than importing ../styles.css: the shipped sheet also
+   carries the app's page layout, banner and collection rules, none of which
+   this page has. What IS carried over verbatim is the design vocabulary — the
+   three fonts, the plum stage, and the five tier ramps — because a battle card
+   has to be recognisably the same object the player pulled. */
+
+:root {
+  --bg0: #150e1f;
+  --ink: #f4effa;
+  --muted: #a795c2;
+  --line: rgba(255, 255, 255, 0.09);
+  --panel: rgba(255, 255, 255, 0.04);
+  --red: #ff2d55;
+  --focus: rgba(255, 45, 85, 0.75);
+  --page: 1240px;
+
+  --font-display: 'Anton', 'Arial Narrow', Impact, sans-serif;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  /* One hue per battle stat, used by the bars, the damage numbers and the
+     legend, so the same colour always means the same thing. */
+  --s-hp: #4fd67f;
+  --s-atk: #ff5a72;
+  --s-def: #57b0ff;
+  --s-spd: #ffd166;
+  --s-mom: #b06cff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 620px at 50% -10%, #33224e 0%, transparent 60%),
+    radial-gradient(900px 520px at 105% 110%, #2a1030 0%, transparent 55%),
+    var(--bg0);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+::selection { background: var(--red); color: #fff; }
+
+:where(button, a, select, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.wrap { max-width: var(--page); margin: 0 auto; padding: 0 20px; }
+
+/* ── header ─────────────────────────────────────────────────────────────── */
+.site-head { padding: 26px 0 10px; }
+.brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.play-glyph {
+  flex: none; width: 0; height: 0;
+  border-left: 20px solid var(--red);
+  border-top: 13px solid transparent;
+  border-bottom: 13px solid transparent;
+  filter: drop-shadow(0 0 10px rgba(255, 45, 85, 0.55));
+}
+h1 {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(26px, 5vw, 40px); letter-spacing: 1px;
+  text-transform: uppercase; line-height: 1;
+}
+.proto-tag {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--red);
+  border: 1px solid currentColor; border-radius: 4px; padding: 3px 7px;
+}
+.tagline { color: var(--muted); margin-top: 8px; font-size: 14px; max-width: 74ch; }
+
+/* ── phase stepper ──────────────────────────────────────────────────────── */
+.steps {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin: 18px 0 4px; padding: 0; list-style: none;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase;
+}
+.steps li {
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); background: var(--panel);
+}
+.steps li[aria-current='step'] {
+  color: #fff; border-color: var(--red);
+  background: linear-gradient(180deg, rgba(255, 45, 85, 0.3), rgba(255, 45, 85, 0.12));
+  box-shadow: 0 0 18px -6px var(--red);
+}
+.steps li.done { color: #cdb9e6; border-color: rgba(255, 255, 255, 0.2); }
+
+/* ── panels ─────────────────────────────────────────────────────────────── */
+.panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; padding: 18px; margin-top: 18px;
+}
+.panel > header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.panel h2 {
+  font-family: var(--font-display); font-weight: 400; font-size: 21px;
+  letter-spacing: 0.6px; text-transform: uppercase;
+}
+.panel .hint { color: var(--muted); font-size: 13px; flex: 1 1 260px; }
+
+button {
+  font-family: var(--font-body); font-weight: 700; font-size: 14px;
+  color: var(--ink); background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 16px; cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+}
+button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.22); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary {
+  background: linear-gradient(180deg, #ff4767, var(--red));
+  border-color: transparent; color: #fff;
+  box-shadow: 0 8px 22px -10px var(--red);
+}
+button.primary:hover:not(:disabled) { background: linear-gradient(180deg, #ff5e79, #ff1745); }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.spacer { flex: 1; }
+.readout { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.readout b { color: var(--ink); }
+
+/* ── tier ramps — identical to the shipped card, so a battle card is the same
+   object the player pulled ─────────────────────────────────────────────── */
+.r-N   { --t-hi:#c9ced8; --t-mid:#828a97; --t-lo:#4d535e; --t-soft:#a7adb8; --t-glow:#9aa3b2; --t-ink:#12151b; }
+.r-R   { --t-hi:#f6f9fd; --t-mid:#c2ccda; --t-lo:#93a3b8; --t-soft:#e7eef7; --t-glow:#cdd8ea; --t-ink:#0f1622; }
+.r-SR  { --t-hi:#ffe9a6; --t-mid:#eec04b; --t-lo:#cf992a; --t-soft:#ffd977; --t-glow:#ffcf6b; --t-ink:#241a05; }
+.r-SSR { --t-hi:#eaf7ff; --t-mid:#a9d4e8; --t-lo:#7fbfe0; --t-soft:#dff3ff; --t-glow:#7fe7ff; --t-ink:#0c1524; }
+.r-UR  { --t-hi:#ffe4bf; --t-mid:#ff5566; --t-lo:#b3162e; --t-soft:#ffb066; --t-glow:#ff3b57; --t-ink:#2a060c; }
+
+/* ── THE BATTLE CARD ────────────────────────────────────────────────────────
+   Same metal bevel as the collection card wrapped around a denser interior.
+   Every internal size is a container-query unit so one markup renders at 120px
+   in a 50-card draft and at 220px in the arena with no second stylesheet. */
+.bcard {
+  container-type: inline-size;
+  position: relative;
+  aspect-ratio: 5 / 7.4;
+  border-radius: clamp(9px, 5cqw, 16px);
+  padding: clamp(2px, 1.4cqw, 4px);
+  background: conic-gradient(from 210deg,
+    var(--t-mid), var(--t-hi), var(--t-lo), var(--t-soft),
+    var(--t-mid), var(--t-hi), var(--t-lo), var(--t-mid));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.bcard-inner {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px, 1.2cqw, 5px);
+  padding: clamp(5px, 3cqw, 9px);
+  border-radius: clamp(7px, 4cqw, 13px);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--el) 20%, transparent) 0%, transparent 60%),
+    linear-gradient(180deg, #171d2c 0%, #0d1120 100%);
+}
+
+.bcard-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+
+.rarity-badge {
+  font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(9px, 4.4cqw, 14px); line-height: 1; letter-spacing: 0.5px;
+  padding: clamp(2px, 1.3cqw, 4px) clamp(4px, 2cqw, 7px);
+  border-radius: clamp(4px, 2cqw, 6px);
+  color: var(--t-ink);
+  background: linear-gradient(160deg, var(--t-hi), var(--t-lo));
+  box-shadow: 0 0 clamp(5px, 2.5cqw, 10px) -2px var(--t-glow);
+}
+
+/* The two chips are the card's identity line. Element on the top right and
+   class under the portrait, so the eye reads "what is it about" then "what
+   does it do" in the order a player asks. */
+.el-chip, .cls-chip {
+  display: inline-flex; align-items: center; gap: clamp(2px, 1.2cqw, 4px);
+  font-family: var(--font-mono); font-weight: 700;
+  font-size: clamp(7px, 3.1cqw, 10px); letter-spacing: 0.6px; text-transform: uppercase;
+  padding: clamp(2px, 1.2cqw, 4px) clamp(4px, 2cqw, 7px);
+  border-radius: 999px; white-space: nowrap;
+}
+.el-chip {
+  color: var(--el);
+  border: 1px solid color-mix(in srgb, var(--el) 55%, transparent);
+  background: color-mix(in srgb, var(--el) 14%, transparent);
+}
+.el-chip i { font-style: normal; font-size: 1.2em; line-height: 1; }
+
+.cls-chip {
+  align-self: center;
+  color: #dfe6f5;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.07);
+}
+.cls-chip i { font-style: normal; opacity: 0.85; }
+.cls-chip.c-Titan    { color: var(--s-hp);  border-color: color-mix(in srgb, var(--s-hp) 45%, transparent); }
+.cls-chip.c-Carry    { color: var(--s-atk); border-color: color-mix(in srgb, var(--s-atk) 45%, transparent); }
+.cls-chip.c-Bulwark  { color: var(--s-def); border-color: color-mix(in srgb, var(--s-def) 45%, transparent); }
+.cls-chip.c-Assassin { color: var(--s-spd); border-color: color-mix(in srgb, var(--s-spd) 45%, transparent); }
+.cls-chip.c-Riser    { color: var(--s-mom); border-color: color-mix(in srgb, var(--s-mom) 45%, transparent); }
+
+.bcard-face { display: flex; align-items: center; gap: clamp(4px, 2.4cqw, 8px); min-width: 0; }
+
+/* The portrait keeps its metal ring but gives up the centre of the card. It is
+   still the biggest single thing on the face, which is what stops a battle
+   card reading as a spreadsheet. */
+.bavatar {
+  flex: none;
+  width: clamp(28px, 27cqw, 62px); height: clamp(28px, 27cqw, 62px);
+  border-radius: 50%; padding: clamp(1px, 1cqw, 3px);
+  background: conic-gradient(from 140deg, var(--t-lo), var(--t-hi), var(--t-glow), var(--t-soft), var(--t-lo), var(--t-hi), var(--t-lo));
+  box-shadow: 0 0 clamp(5px, 3cqw, 14px) -4px var(--t-glow);
+  display: block;
+}
+.bavatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; background: #223049; }
+
+.bcard-id { min-width: 0; flex: 1; }
+.bcard-id h3 {
+  font-size: clamp(9px, 4.4cqw, 14px); font-weight: 700; line-height: 1.15;
+  overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bsubs {
+  margin-top: 2px; color: var(--muted);
+  font-family: var(--font-mono); font-size: clamp(6.5px, 2.9cqw, 9.5px);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── the stat block ─────────────────────────────────────────────────────── */
+.bstats { display: grid; gap: clamp(1px, 0.9cqw, 3px); margin-top: auto; }
+.bstat {
+  display: grid;
+  grid-template-columns: clamp(17px, 8.5cqw, 26px) 1fr clamp(19px, 10cqw, 32px);
+  align-items: center; gap: clamp(3px, 1.6cqw, 6px);
+}
+.bstat em {
+  font-style: normal; font-family: var(--font-mono);
+  font-size: clamp(6px, 2.7cqw, 9px); letter-spacing: 0.4px; color: var(--muted);
+}
+.bstat .bar {
+  height: clamp(4px, 2cqw, 7px); border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08); overflow: hidden;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+.bstat .bar i {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, transparent), var(--c));
+  box-shadow: 0 0 8px -2px var(--c);
+}
+.bstat b {
+  font-family: var(--font-mono); font-weight: 700;
+  font-size: clamp(7.5px, 3.3cqw, 11px); text-align: right; color: #e9edf7;
+}
+.s-hp  { --c: var(--s-hp); }
+.s-atk { --c: var(--s-atk); }
+.s-def { --c: var(--s-def); }
+.s-spd { --c: var(--s-spd); }
+.s-mom { --c: var(--s-mom); }
+.s-hp em  { color: var(--s-hp); }
+.s-atk em { color: var(--s-atk); }
+.s-def em { color: var(--s-def); }
+.s-spd em { color: var(--s-spd); }
+.s-mom em { color: var(--s-mom); }
+
+.bability {
+  font-size: clamp(6.5px, 2.9cqw, 9.5px); line-height: 1.3; color: var(--muted);
+  padding-top: clamp(2px, 1.4cqw, 5px); border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bability b { color: #dfe6f5; }
+
+/* Matchup flag against the line-up the player can already see. Sits on the
+   card because that is where the decision it informs gets made. */
+.matchup {
+  position: absolute; top: clamp(26px, 13cqw, 40px); right: clamp(3px, 2cqw, 7px);
+  font-family: var(--font-mono); font-weight: 700; font-size: clamp(7px, 3cqw, 10px);
+  padding: 2px 5px; border-radius: 5px; letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.55); border: 1px solid currentColor;
+}
+.matchup.m-good { color: #6ee7a0; }
+.matchup.m-bad  { color: #ff7d92; }
+.matchup.m-flat { color: var(--muted); }
+
+/* ── health, only while fighting ────────────────────────────────────────── */
+.hpbar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: clamp(11px, 5.5cqw, 17px);
+  background: rgba(0, 0, 0, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex; align-items: center;
+}
+.hpbar i {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg, #63e88f, #2fa85f);
+  transition: width 0.28s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.hpbar.is-low i { background: linear-gradient(180deg, #ff8f6b, #d63b2f); }
+.hpbar span {
+  position: relative; z-index: 1; width: 100%; text-align: center;
+  font-family: var(--font-mono); font-weight: 700; font-size: clamp(7px, 3cqw, 10px);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* ── card at small widths: shed detail rather than shear it ─────────────── */
+@container (max-width: 168px) {
+  .bability { display: none; }
+  .bsubs { display: none; }
+}
+@container (max-width: 124px) {
+  .bstat.s-mom, .bstat.s-def { display: none; }
+  .cls-chip { font-size: 7px; padding: 1px 4px; }
+}
+
+/* ── draft grid ─────────────────────────────────────────────────────────── */
+.draft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(122px, 1fr));
+  gap: 12px;
+}
+.draft-grid .pick {
+  padding: 0; border: 0; background: none; border-radius: 14px;
+  cursor: pointer; transition: transform 0.14s ease;
+}
+.draft-grid .pick:hover { transform: translateY(-4px); }
+.draft-grid .pick[aria-pressed='true'] .bcard {
+  box-shadow: 0 0 0 3px var(--red), 0 14px 30px -10px rgba(0, 0, 0, 0.7);
+}
+.draft-grid .pick.is-fielded { opacity: 0.32; }
+.draft-grid .pick.is-fielded .bcard { filter: saturate(0.4); }
+
+.dealt { animation: dealt 0.34s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes dealt {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── line-up slots ──────────────────────────────────────────────────────── */
+.ranks { display: grid; gap: 14px; }
+.rank { display: grid; gap: 8px; }
+.rank-label {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.rank-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.rank-cards { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.slot {
+  width: 148px; aspect-ratio: 5 / 7.4;
+  border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid; place-items: center; padding: 0;
+  color: var(--muted); font-family: var(--font-mono); font-size: 11px;
+  cursor: pointer;
+}
+.slot:hover, .slot.is-target { border-color: var(--red); color: var(--ink); background: rgba(255, 45, 85, 0.08); }
+.slot.filled { border-style: solid; border-color: transparent; background: none; }
+.slot .bcard { width: 100%; }
+
+.enemy .slot { cursor: default; }
+.enemy .slot:hover { border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.03); }
+
+/* ── the arena ──────────────────────────────────────────────────────────── */
+.arena { display: grid; gap: 10px; }
+.side { display: grid; gap: 8px; }
+.side-head {
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: var(--muted);
+}
+.side-head b { color: var(--ink); letter-spacing: 0.5px; }
+.line { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
+.line .bcard { width: clamp(96px, 15vw, 146px); }
+/* The front rank carries a faint rule under it on the enemy side and over it
+   on yours, so the two ranks read as facing rather than as a list. Row ORDER
+   is done in the DOM (arena.js) rather than with grid areas — the row nearest
+   the middle must not be able to drift away from the row the engine calls
+   front. */
+.side.enemy .line.front { border-bottom: 1px solid rgba(255, 255, 255, 0.07); padding-bottom: 6px; }
+.side.mine  .line.front { border-top: 1px solid rgba(255, 255, 255, 0.07); padding-top: 6px; }
+
+.bcard.is-acting { box-shadow: 0 0 0 3px #fff2, 0 0 26px -4px var(--el); transform: translateY(-6px) scale(1.03); }
+.bcard.is-hit    { animation: shake 0.24s ease; }
+.bcard.is-down   { opacity: 0.35; filter: grayscale(0.8); }
+@keyframes shake {
+  0%, 100% { transform: none; }
+  25% { transform: translateX(-5px) rotate(-1.5deg); }
+  75% { transform: translateX(5px) rotate(1.5deg); }
+}
+
+.vs-strip {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 8px 0; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+}
+.vs-strip .round {
+  font-family: var(--font-display); font-size: 22px; letter-spacing: 1px;
+  color: var(--ink); text-transform: uppercase;
+}
+
+/* Damage numbers fly off the card that took the hit. */
+.pop {
+  position: absolute; left: 50%; top: 38%;
+  transform: translateX(-50%);
+  font-family: var(--font-display); font-size: 22px; letter-spacing: 0.5px;
+  color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+  pointer-events: none; z-index: 5;
+  animation: pop 0.85s ease-out forwards;
+}
+.pop.crit { color: #ffd166; font-size: 28px; }
+.pop.strong { color: #6ee7a0; }
+.pop.weak { color: #9fb0c9; font-size: 18px; }
+.pop small { display: block; font-family: var(--font-mono); font-size: 8px; letter-spacing: 1px; }
+@keyframes pop {
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+  22%  { opacity: 1; transform: translate(-50%, -6px) scale(1.12); }
+  100% { opacity: 0; transform: translate(-50%, -38px) scale(1); }
+}
+
+/* ── log ────────────────────────────────────────────────────────────────── */
+.log {
+  margin-top: 12px; max-height: 190px; overflow-y: auto;
+  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.6;
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.log p { color: var(--muted); }
+.log p.round-line { color: #cdb9e6; margin-top: 6px; letter-spacing: 1px; text-transform: uppercase; font-size: 10px; }
+.log p.round-line:first-child { margin-top: 0; }
+.log .a { color: #ffb3c1; }
+.log .b { color: #a8d5ff; }
+.log .tag { color: #ffd166; }
+.log .dead { color: var(--red); font-weight: 700; }
+
+/* ── result ─────────────────────────────────────────────────────────────── */
+.verdict {
+  text-align: center; padding: 20px 12px;
+  font-family: var(--font-display); font-size: clamp(30px, 7vw, 56px);
+  letter-spacing: 2px; text-transform: uppercase; line-height: 1;
+}
+.verdict.win  { color: #6ee7a0; text-shadow: 0 0 40px rgba(110, 231, 160, 0.4); }
+.verdict.loss { color: var(--red); text-shadow: 0 0 40px rgba(255, 45, 85, 0.4); }
+.verdict.draw { color: var(--muted); }
+.verdict small { display: block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; color: var(--muted); margin-top: 10px; }
+
+/* ── the wheel legend ───────────────────────────────────────────────────── */
+.wheel { display: flex; gap: 8px; flex-wrap: wrap; }
+.wheel li {
+  list-style: none; display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 5px 9px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--el) 45%, transparent);
+  background: color-mix(in srgb, var(--el) 12%, transparent);
+  color: var(--el);
+}
+.wheel li i { font-style: normal; }
+.wheel li span { color: var(--muted); }
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.legend b { color: var(--ink); }
+.legend .key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+footer.note {
+  margin-top: 26px; color: var(--muted); font-size: 12px; line-height: 1.7;
+}
+footer.note code { font-family: var(--font-mono); color: #cdb9e6; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

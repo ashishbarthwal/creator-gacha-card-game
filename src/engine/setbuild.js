@@ -25,6 +25,7 @@
    reach a shipped file by omission. */
 
 import { RARITY, RARITY_ORDER, rarityFromSubs } from './core.js';
+import { elementOf } from './element.js';
 
 /* Cards drawn in one x10 — the pull size the guard reasons about, since that is
    the unit a player experiences as "the same card again". */
@@ -343,6 +344,15 @@ function toPublished(channel) {
        it sits outside the 30-day statistics cap that keeps built sets out of
        git; it is the same class of fact as the title or the handle. */
     publishedAt: String(channel.publishedAt ?? ''),
+    /* THE DERIVED ELEMENT, NOT THE CLAIMS IT CAME FROM. `topicDetails` hands
+       back several Wikipedia URLs per channel; storing them would add ~4
+       strings to every one of 23.5k records to re-run a pure function that
+       already ran at build. WP11 states the same rule for classification —
+       "store derived TAGS only, never raw descriptions" — and it applies for
+       the same reason here: what ships should be the answer, not the evidence.
+       Sets built before topicDetails was requested emit 'Unaligned', which is
+       exactly what an absent claim means, so an old set stays valid. */
+    element: elementOf(channel),
   };
   /* Omitted rather than zeroed when hidden, matching the live API and the
      typedef — the core reads absence as the bottom band on purpose. */

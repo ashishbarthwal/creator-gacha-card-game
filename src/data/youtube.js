@@ -5,6 +5,27 @@
 
 const YT_ENDPOINT = 'https://www.googleapis.com/youtube/v3/channels';
 
+/* THE PARTS A HYDRATE ASKS FOR, NAMED ONCE.
+
+   channels.list costs 1 quota unit PER CALL, not per part — so a part is free
+   once the call is being made anyway, and the only cost of asking for one more
+   is the bytes on the wire. That is why `topicDetails` is here: it carries the
+   Wikipedia topic claims engine/element.js turns into a battle element, and it
+   is the only new SIGNAL available to this project at zero quota. Everything
+   else derivable from `statistics` is arithmetic on four numbers we already
+   have.
+
+   Exported and shared with data/search.js because the two hydrate paths must
+   ask for the same thing — a channel discovered by Magic Search and one added
+   by hand should not end up with different fields. That divergence is how
+   `publishedAt` went missing from half the pipeline once already.
+
+   Deliberately NOT requested: `brandingSettings` (keywords) and the channel
+   description. They are free too, and they are prose the creator wrote —
+   deriving an element from them is the name-matching that looksInstitutional()
+   is kept narrow to avoid. */
+export const CHANNEL_PARTS = 'snippet,statistics,topicDetails';
+
 /* customUrl is the API's handle field, but it is not guaranteed to be
    handle-shaped: older channels return a bare, lowercased vanity string
    ("mkbhd") while the modern format is "@mkbhd". Normalize to the "@name"
@@ -16,7 +37,7 @@ function normalizeHandle(customUrl) {
 }
 
 export async function fetchLiveChannel(resolved, apiKey) {
-  const params = new URLSearchParams({ part: 'snippet,statistics', key: apiKey });
+  const params = new URLSearchParams({ part: CHANNEL_PARTS, key: apiKey });
   if (resolved.kind === 'handle') params.set('forHandle', resolved.value);
   else params.set('id', resolved.value);
 
@@ -64,5 +85,11 @@ export function mapChannelItem(item) {
     // hydrate requests, so reading it costs no extra quota. The battle axes
     // need it to tell "50 uploads a year" from "500 uploads, once, in 2011".
     publishedAt: item.snippet?.publishedAt ?? '',
+    // Wikipedia URLs describing what the channel is about, straight from
+    // topicDetails. Kept RAW here because this is the seam's shape and the
+    // derivation belongs in the engine; setbuild.js stores only the element it
+    // derives, never these URLs. Frequently absent on smaller channels, which
+    // is why Unaligned exists.
+    topicCategories: item.topicDetails?.topicCategories ?? [],
   };
 }

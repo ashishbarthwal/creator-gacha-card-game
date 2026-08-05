@@ -10,8 +10,9 @@ don't cover this project's deploy cadence) · 24,359 candidates.
 **The live copy serves the 24,251-card deck; 23,539 is built and committed but NOT yet uploaded** —
 the deploy needs an authenticated `wrangler` session on Ash's machine:
 `npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js`.
-**Next:** WP12 — the battle system. The **pure engine is built and tested** (5v5, auto-resolved,
-power-matched AI); there is **no UI yet**, so it cannot be played. See below.
+**Next:** WP12 — the battle system. The **engine is built, deepened and tested**, and there is now
+a **playable prototype** at `prototype/index.html` (local only, never shipped). What is still
+missing is the battle inside the real app. See below.
 
 ---
 
@@ -78,15 +79,32 @@ in DECISIONS.md.
 - [X] **`engine/battle.js`** — turn resolution, seeded RNG, returns an event log the UI replays
       (the same shape the reveal already uses: decide first, animate a settled result).
 - [X] **`engine/opponent.js`** — power-matched AI deck at even / uphill / favoured.
-- [X] **46 tests**, including a balance block that asserts the design goals rather than hoping:
-      no class over half the deck, attack independent of size, and a large share of small cards
-      out-rating the median giant (33.5% on the live deck).
-- [X] **`publishedAt` now ships** — it was already inside the `snippet` every hydrate fetches and
-      the allowlist was discarding it. Zero extra quota. Two axes are dead without it.
-- [ ] **A rebuild is needed before the numbers are real.** The live set predates `publishedAt`,
-      so maturity and cadence are on their documented fallbacks until the next `npm run deploy`.
-      Tuning against the real ages is the first job after that.
-- [ ] **UI** — team picker, the battle screen, replaying the event log. Nothing is playable yet.
+- [X] **`engine/element.js`** — `topicDetails.topicCategories` → one of six elements on a simple
+      wheel, plus Unaligned. **Zero quota**: `channels.list` bills per call, not per part. The one
+      genuinely new signal available to this project; everything else derivable from the four
+      numbers is arithmetic (see the velocity note in DECISIONS.md).
+- [X] **The three combat layers** — elements, front/back ranks, and a verb per class. Added
+      because a power-matched fight had nothing in it to decide; each layer is worth less without
+      the one before it, which is why they landed in that order.
+- [X] **Speed now buys a second action.** It previously bought turn order and nothing else, which
+      made the Assassin — the largest class in the deck — a card that had spent its whole budget
+      on nothing (0 wins in 200 at 72% of a matched team's rating).
+- [X] **`tools/battle-balance.js`** — measures the engine against the real deck: axis spread and
+      size-correlation, class and element mix, the size claims, fight length and matchmaker
+      fairness. The test block says "still true"; this says "how true, and where".
+- [X] **83 tests** across `battle` and `element`, including a balance block that asserts the
+      design goals rather than hoping. Current live-deck figures: attack flat with size at 1.02,
+      power median ratio 1.15, small cards out-rating the median giant 32.0%, even-match win rate
+      ~44-50%, median fight 6 rounds.
+- [X] **A playable prototype** — `prototype/index.html`. Five packs each side, the opposition
+      commits first so you build against something visible, formation, and the event log replayed
+      on the cards. Fictional deck, real engine; not in the deploy allowlist.
+- [ ] **A rebuild is needed before the numbers are real.** The live set predates both
+      `publishedAt` and `topicDetails`, so maturity/cadence/velocity are on their documented
+      fallbacks and **every card is Unaligned** — the element layer is inert until the next
+      `npm run deploy`. Refit the velocity trend from real ages after that (the tool prints it).
+- [ ] **UI in the real app** — team picker, battle screen, log replay. The prototype is the design,
+      not the shipped feature.
 - [ ] Decide whether individual matchups should stay deterministic (see DECISIONS.md — currently
       a fight is decided by composition, not luck, which is what auto-battle means).
 

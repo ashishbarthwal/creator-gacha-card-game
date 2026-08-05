@@ -10,9 +10,16 @@ This is a portfolio piece and fan tribute. Not a business.
 
 Ash — SDET moving into AI engineering. This repo is a portfolio artifact with two goals,
 in order: **real users actually playing it**, and a **directed-AI-engineering showcase** —
-the visible process (this file, PLAN.md, DECISIONS.md, `wpN` tags + Releases, commit
-messages shaped `WPn: <what and why>`) is itself the exhibit. Keep the receipts honest:
-docs must reflect reality, tags/badges only for what exists.
+the visible process (this file, PLAN.md, DECISIONS.md, tags + Releases, commit messages)
+is itself the exhibit. Keep the receipts honest: docs must reflect reality, tags/badges
+only for what exists.
+
+**Commit naming (changed 2026-08-05):** sequential `WPn:` numbering is retired — work no
+longer lands in a strict planned order, so a number implied a sequence that stopped being
+true. Commit messages are now `WP-<Name>: <what and why>`, where `<Name>` is a short
+descriptive slug for the body of work (e.g. `WP-Battle System: <...>`), not a position in
+a queue. Historical `WPn` commits and tags are left as-is — they're a record of what
+happened, not something to retcon.
 
 Tests are the safety net, not the centerpiece (reframed 2026-07-18; WP1 delivered them —
 56 tests, CI on every push, self-contained HTML reports). Ash is learning GitHub Actions

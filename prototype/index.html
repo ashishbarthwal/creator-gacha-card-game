@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Creator Gacha — Arena prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="arena.css">
+</head>
+<body>
+
+<header class="site-head wrap">
+  <div class="brand">
+    <span class="play-glyph" aria-hidden="true"></span>
+    <h1>Creator Gacha — Arena</h1>
+    <span class="proto-tag">Prototype</span>
+  </div>
+  <p class="tagline">
+    Both sides open five packs. The opposition commits its five first, so you build
+    <em>against something you can see</em>. Cards are invented; the engine is the real one.
+  </p>
+  <ol class="steps" id="steps">
+    <li data-step="draft">1 · Open packs</li>
+    <li data-step="scout">2 · Scout</li>
+    <li data-step="build">3 · Build</li>
+    <li data-step="battle">4 · Battle</li>
+  </ol>
+</header>
+
+<main class="wrap">
+
+  <!-- 1 — DRAFT ---------------------------------------------------------- -->
+  <section class="panel" id="p-draft">
+    <header>
+      <h2>Open five packs</h2>
+      <p class="hint">Fifty cards, pulled at the live drop rates — N 55% · R 27% · SR 12% · SSR 5% · UR 1%.</p>
+    </header>
+    <div class="row">
+      <button class="primary" id="btn-open">Open 5 packs</button>
+      <button id="btn-reseed">New deck</button>
+      <span class="spacer"></span>
+      <span class="readout" id="draft-readout"></span>
+    </div>
+    <div class="draft-grid" id="draft" style="margin-top:16px"></div>
+  </section>
+
+  <!-- 2 — SCOUT ---------------------------------------------------------- -->
+  <section class="panel" id="p-scout" hidden>
+    <header>
+      <h2>The opposition</h2>
+      <p class="hint">
+        Locked in before you pick, and arranged: tanks in front, damage behind.
+        Read their elements — you counter what they brought.
+      </p>
+    </header>
+    <div class="ranks enemy" id="enemy-ranks"></div>
+    <ul class="wheel" id="wheel" style="margin-top:16px"></ul>
+  </section>
+
+  <!-- 3 — BUILD ---------------------------------------------------------- -->
+  <section class="panel" id="p-build" hidden>
+    <header>
+      <h2>Your five</h2>
+      <p class="hint">
+        Click a slot, then a card. <b>Front rank</b> takes every hit while it stands.
+        <b>Back rank</b> is safe until it falls, and deals 15% less for the cover.
+      </p>
+    </header>
+    <div class="ranks" id="my-ranks"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="primary" id="btn-fight" disabled>Fight</button>
+      <button id="btn-auto">Auto-pick</button>
+      <button id="btn-clear">Clear</button>
+      <span class="spacer"></span>
+      <span class="readout" id="power-readout"></span>
+    </div>
+    <div class="legend" style="margin-top:14px">
+      <span><i class="key" style="background:var(--s-hp)"></i>HP</span>
+      <span><i class="key" style="background:var(--s-atk)"></i>ATK</span>
+      <span><i class="key" style="background:var(--s-def)"></i>DEF</span>
+      <span><i class="key" style="background:var(--s-spd)"></i>SPD turn order</span>
+      <span><i class="key" style="background:var(--s-mom)"></i>MOM = % attack gained per round</span>
+      <span>Bar = <b>shape</b> (what it's best at) · number = <b>value</b></span>
+    </div>
+  </section>
+
+  <!-- 4 — BATTLE --------------------------------------------------------- -->
+  <section class="panel" id="p-battle" hidden>
+    <header>
+      <h2>Arena</h2>
+      <p class="hint" id="battle-hint">Resolving…</p>
+    </header>
+    <div class="arena">
+      <div class="side enemy" id="arena-enemy"></div>
+      <div class="vs-strip"><span class="round" id="round-label">Round 1</span></div>
+      <div class="side mine" id="arena-mine"></div>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="verdict" id="verdict" hidden></div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="btn-again" hidden>Rebuild your five</button>
+      <button id="btn-fresh" hidden>New draft</button>
+      <button id="btn-skip">Skip to the end</button>
+      <span class="spacer"></span>
+      <span class="readout" id="speed-readout"></span>
+    </div>
+  </section>
+
+  <footer class="note">
+    <p>
+      <b>Prototype, not the game.</b> Every channel here is invented — names, numbers and topic
+      claims — so nothing on this page describes a real creator. The engine underneath is the
+      shipping one: <code>src/engine/battle-stats.js</code>, <code>battle.js</code>,
+      <code>element.js</code> and <code>opponent.js</code>, unmodified.
+    </p>
+    <p>
+      Elements come from <code>topicDetails.topicCategories</code>, a part of the
+      <code>channels.list</code> call the build already makes — one quota unit per call however
+      many parts it carries, so the whole matchup layer is free. Add <code>?seed=123</code> to
+      reproduce a deck.
+    </p>
+  </footer>
+
+</main>
+
+<script type="module" src="arena.js"></script>
+</body>
+</html>

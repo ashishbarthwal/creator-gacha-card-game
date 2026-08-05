@@ -13,12 +13,17 @@
 import { describe, it, expect } from 'vitest';
 import {
   axesFrom, shapeFrom, classFrom, battleStatsFrom, channelAgeYears, powerOf,
-  BATTLE_AXES, BATTLE_CLASSES,
+  momentumMultiplier, BATTLE_AXES, BATTLE_CLASSES, MOMENTUM_CAP,
 } from '../src/engine/battle-stats.js';
 import {
-  toCombatant, makeTeam, resolveBattle, battle, teamPower, TEAM_SIZE, MAX_ROUNDS,
+  toCombatant, makeTeam, resolveBattle, battle, teamPower, pickTarget, matchupPreview,
+  TEAM_SIZE, MAX_ROUNDS, FRONT_SLOTS, CLASS_ABILITY, rowForSlot,
 } from '../src/engine/battle.js';
-import { matchOpponent, buildOpponentTeam, matchQuality, DIFFICULTY } from '../src/engine/opponent.js';
+import {
+  matchOpponent, buildOpponentTeam, matchQuality, DIFFICULTY,
+  arrangeFormation, bestTeamFrom, draftOpponent,
+} from '../src/engine/opponent.js';
+import { ELEMENTS, ELEMENT_CYCLE, elementMultiplier, beatsOf } from '../src/engine/element.js';
 
 /* mulberry32 — the same tiny seedable PRNG the gacha tests use, so a battle is
    reproducible across runs and platforms. */
@@ -46,65 +51,82 @@ const channel = (over = {}) => ({
   ...over,
 });
 
-/* A deterministic synthetic deck spanning the real bands.
+/* A deterministic synthetic deck shaped like the real one.
 
-   VIEWS-PER-VIDEO IS DERIVED FROM SUBSCRIBERS ON PURPOSE, and getting this
-   wrong is what the first version of this fixture did. It drew size and
-   views-per-video from two independent cycles, which produced a deck where a
+   THIS FIXTURE HAS BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, AND BOTH
+   FAILURES ARE THE SAME FAILURE: a fixture that violates the invariant the
+   code is calibrated against tests nothing but the fixture.
+
+   Round one drew size and views-per-video from two independent cycles, so a
    300M-subscriber channel could average 300 views a video — a correlation real
-   YouTube does not break. battle-stats.js de-sizes `punch` against a trend
-   line FITTED TO THE LIVE DECK, so feeding it data with no such trend drove
-   every large channel's residual to the floor: attack came out 10x higher for
-   small channels than huge ones here, while the real 23.5k-card deck measured
-   flat (107 / 107 / 107 / 103 / 104 across the five bands).
+   YouTube does not break. Because battle-stats.js de-sizes `punch` against a
+   trend line fitted to the live deck, that drove every large channel's
+   residual to the floor and attack came out 10x higher for small channels than
+   for giants, where the real deck measures flat.
 
-   A fixture that violates the invariant the code is calibrated against tests
-   nothing but the fixture. A first attempt at a fix — views-per-video as
-   subscribers times an independent spread factor — was still wrong, just in
-   the other direction (attack came out 1.7x HIGHER for giants), because a
-   made-up correlation is no more the real one than no correlation at all.
+   Round two fixed punch by construction — each channel gets the views-per-video
+   the engine expects of its size, pushed off that line by symmetric noise — and
+   then the fifth axis arrived and exposed what was still wrong. Subscriber
+   counts were LOG-UNIFORM from 1e3 to 3e8, which is nothing like YouTube: 42.5%
+   of the deck sat pegged at devotion = 100 and 28.3% at cadence = 100, and one
+   class took 51%. Replacing that with a fitted log-normal was still not enough,
+   because the real deck's subscriber counts run down to single digits and
+   clamping at 1,000 deleted the bottom two decades — exactly the band the
+   headline claim ("a well-shaped small card out-rates a giant") is about. The
+   share came out at 13% against 33% measured on the real deck.
 
-   So the deck is CONSTRUCTED TO SATISFY THE ENGINE'S OWN TREND LINE plus
-   symmetric noise. Each channel is given the views-per-video that
-   battle-stats.js expects of a channel its size, then pushed off that line by
-   a deterministic amount. Residuals are then symmetric around zero BY
-   CONSTRUCTION at every size, which is exactly the property the live deck has
-   and the property the balance assertions are about. The noise term is what
-   creates the over- and under-performers the residual is meant to find.
+   So size and devotion are now drawn from the LIVE DECK'S OWN QUANTILES, and
+   the one genuinely size-coupled quantity — views per video — is still placed
+   on the engine's trend plus noise, because that correlation is real and must
+   be reproduced rather than sampled away. Measured against the live 23,539-card
+   deck the fixture now tracks it closely: attack ratio 1.05 (live 1.02), small
+   cards out-rating the median giant 23.1% (live 33.1%), largest class 29.8%
+   (live 26.5%).
 
-   Views depend on the target punch and the target punch depends on Influence,
-   which depends on views — so it settles by a short fixed-point iteration
-   rather than being solved in closed form. Four passes is well past
-   convergence at this precision. */
+   Re-measure with:  node tools/battle-balance.js [--synthetic] */
+/* The top tail carries its own points: interpolating straight from p99 (13.8M)
+   to the maximum (511M) invents hundreds of 100M-subscriber channels where the
+   real deck has nine, and that alone put the fixture's giant band at 1.42x the
+   small band's power against 1.26x measured. A quantile table is only as
+   honest as its resolution where the curve bends hardest. */
+const SUBS_QUANTILES = [   // log10(subscriberCount), live deck
+  [0, 0.6], [0.01, 0.903], [0.05, 2.236], [0.10, 3.053], [0.25, 3.468],
+  [0.50, 4.230], [0.75, 5.246], [0.90, 6.033], [0.95, 6.467], [0.99, 7.140],
+  [0.996, 7.389], [0.999, 7.769], [0.9999, 8.155], [1, 8.708],
+];
+const DEVOTION_QUANTILES = [  // log10(viewCount / subscriberCount), live deck
+  [0, 0.9], [0.05, 1.503], [0.25, 2.088], [0.50, 2.420], [0.75, 2.736], [0.95, 3.179], [1, 4.2],
+];
 const TREND = { intercept: 17.459, slope: 0.8151 };   // mirrors battle-stats.js
 const normLocal = (v, [lo, hi]) => Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100));
+
+function fromQuantiles(table, u) {
+  for (let i = 1; i < table.length; i++) {
+    const [p0, v0] = table[i - 1];
+    const [p1, v1] = table[i];
+    if (u <= p1) return v0 + ((u - p0) / (p1 - p0 || 1)) * (v1 - v0);
+  }
+  return table[table.length - 1][1];
+}
 
 function syntheticDeck(n = 400) {
   const out = [];
   for (let i = 0; i < n; i++) {
-    /* Every generator below is driven by a HASH of the index rather than by
-       `i % k` directly. Plain modular cycles look varied but lock into phase
-       with one another — size, upload count and age all repeating on
-       co-prime-ish periods produced a deck where one class took 53% of the
-       cards, against 35% on the live deck. Phase alignment is a property of
-       the fixture, not of the game. */
-    const mix = (n) => { let x = (i * 2654435761 + n * 40503) >>> 0; x ^= x >>> 13; x = Math.imul(x, 1274126177) >>> 0; return (x ^ (x >>> 16)) >>> 0; };
-    const frac = (n) => mix(n) / 4294967296;
+    /* Every draw below is keyed on a HASH of the index rather than on `i % k`.
+       Plain modular cycles look varied but lock into phase with one another —
+       size, upload count and age repeating on co-prime-ish periods once
+       produced a deck where a single class took 53% of the cards. Phase
+       alignment is a property of the fixture, not of the game. */
+    const mix = (k) => { let x = (i * 2654435761 + k * 40503) >>> 0; x ^= x >>> 13; x = Math.imul(x, 1274126177) >>> 0; return (x ^ (x >>> 16)) >>> 0; };
+    const frac = (k) => (mix(k) + 0.5) / 4294967296;
 
-    const subs = Math.round(1e3 * Math.pow(10, frac(1) * 5.5));       // 1e3 .. ~3e8
-    const videos = 20 + Math.floor(frac(2) * 4000);
-    /* Deterministic over/under-performance against the trend, spread across
-       roughly +/-15 points so both tails are populated at every size. */
-    const noise = (frac(3) * 2 - 1) * 15;
+    const subs = Math.max(1, Math.round(10 ** fromQuantiles(SUBS_QUANTILES, frac(1))));
+    const views = Math.max(1, Math.round(subs * 10 ** fromQuantiles(DEVOTION_QUANTILES, frac(2))));
 
-    let views = Math.max(1, subs * 20);
-    for (let pass = 0; pass < 4; pass++) {
-      const influence = 0.6 * normLocal(Math.log10(subs + 1), [3, 8.477])
-                      + 0.4 * normLocal(Math.log10(views + 1), [4, 11.477]);
-      const targetRaw = Math.max(0, Math.min(100, TREND.intercept + TREND.slope * influence + noise));
-      const perVideo = Math.pow(10, 1.5 + (targetRaw / 100) * 7) - 1;
-      views = Math.max(1, Math.round(perVideo * videos));
-    }
+    const influence = 0.6 * normLocal(Math.log10(subs + 1), [3, 8.477])
+                    + 0.4 * normLocal(Math.log10(views + 1), [4, 11.477]);
+    const targetPunch = Math.max(0, Math.min(100, TREND.intercept + TREND.slope * influence + (frac(3) * 2 - 1) * 18));
+    const videos = Math.max(1, Math.round(views / Math.max(1, 10 ** (1.5 + (targetPunch / 100) * 7) - 1)));
 
     out.push(channel({
       id: 'UC' + String(i).padStart(22, '0'),
@@ -112,7 +134,11 @@ function syntheticDeck(n = 400) {
       subscriberCount: String(subs),
       viewCount: String(views),
       videoCount: String(videos),
-      publishedAt: yearsAgo(1 + frac(4) * 17),
+      publishedAt: yearsAgo(1 + frac(4) * 18),
+      /* Spread evenly across the wheel so the element layer is exercised. Even
+         rather than YouTube-shaped: what is under test is whether the mechanic
+         is balanced, and an even wheel is the case where it must be. */
+      element: ELEMENTS[Math.floor(frac(6) * ELEMENTS.length)],
     }));
   }
   return out;
@@ -197,33 +223,44 @@ describe('axesFrom — the axes measure what they claim', () => {
 });
 
 describe('shapeFrom / classFrom', () => {
-  it('shape is four shares summing to 1', () => {
+  const STATS = ['hp', 'atk', 'def', 'spd', 'mom'];
+  const even = 1 / BATTLE_AXES.length;
+
+  it('shape is one share per axis, summing to 1', () => {
     const shape = shapeFrom(axesFrom(channel(), NOW));
-    const total = shape.hp + shape.atk + shape.def + shape.spd;
-    expect(total).toBeCloseTo(1, 10);
+    expect(Object.keys(shape).sort()).toEqual([...STATS].sort());
+    expect(STATS.reduce((sum, k) => sum + shape[k], 0)).toBeCloseTo(1, 10);
   });
 
   it('an all-zero card splits evenly instead of dividing by zero', () => {
-    const shape = shapeFrom({ maturity: 0, punch: 0, devotion: 0, cadence: 0 });
-    expect(shape).toEqual({ hp: 0.25, atk: 0.25, def: 0.25, spd: 0.25 });
+    const shape = shapeFrom(Object.fromEntries(BATTLE_AXES.map(a => [a, 0])));
+    for (const k of STATS) expect(shape[k]).toBeCloseTo(even, 10);
     expect(classFrom(shape)).toBe('Balanced');
   });
 
-  it('a dominant axis names the class', () => {
-    expect(classFrom({ hp: 0.7, atk: 0.1, def: 0.1, spd: 0.1 })).toBe('Titan');
-    expect(classFrom({ hp: 0.1, atk: 0.7, def: 0.1, spd: 0.1 })).toBe('Carry');
-    expect(classFrom({ hp: 0.1, atk: 0.1, def: 0.7, spd: 0.1 })).toBe('Bulwark');
-    expect(classFrom({ hp: 0.1, atk: 0.1, def: 0.1, spd: 0.7 })).toBe('Assassin');
+  /* One case per class, built by handing the whole shape to a single stat, so
+     a renamed or re-pointed axis fails here rather than silently changing what
+     a card claims to be. */
+  it.each([
+    ['hp', 'Titan'], ['atk', 'Carry'], ['def', 'Bulwark'],
+    ['spd', 'Assassin'], ['mom', 'Riser'],
+  ])('a dominant %s share names the class %s', (stat, expected) => {
+    const shape = Object.fromEntries(STATS.map(k => [k, k === stat ? 0.6 : 0.1]));
+    expect(classFrom(shape)).toBe(expected);
   });
 
   it('a near-even split reads Balanced rather than picking a winner by a hair', () => {
-    expect(classFrom({ hp: 0.26, atk: 0.25, def: 0.25, spd: 0.24 })).toBe('Balanced');
+    const shape = { hp: even + 0.01, atk: even, def: even, spd: even, mom: even - 0.01 };
+    expect(classFrom(shape)).toBe('Balanced');
   });
 
-  it('every class it can emit is declared in BATTLE_CLASSES', () => {
+  it('every class it can emit is declared in BATTLE_CLASSES, and every one has a verb', () => {
     const deck = syntheticDeck(400);
     const emitted = new Set(deck.map(ch => battleStatsFrom(ch, NOW).class));
     for (const c of emitted) expect(BATTLE_CLASSES).toContain(c);
+    /* A class the player cannot read is back to being a label — the thing the
+       combat rewrite existed to stop. */
+    for (const c of BATTLE_CLASSES) expect(CLASS_ABILITY[c]?.name).toBeTruthy();
   });
 });
 
@@ -236,7 +273,13 @@ describe('battleStatsFrom', () => {
 
   it('never yields a stat below 1, even for an empty channel', () => {
     const s = battleStatsFrom(channel({ subscriberCount: '0', viewCount: '0', videoCount: '0' }), NOW);
-    for (const k of ['hp', 'atk', 'def', 'spd']) expect(s[k]).toBeGreaterThanOrEqual(1);
+    for (const k of ['hp', 'atk', 'def', 'spd', 'mom']) expect(s[k]).toBeGreaterThanOrEqual(1);
+  });
+
+  it('carries an element, and an unclaimed channel is Unaligned rather than absent', () => {
+    expect(battleStatsFrom(channel(), NOW).element).toBe('Unaligned');
+    expect(battleStatsFrom(channel({ element: 'Gaming' }), NOW).element).toBe('Gaming');
+    expect(ELEMENTS).toContain(battleStatsFrom(channel(), NOW).element);
   });
 
   it('crit stays inside a sane band — never a coin flip', () => {
@@ -315,6 +358,189 @@ describe('resolveBattle', () => {
   });
 });
 
+/* ── THE THREE COMBAT LAYERS ─────────────────────────────────────────────────
+   Rows, class verbs and elements are what turned a fight that resolved 0/100
+   on stats alone into one with decisions in it. Each is pinned by the property
+   it was added for, not by its arithmetic — the point of Backstab is that an
+   Assassin reaches the back rank, not that it multiplies by 1.25. */
+describe('rows and targeting', () => {
+  const unit = (over = {}) => ({ currentHp: 100, maxHp: 100, atk: 100, class: 'Carry', row: 'front', ...over });
+
+  it('slots 0-1 are the front rank and the rest are behind it', () => {
+    expect(rowForSlot(0)).toBe('front');
+    expect(rowForSlot(FRONT_SLOTS - 1)).toBe('front');
+    expect(rowForSlot(FRONT_SLOTS)).toBe('back');
+    expect(makeTeam(syntheticDeck(5), NOW).map(u => u.row))
+      .toEqual(['front', 'front', 'back', 'back', 'back']);
+  });
+
+  it('the back rank cannot be reached while any of the front stands', () => {
+    const enemies = [unit({ id: 'f0' }), unit({ id: 'f1' }), unit({ id: 'b0', row: 'back' })];
+    expect(pickTarget(unit({ class: 'Carry' }), enemies).id).toBe('f0');
+  });
+
+  it('when the front rank falls the back rank becomes reachable', () => {
+    const enemies = [
+      unit({ id: 'f0', currentHp: 0 }), unit({ id: 'f1', currentHp: 0 }),
+      unit({ id: 'b0', row: 'back' }),
+    ];
+    expect(pickTarget(unit(), enemies).id).toBe('b0');
+  });
+
+  it('a Titan takes hits aimed at its rank', () => {
+    const enemies = [unit({ id: 'f0' }), unit({ id: 'titan', class: 'Titan' })];
+    expect(pickTarget(unit(), enemies).id).toBe('titan');
+  });
+
+  /* The definition of the class, not a special case: Assassins exist so that
+     stacking your damage behind a wall is not a free win. */
+  it('an Assassin ignores both the wall and the taunt, and goes for the hardest hitter', () => {
+    const enemies = [
+      unit({ id: 'titan', class: 'Titan' }),
+      unit({ id: 'chip', row: 'back', atk: 40 }),
+      unit({ id: 'carry', row: 'back', atk: 220 }),
+    ];
+    expect(pickTarget(unit({ class: 'Assassin' }), enemies).id).toBe('carry');
+  });
+
+  it('an Assassin still finds a target when the back rank is empty', () => {
+    const enemies = [unit({ id: 'f0' })];
+    expect(pickTarget(unit({ class: 'Assassin' }), enemies).id).toBe('f0');
+  });
+
+  it('a wiped-out side offers no target rather than throwing', () => {
+    expect(pickTarget(unit(), [unit({ currentHp: 0 })])).toBeNull();
+    expect(pickTarget(unit(), [])).toBeNull();
+  });
+});
+
+describe('elements', () => {
+  it('every element beats exactly one and loses to exactly one', () => {
+    for (const attacker of ELEMENT_CYCLE) {
+      const beaten = ELEMENT_CYCLE.filter(d => elementMultiplier(attacker, d) > 1);
+      const losses = ELEMENT_CYCLE.filter(d => elementMultiplier(d, attacker) > 1);
+      expect(beaten).toEqual([beatsOf(attacker)]);
+      expect(losses).toHaveLength(1);
+    }
+  });
+
+  it('the wheel closes — following `beats` returns to the start', () => {
+    let at = ELEMENT_CYCLE[0];
+    for (let i = 0; i < ELEMENT_CYCLE.length; i++) at = beatsOf(at);
+    expect(at).toBe(ELEMENT_CYCLE[0]);
+  });
+
+  /* Unaligned is what a channel with no topic claim gets, and most of a set
+     built before topicDetails was requested will be Unaligned. It must be
+     neutral rather than weak, or thin metadata would become a penalty. */
+  it('Unaligned neither counters nor is countered', () => {
+    for (const other of ELEMENTS) {
+      expect(elementMultiplier('Unaligned', other)).toBe(1);
+      expect(elementMultiplier(other, 'Unaligned')).toBe(1);
+    }
+  });
+
+  it('a matchup preview counts an enemy line-up the same way combat will', () => {
+    const enemy = [channel({ id: 'e1', element: 'Tech' }), channel({ id: 'e2', element: 'Tech' }), channel({ id: 'e3', element: 'Lifestyle' })];
+    const [gaming] = matchupPreview([channel({ id: 'm1', element: 'Gaming' })], enemy, NOW);
+    expect(gaming).toMatchObject({ element: 'Gaming', strong: 2, weak: 1, net: 1 });
+  });
+});
+
+describe('momentum', () => {
+  it('round one carries no ramp, and the ramp grows from there', () => {
+    const c = { mom: 10 };
+    expect(momentumMultiplier(c, 1)).toBe(1);
+    expect(momentumMultiplier(c, 2)).toBeCloseTo(1.1, 10);
+    expect(momentumMultiplier(c, 6)).toBeCloseTo(1.5, 10);
+  });
+
+  it('a Riser ramps twice as fast', () => {
+    expect(momentumMultiplier({ mom: 10 }, 4, true) - 1)
+      .toBeCloseTo((momentumMultiplier({ mom: 10 }, 4, false) - 1) * 2, 10);
+  });
+
+  /* Uncapped, a long fight becomes a Riser walkover regardless of what the
+     other side brought. */
+  it('the ramp is capped however long the fight runs', () => {
+    expect(momentumMultiplier({ mom: 30 }, MAX_ROUNDS, true)).toBe(1 + MOMENTUM_CAP);
+  });
+});
+
+describe('arrangeFormation', () => {
+  const deck = syntheticDeck(200);
+
+  it('returns the same cards, reordered, never more or fewer', () => {
+    const five = deck.slice(0, TEAM_SIZE);
+    const arranged = arrangeFormation(five, NOW);
+    expect(new Set(arranged.map(c => c.id))).toEqual(new Set(five.map(c => c.id)));
+  });
+
+  it('puts the tougher cards in front', () => {
+    const arranged = makeTeam(arrangeFormation(deck.slice(0, TEAM_SIZE), NOW), NOW);
+    const front = arranged.slice(0, FRONT_SLOTS);
+    const back = arranged.slice(FRONT_SLOTS);
+    const effHp = u => u.hp * (1 + u.def / 110);
+    expect(Math.min(...front.map(effHp))).toBeGreaterThan(0);
+    /* Stated as a comparison of the ranks rather than a per-card rule: the
+       class bonus can legitimately lift a Bulwark past a slightly beefier
+       Carry, and that is the arrangement doing its job. */
+    expect(Math.max(...back.map(effHp))).toBeLessThanOrEqual(Math.max(...front.map(effHp)) * 1.35);
+  });
+
+  /* A formation is only a decision if it changes the outcome. */
+  it('formation changes the result — the same five cards, reversed, fight differently', () => {
+    const five = arrangeFormation(deck.slice(0, TEAM_SIZE), NOW);
+    const foes = arrangeFormation(deck.slice(20, 20 + TEAM_SIZE), NOW);
+    let differences = 0;
+    for (let s = 1; s <= 30; s++) {
+      const good = battle(five, foes, { rng: mulberry32(s), now: NOW });
+      const bad = battle([...five].reverse(), foes, { rng: mulberry32(s), now: NOW });
+      if (good.winner !== bad.winner || good.rounds !== bad.rounds) differences++;
+    }
+    expect(differences).toBeGreaterThan(0);
+  });
+});
+
+describe('draftOpponent — both sides pull their own cards', () => {
+  const deck = syntheticDeck(600);
+  const playerDraft = deck.slice(0, 50);
+  const aiDraft = deck.slice(300, 350);
+
+  /* A draft is five x10 pulls and a gacha stacks duplicates, so the same
+     creator legitimately appears in it more than once. Fielding them twice is
+     not a strategy, it is a bug that looks like one — found in the prototype
+     with the opposition standing next to itself. */
+  it('never fields the same creator twice, even when the draft holds duplicates', () => {
+    const doubled = [...aiDraft.slice(0, 10), ...aiDraft.slice(0, 10), ...aiDraft.slice(10, 20)];
+    for (let s = 1; s <= 15; s++) {
+      const { channels } = draftOpponent(playerDraft, doubled, { rng: mulberry32(s), now: NOW });
+      expect(new Set(channels.map(c => c.id)).size).toBe(channels.length);
+    }
+    expect(new Set(bestTeamFrom([...playerDraft, ...playerDraft], { now: NOW }).map(c => c.id)).size).toBe(TEAM_SIZE);
+  });
+
+  it('fields a full, distinct, arranged team out of its own draft', () => {
+    const { channels } = draftOpponent(playerDraft, aiDraft, { rng: mulberry32(9), now: NOW });
+    expect(channels).toHaveLength(TEAM_SIZE);
+    expect(new Set(channels.map(c => c.id)).size).toBe(TEAM_SIZE);
+    const ids = new Set(aiDraft.map(c => c.id));
+    for (const c of channels) expect(ids.has(c.id)).toBe(true);
+  });
+
+  it('aims at what the player’s draft could field, not at what it did field', () => {
+    const m = draftOpponent(playerDraft, aiDraft, { rng: mulberry32(4), now: NOW });
+    const ceiling = teamPower(bestTeamFrom(playerDraft, { now: NOW }).map(ch => toCombatant(ch, NOW)));
+    expect(m.targetPower).toBe(Math.round(ceiling));
+  });
+
+  it('the difficulty dial tilts the target', () => {
+    const up = draftOpponent(playerDraft, aiDraft, { difficulty: 'stronger', rng: mulberry32(4), now: NOW });
+    const even = draftOpponent(playerDraft, aiDraft, { difficulty: 'even', rng: mulberry32(4), now: NOW });
+    expect(up.targetPower).toBeGreaterThan(even.targetPower);
+  });
+});
+
 describe('matchOpponent', () => {
   const deck = syntheticDeck(600);
 
@@ -370,7 +596,12 @@ describe('matchOpponent', () => {
    as properties of the deck, so a future tweak to an anchor or a scale factor
    that quietly re-couples power to rarity fails CI instead of shipping. */
 describe('balance — rarity must not decide the fight', () => {
-  const deck = syntheticDeck(1200);
+  /* 4,000 rather than 1,200. The claims below are about the tails — cards
+     under 100K against cards over 10M — and at the live deck's real subscriber
+     distribution a 1,200-card fixture holds only ~18 giants, which is too few
+     to take a median of. Sample size is bought with cards rather than by
+     distorting the distribution, which is what the previous fixture did. */
+  const deck = syntheticDeck(4000);
   const stats = deck.map(ch => battleStatsFrom(ch, NOW));
 
   /* Split by the same subscriber bands the game already uses, via the raw
@@ -382,9 +613,9 @@ describe('balance — rarity must not decide the fight', () => {
   const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
   const meanStat = (cards, key) => mean(cards.map(c => battleStatsFrom(c, NOW)[key]));
 
-  it('the deck spans at least four of the five classes', () => {
+  it('the deck spans every class', () => {
     const classes = new Set(stats.map(s => s.class));
-    expect(classes.size).toBeGreaterThanOrEqual(4);
+    expect(classes.size).toBe(BATTLE_CLASSES.length);
   });
 
   /* The failure that shipped in the first draft: 82% of the deck came out
@@ -469,14 +700,35 @@ describe('balance — rarity must not decide the fight', () => {
      across many different player teams — which is what a player actually
      experiences over a session — and each individual fight stays a test of the
      team they brought. */
+  /* BOTH SIDES ARE ARRANGED BY THE SAME RULE, and leaving that out is what
+     made this test fail when rows landed: the AI places its formation and an
+     unarranged player does not, so the measured win rate fell to 11.9% while
+     the ratings stayed level. That is the formation layer WORKING — it is a
+     real advantage, and it is exactly the one a player earns by thinking — but
+     measuring it here would mean this test no longer says what it claims. The
+     claim is that the MATCHMAKER is fair, so the only difference between the
+     two sides must be the cards it picked. */
+  /* MANY TEAMS, FEW SEEDS — and the ratio matters more than the total.
+
+     This started as 9 teams x 40 seeds and was a bad estimator dressed up as a
+     big sample: the file's own note explains that a matched pair resolves near
+     0% or 100% because ~25 attacks average the noise out, so re-rolling the
+     same matchup 40 times is one observation counted forty times. The effective
+     sample was 9, and it swung between 44% and 71% purely on which nine teams
+     were drawn — enough to fail a 30-70% assertion on a change that had moved
+     the real figure by two points.
+
+     40 teams x 10 seeds is the same 400 fights and roughly four times the
+     information, because the thing being estimated varies across TEAMS. */
   it('an even match is fair in aggregate across many different teams', () => {
     let wins = 0;
     let fights = 0;
-    for (const start of [0, 40, 90, 150, 220, 310, 380, 450, 520]) {
-      const player = deck.slice(start, start + TEAM_SIZE);
+    for (let t = 0; t < 40; t++) {
+      const start = (t * 97) % (deck.length - TEAM_SIZE);
+      const player = arrangeFormation(deck.slice(start, start + TEAM_SIZE), NOW);
       if (player.length < TEAM_SIZE) continue;
       const m = matchOpponent(player, deck, { difficulty: 'even', rng: mulberry32(start + 3), now: NOW });
-      for (let s = 1; s <= 40; s++) {
+      for (let s = 1; s <= 10; s++) {
         if (battle(player, m.channels, { rng: mulberry32(s), now: NOW }).winner === 'a') wins++;
         fights++;
       }
@@ -484,5 +736,27 @@ describe('balance — rarity must not decide the fight', () => {
     const rate = wins / fights;
     expect(rate).toBeGreaterThan(0.3);
     expect(rate).toBeLessThan(0.7);
+  });
+
+  /* A fight nobody can sit through is a fight nobody plays. The UI replays the
+     log, so length is a product constraint and not just a tuning curiosity —
+     SCALE.hp in battle-stats.js is the knob, and it is safe to turn because it
+     moves every power rating by the same factor. */
+  it('a fight is short enough to watch and ends by elimination, not by the cap', () => {
+    const lengths = [];
+    let capped = 0;
+    for (const start of [0, 90, 220, 380, 520]) {
+      const player = arrangeFormation(deck.slice(start, start + TEAM_SIZE), NOW);
+      const m = matchOpponent(player, deck, { difficulty: 'even', rng: mulberry32(start + 3), now: NOW });
+      for (let s = 1; s <= 40; s++) {
+        const r = battle(player, m.channels, { rng: mulberry32(s), now: NOW });
+        lengths.push(r.rounds);
+        if (r.rounds >= MAX_ROUNDS) capped++;
+      }
+    }
+    const median = [...lengths].sort((a, b) => a - b)[Math.floor(lengths.length / 2)];
+    expect(median).toBeGreaterThanOrEqual(4);
+    expect(median).toBeLessThanOrEqual(12);
+    expect(capped / lengths.length).toBeLessThan(0.05);
   });
 });

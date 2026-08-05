@@ -323,9 +323,15 @@ describe('assembleSet — the strip is the last Gate item', () => {
        updated by hand to admit it. A launch DATE is not a performance
        statistic, so it sits outside the 30-day cap the strip exists to honour —
        the same class of fact as the title or the handle. `country` is still
-       absent, which is the leak this test was originally written to catch. */
+       absent, which is the leak this test was originally written to catch.
+
+       `element` joined next, and it is the same argument one step further on:
+       what ships is the single word engine/element.js DERIVED, never the
+       Wikipedia URLs it derived it from. A topic claim is not a statistic
+       either, and storing the answer rather than the evidence keeps ~4 strings
+       per record out of a 23.5k-card file. */
     expect(Object.keys(set.channels[0]).sort()).toEqual(
-      ['avatarUrl', 'handle', 'hiddenSubscriberCount', 'id', 'publishedAt', 'subscriberCount', 'title', 'videoCount', 'viewCount'],
+      ['avatarUrl', 'element', 'handle', 'hiddenSubscriberCount', 'id', 'publishedAt', 'subscriberCount', 'title', 'videoCount', 'viewCount'],
     );
   });
 

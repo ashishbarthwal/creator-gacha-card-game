@@ -22,6 +22,10 @@ function item(over = {}) {
       subscriberCount: '12345', viewCount: '678900', videoCount: '42',
       ...over.statistics,
     },
+    /* No default claims: topicDetails is genuinely absent for a large share of
+       real channels, so the base fixture is the common case and a test that
+       wants topics passes them in. */
+    ...(over.topicDetails ? { topicDetails: over.topicDetails } : {}),
   };
 }
 
@@ -38,7 +42,22 @@ describe('mapChannelItem — API item to Channel shape', () => {
       videoCount: '42',
       country: 'US',
       publishedAt: '2013-04-05T00:00:00Z',
+      /* Raw here on purpose: the seam carries the claims and the engine turns
+         them into an element. Only setbuild.js stores the derived answer. */
+      topicCategories: [],
     });
+  });
+
+  it('carries topicCategories through from topicDetails', () => {
+    const topics = ['https://en.wikipedia.org/wiki/Video_game_culture'];
+    expect(mapChannelItem(item({ topicDetails: { topicCategories: topics } })).topicCategories).toEqual(topics);
+  });
+
+  /* topicDetails is absent for a great many smaller channels, and an absent
+     claim must read as "no claim" rather than as a crash — Unaligned exists
+     precisely for this case. */
+  it('an item with no topicDetails yields an empty list, not undefined', () => {
+    expect(mapChannelItem(item()).topicCategories).toEqual([]);
   });
 
   it('prefers the largest thumbnail, falling down the ladder', () => {
@@ -70,6 +89,7 @@ describe('mapChannelItem — API item to Channel shape', () => {
       videoCount: '0',
       country: '',
       publishedAt: '',
+      topicCategories: [],
     });
   });
 

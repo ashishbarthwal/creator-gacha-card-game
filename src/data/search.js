@@ -9,7 +9,7 @@
    is what the tests pin; this wrapper is exercised by running tools/magic-search.js. */
 
 import { buildSearchParams, harvestChannelIds } from '../engine/discover.js';
-import { mapChannelItem } from './youtube.js';
+import { mapChannelItem, CHANNEL_PARTS } from './youtube.js';
 
 const SEARCH_ENDPOINT = 'https://www.googleapis.com/youtube/v3/search';
 const CHANNELS_ENDPOINT = 'https://www.googleapis.com/youtube/v3/channels';
@@ -57,7 +57,9 @@ export function orderChannelsByIds(items, ids) {
 export async function fetchChannelsByIds(ids, apiKey) {
   if (!ids.length) return [];
   const json = await getJson(CHANNELS_ENDPOINT, {
-    part: 'snippet,statistics',
+    /* Shared with the single-channel adapter so both hydrate paths return the
+       same fields — see CHANNEL_PARTS. Still one quota unit per call. */
+    part: CHANNEL_PARTS,
     id: ids.slice(0, 50).join(','),
     maxResults: '50',
     key: apiKey,

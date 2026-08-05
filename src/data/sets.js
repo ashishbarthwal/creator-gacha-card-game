@@ -47,6 +47,18 @@ function normalizeChannel(ch, i, slug) {
     viewCount: String(ch.viewCount ?? '0'),
     videoCount: String(ch.videoCount ?? '0'),
     country: String(ch.country ?? ''),
+    /* THESE TWO WERE BEING DROPPED ON THE FLOOR. setbuild.js puts both into
+       every published record and this normalizer, written before either
+       existed, rebuilt the channel without them — so a set could ship a
+       publishedAt that no reader ever saw. Two of the five battle axes are
+       dead without the date and the whole element layer is dead without the
+       element, and both failures are silent: the card still renders, it just
+       quietly falls back. Worth stating because the bug is structural rather
+       than careless — a positive allowlist is the right shape here for exactly
+       the reason toCandidate uses one, and its cost is that a new field has to
+       be added in two places or it goes nowhere. */
+    publishedAt: String(ch.publishedAt ?? ''),
+    element: String(ch.element ?? ''),
   };
   /* Keep subscriberCount only when present — the typedef omits it for hidden
      channels, matching the live API, so the core reads them the same way. */
