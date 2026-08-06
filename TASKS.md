@@ -5,20 +5,51 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.pages.dev (moved off Netlify 2026-08-03 — free-tier credits
-don't cover this project's deploy cadence) · 24,359 candidates.
-**The live copy still serves the old 24,251-card "Series 1" deck. A new build — "Core Set",
-15,833 cards, every staged institution permanently cut — is built locally at
-`sets/built/core.json` but NOT yet uploaded**, pending Ash's go-ahead to push. Once it is:
-`npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js`.
-See "Core Set replaces Series 1" below.
-**Next:** WP12 — the battle system. The **engine is built, deepened and tested**, and there is now
-a **playable prototype** at `prototype/index.html` (local only, never shipped). What is still
-missing is the battle inside the real app. See below.
+**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,833 cards**
+(deployed 2026-08-05, commit `e509076`) — every staged institution permanently cut, series
+numbering retired. See "Core Set replaces Series 1" below. (This section was stale until now —
+the deploy happened but the doc was never updated after it.)
+**Next:** WP-Ruby Tier — **built and tested, not yet deployed.** A genuine sixth rarity band,
+`RUBY`, for 100M+ subscriber channels (the Ruby Play Button), fully decoupled from UR's weight.
+The old UR band (31 cards) splits into UR 22 / RUBY 9 on a fresh local build
+(`sets/built/core.json`, 2026-08-06/07). Full reveal-FX escalation (ignition/discharge/aura,
+frame ember, holo sheen — all in `styles.css`) and card-frame tokens (`.r-RUBY`) are in; 425
+tests pass. Deploy needs `npx wrangler pages deploy _site --project-name=creator-gacha
+--branch=main && node tools/record-deploy.js`, pending Ash's go-ahead. See below.
+Separately: WP12's battle system engine is built and tested with a playable prototype at
+`prototype/index.html` (local only); the in-app UI is still missing.
 
 ---
 
 ## Open
+
+### WP-Ruby Tier — a real sixth band for 100M+ (built 2026-08-07, not yet deployed)
+Started as "should UR be rarer" (Ash: pulling MrBeast should be a YOOOO moment). A first-pass
+continuous within-UR skew was considered and set aside: it dilutes as the UR roster grows, since
+the whole band still gets a fixed share of pulls no matter how many cards sit in it. Built instead
+as a genuine new rarity band, decoupled from UR entirely — `bandsFrom`/`pickBand` in `gacha.js`
+already loop generically over `RARITY_ORDER`, so almost no new pull logic was needed.
+
+- [X] `RUBY` added to `RARITY_ORDER`/`RARITY` in `core.js`; `rarityFromSubs` gets a
+      `>= 100_000_000` branch ahead of the UR check.
+- [X] Weight split: UR 1 → 0.9, RUBY 0.1 (Ash's call). Mult: RUBY 3.0 vs UR's 2.5 (Ash's call).
+- [X] Full CSS tier frame — `.r-RUBY` tokens (crimson-magenta, distinct hue from UR's amber-red,
+      not just brighter), reveal-FX escalation (ignition/discharge/aura reused generically via a
+      `TOP_TIER` set in `reveal.js`, colours overridden per-tier in CSS), card ember/holo sheen,
+      `TIER_NAME.RUBY = 'Ruby Play Button'`.
+- [X] `setbuild.js`'s band-depth math needed no changes — it already iterates `RARITY_ORDER`
+      generically. One test tolerance widened (`gives every band roughly the same completion
+      time`, `test/setbuild.test.js`): RUBY's real-world population (9 known 100M+ channels) is
+      too shallow for the coupon-collector water-filling to ever equalize its completion time
+      with the other bands, so RUBY is excluded from that parity check and UR's own tolerance
+      widened slightly (10% → 15%) now that a 6th band thins its share too.
+- [X] Local rebuild: UR 22 / RUBY 9 (split from the old 31-card UR band). 425 tests pass.
+- [ ] **Not yet deployed.** Needs `tools/build-site.js` + `wrangler pages deploy` — independent
+      of the Core Set data deploy. The live site still runs the old flat-UR pull table and card
+      frame until this ships.
+- [ ] `test/gacha.test.js`/`test/core.test.js` cover the new band, but nobody has looked at the
+      reveal animation or the collection-grid RUBY card in a real browser yet — do that before
+      calling the visual side done.
 
 ### WP10 — Deploy + README
 - [X] **Netlify direct upload + live link.** LIVE at https://creator-gacha.netlify.app

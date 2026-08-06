@@ -19,7 +19,9 @@ describe('rarityFromSubs — exact boundaries', () => {
     [10_000_000,   'SSR'],
     [49_999_999,   'SSR'],
     [50_000_000,   'UR'],
-    [325_000_000,  'UR'],   // well past the top band — no ceiling
+    [99_999_999,   'UR'],
+    [100_000_000,  'RUBY'],
+    [511_000_000,  'RUBY'],   // well past the top band — no ceiling
   ];
 
   it.each(table)('%i subs -> %s (as number)', (subs, want) => {
@@ -104,7 +106,7 @@ describe('statsFrom — scaling', () => {
   it('rarity multiplier is applied — same raw counts, higher band, higher stats', () => {
     const counts = { viewCount: '5000000', videoCount: '300' };
     const stats = RARITY_ORDER.map((_, i) =>
-      statsFrom(channel({ ...counts, subscriberCount: ['0', '100000', '1000000', '10000000', '50000000'][i] })));
+      statsFrom(channel({ ...counts, subscriberCount: ['0', '100000', '1000000', '10000000', '50000000', '100000000'][i] })));
     for (let i = 1; i < stats.length; i++) {
       expect(stats[i].atk).toBeGreaterThan(stats[i - 1].atk);
       expect(stats[i].def).toBeGreaterThan(stats[i - 1].def);

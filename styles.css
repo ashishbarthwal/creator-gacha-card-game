@@ -721,13 +721,17 @@
   /* Rarity → YouTube Creator Award tier. --rc (chip dots + accents) and the
      --t-* set (bevel, glow, badge) both derive from the tier, so chips and
      cards always agree. N=Graphite, R=Silver, SR=Gold, SSR=Diamond,
-     UR=Red Diamond — the same 100K / 1M / 10M / 50M thresholds YouTube's own
-     play buttons use, which is exactly where the rarity bands sit. */
-  .r-N   { --t-hi:#c9ced8; --t-mid:#828a97; --t-lo:#4d535e; --t-soft:#a7adb8; --t-glow:#9aa3b2; --t-ink:#12151b; --rc: var(--t-glow); }
-  .r-R   { --t-hi:#f6f9fd; --t-mid:#c2ccda; --t-lo:#93a3b8; --t-soft:#e7eef7; --t-glow:#cdd8ea; --t-ink:#0f1622; --rc: var(--t-glow); }
-  .r-SR  { --t-hi:#ffe9a6; --t-mid:#eec04b; --t-lo:#cf992a; --t-soft:#ffd977; --t-glow:#ffcf6b; --t-ink:#241a05; --rc: var(--t-glow); }
-  .r-SSR { --t-hi:#eaf7ff; --t-mid:#a9d4e8; --t-lo:#7fbfe0; --t-soft:#dff3ff; --t-glow:#7fe7ff; --t-ink:#0c1524; --rc: var(--t-glow); }
-  .r-UR  { --t-hi:#ffe4bf; --t-mid:#ff5566; --t-lo:#b3162e; --t-soft:#ffb066; --t-glow:#ff3b57; --t-ink:#2a060c; --rc: var(--t-glow); }
+     UR=Red Diamond, RUBY=Ruby Play Button — the same 100K / 1M / 10M / 50M /
+     100M thresholds YouTube's own play buttons use, which is exactly where
+     the rarity bands sit. RUBY skews magenta-crimson against UR's amber-red,
+     and runs darker at the low end, so the two never read as the same hue at
+     different brightness. */
+  .r-N    { --t-hi:#c9ced8; --t-mid:#828a97; --t-lo:#4d535e; --t-soft:#a7adb8; --t-glow:#9aa3b2; --t-ink:#12151b; --rc: var(--t-glow); }
+  .r-R    { --t-hi:#f6f9fd; --t-mid:#c2ccda; --t-lo:#93a3b8; --t-soft:#e7eef7; --t-glow:#cdd8ea; --t-ink:#0f1622; --rc: var(--t-glow); }
+  .r-SR   { --t-hi:#ffe9a6; --t-mid:#eec04b; --t-lo:#cf992a; --t-soft:#ffd977; --t-glow:#ffcf6b; --t-ink:#241a05; --rc: var(--t-glow); }
+  .r-SSR  { --t-hi:#eaf7ff; --t-mid:#a9d4e8; --t-lo:#7fbfe0; --t-soft:#dff3ff; --t-glow:#7fe7ff; --t-ink:#0c1524; --rc: var(--t-glow); }
+  .r-UR   { --t-hi:#ffe4bf; --t-mid:#ff5566; --t-lo:#b3162e; --t-soft:#ffb066; --t-glow:#ff3b57; --t-ink:#2a060c; --rc: var(--t-glow); }
+  .r-RUBY { --t-hi:#ffe0ea; --t-mid:#ff2358; --t-lo:#6b0019; --t-soft:#ff6b8f; --t-glow:#ff0a3f; --t-ink:#1a0006; --rc: var(--t-glow); }
 
   /* card — a metal-bevel frame (the seam) around a dark inner face. Internal
      sizes are container-query units, so one card scales cleanly from the
@@ -1092,6 +1096,7 @@
      itself once it is sitting in a grid of forty. */
   .cards-grid .card.r-SSR:hover { box-shadow: 0 20px 46px -14px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
   .cards-grid .card.r-UR:hover  { box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
+  .cards-grid .card.r-RUBY:hover { box-shadow: 0 24px 54px -14px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.26) inset, 0 0 60px -6px var(--t-glow); }
 
   /* reveal overlay */
 
@@ -1325,17 +1330,22 @@
   .glow-SR.reveal-cell.flipped  { --seam: rgba(255, 207, 107, 0.42); --seam-peak: 30px 4px; --seam-rest: 16px 2px; }
   .glow-SSR.reveal-cell.flipped { --seam: rgba(127, 231, 255, 0.6);  --seam-peak: 46px 7px; --seam-rest: 26px 4px; }
   /* UR rests hotter and wider than it peaks elsewhere — it has an aura to sit
-     inside, so the settled halo carries more than SR/SSR's do. */
+     inside, so the settled halo carries more than SR/SSR's do. RUBY rests
+     hotter and wider again, one step past it. */
   .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 44px 9px; }
-  /* SSR/UR turn over 0.95s (below), so their halo peaks later — otherwise it has
-     already started fading by the time the face is actually facing you. The
-     face crosses into view around the halfway point of the turn, so these
+  .glow-RUBY.reveal-cell.flipped { --seam: rgba(255, 30, 75, 0.85);  --seam-peak: 78px 13px; --seam-rest: 54px 11px; }
+  /* SSR/UR/RUBY turn over 0.95s (below), so their halo peaks later — otherwise
+     it has already started fading by the time the face is actually facing you.
+     The face crosses into view around the halfway point of the turn, so these
      delays move whenever the flip durations do. */
   .reveal-cell.flipped { animation: seam-light 0.8s ease-out var(--seam-delay, 0.15s) both; }
   .glow-SSR.reveal-cell.flipped { --seam-delay: 0.5s; }
   /* UR waits longer still: its halo has to flood in BEHIND the ignition (below)
-     rather than beat it, so the fire reads as the thing lighting the frame. */
+     rather than beat it, so the fire reads as the thing lighting the frame.
+     RUBY's ignition runs longer still (fuse-run below), so its halo waits
+     longer too. */
   .glow-UR.reveal-cell.flipped { --seam-delay: 0.85s; }
+  .glow-RUBY.reveal-cell.flipped { --seam-delay: 1.05s; }
   @keyframes seam-light {
     from { box-shadow: 0 0 0 0 transparent; }
     45%  { box-shadow: 0 0 var(--seam-peak, 38px 6px) var(--seam, transparent); }
@@ -1370,13 +1380,18 @@
     opacity: 0;
     animation: twinkle var(--tw, 2.4s) ease-in-out infinite;
   }
-  /* Tints track the frame tokens: SR gold, SSR cold diamond, UR hot amber — so
-     UR never reads as "SSR with more dots". */
+  /* Tints track the frame tokens: SR gold, SSR cold diamond, UR hot amber,
+     RUBY hot crimson — so UR never reads as "SSR with more dots", and RUBY
+     never reads as "UR with more dots". */
   .glow-SR  .star { --star: rgba(255, 214, 140, 0.85); }
   .glow-SSR .star { --star: rgba(190, 240, 255, 0.9); }
   .glow-UR  .star {
     --star: rgba(255, 210, 172, 0.98);
     box-shadow: 0 0 8px var(--star), 0 0 17px var(--star); /* UR dots carry a second, wider halo */
+  }
+  .glow-RUBY .star {
+    --star: rgba(255, 130, 170, 1);
+    box-shadow: 0 0 9px var(--star), 0 0 20px var(--star); /* wider still than UR's */
   }
 
   @keyframes twinkle {
@@ -1406,10 +1421,11 @@
     transform-origin: 50% 50%;
     mix-blend-mode: screen;
   }
-  .glow-R   .beam { --beam: #cdd8ea; }
-  .glow-SR  .beam { --beam: #ffcf6b; }
-  .glow-SSR .beam { --beam: #7fe7ff; }
-  .glow-UR  .beam { --beam: #ff5566; }
+  .glow-R    .beam { --beam: #cdd8ea; }
+  .glow-SR   .beam { --beam: #ffcf6b; }
+  .glow-SSR  .beam { --beam: #7fe7ff; }
+  .glow-UR   .beam { --beam: #ff5566; }
+  .glow-RUBY .beam { --beam: #ff2358; }
   /* Back-loaded curve: ease-out spent the beam in its first third and left the
      rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
      into the flip makes the long beams tension instead of waiting. */
@@ -1430,9 +1446,10 @@
   /* Rarer cards flip slower — a beat of drama on the turn. Now a three-step
      ladder rather than two: SR used to share the common turn and only differed
      in what landed after it, so the escalation started a tier late. */
-  .glow-SR  .flip-inner { transition-duration: 0.82s; }
-  .glow-SSR .flip-inner,
-  .glow-UR  .flip-inner { transition-duration: 0.95s; }
+  .glow-SR   .flip-inner { transition-duration: 0.82s; }
+  .glow-SSR  .flip-inner,
+  .glow-UR   .flip-inner { transition-duration: 0.95s; }
+  .glow-RUBY .flip-inner { transition-duration: 1.05s; }
 
   /* reveal-moment specular sweep — a single slow light pass across the card
      face as it lands (SR+ only), a faint tint per glow tier. Not a loop. */
@@ -1460,10 +1477,12 @@
   /* Delay is folded in per tier rather than set in a later rule: SR flips over
      0.82s and SSR/UR over 0.95s, so their pass has to start later to cross a
      card that's facing you. Rarer = slower and brighter. */
-  .glow-SR  .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.46s; }
-  .glow-SSR .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
-  .glow-UR  .sweep { --sweep: rgba(255, 232, 214, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
-  .glow-UR  .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
+  .glow-SR   .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.46s; }
+  .glow-SSR  .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
+  .glow-UR   .sweep { --sweep: rgba(255, 232, 214, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
+  .glow-UR   .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
+  .glow-RUBY .sweep { --sweep: rgba(255, 224, 234, 1);    --sweep-ms: 1.3s;  --sweep-delay: 0.72s; }
+  .glow-RUBY .sweep::before { width: 58%; filter: blur(2.6px); } /* broader still than UR's */
   .reveal-cell.flipped .sweep::before { animation: sweep-pass var(--sweep-ms, 0.85s) ease-in-out var(--sweep-delay, 0.4s) 1; }
 
   /* ---- UR only: the ignition ------------------------------------------------
@@ -1514,8 +1533,24 @@
       transparent 100%);
   }
 
+  /* RUBY's ignition runs a hair longer and hotter — a crimson-into-white head
+     against UR's amber-into-crimson, so the top of the ladder still reads as
+     escalation rather than a recolor of the same ring. */
+  .glow-RUBY .fuse i {
+    background: conic-gradient(from 0deg,
+      transparent 0 50%,
+      rgba(107, 0, 25, 0.6) 66%,
+      #ff2358 82%,
+      #ff6b8f 92%,
+      #ffe0ea 97%,
+      #fff 99.4%,
+      transparent 100%);
+  }
+
   .reveal-cell.flipped .fuse { animation: fuse-hold 1.15s linear 0.55s both; }
   .reveal-cell.flipped .fuse i { animation: fuse-run 1.15s cubic-bezier(0.45, 0, 0.4, 1) 0.55s both; }
+  .glow-RUBY.reveal-cell.flipped .fuse { animation-duration: 1.35s; }
+  .glow-RUBY.reveal-cell.flipped .fuse i { animation-duration: 1.35s; }
 
   @keyframes fuse-hold {
     0%   { opacity: 0; }
@@ -1545,7 +1580,13 @@
     background: radial-gradient(closest-side, rgba(255, 90, 110, 0.2), transparent 76%);
     box-shadow: 0 0 0 2px rgba(255, 140, 130, 0.85), 0 0 40px 8px rgba(255, 70, 95, 0.5);
   }
+  .glow-RUBY .bloom {
+    background: radial-gradient(closest-side, rgba(255, 20, 70, 0.24), transparent 76%);
+    box-shadow: 0 0 0 2px rgba(255, 110, 140, 0.9), 0 0 48px 10px rgba(255, 10, 63, 0.55);
+  }
+
   .reveal-cell.flipped .bloom { animation: bloom-out 0.8s cubic-bezier(0.12, 0.7, 0.3, 1) 1.62s 1; }
+  .glow-RUBY.reveal-cell.flipped .bloom { animation-delay: 1.82s; }
 
   @keyframes bloom-out {
     from { opacity: 0.9; transform: scale(1);    filter: blur(0); }
@@ -1567,6 +1608,7 @@
     opacity: 0;
   }
   .reveal-cell.flipped .aura { animation: aura-in 1s ease-out 1.35s both; }
+  .glow-RUBY.reveal-cell.flipped .aura { animation-delay: 1.55s; }
   @keyframes aura-in { to { opacity: 1; } }
 
   .aura::before {
@@ -1580,6 +1622,15 @@
       transparent 78%);
     filter: blur(10px);
     animation: aura-breathe 3.8s ease-in-out infinite;
+  }
+
+  /* RUBY's aura runs crimson-to-magenta rather than UR's orange-red, and
+     breathes a touch wider — the field behind the top card in the game. */
+  .glow-RUBY .aura::before {
+    background: radial-gradient(closest-side,
+      rgba(255, 10, 63, 0.44) 0%,
+      rgba(255, 60, 130, 0.17) 58%,
+      transparent 78%);
   }
 
   @keyframes aura-breathe {
@@ -1599,6 +1650,12 @@
     background: radial-gradient(circle, #fff4e2 0%, #ffab72 45%, transparent 74%);
     box-shadow: 0 0 5px rgba(255, 150, 110, 0.8);
     opacity: 0;
+  }
+
+  /* RUBY sheds crimson-pink motes rather than UR's amber ones. */
+  .glow-RUBY .mote {
+    background: radial-gradient(circle, #fff0f4 0%, #ff5580 45%, transparent 74%);
+    box-shadow: 0 0 5px rgba(255, 60, 110, 0.85);
   }
 
   .reveal-cell.flipped .mote { animation: mote-drift var(--float, 3.6s) ease-out infinite; }
@@ -1766,10 +1823,11 @@
 
   .card { transition: transform 0.2s ease; }
 
-  .card.r-R   { --tilt-max: 7deg;  --holo-strength: 0;    }
-  .card.r-SR  { --tilt-max: 9deg;  --holo-strength: 0.30; }
-  .card.r-SSR { --tilt-max: 11deg; --holo-strength: 0.50; }
-  .card.r-UR  { --tilt-max: 13deg; --holo-strength: 0.42; }
+  .card.r-R    { --tilt-max: 7deg;  --holo-strength: 0;    }
+  .card.r-SR   { --tilt-max: 9deg;  --holo-strength: 0.30; }
+  .card.r-SSR  { --tilt-max: 11deg; --holo-strength: 0.50; }
+  .card.r-UR   { --tilt-max: 13deg; --holo-strength: 0.42; }
+  .card.r-RUBY { --tilt-max: 15deg; --holo-strength: 0.48; }
 
   /* Finish layer: painted above the card body (so the shine sweeps across the
      art and the text) but below the badges at z-index 3, which stay crisp. */
@@ -1820,17 +1878,39 @@
     filter: saturate(1.25);
   }
 
+  /* RUBY's sheen runs crimson→magenta rather than UR's gold→crimson — one
+     step hotter and redder, so it reads as the ceiling above UR rather than a
+     recolor of it. */
+  .card.r-RUBY .holo {
+    background: repeating-linear-gradient(115deg,
+      rgba(255, 224, 234, 0.48)  0%,
+      rgba(255, 90, 130, 0.48)  12%,
+      rgba(255, 10, 63, 0.48)   24%,
+      rgba(255, 107, 143, 0.48) 36%,
+      rgba(255, 224, 234, 0.48) 48%);
+    filter: saturate(1.3);
+  }
+
   /* UR only: a low, smouldering flicker at the seam — the "Red Diamond" tier
      reading as legendary without a distracting full-card colour sweep. Only the
      frame glow moves; irregular keyframe stops make it flicker like heat. */
   @media (prefers-reduced-motion: no-preference) {
     .card.r-UR { animation: ur-ember 4.2s ease-in-out infinite; }
+    /* RUBY's ember runs a touch faster and hotter than UR's — the Ruby Play
+       Button tier, one step past Red Diamond. */
+    .card.r-RUBY { animation: ruby-ember 3.6s ease-in-out infinite; }
   }
   @keyframes ur-ember {
     0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px -8px var(--t-glow); }
     28%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 34px -6px #ff5a3c; }
     52%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 25px -8px var(--t-glow); }
     76%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 40px -6px #ff7a33; }
+  }
+  @keyframes ruby-ember {
+    0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 24px -8px var(--t-glow); }
+    28%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,60,110,0.24) inset, 0 0 40px -6px #ff1450; }
+    52%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 30px -8px var(--t-glow); }
+    76%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,20,80,0.20) inset, 0 0 46px -6px #ff2d70; }
   }
 
   /* Touch / no-hover devices can't poke-holo, so give the rarer bands a gentle
@@ -1839,7 +1919,7 @@
      simply not wired up in this view (the scrolling collection grid never
      requests motion permission — see holo.js). */
   @media (hover: none) {
-    .card.r-SR  .holo, .card.r-SSR .holo, .card.r-UR  .holo { opacity: calc(var(--holo-strength) * 0.5); }
+    .card.r-SR  .holo, .card.r-SSR .holo, .card.r-UR  .holo, .card.r-RUBY .holo { opacity: calc(var(--holo-strength) * 0.5); }
   }
 
   /* .holo full strength under .lit — deliberately placed AFTER the touch
@@ -1860,6 +1940,7 @@
     .card { transition: none; }
     .holo { transition: none; }
     .card.r-UR { animation: none; }
+    .card.r-RUBY { animation: none; }
   }
 
 /* ===========================================================================

@@ -2,14 +2,15 @@
    Imports nothing, by design. If this file ever needs an import, the
    design is wrong. */
 
-export const RARITY_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
+export const RARITY_ORDER = ['N', 'R', 'SR', 'SSR', 'UR', 'RUBY'];
 
 export const RARITY = {
-  N:   { weight: 55, mult: 1.0  },
-  R:   { weight: 27, mult: 1.25 },
-  SR:  { weight: 12, mult: 1.6  },
-  SSR: { weight: 5,  mult: 2.0  },
-  UR:  { weight: 1,  mult: 2.5  },
+  N:    { weight: 55,  mult: 1.0  },
+  R:    { weight: 27,  mult: 1.25 },
+  SR:   { weight: 12,  mult: 1.6  },
+  SSR:  { weight: 5,   mult: 2.0  },
+  UR:   { weight: 0.9, mult: 2.5  },
+  RUBY: { weight: 0.1, mult: 3.0  },
 };
 
 /* The API reports counts as decimal strings and omits them entirely for
@@ -23,6 +24,7 @@ export function toCount(value) {
 export function rarityFromSubs(subscriberCount, hidden = false) {
   if (hidden) return 'N';
   const subs = toCount(subscriberCount);
+  if (subs >= 100_000_000) return 'RUBY';
   if (subs >= 50_000_000) return 'UR';
   if (subs >= 10_000_000) return 'SSR';
   if (subs >= 1_000_000)  return 'SR';

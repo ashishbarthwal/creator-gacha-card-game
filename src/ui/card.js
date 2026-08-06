@@ -89,11 +89,12 @@ function accentFor(channel) {
 /* Rarity band → YouTube Creator Award tier name. The bands are literally the
    play-button subscriber thresholds, so the awards name the tiers. */
 const TIER_NAME = {
-  N:   'Graphite',
-  R:   'Silver',
-  SR:  'Gold',
-  SSR: 'Diamond',
-  UR:  'Red Diamond',
+  N:    'Graphite',
+  R:    'Silver',
+  SR:   'Gold',
+  SSR:  'Diamond',
+  UR:   'Red Diamond',
+  RUBY: 'Ruby Play Button',
 };
 
 export function renderCard(card, { isNew = false, count = 0 } = {}) {

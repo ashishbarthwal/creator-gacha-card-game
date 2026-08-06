@@ -40,11 +40,12 @@ const CARD_BACK_HTML =
    crescendo); beam is the pre-flip telegraph time (ms); hold is the pause after
    this card lands. Sweep, seam glow and stars are gated per rarity downstream. */
 const FX = {
-  N:   { rank: 0, beam: 0,    hold: 0   },
-  R:   { rank: 1, beam: 200,  hold: 60  },
-  SR:  { rank: 2, beam: 360,  hold: 240 },
-  SSR: { rank: 3, beam: 600,  hold: 430 },
-  UR:  { rank: 4, beam: 950,  hold: 700 },
+  N:    { rank: 0, beam: 0,    hold: 0   },
+  R:    { rank: 1, beam: 200,  hold: 60  },
+  SR:   { rank: 2, beam: 360,  hold: 240 },
+  SSR:  { rank: 3, beam: 600,  hold: 430 },
+  UR:   { rank: 4, beam: 950,  hold: 700 },
+  RUBY: { rank: 5, beam: 1200, hold: 900 },
 };
 
 /* Gap between consecutive commons — the cadence knob, and the one that decides
@@ -56,17 +57,25 @@ const FX = {
 const BASE_GAP = 200;
 const OPENING_BEAT = 300;  // let the overlay settle before the first flip
 
-const SWEPT = new Set(['SR', 'SSR', 'UR']);   // get the specular sweep
+const SWEPT = new Set(['SR', 'SSR', 'UR', 'RUBY']);   // get the specular sweep
 
 /* Twinkling stars, now starting at SR: a sparse small shimmer there, the dense
-   quick field at SSR, a little denser again at UR. Ranges are [min, max] —
-   count, dot size (px), twinkle period (s). Tint is per-tier in CSS and follows
-   the frame, so SR reads gold, SSR cold diamond, UR hot amber. */
+   quick field at SSR, a little denser again at UR, denser still at RUBY.
+   Ranges are [min, max] — count, dot size (px), twinkle period (s). Tint is
+   per-tier in CSS and follows the frame, so SR reads gold, SSR cold diamond,
+   UR hot amber, RUBY hot crimson. */
 const STARS = {
-  SR:  { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
-  SSR: { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
-  UR:  { count: 26, size: [2.0, 4.4], tw: [1.1, 2.8] },
+  SR:   { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
+  SSR:  { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
+  UR:   { count: 26, size: [2.0, 4.4], tw: [1.1, 2.8] },
+  RUBY: { count: 32, size: [2.2, 4.8], tw: [0.9, 2.4] },
 };
+
+/* The top-of-ladder finale — ignition, discharge and breathing aura — was
+   UR-exclusive when UR was the top tier. RUBY inherits the same mechanics
+   (WP-Ruby Tier); its own colours come from CSS (.glow-RUBY), keyed off the
+   same class this set gates. */
+const TOP_TIER = new Set(['UR', 'RUBY']);
 
 /* Avatar exclusion in card-relative fractions (the ringed centrepiece), so
    stars never land on the pfp. y is scaled by the 5:7 aspect for a round check. */
@@ -276,14 +285,14 @@ function buildCell(result) {
     front.appendChild(sweep);
   }
   if (STARS[rarity]) front.appendChild(makeStars(rarity));
-  if (rarity === 'UR') {
-    /* UR only — the ignition: a white-hot point races once around the frame
-       bevel as the card lands, and the seam halo floods in behind it. This is
-       the strike the card's ambient ember (`.card.r-UR`, ur-ember) is the
-       aftermath of. The <i> carries the spinning gradient; the wrapper is a
-       static masked ring, so the ring itself never rotates — only the head
-       appears to travel. Border-only by construction, so it never crosses the
-       avatar. */
+  if (TOP_TIER.has(rarity)) {
+    /* Top tier only — the ignition: a white-hot point races once around the
+       frame bevel as the card lands, and the seam halo floods in behind it.
+       This is the strike the card's ambient ember (`.card.r-UR`/`.r-RUBY`,
+       *-ember) is the aftermath of. The <i> carries the spinning gradient; the
+       wrapper is a static masked ring, so the ring itself never rotates — only
+       the head appears to travel. Border-only by construction, so it never
+       crosses the avatar. */
     const fuse = document.createElement('div');
     fuse.className = 'fuse';
     fuse.appendChild(document.createElement('i'));

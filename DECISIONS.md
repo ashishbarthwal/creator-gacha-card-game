@@ -3051,3 +3051,65 @@ exist. Not done here: this rebuild's purpose was the institution cut, and a stat
 exactly the kind of change `balance-tool-methodology` says should be deliberate, not a drive-by.
 
 </details>
+
+## RUBY: a genuine sixth rarity band for 100M+ subscribers (2026-08-07)
+
+<details>
+<summary><b>Not a within-UR skew — a real band, decoupled from UR's weight and drawn from the
+Ruby Play Button, one tier past the Custom/Red Diamond button UR is already themed on.</b></summary>
+
+Ash: "make UR more rarer? compensate by smaller channels? UR should be more exciting coz
+pulling MrBeast should be a YOOOOOO!!! moment." A continuous within-UR skew (weighting selection
+by subscriber count above 100M) was prototyped first and set aside: it dilutes as the UR roster
+grows, because the whole band still draws a fixed share of pulls no matter how many cards sit in
+it, so every individual card's odds — MrBeast's included — shrink as more UR-tier channels get
+sourced. The ratio between cards holds; the absolute number keeps drifting.
+
+**Built instead: a real band.** `RARITY_ORDER` gains `RUBY` after `UR`; `rarityFromSubs` gets a
+`>= 100_000_000` branch. `bandsFrom`/`pickBand` in `gacha.js` already loop generically over
+`RARITY_ORDER`, so the pull engine needed no new logic at all — the two-stage design (band by
+fixed weight, then uniform inside it) pays for itself again here.
+
+**The split.** UR's weight drops from 1 to 0.9, RUBY takes the remaining 0.1 — Ash's call,
+choosing the gentler of two offered splits (0.9/0.1 over 0.8/0.2) so RUBY reads as a rare bonus
+layered on UR rather than an aggressive cut into it. RUBY's stat multiplier is 3.0 against UR's
+2.5 — again Ash's call, the smaller of two offered steps, keeping the escalation in line with the
+existing 1.0/1.25/1.6/2.0/2.5 ladder's own spacing rather than jumping it.
+
+**100,000,000 subscribers is a real YouTube milestone** — the Ruby Play Button — so this extends
+the "rarity tiers ARE the Creator Awards" mapping one step further rather than inventing
+something new. Measured against the real Core Set candidate pool: 9 channels currently cross it
+(MrBeast, PewDiePie, Cocomelon, Vlad and Niki, Like Nastya, Kids Diana Show, Stokes Twins,
+BLACKPINK, Alan's Universe) against 22 that stay in UR once the split lands — the old flat UR
+band held 31.
+
+**A real visual escalation, not a recolor.** TASKS.md flagged this explicitly ("needs an
+escalation, not a recolor") after the earlier UR-skew work shipped nothing visible. RUBY's frame
+tokens (`.r-RUBY`) run crimson-into-magenta rather than UR's amber-into-crimson — a different hue
+skew, not just a brighter version of the same one — and darker at the low end. The reveal
+overlay's top-tier finale (ignition ring, discharge bloom, breathing aura with shed motes) was
+UR-exclusive in `reveal.js`; it now gates on a `TOP_TIER` set containing both UR and RUBY, with
+RUBY's own colours and slightly longer timings supplied per-tier in `styles.css` rather than
+duplicating the JS. Card tilt (`--tilt-max`), holo strength, and the ambient ember animation
+(`ruby-ember`, mirroring `ur-ember`) all get their own RUBY values, escalated past UR's.
+
+**The coupon-collector math breaks down at this depth, and that's expected, not a bug.**
+`setbuild.js`'s band-depth guard (`minCardsForBand`, `bandTargets`) needed no code changes — both
+already iterate `RARITY_ORDER` generically — but one existing test asserting all bands reach
+roughly equal completion time under water-filling had to exclude RUBY: water-filling can only
+raise a band's completion time by adding cards to it (never lower it), and RUBY's real-world
+population (9 known 100M+ channels, worldwide) puts its 2-card floor's completion time at ~3000
+pulls against the other bands' ~2100 at a 400-card budget — no amount of budget can close that
+gap when the ceiling on RUBY's roster is reality, not the allocator. UR's own tolerance in the
+same test widened from 10% to 15%, since a 6th band thinning the shared weight table moved it
+from a comfortable margin to a real, if small, outlier too.
+
+**Not yet deployed.** Local rebuild of the Core Set (`tools/build-set.js --uncapped`) confirms
+the split holds against real data: UR 22 / RUBY 9, both bands full and healthy, 15,832 cards
+total (one fewer than the prior 15,833 — a channel vanished between hydration passes, unrelated
+to this change). 425 tests pass. This is app code (`src/engine/`, `src/ui/`), not set data, so it
+ships via `tools/build-site.js` + `wrangler pages deploy` independently of the Core Set data
+deploy — pending Ash's go-ahead, and pending an actual look at the reveal animation and the
+RUBY card in a browser, which nobody has done yet.
+
+</details>

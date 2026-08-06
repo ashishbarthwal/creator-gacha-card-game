@@ -81,11 +81,12 @@ describe('pull — weighting favors low rarity (seeded, deterministic)', () => {
   it('over 1000 seeded pulls, frequency follows the weight table strictly', () => {
     const counts = tally(pull(poolOfEachRarity(), 1000, mulberry32(2026)));
 
-    /* Weights are 55/27/12/5/1 — the observed order must match exactly. */
+    /* Weights are 55/27/12/5/0.9/0.1 — the observed order must match exactly. */
     expect(counts.N).toBeGreaterThan(counts.R);
     expect(counts.R).toBeGreaterThan(counts.SR);
     expect(counts.SR).toBeGreaterThan(counts.SSR);
     expect(counts.SSR).toBeGreaterThan(counts.UR);
+    expect(counts.UR).toBeGreaterThanOrEqual(counts.RUBY);
 
     /* And the commonest band dominates: N alone is a majority of all pulls. */
     expect(counts.N).toBeGreaterThan(500);
@@ -126,7 +127,7 @@ describe('pull — drop rates are independent of pool size (the two-stage fix)',
     expect(bandSequence(padded, 2026)).toEqual(bandSequence(small, 2026));
   });
 
-  it('a UR buried under 200 commons still drops at roughly its 1% weight', () => {
+  it('a UR buried under 200 commons still drops at roughly its 0.9% weight', () => {
     const draws = 4000;
     const pool = [...cardsOf('N', 200), { rarity: 'UR', channel: { id: 'id-UR' } }];
     const counts = tally(pull(pool, draws, mulberry32(7)));
