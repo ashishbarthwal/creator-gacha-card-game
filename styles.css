@@ -741,8 +741,21 @@
     background: conic-gradient(from 210deg,
       var(--t-mid), var(--t-hi), var(--t-lo), var(--t-soft),
       var(--t-mid), var(--t-hi), var(--t-lo), var(--t-mid));
+    /* NO BLACK DROP SHADOW. `0 10px 30px rgba(0,0,0,0.5)` sat here for a long
+       time and it is what made every card look like a hole cut in the page
+       rather than an object resting on it.
+
+       The reason it read as a cutout rather than as depth is the surface it
+       lands on. The collection panel is `rgba(255,255,255,0.04)` — a LIGHTENING
+       over the stage — so a 50%-black shadow with 30px of blur and no negative
+       spread pulls the ring around each card down to roughly rgb(10,7,15),
+       markedly darker than both the panel and the #150e1f page behind it. Three
+       tones meeting at the card edge, the darkest one hugging the card: that is
+       the visual signature of a cutout, not a shadow.
+
+       Depth comes from the rarity glow and the inset hairline instead. Both ADD
+       light, so the background stays flat and continuous behind every card. */
     box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.5),
       0 0 0 1px rgba(255, 255, 255, 0.12) inset,
       0 0 22px -8px var(--t-glow);
     transition: transform 0.2s ease;
@@ -1079,10 +1092,13 @@
     transition: transform 0.2s ease, box-shadow 0.25s ease;
   }
 
+  /* Hover brightens, never darkens — same reasoning as `.card`'s own shadow.
+     This was the worse half of it: the dark ring DEEPENED and spread on hover,
+     so the cutout appeared to open up around the card exactly as the tilt
+     engaged, which is what made it read as the card detaching from the page. */
   .cards-grid .card:hover,
   .cards-grid .card:focus-visible {
     box-shadow:
-      0 20px 44px -14px rgba(0, 0, 0, 0.72),
       0 0 0 1px rgba(255, 255, 255, 0.2) inset,
       0 0 30px -6px var(--t-glow);
   }
@@ -1090,8 +1106,8 @@
   /* The rarer the card, the further its glow reaches on hover — the same
      escalation the reveal uses, carried into the binder so a UR still announces
      itself once it is sitting in a grid of forty. */
-  .cards-grid .card.r-SSR:hover { box-shadow: 0 20px 46px -14px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
-  .cards-grid .card.r-UR:hover  { box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
+  .cards-grid .card.r-SSR:hover { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
+  .cards-grid .card.r-UR:hover  { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
 
   /* reveal overlay */
 
@@ -1114,7 +1130,16 @@
     inset: 0;
     z-index: 50;
     display: flex;
-    background: rgba(11, 6, 20, 0.9);
+    /* THE BACKDROP IS THE STAGE COLOUR, not a darker one. It used to be
+       `rgba(11, 6, 20, 0.9)` — rgb(11,6,20), against the page's own --bg0 of
+       rgb(21,14,31). Roughly half the lightness and less purple, compositing to
+       about rgb(12,7,21): effectively black. Every card in the overlay then sat
+       in a black field with the page's purple visible nowhere, so a card read as
+       a hole punched in the site rather than a card laid on it.
+
+       Derived from --bg0 rather than restated as a literal, so the overlay
+       cannot drift away from the stage again if the palette moves. */
+    background: color-mix(in srgb, var(--bg0) 88%, transparent);
     backdrop-filter: blur(8px);
     overflow-y: auto;
     /* Horizontal stays clipped: seam glow, bloom and the UR aura's motes all
@@ -1184,9 +1209,11 @@
     /* Near-solid under the button itself. The fade is not this element's job —
        see ::before — because anything that fades here has to be paid for in
        layout height, and layout height is the resting gap above the button. */
+    /* Stage colour, matching #reveal's own backdrop — the old rgb(11,6,20) left
+       a darker band across the foot than the field it sits on. */
     background: linear-gradient(to top,
-      rgba(11, 6, 20, 0.98) 0 60%,
-      rgba(11, 6, 20, 0.92));
+      color-mix(in srgb, var(--bg0) 98%, transparent) 0 60%,
+      color-mix(in srgb, var(--bg0) 92%, transparent));
   }
 
   /* The scrim, hung ABOVE the bar and out of flow, so the veil can be as tall as
@@ -1203,8 +1230,8 @@
     height: 58px;
     pointer-events: none;
     background: linear-gradient(to top,
-      rgba(11, 6, 20, 0.92),
-      rgba(11, 6, 20, 0.55) 45%,
+      color-mix(in srgb, var(--bg0) 92%, transparent),
+      color-mix(in srgb, var(--bg0) 55%, transparent) 45%,
       transparent);
   }
 
@@ -1827,10 +1854,14 @@
     .card.r-UR { animation: ur-ember 4.2s ease-in-out infinite; }
   }
   @keyframes ur-ember {
-    0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px -8px var(--t-glow); }
-    28%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 34px -6px #ff5a3c; }
-    52%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 25px -8px var(--t-glow); }
-    76%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 40px -6px #ff7a33; }
+    /* The dark component is dropped here too. These keyframes override
+       box-shadow outright, so leaving it would have restored the cutout on UR
+       cards alone — a confusing thing to chase once every other card looked
+       right. */
+    0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px -8px var(--t-glow); }
+    28%      { box-shadow: 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 34px -6px #ff5a3c; }
+    52%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 25px -8px var(--t-glow); }
+    76%      { box-shadow: 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 40px -6px #ff7a33; }
   }
 
   /* Touch / no-hover devices can't poke-holo, so give the rarer bands a gentle
@@ -1873,7 +1904,10 @@
     display: grid;
     place-items: center;
     padding: 24px;
-    background: rgba(11, 6, 20, 0.58);
+    /* Same correction as #reveal above — the inspector's backdrop was the same
+       too-dark, too-neutral rgb(11,6,20). Lighter alpha here because the
+       inspector is a single card and the page behind it should stay legible. */
+    background: color-mix(in srgb, var(--bg0) 58%, transparent);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
   }
