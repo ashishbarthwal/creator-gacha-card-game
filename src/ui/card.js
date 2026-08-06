@@ -87,14 +87,22 @@ function accentFor(channel) {
 }
 
 /* Rarity band → YouTube Creator Award tier name. The bands are literally the
-   play-button subscriber thresholds, so the awards name the tiers. */
+   play-button subscriber thresholds, so the awards name the tiers.
+
+   UR/RUBY here are the internal band keys (unchanged, so saved collections
+   and the pull engine never see this), not the award names — those were
+   swapped 2026-08-07 to match the real thresholds: the Ruby Play Button is
+   50M subs (UR's band), the Red Diamond Play Button — a dark red crystal set
+   in silver-plated metal — is 100M (RUBY's band). PewDiePie nicknamed his 50M
+   trophy "Ruby" on camera and it stuck. The badge chip still shows the short
+   code (UR/RUBY); this is only the full name under it. */
 const TIER_NAME = {
   N:    'Graphite',
   R:    'Silver',
   SR:   'Gold',
   SSR:  'Diamond',
-  UR:   'Red Diamond',
-  RUBY: 'Ruby Play Button',
+  UR:   'Ruby Play Button',
+  RUBY: 'Red Diamond Play Button',
 };
 
 export function renderCard(card, { isNew = false, count = 0 } = {}) {

@@ -63,12 +63,18 @@ const SWEPT = new Set(['SR', 'SSR', 'UR', 'RUBY']);   // get the specular sweep
    quick field at SSR, a little denser again at UR, denser still at RUBY.
    Ranges are [min, max] — count, dot size (px), twinkle period (s). Tint is
    per-tier in CSS and follows the frame, so SR reads gold, SSR cold diamond,
-   UR hot amber, RUBY hot crimson. */
+   UR hot amber, RUBY cold diamond-white with a red cast. */
 const STARS = {
   SR:   { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
   SSR:  { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
   UR:   { count: 26, size: [2.0, 4.4], tw: [1.1, 2.8] },
-  RUBY: { count: 32, size: [2.2, 4.8], tw: [0.9, 2.4] },
+  /* RUBY goes DOWN, against the escalation every other row follows, and that
+     inversion is the point. Up to UR the ladder buys drama with density. The
+     gem cut buys it with restraint: a cut stone throws a few big, deliberate
+     reflections, and a dense field of small ones is what costume jewellery
+     looks like. Fewer, larger, slower — and rendered as four-point sparkles
+     rather than round dots (`.glow-RUBY .star` in styles.css). */
+  RUBY: { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
 };
 
 /* The top-of-ladder finale — ignition, discharge and breathing aura — was
@@ -235,12 +241,17 @@ function makeStars(rarity) {
    as noise) and nothing drifts across the avatar. Motes spawn on the card's
    perimeter and drift outward along their own angle, so they look shed by the
    card rather than sprinkled around it. */
-const MOTE_COUNT = 50;
+/* Per-tier, because the two top tiers are shedding different things. UR is an
+   ember throwing sparks, and a lot of them is what makes it read as burning.
+   RUBY is a cut stone: what comes off it is the occasional glint, so the same
+   field at the same density would just look like UR again with a red filter —
+   the exact "recoloured UR" outcome the gem cut exists to avoid. */
+const MOTE_COUNT = { UR: 50, RUBY: 14 };
 
-function makeAura() {
+function makeAura(rarity) {
   const wrap = document.createElement('div');
   wrap.className = 'aura';
-  for (let i = 0; i < MOTE_COUNT; i++) {
+  for (let i = 0; i < (MOTE_COUNT[rarity] ?? 50); i++) {
     const mote = document.createElement('i');
     mote.className = 'mote';
     const angle = Math.random() * Math.PI * 2;
@@ -303,7 +314,7 @@ function buildCell(result) {
        the fuse closes its loop; the aura settles in behind it and stays. */
     const bloom = document.createElement('div');
     bloom.className = 'bloom';
-    cell.append(bloom, makeAura());
+    cell.append(bloom, makeAura(rarity));
   }
   inner.append(back, front);
   flipEl.appendChild(inner);

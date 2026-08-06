@@ -721,17 +721,22 @@
   /* Rarity → YouTube Creator Award tier. --rc (chip dots + accents) and the
      --t-* set (bevel, glow, badge) both derive from the tier, so chips and
      cards always agree. N=Graphite, R=Silver, SR=Gold, SSR=Diamond,
-     UR=Red Diamond, RUBY=Ruby Play Button — the same 100K / 1M / 10M / 50M /
-     100M thresholds YouTube's own play buttons use, which is exactly where
-     the rarity bands sit. RUBY skews magenta-crimson against UR's amber-red,
-     and runs darker at the low end, so the two never read as the same hue at
-     different brightness. */
+     UR=Ruby Play Button, RUBY=Red Diamond Play Button — the same 100K / 1M /
+     10M / 50M / 100M thresholds YouTube's own play buttons use (award names
+     swapped 2026-08-07 to match reality — see card.js's TIER_NAME comment).
+     RUBY (Red Diamond) runs darker and less saturated than UR (Ruby) — a
+     near-black crystal rather than a brighter gem — so the top of the ladder
+     reads as denser and heavier, not just a different red. */
   .r-N    { --t-hi:#c9ced8; --t-mid:#828a97; --t-lo:#4d535e; --t-soft:#a7adb8; --t-glow:#9aa3b2; --t-ink:#12151b; --rc: var(--t-glow); }
   .r-R    { --t-hi:#f6f9fd; --t-mid:#c2ccda; --t-lo:#93a3b8; --t-soft:#e7eef7; --t-glow:#cdd8ea; --t-ink:#0f1622; --rc: var(--t-glow); }
   .r-SR   { --t-hi:#ffe9a6; --t-mid:#eec04b; --t-lo:#cf992a; --t-soft:#ffd977; --t-glow:#ffcf6b; --t-ink:#241a05; --rc: var(--t-glow); }
   .r-SSR  { --t-hi:#eaf7ff; --t-mid:#a9d4e8; --t-lo:#7fbfe0; --t-soft:#dff3ff; --t-glow:#7fe7ff; --t-ink:#0c1524; --rc: var(--t-glow); }
   .r-UR   { --t-hi:#ffe4bf; --t-mid:#ff5566; --t-lo:#b3162e; --t-soft:#ffb066; --t-glow:#ff3b57; --t-ink:#2a060c; --rc: var(--t-glow); }
-  .r-RUBY { --t-hi:#ffe0ea; --t-mid:#ff2358; --t-lo:#6b0019; --t-soft:#ff6b8f; --t-glow:#ff0a3f; --t-ink:#1a0006; --rc: var(--t-glow); }
+  /* --t-lo is a deep WINE, not the near-black it started as. A facet needs to
+     be dark enough to contrast its neighbour, but true black reads as a gap in
+     the frame rather than a plane turned away from the light — and nothing else
+     in this UI is black. */
+  .r-RUBY { --t-hi:#ffb3bb; --t-mid:#8c0f24; --t-lo:#3a0c1e; --t-soft:#c8354a; --t-glow:#d61030; --t-ink:#fdf0f1; --rc: var(--t-glow); }
 
   /* card — a metal-bevel frame (the seam) around a dark inner face. Internal
      sizes are container-query units, so one card scales cleanly from the
@@ -745,8 +750,18 @@
     background: conic-gradient(from 210deg,
       var(--t-mid), var(--t-hi), var(--t-lo), var(--t-soft),
       var(--t-mid), var(--t-hi), var(--t-lo), var(--t-mid));
+    /* NO DARK DROP SHADOW, anywhere in the card's states. A black shadow behind
+       a card sitting on this stage does not read as depth — it reads as a hole
+       cut in the background, because the stage is warm and lit and the shadow
+       is a cold dark ring around every card. It was worse on hover, where the
+       shadow deepened and spread, so the halo appeared to bloom outward on all
+       four sides exactly as the tilt engaged and looked like the card had come
+       unstuck from the page.
+
+       Depth comes from the rarity glow and the inset hairline instead, both of
+       which ADD light rather than subtracting it, so the background stays flat
+       and continuous behind every card. */
     box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.5),
       0 0 0 1px rgba(255, 255, 255, 0.12) inset,
       0 0 22px -8px var(--t-glow);
     transition: transform 0.2s ease;
@@ -966,6 +981,255 @@
     letter-spacing: 0.5px;
   }
 
+  /* ---- RUBY (Red Diamond) — the gem cut ------------------------------------
+     The 100M tier is not a recoloured UR, and this block is where that stops
+     being a claim. Every other band is a metal bevel around a dark face — a
+     painted frame. This one is cut stone: an octagonal silhouette, hard-stop
+     facet planes, and light that travels across the edges instead of sitting
+     on them. Reference is jewellery, not gaming rarity.
+
+     THE SILHOUETTE IS PERCENTAGE-BASED, and that is load-bearing rather than a
+     style preference. Container-query units (`cqw`) do NOT work here: `.card`
+     declares `container-type` itself, so cqw inside its OWN properties resolves
+     against an ancestor container — of which there are none — and falls back to
+     the viewport. That is why the base `border-radius: clamp(11px, 6cqw, 22px)`
+     is really just 22px at every size. A bevel pinned that way would be a
+     hairline on the inspector's big card and a chamfer eating the corners of a
+     170px grid card. Percentages in `clip-path` resolve against the element's
+     own box, so these scale with the card and nothing else.
+
+     The 7%/5% split is what makes the cut SQUARE: the card is 5:7, so an equal
+     PIXEL cut needs a smaller percentage vertically (7 / 1.4 = 5). Matching the
+     two numbers instead would give a stretched, lozenge-shaped corner. */
+  .card.r-RUBY {
+    --gem-clip: polygon(
+      7% 0%, 93% 0%,
+      100% 5%, 100% 95%,
+      93% 100%, 7% 100%,
+      0% 95%, 0% 5%);
+    border-radius: 0;
+    clip-path: var(--gem-clip);
+    /* A wider band than the other tiers (base is 3-6px). Facets need room to
+       read as facets; at the base width this whole treatment is a red line. */
+    padding: clamp(5px, 2.6cqw, 10px);
+    /* HARD STOPS, not a smooth sweep. A gradient that blends reads as polished
+       metal — which is exactly what the other five tiers are. Discrete wedges
+       meeting at a hard edge read as cut planes catching light differently,
+       which is what a faceted stone actually does. Alternating dark/bright is
+       what gives the frame its depth. */
+    background:
+      radial-gradient(130% 80% at 28% -6%, rgba(255, 190, 190, 0.34), transparent 62%),
+      conic-gradient(from 208deg,
+        #7d0f22 0deg 26deg,
+        #4a1024 26deg 52deg,
+        #c02840 52deg 76deg,
+        #6b1226 76deg 104deg,
+        #92162c 104deg 130deg,
+        #3a0c1e 130deg 158deg,
+        #d8455e 158deg 182deg,
+        #5c1229 182deg 212deg,
+        #a81e35 212deg 240deg,
+        #430e21 240deg 268deg,
+        #b52236 268deg 296deg,
+        #521228 296deg 330deg,
+        #7d0f22 330deg 360deg);
+    /* box-shadow cannot survive clip-path — it paints outside the silhouette
+       and is cut away with it. drop-shadow follows the clipped shape instead,
+       so the glow is octagonal like the card rather than a rectangle peeking
+       out behind the bevels. This is also why RUBY has no ember animation: the
+       brief calls for light that MOVES across the stone, not a frame that
+       pulses, and that lives on ::before below. */
+    box-shadow: none;
+    filter: drop-shadow(0 0 16px rgba(190, 20, 46, 0.45));
+  }
+
+  .card.r-RUBY .card-inner {
+    /* Load-bearing, not tidiness. `::before` (the sweep) sits below the face
+       for free, because a pseudo-element that early in tree order paints
+       first — but `::after` (the sparkles) is LAST in tree order, so at
+       `z-index: auto` it paints on top of everything, dropping four-point
+       glints across the portrait and the badge. Giving the face a positive
+       z-index moves it into the later paint step and puts both pseudo-elements
+       back under it, so the frame band is the only place either can show. */
+    z-index: 1;
+    border-radius: 0;
+    clip-path: polygon(
+      6.6% 0%, 93.4% 0%,
+      100% 4.7%, 100% 95.3%,
+      93.4% 100%, 6.6% 100%,
+      0% 95.3%, 0% 4.7%);
+    /* THE FACE IS NOT OVERRIDDEN, and that is deliberate after getting it wrong
+       once. The gem-cut pass darkened it to near-black (#150a12 -> #0a0509) on
+       the theory that a dense backing would make the stone read heavier. What it
+       actually did was punch a black rectangle into a UI that contains no black
+       anywhere else — every other card face is the same dark navy-purple, and so
+       is the stage behind them — so the card stopped looking like an object on
+       the page and started looking like a hole in it.
+
+       The tier's identity is carried by the cut, the facets and the frame. The
+       face is shared, so a RUBY card sits on the same surface as every other
+       card in the binder. */
+  }
+
+  /* The travelling light — one slow pass across the gem edge, then a long rest.
+     Sits BELOW `.card-inner` (which is opaque, positioned, and later in the DOM),
+     so it is only ever visible on the frame band. That containment is the whole
+     reason this reads as light moving through the setting rather than a shine
+     wiping across a creator's face. */
+  .card.r-RUBY::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg,
+      transparent 38%,
+      rgba(255, 214, 214, 0.5) 46.5%,
+      rgba(255, 255, 255, 0.92) 50%,
+      rgba(255, 214, 214, 0.5) 53.5%,
+      transparent 62%);
+    background-size: 280% 280%;
+    mix-blend-mode: screen;
+    animation: gem-sweep 8s cubic-bezier(0.4, 0, 0.5, 1) infinite;
+  }
+
+  /* Most of the cycle is the resting state. "Occasional", per the brief — a
+     stone catches the light when it moves, it does not strobe. */
+  @keyframes gem-sweep {
+    0%       { background-position: 145% 145%; }
+    26%      { background-position: -45% -45%; }
+    100%     { background-position: -45% -45%; }
+  }
+
+  /* Three four-point reflections, sitting on the bevels. Each is a pair of
+     crossed thin ellipses — the shape a facet actually throws — rather than a
+     round dot, which is what separates "cut stone" from "particle effect".
+     Two are placed on the cut corners, where the frame is at its widest and a
+     glint has room to read; the third rides the right edge. Kept under the
+     face by the z-index above, so none of them can ever land on a creator's
+     portrait. */
+  .card.r-RUBY::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 242, 240, 0.95) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 242, 240, 0.95) 32%, transparent 70%),
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 232, 228, 0.8) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 232, 228, 0.8) 32%, transparent 70%),
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 246, 244, 0.85) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 246, 244, 0.85) 32%, transparent 70%);
+    background-repeat: no-repeat;
+    background-size: 17% 12%, 17% 12%, 13% 9%, 13% 9%, 15% 10.5%, 15% 10.5%;
+    background-position:
+      3.5% 2.5%, 3.5% 2.5%,
+      99% 44%, 99% 44%,
+      96.5% 97.5%, 96.5% 97.5%;
+    animation: gem-glint 8s ease-in-out infinite;
+  }
+
+  @keyframes gem-glint {
+    0%, 100% { opacity: 0.28; }
+    18%      { opacity: 0.95; }
+    44%      { opacity: 0.34; }
+  }
+
+  /* The face behind the portrait: a brilliant-cut silhouette and faint
+     diamond-cut ruling, replacing the channel-initial monogram every other
+     tier carries. The letter is dropped rather than the element — `.monogram`
+     is what positions this, and its two pseudo-elements were free. */
+  .card.r-RUBY .monogram { color: transparent; }
+
+  .card.r-RUBY .monogram::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(60deg,  rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 26px),
+      repeating-linear-gradient(-60deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 26px);
+  }
+
+  .card.r-RUBY .monogram::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 68cqw;
+    height: 68cqw;
+    transform: translate(-50%, -50%);
+    /* A round-brilliant outline — the table, crown and pavilion read as one
+       stone standing behind the portrait. */
+    clip-path: polygon(50% 0%, 79% 18%, 100% 50%, 79% 82%, 50% 100%, 21% 82%, 0% 50%, 21% 18%);
+    background: conic-gradient(from 90deg,
+      rgba(255, 120, 140, 0.11) 0deg 45deg,
+      rgba(255, 255, 255, 0.05) 45deg 90deg,
+      rgba(255, 90, 115, 0.13) 90deg 135deg,
+      rgba(255, 255, 255, 0.04) 135deg 180deg,
+      rgba(255, 120, 140, 0.11) 180deg 225deg,
+      rgba(255, 255, 255, 0.05) 225deg 270deg,
+      rgba(255, 90, 115, 0.13) 270deg 315deg,
+      rgba(255, 255, 255, 0.04) 315deg 360deg);
+  }
+
+  /* The badge as a set stone rather than a rounded label: bevelled to echo the
+     card silhouette, gold hairline for the setting, and lettering cut INTO the
+     face (light below, shadow above) instead of sitting on it. */
+  .card.r-RUBY .rarity-badge {
+    border-radius: 0;
+    clip-path: polygon(
+      14% 0%, 86% 0%, 100% 26%, 100% 74%,
+      86% 100%, 14% 100%, 0% 74%, 0% 26%);
+    color: #2a0208;
+    background: linear-gradient(155deg,
+      #f0c8cd 0%, #c02840 22%, #5c0a19 54%, #8f1729 78%, #e8b0b8 100%);
+    text-shadow:
+      0 1px 0 rgba(255, 224, 224, 0.42),
+      0 -1px 0 rgba(0, 0, 0, 0.55);
+    box-shadow: 0 0 0 1px rgba(217, 164, 65, 0.5) inset;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
+  }
+
+  .card.r-RUBY .tier-label { color: #e6a9b2; }
+
+  /* The setting around the portrait — alternating stone and gold facets, hard
+     stops again so the ring reads as cut rather than plated. */
+  .card.r-RUBY .avatar-ring {
+    background: conic-gradient(from 128deg,
+      #45101f 0deg 22deg,
+      #c9304a 22deg 40deg,
+      #d9a441 40deg 52deg,
+      #6e1426 52deg 78deg,
+      #f2b8bf 78deg 92deg,
+      #7d0f22 92deg 120deg,
+      #d9a441 120deg 132deg,
+      #4a1024 132deg 162deg,
+      #b52236 162deg 186deg,
+      #f5d6da 186deg 198deg,
+      #5c1229 198deg 232deg,
+      #d9a441 232deg 244deg,
+      #92162c 244deg 274deg,
+      #3a0c1e 274deg 306deg,
+      #c02840 306deg 334deg,
+      #45101f 334deg 360deg);
+    box-shadow:
+      0 0 clamp(8px, 4cqw, 22px) -6px rgba(214, 16, 48, 0.7),
+      0 8px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .card.r-RUBY .avatar-ring::after {
+    box-shadow:
+      0 0 0 1px rgba(217, 164, 65, 0.55) inset,
+      0 0 0 3px rgba(0, 0, 0, 0.42) inset;
+  }
+
+  /* A stone does not move on its own. With motion reduced, the sweep and the
+     glint hold at their resting values rather than vanishing — the facets are
+     structure, not animation, so nothing here is lost. */
+  @media (prefers-reduced-motion: reduce) {
+    .card.r-RUBY::before { animation: none; background-position: 40% 40%; opacity: 0.5; }
+    .card.r-RUBY::after  { animation: none; opacity: 0.55; }
+  }
+
   /* ---- THE CARD AT SMALL SIZES --------------------------------------------
      Every font-size above is `clamp(floor, Ncqw, ceiling)`, which scales the
      card beautifully down to about 240px and then stops: below that the floors
@@ -1083,10 +1347,12 @@
     transition: transform 0.2s ease, box-shadow 0.25s ease;
   }
 
+  /* Hover brightens, it never darkens — see the note on `.card`'s box-shadow.
+     The black drop shadow these rules used to carry is what made a hovered card
+     look like it had been cut out of the page. */
   .cards-grid .card:hover,
   .cards-grid .card:focus-visible {
     box-shadow:
-      0 20px 44px -14px rgba(0, 0, 0, 0.72),
       0 0 0 1px rgba(255, 255, 255, 0.2) inset,
       0 0 30px -6px var(--t-glow);
   }
@@ -1094,9 +1360,16 @@
   /* The rarer the card, the further its glow reaches on hover — the same
      escalation the reveal uses, carried into the binder so a UR still announces
      itself once it is sitting in a grid of forty. */
-  .cards-grid .card.r-SSR:hover { box-shadow: 0 20px 46px -14px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
-  .cards-grid .card.r-UR:hover  { box-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
-  .cards-grid .card.r-RUBY:hover { box-shadow: 0 24px 54px -14px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.26) inset, 0 0 60px -6px var(--t-glow); }
+  .cards-grid .card.r-SSR:hover { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
+  .cards-grid .card.r-UR:hover  { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
+  /* RUBY hovers through `filter`, not `box-shadow` — its clip-path cuts a
+     box-shadow away with the rest of the rectangle, so the hover glow has to
+     come from a drop-shadow that follows the gem silhouette instead. Coloured
+     only, no black component, for the same reason as every rule above. */
+  .cards-grid .card.r-RUBY:hover {
+    box-shadow: none;
+    filter: drop-shadow(0 0 26px rgba(214, 16, 48, 0.65));
+  }
 
   /* reveal overlay */
 
@@ -1329,11 +1602,12 @@
      steady halo. SR+ only; N/R reveal with no seam. */
   .glow-SR.reveal-cell.flipped  { --seam: rgba(255, 207, 107, 0.42); --seam-peak: 30px 4px; --seam-rest: 16px 2px; }
   .glow-SSR.reveal-cell.flipped { --seam: rgba(127, 231, 255, 0.6);  --seam-peak: 46px 7px; --seam-rest: 26px 4px; }
-  /* UR rests hotter and wider than it peaks elsewhere — it has an aura to sit
-     inside, so the settled halo carries more than SR/SSR's do. RUBY rests
-     hotter and wider again, one step past it. */
+  /* UR (Ruby) rests hotter and wider than it peaks elsewhere — it has an aura
+     to sit inside, so the settled halo carries more than SR/SSR's do. RUBY
+     (Red Diamond) rests wider again, one step past it, but darker and less
+     saturated — a deep blood-red glow rather than a brighter pink one. */
   .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 44px 9px; }
-  .glow-RUBY.reveal-cell.flipped { --seam: rgba(255, 30, 75, 0.85);  --seam-peak: 78px 13px; --seam-rest: 54px 11px; }
+  .glow-RUBY.reveal-cell.flipped { --seam: rgba(196, 16, 40, 0.85);  --seam-peak: 78px 13px; --seam-rest: 54px 11px; }
   /* SSR/UR/RUBY turn over 0.95s (below), so their halo peaks later — otherwise
      it has already started fading by the time the face is actually facing you.
      The face crosses into view around the halfway point of the turn, so these
@@ -1381,17 +1655,29 @@
     animation: twinkle var(--tw, 2.4s) ease-in-out infinite;
   }
   /* Tints track the frame tokens: SR gold, SSR cold diamond, UR hot amber,
-     RUBY hot crimson — so UR never reads as "SSR with more dots", and RUBY
-     never reads as "UR with more dots". */
+     RUBY cold diamond-white with a red cast — so UR never reads as "SSR with
+     more dots", and RUBY never reads as "UR with more dots". */
   .glow-SR  .star { --star: rgba(255, 214, 140, 0.85); }
   .glow-SSR .star { --star: rgba(190, 240, 255, 0.9); }
   .glow-UR  .star {
     --star: rgba(255, 210, 172, 0.98);
     box-shadow: 0 0 8px var(--star), 0 0 17px var(--star); /* UR dots carry a second, wider halo */
   }
+  /* Red Diamond's are not dots at all — they are four-point reflections, the
+     shape a facet actually throws, built from two crossed thin ellipses. The
+     round radial the other tiers use is overridden outright rather than
+     tinted, because "cut stone" and "glowing particle" are different objects,
+     and at nine sparkles per card (reveal.js) each one has to earn its place.
+     Cooler and paler than Ruby's warm amber, too: a crystal first, a red gem
+     second. */
   .glow-RUBY .star {
-    --star: rgba(255, 130, 170, 1);
-    box-shadow: 0 0 9px var(--star), 0 0 20px var(--star); /* wider still than UR's */
+    --star: rgba(255, 226, 226, 1);
+    background:
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, var(--star) 34%, transparent 72%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, var(--star) 34%, transparent 72%);
+    border-radius: 0;
+    box-shadow: none;
+    filter: drop-shadow(0 0 4px rgba(255, 190, 190, 0.9));
   }
 
   @keyframes twinkle {
@@ -1425,7 +1711,7 @@
   .glow-SR   .beam { --beam: #ffcf6b; }
   .glow-SSR  .beam { --beam: #7fe7ff; }
   .glow-UR   .beam { --beam: #ff5566; }
-  .glow-RUBY .beam { --beam: #ff2358; }
+  .glow-RUBY .beam { --beam: #c81030; }
   /* Back-loaded curve: ease-out spent the beam in its first third and left the
      rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
      into the flip makes the long beams tension instead of waiting. */
@@ -1481,7 +1767,7 @@
   .glow-SSR  .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
   .glow-UR   .sweep { --sweep: rgba(255, 232, 214, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
   .glow-UR   .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
-  .glow-RUBY .sweep { --sweep: rgba(255, 224, 234, 1);    --sweep-ms: 1.3s;  --sweep-delay: 0.72s; }
+  .glow-RUBY .sweep { --sweep: rgba(255, 226, 220, 1);    --sweep-ms: 1.3s;  --sweep-delay: 0.72s; }
   .glow-RUBY .sweep::before { width: 58%; filter: blur(2.6px); } /* broader still than UR's */
   .reveal-cell.flipped .sweep::before { animation: sweep-pass var(--sweep-ms, 0.85s) ease-in-out var(--sweep-delay, 0.4s) 1; }
 
@@ -1533,18 +1819,30 @@
       transparent 100%);
   }
 
-  /* RUBY's ignition runs a hair longer and hotter — a crimson-into-white head
-     against UR's amber-into-crimson, so the top of the ladder still reads as
-     escalation rather than a recolor of the same ring. */
+  /* Red Diamond's ignition runs a hair longer than Ruby's — a near-black-red
+     head brightening to white, against UR's amber-into-crimson, so the top of
+     the ladder reads as denser and heavier rather than a recolor of the same
+     ring. */
   .glow-RUBY .fuse i {
     background: conic-gradient(from 0deg,
       transparent 0 50%,
-      rgba(107, 0, 25, 0.6) 66%,
-      #ff2358 82%,
-      #ff6b8f 92%,
-      #ffe0ea 97%,
+      rgba(21, 0, 10, 0.65) 66%,
+      #8c0f24 82%,
+      #d61030 92%,
+      #ffb3bb 97%,
       #fff 99.4%,
       transparent 100%);
+  }
+
+  /* The ignition has to trace the shape it is igniting. RUBY's card is an
+     octagon (see the gem-cut block), so a 12px-radius rounded rectangle racing
+     around it would visibly miss the bevels at all four corners. Same polygon
+     as `.card.r-RUBY`, applied over the mask so the ring is cut to the gem. */
+  .glow-RUBY .fuse {
+    border-radius: 0;
+    clip-path: polygon(
+      7% 0%, 93% 0%, 100% 5%, 100% 95%,
+      93% 100%, 7% 100%, 0% 95%, 0% 5%);
   }
 
   .reveal-cell.flipped .fuse { animation: fuse-hold 1.15s linear 0.55s both; }
@@ -1580,9 +1878,18 @@
     background: radial-gradient(closest-side, rgba(255, 90, 110, 0.2), transparent 76%);
     box-shadow: 0 0 0 2px rgba(255, 140, 130, 0.85), 0 0 40px 8px rgba(255, 70, 95, 0.5);
   }
+  /* The discharge is a ghost of the card's own silhouette pushing outward, so
+     for RUBY it has to be the gem's silhouette, not a rounded rectangle. The
+     2px outline is dropped here rather than clipped: `clip-path` cuts a
+     box-shadow's outer ring away, so it would only ever draw on three of the
+     eight edges. The radial fill carries the shape on its own. */
   .glow-RUBY .bloom {
-    background: radial-gradient(closest-side, rgba(255, 20, 70, 0.24), transparent 76%);
-    box-shadow: 0 0 0 2px rgba(255, 110, 140, 0.9), 0 0 48px 10px rgba(255, 10, 63, 0.55);
+    border-radius: 0;
+    clip-path: polygon(
+      7% 0%, 93% 0%, 100% 5%, 100% 95%,
+      93% 100%, 7% 100%, 0% 95%, 0% 5%);
+    background: radial-gradient(closest-side, rgba(170, 18, 44, 0.42), rgba(90, 8, 22, 0.16) 62%, transparent 82%);
+    box-shadow: none;
   }
 
   .reveal-cell.flipped .bloom { animation: bloom-out 0.8s cubic-bezier(0.12, 0.7, 0.3, 1) 1.62s 1; }
@@ -1624,12 +1931,13 @@
     animation: aura-breathe 3.8s ease-in-out infinite;
   }
 
-  /* RUBY's aura runs crimson-to-magenta rather than UR's orange-red, and
-     breathes a touch wider — the field behind the top card in the game. */
+  /* Red Diamond's aura runs deep blood-red fading to near-black rather than
+     Ruby's orange-red, and breathes a touch wider — the field behind the top
+     card in the game. */
   .glow-RUBY .aura::before {
     background: radial-gradient(closest-side,
-      rgba(255, 10, 63, 0.44) 0%,
-      rgba(255, 60, 130, 0.17) 58%,
+      rgba(180, 10, 30, 0.46) 0%,
+      rgba(60, 4, 12, 0.2) 58%,
       transparent 78%);
   }
 
@@ -1652,10 +1960,11 @@
     opacity: 0;
   }
 
-  /* RUBY sheds crimson-pink motes rather than UR's amber ones. */
+  /* Red Diamond sheds white-hot-into-deep-red motes rather than Ruby's amber
+     ones — a colder core than Ruby's, matching the crystal. */
   .glow-RUBY .mote {
-    background: radial-gradient(circle, #fff0f4 0%, #ff5580 45%, transparent 74%);
-    box-shadow: 0 0 5px rgba(255, 60, 110, 0.85);
+    background: radial-gradient(circle, #fff0ee 0%, #c8102e 45%, transparent 74%);
+    box-shadow: 0 0 5px rgba(196, 16, 40, 0.85);
   }
 
   .reveal-cell.flipped .mote { animation: mote-drift var(--float, 3.6s) ease-out infinite; }
@@ -1857,12 +2166,41 @@
      the base rule is untransformed.
 
      The OPACITY half of this (.holo strength) is declared further down, after
-     the touch fallback block, on purpose — see the note there. */
+     the touch fallback block, on purpose — see the note there.
+
+     THE SCALE IS NOT A HOVER FLOURISH — IT CLOSES A GAP. Rotating in 3D under
+     `perspective()` pushes the receding edge away from the viewer, and anything
+     further away projects smaller, so a tilted card stops covering the box it
+     was laid out in. The result is a sliver of background showing along
+     whichever edges are leaning back — on all four sides as the pointer moves,
+     since rotateX and rotateY both do it.
+
+     It is worst on the biggest cards, because the shortfall depends on how far
+     the edge travels relative to the 800px perspective distance: a 170px grid
+     card at 11deg loses ~4px, while a 340px-wide inspector card at 13deg swings
+     its half-height of 238px through sin(13deg) ~= 0.225 — about 54px of depth,
+     projecting at 800/854 and pulling the edge in by ~15px. Very visible, which
+     is why the inspector overrides the amount below.
+
+     Scaling up by slightly more than that shortfall makes the card overfill its
+     box, so the receding edge lands back on (or just past) the boundary and
+     there is nothing left to see through. Declared LAST in the function list so
+     it applies to the element before the rotations and the projection — scale
+     commutes with rotation, but it does not commute with perspective. The knob
+     is a variable because the right amount is a function of card size, and one
+     constant cannot be right for a 170px thumbnail and a 340px hero at once.
+
+     This does not contradict the "never transform on hover" note in the grid's
+     own rules: the objection there was a SEPARATE hover transform fighting this
+     one for the same property. This is inside the same declaration. */
+  .card { --tilt-lift: 1.05; }
+
   .card.lit {
     transform:
       perspective(800px)
       rotateX(calc(var(--py, 0) * var(--tilt-max, 0deg) * -1))
-      rotateY(calc(var(--px, 0) * var(--tilt-max, 0deg)));
+      rotateY(calc(var(--px, 0) * var(--tilt-max, 0deg)))
+      scale(var(--tilt-lift, 1.05));
   }
 
   /* UR's signature molten sheen — a warm gold→crimson holo (not the cool
@@ -1878,39 +2216,39 @@
     filter: saturate(1.25);
   }
 
-  /* RUBY's sheen runs crimson→magenta rather than UR's gold→crimson — one
-     step hotter and redder, so it reads as the ceiling above UR rather than a
-     recolor of it. */
+  /* Red Diamond's sheen runs near-black into deep blood-red rather than
+     UR/Ruby's gold→crimson — a heavier, darker crystal shimmer, so it reads
+     as the ceiling above Ruby rather than a recolor of it. */
   .card.r-RUBY .holo {
     background: repeating-linear-gradient(115deg,
-      rgba(255, 224, 234, 0.48)  0%,
-      rgba(255, 90, 130, 0.48)  12%,
-      rgba(255, 10, 63, 0.48)   24%,
-      rgba(255, 107, 143, 0.48) 36%,
-      rgba(255, 224, 234, 0.48) 48%);
-    filter: saturate(1.3);
+      rgba(255, 200, 200, 0.44)  0%,
+      rgba(180, 20, 40, 0.5)    12%,
+      rgba(30, 0, 8, 0.5)       24%,
+      rgba(150, 15, 35, 0.5)    36%,
+      rgba(255, 200, 200, 0.44) 48%);
+    filter: saturate(1.15);
   }
 
-  /* UR only: a low, smouldering flicker at the seam — the "Red Diamond" tier
-     reading as legendary without a distracting full-card colour sweep. Only the
-     frame glow moves; irregular keyframe stops make it flicker like heat. */
+  /* UR (Ruby Play Button): a low, smouldering flicker at the seam — the tier
+     reading as legendary without a distracting full-card colour sweep. Only
+     the frame glow moves; irregular keyframe stops make it flicker like heat. */
   @media (prefers-reduced-motion: no-preference) {
     .card.r-UR { animation: ur-ember 4.2s ease-in-out infinite; }
-    /* RUBY's ember runs a touch faster and hotter than UR's — the Ruby Play
-       Button tier, one step past Red Diamond. */
-    .card.r-RUBY { animation: ruby-ember 3.6s ease-in-out infinite; }
+    /* RUBY (Red Diamond) deliberately has NO ember. It briefly did, and it was
+       wrong twice over: the flicker is a box-shadow, which `clip-path` cuts
+       away with everything else outside the gem silhouette, so it was invisible
+       anyway — and a frame that pulses is the "constant glow" the gem-cut brief
+       rules out. Its motion is the light TRAVELLING across the facets instead
+       (`gem-sweep`, in the RUBY block above), which is what a real stone does. */
   }
+  /* The dark component these keyframes used to carry is gone for the same
+     reason it is gone from `.card` — it re-introduced the cutout ring on UR
+     cards only, which would have been a confusing thing to chase later. */
   @keyframes ur-ember {
-    0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px -8px var(--t-glow); }
-    28%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 34px -6px #ff5a3c; }
-    52%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 25px -8px var(--t-glow); }
-    76%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 40px -6px #ff7a33; }
-  }
-  @keyframes ruby-ember {
-    0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 24px -8px var(--t-glow); }
-    28%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,60,110,0.24) inset, 0 0 40px -6px #ff1450; }
-    52%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 30px -8px var(--t-glow); }
-    76%      { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,20,80,0.20) inset, 0 0 46px -6px #ff2d70; }
+    0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px -8px var(--t-glow); }
+    28%      { box-shadow: 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 34px -6px #ff5a3c; }
+    52%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 25px -8px var(--t-glow); }
+    76%      { box-shadow: 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 40px -6px #ff7a33; }
   }
 
   /* Touch / no-hover devices can't poke-holo, so give the rarer bands a gentle
@@ -1972,7 +2310,11 @@
   /* The hero card renders at ~2x the grid size; its container-query units do
      all the scaling, so no per-element overrides are needed here. */
   .inspect-holder { width: min(82vw, 340px); }
-  .inspect-holder .card { width: 100%; cursor: default; }
+  /* A bigger lift than the grid's, because the tilt gap grows with card size —
+     the hero swings roughly twice the half-height through the same angle, so it
+     loses roughly twice the edge. See the note on `--tilt-lift` in the WP3
+     block for the geometry. */
+  .inspect-holder .card { width: 100%; cursor: default; --tilt-lift: 1.085; }
 
   /* Collection cards advertise that they open. */
   .cards-grid .card { cursor: zoom-in; }

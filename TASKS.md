@@ -10,12 +10,15 @@ individually.
 numbering retired. See "Core Set replaces Series 1" below. (This section was stale until now —
 the deploy happened but the doc was never updated after it.)
 **Next:** WP-Ruby Tier — **built and tested, not yet deployed.** A genuine sixth rarity band,
-`RUBY`, for 100M+ subscriber channels (the Ruby Play Button), fully decoupled from UR's weight.
+internal key `RUBY`, for 100M+ subscriber channels — displayed as **Red Diamond Play Button**
+(UR's band is the real Ruby Play Button, 50M; names were swapped 2026-08-07 after Ash asked
+whether "Ruby" was even the right call — see DECISIONS.md), fully decoupled from UR's weight.
 The old UR band (31 cards) splits into UR 22 / RUBY 9 on a fresh local build
 (`sets/built/core.json`, 2026-08-06/07). Full reveal-FX escalation (ignition/discharge/aura,
-frame ember, holo sheen — all in `styles.css`) and card-frame tokens (`.r-RUBY`) are in; 425
-tests pass. Deploy needs `npx wrangler pages deploy _site --project-name=creator-gacha
---branch=main && node tools/record-deploy.js`, pending Ash's go-ahead. See below.
+frame ember, holo sheen — all in `styles.css`) and card-frame tokens (`.r-RUBY`, dark blood-red
+after the naming fix) are in; 425 tests pass. Deploy needs `npx wrangler pages deploy _site
+--project-name=creator-gacha --branch=main && node tools/record-deploy.js`, pending Ash's
+go-ahead. See below.
 Separately: WP12's battle system engine is built and tested with a playable prototype at
 `prototype/index.html` (local only); the in-app UI is still missing.
 
@@ -33,10 +36,15 @@ already loop generically over `RARITY_ORDER`, so almost no new pull logic was ne
 - [X] `RUBY` added to `RARITY_ORDER`/`RARITY` in `core.js`; `rarityFromSubs` gets a
       `>= 100_000_000` branch ahead of the UR check.
 - [X] Weight split: UR 1 → 0.9, RUBY 0.1 (Ash's call). Mult: RUBY 3.0 vs UR's 2.5 (Ash's call).
-- [X] Full CSS tier frame — `.r-RUBY` tokens (crimson-magenta, distinct hue from UR's amber-red,
-      not just brighter), reveal-FX escalation (ignition/discharge/aura reused generically via a
-      `TOP_TIER` set in `reveal.js`, colours overridden per-tier in CSS), card ember/holo sheen,
-      `TIER_NAME.RUBY = 'Ruby Play Button'`.
+- [X] Full CSS tier frame — reveal-FX escalation (ignition/discharge/aura reused generically via
+      a `TOP_TIER` set in `reveal.js`, colours overridden per-tier in CSS), card ember/holo sheen.
+- [X] **Award names swapped 2026-08-07** — caught after building it: YouTube's real Ruby Play
+      Button is 50M subs, Red Diamond is 100M, backwards from the first pass (and from UR's
+      "Red Diamond" label going all the way back to WP3). `TIER_NAME.UR = 'Ruby Play Button'`,
+      `TIER_NAME.RUBY = 'Red Diamond Play Button'` — internal keys (`UR`/`RUBY`) untouched, so no
+      migration for saved collections. `.r-RUBY`'s palette re-picked to match: dark near-black
+      blood-red rather than the original pink-magenta, distinct from UR/Ruby's amber-red by hue
+      AND weight. See DECISIONS.md 2026-08-07 "The award names were backwards" for the full record.
 - [X] `setbuild.js`'s band-depth math needed no changes — it already iterates `RARITY_ORDER`
       generically. One test tolerance widened (`gives every band roughly the same completion
       time`, `test/setbuild.test.js`): RUBY's real-world population (9 known 100M+ channels) is

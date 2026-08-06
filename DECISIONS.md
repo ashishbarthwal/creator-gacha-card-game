@@ -3113,3 +3113,45 @@ deploy — pending Ash's go-ahead, and pending an actual look at the reveal anim
 RUBY card in a browser, which nobody has done yet.
 
 </details>
+
+## The award names were backwards — Ruby is 50M, Red Diamond is 100M (2026-08-07)
+
+<details>
+<summary><b>UR's display name and RUBY's display name were swapped: the real Ruby Play Button is
+YouTube's 50M-subscriber award, not the 100M one this project just built.</b></summary>
+
+Caught while looking at the freshly-built top tier in a browser: Ash asked whether the new
+100M band had to be called "Ruby" and whether something slicker existed, like a "Black Diamond."
+Before inventing a new name, a quick check of what YouTube actually calls these awards turned up
+the real answer — the project already had the right *concept* ("rarity tiers ARE the Creator
+Awards") but the wrong assignment.
+
+**The real thresholds, confirmed by search:** the **Ruby Play Button is 50 million subscribers**
+— PewDiePie nicknamed his custom trophy "Ruby" on camera when he received it in December 2016,
+and the name stuck as YouTube's own term for it. The **Red Diamond Play Button — a dark red
+crystal set in silver-plated metal — is 100 million subscribers**, first awarded, again to
+PewDiePie, in 2019. This project's `UR` band (50M) was shipped calling itself "Red Diamond" since
+WP3, months before this session; the new `RUBY` band (100M) built earlier today inherited the
+same swap by cargo-culting the wrong half of the pair.
+
+**Fixed as a display-string-only change**, deliberately: `card.js`'s `TIER_NAME` map now reads
+`UR: 'Ruby Play Button'` and `RUBY: 'Red Diamond Play Button'`. The internal engine keys
+(`RARITY_ORDER`'s `UR`/`RUBY`, the CSS class names `.r-UR`/`.r-RUBY`, `.glow-UR`/`.glow-RUBY`)
+are untouched — renaming those would touch every saved player collection (rarity is stored as
+this literal string in localStorage), every test, and the whole reveal/CSS surface for no
+functional gain, since the keys are internal band identifiers, not player-facing award names.
+Only the full name shown under the rarity-badge chip changed; the short badge code (still
+literally "UR" / "RUBY") is unaffected.
+
+**RUBY's whole palette got re-picked to match**, not just the label. The tier was originally
+built pink-magenta ("a hot pink to red gradient" reading), which fit a name it no longer carries.
+Red Diamond, per the real trophy, is a dark red crystal — so every RUBY-tier surface
+(`.r-RUBY` tokens, the reveal overlay's ignition/discharge/aura, the card's holo sheen and ember
+flicker) moved from bright pink/magenta toward a darker, less saturated, near-black-red palette:
+`--t-lo` went from `#6b0019` to `#15000a`, `--t-mid` from a crimson-pink `#ff2358` to a true
+blood-red `#8c0f24`, and the reveal stars shifted from a warm pink tint to a cooler diamond-white
+with a red cast — differentiating it from UR/Ruby's existing warm amber-red identity by hue AND
+weight, not just by being "more pink." The ember keyframe was renamed `ur-ember`/`red-diamond-
+ember` to match. 425 tests pass unchanged — none of this touched engine logic, weights, or mults.
+
+</details>
