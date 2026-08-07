@@ -14,7 +14,7 @@
 
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
-import { enableCardTilt, enableDeviceTilt } from './holo.js';
+import { enableCardTilt } from './holo.js';
 
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
@@ -150,13 +150,6 @@ export function openReveal(results) {
   revealTimers = [];
   revealGrid.innerHTML = '';
   applyColumns(results.length);
-
-  /* Called from here rather than once at module load: opening a reveal is
-     always the result of a tap (the pack), and on iOS the motion-permission
-     prompt only fires when requested synchronously inside a user gesture. The
-     first pull of a session is what asks; enableDeviceTilt no-ops on every
-     call after the first (see holo.js). */
-  enableDeviceTilt(revealGrid);
 
   const cells = results.map(result => buildCell(result));
 
