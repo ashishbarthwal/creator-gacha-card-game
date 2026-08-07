@@ -738,6 +738,16 @@
     aspect-ratio: 5 / 7;
     border-radius: clamp(11px, 6cqw, 22px);
     padding: clamp(3px, 1.7cqw, 6px);
+    /* Kills the browser's native double-tap-to-zoom on a card. Without this, a
+       double-tap on mobile — trying to look closer, or just tapping twice in
+       quick succession — zooms the whole page in on that spot and leaves it
+       scrollable/panned in a broken layout the card was never designed for.
+       `manipulation` removes exactly that gesture and nothing else: a single
+       tap still opens the inspector immediately (it also drops the old ~300ms
+       tap-delay some mobile browsers add while waiting to see if a second tap
+       is coming), and pinch-zoom stays available for accessibility. The result
+       reads as "the card doesn't wobble or jump no matter how you tap it." */
+    touch-action: manipulation;
     background: conic-gradient(from 210deg,
       var(--t-mid), var(--t-hi), var(--t-lo), var(--t-soft),
       var(--t-mid), var(--t-hi), var(--t-lo), var(--t-mid));
@@ -754,10 +764,29 @@
        the visual signature of a cutout, not a shadow.
 
        Depth comes from the rarity glow and the inset hairline instead. Both ADD
-       light, so the background stays flat and continuous behind every card. */
+       light, so the background stays flat and continuous behind every card.
+
+       AND THE GLOW MUST NOT REACH THE NEXT CARD. `0 0 22px -8px` did: a shadow
+       carries to roughly spread + blur, so that one reached ~14px past the edge
+       into a gutter that is 18px wide (--reveal-gap). Both cards facing that
+       gutter paid into it, the two halos summed, and the strip between every
+       pair of cards came back measured at rgb(50,61,78) — while the open field
+       around the grid is the plum stage at rgb(20,13,30). Brighter AND a
+       different hue: a blue-grey trench running between the cards, with the
+       page's purple visible only outside the grid.
+
+       So this is the same cutout bug as the black shadow above, inverted. It
+       was never about the shadow being dark — it is that a card must not lay
+       down a tone the rest of the stage does not have. Dark ring, light trench,
+       same tell: three tones meeting at the card edge.
+
+       Reach is now ~4px, comfortably inside half the gutter, so a card lights
+       its own edge and nothing else. The wide coloured halo still exists where
+       it is deliberate and unpaired: hover in the binder, and the rarity seam
+       on .reveal-cell for SR and above. */
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-      0 0 22px -8px var(--t-glow);
+      0 0 12px -8px var(--t-glow);
     transition: transform 0.2s ease;
   }
 
@@ -781,9 +810,22 @@
     display: grid;
     place-items: center;
     font-family: var(--font-display);
-    font-size: 92cqw;
+    /* A WATERMARK, NOT A SHAPE. At 92cqw the initial stood 168px tall in a 183px
+       card while the avatar covering its middle is only 99px across — so the
+       letter was bisected, and its lower strokes sat alone in the open band
+       above the stat boxes. A lone Anton stroke is a rectangle, so what read on
+       the card was not a monogram but a slab of the wrong tone, differently
+       shaped per channel: 'M' and 'K' put two bars there, 'T' and 'D' one.
+       Confirmed by hiding this rule — the face goes clean.
+
+       Two changes, and they fix different halves. The size tucks more of the
+       glyph behind the avatar so less of it is ever orphaned. The alpha is the
+       real fix: at 8% over the face this measured +8 lum, which is an object.
+       CLAUDE.md asks for a FAINT monogram, and faint means the eye reads it as
+       texture on the card rather than as a thing lying on top of it. */
+    font-size: 74cqw;
     line-height: 1;
-    color: color-mix(in srgb, var(--accent, #ffffff) 8%, transparent);
+    color: color-mix(in srgb, var(--accent, #ffffff) 3.5%, transparent);
     user-select: none;
     pointer-events: none;
   }
@@ -1244,7 +1286,11 @@
        393px was. `minmax(0, --reveal-max)` lets a track shrink below its cap
        when the width simply is not there, and never grow past it. */
     grid-template-columns: repeat(var(--reveal-cols, 5), minmax(0, var(--reveal-max, 200px)));
-    gap: var(--reveal-gap, 18px);
+    /* 18px was less than the reach of every SR+ halo in the file, so no rarity
+       could glow without glowing onto its neighbour. Halos need somewhere to
+       fall off to; this is that somewhere. Widened WITH the reaches above rather
+       than instead of them — either alone just moves the seam around. */
+    gap: var(--reveal-gap, 30px);
     justify-content: center;
     /* Clearance for the sticky foot, so the LAST row still lands entirely above
        the Done button when the scroll bottoms out. Padding on the grid rather
@@ -1349,11 +1395,27 @@
   /* Backs stay identical face-down — no rarity tell until the turn (suspense).
      The rarity glow rises AROUND the card as it's revealed, then settles to a
      steady halo. SR+ only; N/R reveal with no seam. */
-  .glow-SR.reveal-cell.flipped  { --seam: rgba(255, 207, 107, 0.42); --seam-peak: 30px 4px; --seam-rest: 16px 2px; }
-  .glow-SSR.reveal-cell.flipped { --seam: rgba(127, 231, 255, 0.6);  --seam-peak: 46px 7px; --seam-rest: 26px 4px; }
-  /* UR rests hotter and wider than it peaks elsewhere — it has an aura to sit
-     inside, so the settled halo carries more than SR/SSR's do. */
-  .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 44px 9px; }
+  /* PEAK IS THE PAYOFF, REST IS THE SCREENSHOT. The two halves of every seam are
+     tuned against different constraints and it is worth saying which is which.
+
+     --seam-peak fires for a moment during the turn, while the eye is on one card
+     and the reveal is the whole point. It can be as wide as it likes.
+
+     --seam-rest is what the grid looks like for the rest of the pull, and it has
+     to live inside the gutter. It did not: UR rested at `44px 9px`, which carries
+     ~53px past the edge, into a gap of 18. So a UR did not glow, it FLOODED —
+     over the gutter, over its neighbour's frame, and the strip between the two
+     read as a lit trench rather than as stage. SSR at 30px reach did the same
+     thing more quietly.
+
+     Every rest value below now falls off inside half a gutter, so there is always
+     unlit stage between two cards no matter which rarities land side by side.
+     The peaks are untouched — the drama was never the problem. */
+  .glow-SR.reveal-cell.flipped  { --seam: rgba(255, 207, 107, 0.42); --seam-peak: 30px 4px; --seam-rest: 11px 0; }
+  .glow-SSR.reveal-cell.flipped { --seam: rgba(127, 231, 255, 0.6);  --seam-peak: 46px 7px; --seam-rest: 14px 0; }
+  /* UR still rests wider and hotter than the others — it has an aura to sit
+     inside — it just no longer rests wider than the gap it sits in. */
+  .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 18px 1px; }
   /* SSR/UR turn over 0.95s (below), so their halo peaks later — otherwise it has
      already started fading by the time the face is actually facing you. The
      face crosses into view around the halfway point of the turn, so these
@@ -1596,10 +1658,16 @@
   .reveal-cell.flipped .aura { animation: aura-in 1s ease-out 1.35s both; }
   @keyframes aura-in { to { opacity: 1; } }
 
+  /* -18% put this cloud 36px past a 200px card's edge and ~50px past top and
+     bottom, at full opacity, held forever by aura-in's `both`. The gutter is 30px.
+     So the single loudest thing in a UR reveal was a red wash lying across the
+     gap and onto the next card's frame — the "cutout" between cards was mostly
+     this. -6% keeps the breathing halo hugging the card, where it reads as the
+     card being lit rather than as the table being lit. */
   .aura::before {
     content: '';
     position: absolute;
-    inset: -18%;
+    inset: -6%;
     border-radius: 50% / 42%;
     background: radial-gradient(closest-side,
       rgba(255, 80, 100, 0.4) 0%,
@@ -1723,7 +1791,10 @@
     .reveal-box { padding: 16px 12px 0; width: min(100vw - 10px, 620px); }
     .reveal-title { font-size: 18px; letter-spacing: 2px; margin-bottom: 14px; }
     .reveal-grid {
-      --reveal-gap: 12px;
+      /* Still the tightest gutter in the file — two columns on a 393px phone is
+         no place to spend 30px — but 12px sat inside every halo's reach. 20px is
+         the least that keeps stage visible between two lit cards. */
+      --reveal-gap: 20px;
       /* Higher than the desktop 200px cap: on a 560px phone two columns have
          room for it, and 240px puts the card back inside the width its own
          clamp() scale was designed for. Narrower phones just shrink below it. */
@@ -1786,9 +1857,9 @@
    under the holo) was removed 2026-08-03 — Ash's call, after trying the phone
    tilt: "that white halo ball moving around" was reading as a distraction
    rather than part of the finish, on desktop and mobile alike. The rainbow
-   holo sweep is the finish now; --mx/--my (still fed by both enableCardTilt
-   and enableDeviceTilt in holo.js) exist to move ITS background-position,
-   not to feed a second, separate highlight.
+   holo sweep is the finish now; --mx/--my (fed by enableCardTilt in holo.js,
+   mouse-hover only — see the device-tilt removal note below) exist to move
+   ITS background-position, not to feed a second, separate highlight.
    =========================================================================== */
 
   .card { transition: transform 0.2s ease; }
@@ -1820,9 +1891,13 @@
   }
 
   /* Lit: JS adds .lit feeding --px/--py (-1..1) for tilt and --mx/--my (%) for
-     the holo sweep's position — from a fine pointer (holo.js's enableCardTilt)
-     or, on a phone, from device orientation (enableDeviceTilt). The tilt eases
-     back to flat when .lit is removed, because transform is transitioned and
+     the holo sweep's position — from a fine pointer only (holo.js's
+     enableCardTilt, gated on `hover: hover` and `pointer: fine`). A phone used
+     to drive this from device orientation instead (enableDeviceTilt); that was
+     removed 2026-08-07 — Ash's call, after it read as inconsistent across real
+     hardware — so touch input never adds .lit at all now, and a phone gets its
+     holo shine from the flat CSS fallback below instead. The tilt eases back
+     to flat when .lit is removed, because transform is transitioned and
      the base rule is untransformed.
 
      The OPACITY half of this (.holo strength) is declared further down, after
@@ -1833,6 +1908,24 @@
       rotateX(calc(var(--py, 0) * var(--tilt-max, 0deg) * -1))
       rotateY(calc(var(--px, 0) * var(--tilt-max, 0deg)));
   }
+
+  /* THE PULL SCREEN DOES NOT TILT. The finish stays — .lit is still added there,
+     so `.card.lit .holo` still runs at full strength and still tracks the
+     pointer through --mx/--my — but the card itself no longer moves.
+
+     Only the transform is dropped, and only here, which is why this is one
+     override rather than a change to the rule above: the inspector is where you
+     have picked a single card up to look at it, and tilting it there is the
+     whole point. The reveal is ten cards you are reading at once.
+
+     It also removes a nested 3D transform from inside .flip-inner's
+     preserve-3d context, which is not a place a second perspective() belongs.
+
+     Mobile never reaches this rule in practice — device-tilt is gone, and
+     touch never sets .lit at all (see the note above .card.lit) — but it stays
+     as the actual guarantee for a mouse+touchscreen hybrid (a Surface, a
+     touchscreen laptop) where a real pointer can still hover the reveal grid. */
+  #reveal-grid .card.lit { transform: none; }
 
   /* UR's signature molten sheen — a warm gold→crimson holo (not the cool
      rainbow), so the top tier reads hotter and richer than SSR's diamond
@@ -1858,31 +1951,68 @@
        box-shadow outright, so leaving it would have restored the cutout on UR
        cards alone — a confusing thing to chase once every other card looked
        right. */
-    0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 20px -8px var(--t-glow); }
-    28%      { box-shadow: 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 34px -6px #ff5a3c; }
-    52%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 25px -8px var(--t-glow); }
-    76%      { box-shadow: 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 40px -6px #ff7a33; }
+    /* Reaches brought inside the gutter for the same reason as the seam rests
+       above — this one runs FOREVER, so its wide keyframes were not a moment of
+       drama, they were the resting state three quarters of the time. The flicker
+       is unchanged in shape and rhythm; only its radius came in. */
+    0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 12px -8px var(--t-glow); }
+    28%      { box-shadow: 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 20px -6px #ff5a3c; }
+    52%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 15px -8px var(--t-glow); }
+    76%      { box-shadow: 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 24px -6px #ff7a33; }
   }
 
-  /* Touch / no-hover devices can't poke-holo, so give the rarer bands a gentle
-     static finish instead of nothing — rarity still shows, never looks broken.
-     This is the FALLBACK for when device-tilt is unavailable, declined, or
-     simply not wired up in this view (the scrolling collection grid never
-     requests motion permission — see holo.js). */
+  /* Touch / no-hover devices can't poke-holo — this is mobile's holo treatment,
+     final rather than a fallback for something better, same reasoning as the
+     tilt removal above: nothing here depends on .lit, --mx, --my, or motion.
+
+     THROUGH 2026-08-07 this was the desktop rainbow sweep at half opacity,
+     permanently centred because .lit never applies on touch. That read exactly
+     like what it was — a flat, generic smear sitting dead in the middle of
+     every card, the same shape whether SR or UR. Replaced 2026-08-08 with a
+     bespoke gradient per band, built from that rarity's own --t-* tokens — the
+     exact colours the frame bezel is already painted from — so the finish
+     reads as this card's own metal catching light, not a filter laid over it.
+
+     OFF-CENTRE ON PURPOSE. A highlight sitting exactly in the middle of every
+     card reads as a sticker; one that falls unevenly reads as a surface. And
+     richness ESCALATES WITH RARITY, the same language the seam glow and the
+     UR ember already speak elsewhere on this card: SR gets one soft sheen,
+     SSR two crossing facets (a cut gem's internal reflections), UR a warm
+     corner glow underneath a molten sheen. A mobile pull still feels rarer the
+     rarer it is, even with nothing moving and nothing tracking your thumb. */
   @media (hover: none) {
-    .card.r-SR  .holo, .card.r-SSR .holo, .card.r-UR  .holo { opacity: calc(var(--holo-strength) * 0.5); }
+    .card.r-SR .holo {
+      opacity: 0.55;
+      background: linear-gradient(128deg,
+        transparent 36%,
+        color-mix(in srgb, var(--t-soft) 65%, transparent) 46%,
+        color-mix(in srgb, var(--t-hi)   85%, transparent) 50%,
+        color-mix(in srgb, var(--t-soft) 65%, transparent) 54%,
+        transparent 64%);
+    }
+    .card.r-SSR .holo {
+      opacity: 0.6;
+      background:
+        linear-gradient(112deg, transparent 28%, color-mix(in srgb, var(--t-hi)   82%, transparent) 40%, transparent 50%),
+        linear-gradient(206deg, transparent 58%, color-mix(in srgb, var(--t-glow) 60%, transparent) 68%, transparent 80%);
+    }
+    .card.r-UR .holo {
+      opacity: 0.62;
+      background:
+        radial-gradient(130% 95% at 18% 104%, color-mix(in srgb, var(--t-glow) 55%, transparent) 0%, transparent 62%),
+        linear-gradient(122deg, transparent 42%, color-mix(in srgb, var(--t-soft) 78%, transparent) 51%, transparent 62%);
+    }
   }
 
-  /* .holo full strength under .lit — deliberately placed AFTER the touch
-     fallback above rather than beside the rest of the .lit rules, and that
-     placement is load-bearing rather than cosmetic. `.card.lit .holo` and
-     `.card.r-SR .holo` (inside the block above) carry EQUAL specificity —
-     three classes each — so a media query alone does not let one beat the
-     other; source order decides the tie. Declaring this AFTER the fallback is
-     what lets device-tilt (holo.js's enableDeviceTilt, which adds .lit on a
-     phone exactly like pointer-tilt does on desktop) win with the SAME full
-     strength pointer-tilt gets, rather than being silently capped at the
-     touch fallback's muted 0.5x the moment a phone earns the real thing. */
+  /* .holo full strength under .lit — placed AFTER the touch fallback above so
+     source order, not just the media query, decides the tie: `.card.lit .holo`
+     and `.card.r-SR .holo` (in the block above) carry equal specificity, three
+     classes each. Load-bearing again now for a mouse+touchscreen hybrid (a
+     touchscreen laptop, a Surface) — matches `hover: none` for its touch input
+     AND can set .lit from a real pointer, so this ordering is what lets an
+     actual mouse hover win full strength rather than being capped at the touch
+     fallback's 0.5x. On a phone, which never sets .lit, this rule simply never
+     fires and the fallback above is the only one that ever applies. */
   .card.lit .holo { opacity: var(--holo-strength, 0); }
 
   /* Reduced motion: no tilt, no shimmer, no fades. JS also skips binding, so a

@@ -6,7 +6,7 @@
    collection.js calls openInspect. */
 
 import { renderCard } from './card.js';
-import { enableCardTilt, enableDeviceTilt } from './holo.js';
+import { enableCardTilt } from './holo.js';
 
 const inspectEl = document.getElementById('inspect');
 const inspectHolder = document.getElementById('inspect-holder');
@@ -23,12 +23,6 @@ export function openInspect(card, meta = {}) {
   inspectHolder.appendChild(renderCard(card, meta));
   inspectEl.hidden = false;
   inspectClose.focus();
-
-  /* Same reasoning as reveal.js: opening the inspector is always a tap (on a
-     collection card or a flipped reveal cell), which is the gesture iOS's
-     motion-permission prompt needs to fire from. No-ops after the first call
-     — see holo.js. */
-  enableDeviceTilt(inspectHolder);
 }
 
 /* The reveal overlay can sit underneath this one, and both answer Escape — so

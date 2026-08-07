@@ -43,3 +43,7 @@ sets/index.local.json
 
 # Local Netlify folder
 .netlify
+
+# Cloudflare secrets — never commit tokens or account ids
+cloudflare-token.png
+cloudflare_account_id.txt
