@@ -2181,6 +2181,20 @@
   }
   .reveal-cell.flipped .stars { animation: stars-in 0.7s ease-out 0.52s both; }
   @keyframes stars-in { to { opacity: 1; } }
+
+  /* MOBILE ADMIRE: inspect.js builds the same star field for the inspector,
+     every open, for every rarity that has one — but it only ever shows on a
+     coarse pointer. A fine pointer already gets motion in here from the tilt
+     + tracked holo shine (holo.js's enableCardTilt, `hover: hover and
+     pointer: fine` only); touch never sets `.lit` at all (device-tilt was
+     removed 2026-08-07 — see holo.js), so a phone's admire screen was just a
+     flat, still card with no `.gem-edge`/twinkle exception (RUBY only). This
+     is what every other tier gets instead: same `hover: none` gate the holo
+     touch fallback further down (WP3 section) uses, so a mouse user's
+     inspector is unchanged. */
+  @media (hover: none) {
+    #inspect .card .stars { animation: stars-in 0.5s ease-out both; }
+  }
   .star {
     position: absolute;
     width: var(--sz, 3px);
@@ -2652,6 +2666,12 @@
        animation off, the layer has to be turned back on explicitly. */
     .stars { animation: none; opacity: 1; }
     .star { animation: none; opacity: 0.5; transform: scale(0.85); }
+    /* The `(hover: none)` admire rule above targets `#inspect .card .stars`,
+       which out-specifies the plain `.stars` two lines up — without this a
+       phone with reduced motion on would still get the fade-in. Same
+       specificity, same override, just repeated at the selector that needs
+       to lose. */
+    #inspect .card .stars { animation: none; opacity: 1; }
   }
 
 /* ===========================================================================
@@ -3060,4 +3080,889 @@
     margin-top: 40px;
     padding-top: 18px;
     border-top: 1px solid var(--line);
+  }
+
+/* ===========================================================================
+   THE ARENA — 5v5 battles
+   ---------------------------------------------------------------------------
+   A full-screen overlay (#arena), built the same way #reveal and #inspect are:
+   a shell in index.html and every panel inside constructed by src/ui/battle.js.
+
+   THE BATTLE CARD IS THE SAME OBJECT THE PLAYER PULLED, seen from a different
+   side — so it borrows the collection card's metal bevel, rarity badge and
+   ringed portrait verbatim, and spends the interior on a stat block instead of
+   a big face. It gets those tier ramps for free: `.r-N` … `.r-RUBY` above are
+   declared on the bare class rather than on `.card`, so `.bcard.r-SSR` picks up
+   the identical --t-* tokens with nothing repeated here. RUBY included.
+
+   Every internal size is a container-query unit, so ONE markup renders at 110px
+   in the collection strip and at 190px in the arena with no second stylesheet
+   and no size prop threaded through the renderer.
+   =========================================================================== */
+
+  :root {
+    /* One hue per battle stat, used by the bars, the class chips and the damage
+       numbers alike, so the same colour always means the same thing wherever it
+       appears. Distinct from the rarity ramp on purpose — rarity says how hard
+       a card was to pull, these say what it does, and conflating the two is the
+       exact confusion engine/battle-stats.js exists to prevent. */
+    --s-hp: #4fd67f;
+    --s-atk: #ff5a72;
+    --s-def: #57b0ff;
+    --s-spd: #ffd166;
+    --s-mom: #b06cff;
+  }
+
+  /* ── the button that opens it ───────────────────────────────────────────── */
+  .btn-battle {
+    margin-left: auto;
+    letter-spacing: 0.5px;
+  }
+  .btn-battle:not(:disabled) {
+    border-color: rgba(255, 45, 85, 0.45);
+    background: rgba(255, 45, 85, 0.12);
+  }
+
+  /* ── overlay shell ──────────────────────────────────────────────────────── */
+  #arena {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow-y: auto;
+    padding: clamp(10px, 3vw, 30px);
+    background: rgba(10, 6, 16, 0.86);
+    backdrop-filter: blur(7px);
+  }
+
+  .arena-box {
+    max-width: var(--page);
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(38, 26, 54, 0.96), rgba(21, 14, 31, 0.98));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 30px 90px -30px #000;
+    overflow: hidden;
+  }
+
+  /* Sticky so the phase stepper and the way out stay reachable through a long
+     scroll — the build phase is a whole collection tall, and an overlay you
+     have to scroll back up to escape is a trap rather than a dialog. */
+  .arena-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px clamp(12px, 2.4vw, 22px);
+    background: rgba(24, 15, 35, 0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  .arena-head h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .arena-head .btn { margin-left: auto; }
+
+  .ar-steps {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ar-steps li {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .ar-steps li.done { color: #6ee7a0; border-color: rgba(110, 231, 160, 0.35); }
+  .ar-steps li[aria-current='step'] {
+    color: #fff;
+    background: rgba(255, 45, 85, 0.16);
+    border-color: rgba(255, 45, 85, 0.5);
+  }
+
+  .arena-body { padding: clamp(12px, 2.4vw, 22px); display: grid; gap: 18px; }
+
+  .ar-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: clamp(12px, 2vw, 18px);
+    display: grid;
+    gap: 14px;
+  }
+  .ar-panel > header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .ar-panel h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .ar-panel .hint { flex: 1 1 260px; }
+  .ar-panel code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .ar-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .ar-readout { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-left: auto; }
+  .ar-readout b { color: var(--ink); }
+  .ar-empty { color: var(--muted); font-size: 14px; }
+  .ar-name { max-width: 320px; }
+
+  .ar-note { font-size: 13px; color: #ffd166; }
+  .ar-note.error { color: #ff8fa3; }
+
+  /* ── choosing an opponent ───────────────────────────────────────────────── */
+  .ar-modes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .ar-mode-card {
+    display: grid;
+    gap: 6px;
+    text-align: left;
+    padding: 16px;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: var(--font-body);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .ar-mode-card:hover { background: rgba(255, 45, 85, 0.1); border-color: rgba(255, 45, 85, 0.45); }
+  .ar-mode-card:active { transform: translateY(1px); }
+  .ar-mode-card b { font-size: 15px; }
+  .ar-mode-card span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+
+  /* ── the battle code ────────────────────────────────────────────────────── */
+  /* Monospace and wrapped rather than scrolled: a code that runs off the right
+     edge looks truncated, and "did I copy all of it?" is the one doubt this
+     screen cannot afford. Selecting on focus means the keyboard route works
+     even where the clipboard API is unavailable (any insecure origin — which
+     includes a LAN-IP dev server, exactly where this gets tested). */
+  .ar-code-out,
+  .ar-code-in {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.34);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    resize: vertical;
+    word-break: break-all;
+  }
+  .ar-code-out { color: #b6f0c4; }
+  .ar-code-in::placeholder { color: rgba(167, 149, 194, 0.55); }
+
+  /* ── line-up slots and the collection strip ─────────────────────────────── */
+  .ar-ranks { display: grid; gap: 14px; }
+  .ar-rank { display: grid; gap: 8px; }
+  .ar-rank-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ar-rank-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .ar-rank-cards { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .ar-slot {
+    width: clamp(104px, 15vw, 152px);
+    aspect-ratio: 5 / 7.4;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .ar-slot:hover,
+  .ar-slot.is-target { border-color: var(--red); color: var(--ink); background: rgba(255, 45, 85, 0.08); }
+  .ar-slot.filled { border-style: solid; border-color: transparent; background: none; }
+  .ar-slot .bcard { width: 100%; }
+  .ar-ranks.enemy .ar-slot { cursor: default; }
+  .ar-ranks.enemy .ar-slot:hover { border-color: transparent; background: none; }
+
+  .ar-pool {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+    gap: 12px;
+    max-height: 62vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .ar-pick {
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.14s ease;
+  }
+  .ar-pick:hover { transform: translateY(-4px); }
+  /* Fielded cards dim rather than disappear: a card that vanishes from the
+     strip when you slot it makes the strip re-flow under the cursor, and the
+     next click lands on whatever moved into that space. */
+  .ar-pick.is-fielded { opacity: 0.34; }
+  .ar-pick.is-fielded .bcard { filter: saturate(0.4); }
+
+  /* ── the element wheel ──────────────────────────────────────────────────── */
+  .ar-wheel { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
+  .ar-wheel li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.4px;
+    color: var(--el);
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--el) 40%, transparent);
+    background: color-mix(in srgb, var(--el) 10%, transparent);
+    border-radius: 999px;
+  }
+  .ar-wheel li i { font-style: normal; }
+  .ar-wheel li span { color: var(--muted); }
+
+  /* ── the fight ──────────────────────────────────────────────────────────── */
+  .ar-arena { display: grid; gap: 10px; }
+  .ar-side { display: grid; gap: 8px; }
+  .ar-side-head {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ar-side-head b { color: var(--ink); }
+  .ar-line { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ar-line.back { opacity: 0.94; }
+  .ar-line .bcard { width: clamp(92px, 14vw, 140px); }
+
+  .ar-vs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+  }
+  .ar-vs::before,
+  .ar-vs::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .ar-round {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #cdb9e6;
+  }
+
+  .bcard.is-acting {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.13), 0 0 26px -4px var(--el);
+    transform: translateY(-6px) scale(1.03);
+  }
+  .bcard.is-hit { animation: ar-shake 0.24s ease; }
+  .bcard.is-down { opacity: 0.35; filter: grayscale(0.8); }
+  @keyframes ar-shake {
+    0%, 100% { transform: none; }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* The damage number. Absolutely positioned inside the card it lands on, so it
+     reads as coming off THAT card rather than floating over the board. */
+  .ar-pop {
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    animation: ar-pop 0.9s ease-out forwards;
+    z-index: 4;
+    text-align: center;
+  }
+  .ar-pop.crit { color: #ffd166; font-size: 28px; }
+  .ar-pop.strong { color: #6ee7a0; }
+  .ar-pop.weak { color: #9fb0c9; font-size: 18px; }
+  .ar-pop small {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  @keyframes ar-pop {
+    0% { opacity: 0; transform: translate(-50%, -20%) scale(0.7); }
+    22% { opacity: 1; transform: translate(-50%, -60%) scale(1.08); }
+    100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+  }
+
+  .ar-log {
+    max-height: 190px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .ar-log p { color: var(--muted); }
+  .ar-log p.round-line {
+    color: #cdb9e6;
+    margin-top: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 10px;
+  }
+  .ar-log p.round-line:first-child { margin-top: 0; }
+  /* Coloured by WHOSE BLOW IT WAS from the reader's seat, not by engine side —
+     ui/battle.js resolves 'a'/'b' against `youAre` before it gets here, so the
+     defender reading their own log sees their hits in the same colour the
+     challenger sees theirs. */
+  .ar-log p.mine { color: #ffb3c1; }
+  .ar-log p.theirs { color: #a8d5ff; }
+  .ar-log .tag { color: #ffd166; }
+  .ar-log .dead { color: var(--red); font-weight: 700; }
+
+  .ar-verdict {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(30px, 7vw, 52px);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px 0 4px;
+  }
+  .ar-verdict.win { color: #6ee7a0; text-shadow: 0 0 40px rgba(110, 231, 160, 0.4); }
+  .ar-verdict.loss { color: var(--red); text-shadow: 0 0 40px rgba(255, 45, 85, 0.4); }
+  .ar-verdict.draw { color: var(--muted); }
+  .ar-verdict small {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-top: 10px;
+    text-transform: none;
+  }
+
+  /* ── THE BATTLE CARD ────────────────────────────────────────────────────── */
+  .bcard {
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 5 / 7.4;
+    border-radius: clamp(9px, 5cqw, 16px);
+    padding: clamp(2px, 1.4cqw, 4px);
+    background: conic-gradient(from 210deg,
+      var(--t-mid), var(--t-hi), var(--t-lo), var(--t-soft),
+      var(--t-mid), var(--t-hi), var(--t-lo), var(--t-mid));
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    transition: transform 0.14s ease, box-shadow 0.14s ease;
+  }
+
+  .bcard-inner {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 1.2cqw, 5px);
+    padding: clamp(5px, 3cqw, 9px);
+    border-radius: clamp(7px, 4cqw, 13px);
+    overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--el) 20%, transparent) 0%, transparent 60%),
+      linear-gradient(180deg, #171d2c 0%, #0d1120 100%);
+  }
+
+  .bcard-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+
+  .bcard .rarity-badge {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(9px, 4.4cqw, 14px);
+    line-height: 1;
+    letter-spacing: 0.5px;
+    padding: clamp(2px, 1.3cqw, 4px) clamp(4px, 2cqw, 7px);
+    border-radius: clamp(4px, 2cqw, 6px);
+    color: var(--t-ink);
+    background: linear-gradient(160deg, var(--t-hi), var(--t-lo));
+    box-shadow: 0 0 clamp(5px, 2.5cqw, 10px) -2px var(--t-glow);
+  }
+
+  /* The two chips are the card's identity line. Element on the top right and
+     class under the portrait, so the eye reads "what is it about" then "what
+     does it do" in the order a player asks. */
+  .el-chip,
+  .cls-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(2px, 1.2cqw, 4px);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7px, 3.1cqw, 10px);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: clamp(2px, 1.2cqw, 4px) clamp(4px, 2cqw, 7px);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .el-chip {
+    color: var(--el);
+    border: 1px solid color-mix(in srgb, var(--el) 55%, transparent);
+    background: color-mix(in srgb, var(--el) 14%, transparent);
+  }
+  .el-chip i { font-style: normal; font-size: 1.2em; line-height: 1; }
+
+  .cls-chip {
+    align-self: center;
+    color: #dfe6f5;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .cls-chip i { font-style: normal; opacity: 0.85; }
+  .cls-chip.c-Titan { color: var(--s-hp); border-color: color-mix(in srgb, var(--s-hp) 45%, transparent); }
+  .cls-chip.c-Carry { color: var(--s-atk); border-color: color-mix(in srgb, var(--s-atk) 45%, transparent); }
+  .cls-chip.c-Bulwark { color: var(--s-def); border-color: color-mix(in srgb, var(--s-def) 45%, transparent); }
+  .cls-chip.c-Assassin { color: var(--s-spd); border-color: color-mix(in srgb, var(--s-spd) 45%, transparent); }
+  .cls-chip.c-Riser { color: var(--s-mom); border-color: color-mix(in srgb, var(--s-mom) 45%, transparent); }
+
+  .bcard-face { display: flex; align-items: center; gap: clamp(4px, 2.4cqw, 8px); min-width: 0; }
+
+  /* The portrait keeps its metal ring but gives up the centre of the card. It
+     is still the biggest single thing on the face, which is what stops a battle
+     card reading as a spreadsheet. */
+  .bavatar {
+    flex: none;
+    width: clamp(28px, 27cqw, 62px);
+    height: clamp(28px, 27cqw, 62px);
+    border-radius: 50%;
+    padding: clamp(1px, 1cqw, 3px);
+    background: conic-gradient(from 140deg, var(--t-lo), var(--t-hi), var(--t-glow), var(--t-soft), var(--t-lo), var(--t-hi), var(--t-lo));
+    box-shadow: 0 0 clamp(5px, 3cqw, 14px) -4px var(--t-glow);
+    display: block;
+  }
+  .bavatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: #223049;
+  }
+
+  .bcard-id { min-width: 0; flex: 1; }
+  .bcard-id h3 {
+    font-size: clamp(9px, 4.4cqw, 14px);
+    font-weight: 700;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bsubs {
+    margin-top: 2px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: clamp(6.5px, 2.9cqw, 9.5px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── the stat block ─────────────────────────────────────────────────────── */
+  .bstats { display: grid; gap: clamp(1px, 0.9cqw, 3px); margin-top: auto; }
+  .bstat {
+    display: grid;
+    grid-template-columns: clamp(17px, 8.5cqw, 26px) 1fr clamp(19px, 10cqw, 32px);
+    align-items: center;
+    gap: clamp(3px, 1.6cqw, 6px);
+  }
+  .bstat em {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: clamp(6px, 2.7cqw, 9px);
+    letter-spacing: 0.4px;
+    color: var(--muted);
+  }
+  .bstat .bar {
+    height: clamp(4px, 2cqw, 7px);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  }
+  .bstat .bar i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, transparent), var(--c));
+    box-shadow: 0 0 8px -2px var(--c);
+  }
+  .bstat b {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7.5px, 3.3cqw, 11px);
+    text-align: right;
+    color: #e9edf7;
+  }
+  .s-hp { --c: var(--s-hp); }
+  .s-atk { --c: var(--s-atk); }
+  .s-def { --c: var(--s-def); }
+  .s-spd { --c: var(--s-spd); }
+  .s-mom { --c: var(--s-mom); }
+  .s-hp em { color: var(--s-hp); }
+  .s-atk em { color: var(--s-atk); }
+  .s-def em { color: var(--s-def); }
+  .s-spd em { color: var(--s-spd); }
+  .s-mom em { color: var(--s-mom); }
+
+  .bability {
+    font-size: clamp(6.5px, 2.9cqw, 9.5px);
+    line-height: 1.3;
+    color: var(--muted);
+    padding-top: clamp(2px, 1.4cqw, 5px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bability b { color: #dfe6f5; }
+
+  /* Matchup flag against the line-up the player can already see. Sits on the
+     card because that is where the decision it informs gets made. */
+  .matchup {
+    position: absolute;
+    top: clamp(26px, 13cqw, 40px);
+    right: clamp(3px, 2cqw, 7px);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7px, 3cqw, 10px);
+    padding: 2px 5px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid currentColor;
+  }
+  .matchup.m-good { color: #6ee7a0; }
+  .matchup.m-bad { color: #ff7d92; }
+  .matchup.m-flat { color: var(--muted); }
+
+  /* ── health, only while fighting ────────────────────────────────────────── */
+  .hpbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: clamp(11px, 5.5cqw, 17px);
+    background: rgba(0, 0, 0, 0.7);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+  }
+  .hpbar i {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, #63e88f, #2fa85f);
+    transition: width 0.28s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .hpbar.is-low i { background: linear-gradient(180deg, #ff8f6b, #d63b2f); }
+  .hpbar span {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7px, 3cqw, 10px);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  }
+
+  /* ── card at small widths: shed detail rather than shear it ─────────────── */
+  @container (max-width: 168px) {
+    .bability { display: none; }
+    .bsubs { display: none; }
+  }
+  @container (max-width: 124px) {
+    .bstat.s-mom,
+    .bstat.s-def { display: none; }
+    .cls-chip { font-size: 7px; padding: 1px 4px; }
+  }
+
+  @media (max-width: 640px) {
+    .arena-head h2 { font-size: 18px; }
+    .ar-pool { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+    .ar-readout { margin-left: 0; flex-basis: 100%; }
+
+    /* THE BACK RANK MUST FIT IN ONE ROW. Three slots at the desktop minimum
+       (104px + 10px gaps) need 332px, which overflows a 360px phone once the
+       overlay and panel padding are taken out — so the rank wrapped 2 + 1 and
+       stopped reading as a rank at all. The formation is the whole decision on
+       this screen; a row that silently breaks in half hides it. */
+    .ar-slot { width: clamp(84px, 27vw, 120px); }
+    .ar-rank-cards { gap: 6px; }
+
+    /* A scrollable strip INSIDE a scrollable overlay is a touch trap — a drag
+       that starts on a card scrolls the strip instead of the page, and there is
+       no visible boundary saying which one you grabbed. On a phone the strip
+       just becomes part of the page. */
+    .ar-pool { max-height: none; overflow-y: visible; }
+
+    /* Codes are the one thing a player has to select by hand if the clipboard
+       API is refused, so give them room to be legible while doing it. */
+    .ar-code-out,
+    .ar-code-in { font-size: 12.5px; }
+
+    /* Full-width so a thumb can hit them, and so "Copy code" never ends up
+       sharing a line with a button that navigates away from the code. */
+    .ar-row .btn { flex: 1 1 auto; min-width: 44%; }
+  }
+
+  /* The arena head carries a title, a three-step stepper and the way out. Below
+     this the three cannot share a line without the close button being pushed
+     off the edge, so the stepper takes its own row and Close stays reachable —
+     it is the only control on this screen a player cannot do without. */
+  @media (max-width: 420px) {
+    .arena-head { gap: 8px; }
+    .arena-head h2 { font-size: 16px; }
+    .ar-steps { order: 3; flex-basis: 100%; }
+    .ar-steps li { font-size: 9.5px; padding: 4px 8px; }
+  }
+
+  /* Reduced motion: the replay is still a replay — it is a sequence of states,
+     not an animation — but nothing slides, shakes or floats to get there. The
+     health bar keeps its value and loses its tween. */
+  @media (prefers-reduced-motion: reduce) {
+    .bcard,
+    .ar-pick,
+    .ar-slot,
+    .ar-mode-card { transition: none; }
+    .bcard.is-hit { animation: none; }
+    .bcard.is-acting { transform: none; }
+    .ar-pick:hover { transform: none; }
+    .hpbar i { transition: none; }
+    .ar-pop { animation: none; opacity: 1; transform: translate(-50%, -80%); }
+  }
+
+  /* The formation readout. Deliberately loud when it is EARNED and quiet when
+     it is not — it is the one number on this screen the card ratings cannot
+     tell you, so it has to survive being glanced at. */
+  .ar-formation {
+    font-size: 12.5px;
+    color: var(--muted);
+    padding: 8px 12px;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+  }
+  .ar-formation b { color: var(--ink); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.5px; }
+  .ar-formation.is-on {
+    color: #b6f0c4;
+    border-style: solid;
+    border-color: rgba(110, 231, 160, 0.45);
+    background: rgba(110, 231, 160, 0.09);
+  }
+  .ar-formation.is-on b { color: #6ee7a0; }
+
+  /* ── THE READY SCREEN ─────────────────────────────────────────────────────
+     A deliberately different colour from every other action in the app. The
+     magenta primary means "do the thing you came here for" and is on the pack,
+     the pull, the commit and the copy button; if the one control that fires a
+     synchronised countdown wore it too, the moment that is supposed to feel
+     like a starting pistol would look like every other button on the page.
+
+     Cyan because it is the only strong hue in the palette not already spoken
+     for: red is the brand and defeat, green is victory, gold is a crit, and the
+     six element hues are card identity. Cyan appears nowhere else, so it reads
+     as its own state rather than borrowing a meaning. */
+  .btn.go {
+    background: linear-gradient(180deg, #2ee6d0, #12b5c9);
+    border-color: transparent;
+    color: #04222a;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    box-shadow: 0 8px 22px -10px #12b5c9;
+  }
+  .btn.go:hover:not(:disabled) { background: linear-gradient(180deg, #4df0dd, #17c9de); }
+  /* Armed: the press landed and the countdown owns the screen now. Stays lit
+     rather than greying out — a disabled button that looks broken mid-countdown
+     invites a second click on something that is already working. */
+  .btn.go.is-armed {
+    opacity: 1;
+    background: linear-gradient(180deg, #0f8fa1, #0b6d7c);
+    color: #bff4fb;
+    box-shadow: none;
+  }
+
+  .ar-faceoff {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 4vw, 34px);
+    padding: 6px 0;
+    text-align: center;
+  }
+  .ar-faceoff span { display: grid; gap: 3px; min-width: 0; }
+  .ar-faceoff b {
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ar-faceoff i {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ar-faceoff em {
+    font-style: normal;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .ar-countdown {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(56px, 18vw, 110px);
+    line-height: 1;
+    letter-spacing: 3px;
+    color: #2ee6d0;
+    text-shadow: 0 0 46px rgba(46, 230, 208, 0.45);
+    padding: 8px 0 4px;
+    /* Reserves its own height from the first frame, so the panel does not jump
+       when the number appears and the button does not slide out from under a
+       finger that is still on it. */
+    min-height: clamp(64px, 20vw, 120px);
+  }
+  .ar-countdown.tick { animation: ar-tick 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+  .ar-countdown.is-go {
+    color: #6ee7a0;
+    text-shadow: 0 0 54px rgba(110, 231, 160, 0.55);
+    animation: ar-go 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  @keyframes ar-tick {
+    0% { opacity: 0; transform: scale(1.45); }
+    22% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0.55; transform: scale(0.94); }
+  }
+  @keyframes ar-go {
+    0% { opacity: 0; transform: scale(0.7); }
+    45% { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Reduced motion: the count still counts — it is information, not decoration
+     — it simply arrives instead of springing. */
+  @media (prefers-reduced-motion: reduce) {
+    .ar-countdown.tick,
+    .ar-countdown.is-go { animation: none; opacity: 1; transform: none; }
+  }
+
+  /* The presence lamp. Three states and each says something different: we do
+     not know yet, they are waiting on you, you are waiting on them. Neutral by
+     default because "press when they tell you" is the honest instruction when
+     there is no server to ask. */
+  .ar-lamp {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    min-height: 18px;
+  }
+  .ar-lamp.is-ready { color: #2ee6d0; }
+  .ar-lamp.is-waiting { color: #ffd166; }
+
+  /* Their light is on and yours is not. The button stops being a thing you may
+     press and becomes the thing everyone is waiting for, so it pulses — the one
+     moment in the arena where the UI is genuinely asking for a click. */
+  .btn.go.is-hot {
+    animation: ar-hot 1.15s ease-in-out infinite;
+  }
+  @keyframes ar-hot {
+    0%, 100% { box-shadow: 0 8px 22px -10px #12b5c9, 0 0 0 0 rgba(46, 230, 208, 0.55); }
+    50%      { box-shadow: 0 8px 22px -10px #12b5c9, 0 0 0 9px rgba(46, 230, 208, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn.go.is-hot { animation: none; box-shadow: 0 0 0 3px rgba(46, 230, 208, 0.6); }
+  }
+
+  /* The two ready lamps. Side by side because the whole question the lobby
+     answers is a comparison — am I waiting on them, or they on me. */
+  .ar-lamps {
+    display: flex;
+    justify-content: center;
+    gap: clamp(10px, 4vw, 28px);
+    flex-wrap: wrap;
+  }
+  .ar-lampdot {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    padding: 5px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .ar-lampdot.on {
+    color: #2ee6d0;
+    border-color: rgba(46, 230, 208, 0.5);
+    background: rgba(46, 230, 208, 0.1);
+  }
+
+  /* The accepted flash. Green rather than the cyan the ready lamps use: this
+     fires once, means something different (someone arrived), and is the only
+     moment on the challenger screen worth interrupting a wait for. */
+  .ar-lamp.is-ready { animation: ar-accepted 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+  @keyframes ar-accepted {
+    0%   { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ar-lamp.is-ready { animation: none; }
   }

@@ -1,9 +1,25 @@
 <!doctype html>
 <!--
-  Privacy policy. Short because the architecture is short: no backend, no
-  accounts, no analytics, no cookies. Every claim below is a claim about code in
-  this repository rather than about a policy someone intends to follow, which is
-  the only kind of privacy promise a client-side app is in a position to make.
+  Privacy policy. Short because the architecture is short: no accounts, no
+  analytics, no cookies, and one server-side endpoint that holds a single match
+  for ten minutes. Every claim below is a claim about code in this repository
+  rather than about a policy someone intends to follow, which is the only kind
+  of privacy promise a mostly-client-side app is in a position to make.
+
+  AMENDED 2026-08-08, when the two-player lobby landed. "No backend" was true
+  for the project's whole life until then and the wording here assumed it in
+  several places, so those places were qualified rather than quietly left
+  standing.
+
+  AMENDED AGAIN the same day, and this one is the honest correction of a claim
+  that had been true for a matter of hours. The first version of the endpoint
+  held two booleans and this page said it was "never sent a card". Ash's flow
+  then needed the accepting player's five to reach the challenger without a
+  second copy-paste, which means the endpoint now carries a battle code — so
+  that sentence had to go rather than be technically defended. What is still
+  true, and is what the promises actually rested on, is that it is never sent
+  an account, an identity, or a collection beyond the five cards someone chose
+  to field, and that it forgets all of it in ten minutes.
 
   It is also a stated prerequisite of any future YouTube API quota audit
   (TASKS.md, WP10), which is why it exists before the first deploy rather than
@@ -32,19 +48,36 @@
 </header>
 
 <main class="doc">
-  <p class="doc-updated">Last updated 3 August 2026</p>
+  <p class="doc-updated">Last updated 8 August 2026</p>
 
   <h2>The short version</h2>
   <p>
-    Creator Gacha has no server. It is a folder of static files — HTML, CSS and JavaScript —
-    served by a CDN and run entirely in your browser. There is nothing on our side to store
-    anything <em>in</em>, which is why the rest of this page is mostly a list of things that
-    do not happen.
+    Creator Gacha is a folder of static files — HTML, CSS and JavaScript — served by a CDN and
+    run entirely in your browser. There is essentially nothing on our side to store anything
+    <em>in</em>, which is why the rest of this page is mostly a list of things that do not
+    happen.
+  </p>
+  <p>
+    The single piece of server-side code in the whole project is a two-player lobby, and it
+    holds the state of one match for ten minutes. It is described in full below. Nothing else
+    you do here reaches a server of ours.
   </p>
 
   <h2>What we collect</h2>
-  <p><strong>Nothing.</strong> No accounts, no sign-in, no analytics, no tracking pixels, no
-  advertising, no cookies, no local telemetry of any kind. We do not know that you visited.</p>
+  <p><strong>Nothing, with one narrow exception.</strong> No accounts, no sign-in, no analytics,
+  no tracking pixels, no advertising, no cookies, no local telemetry of any kind. Play on your
+  own and we do not know that you visited.</p>
+  <p>
+    The exception is the <strong>two-player lobby</strong>, added 8 August 2026. If — and only
+    if — you start a battle against another person, a small service of ours holds, for ten
+    minutes, the state of that one match: whether it was accepted, which side has pressed
+    Ready, and the battle code of the player who accepted. It exists so the two of you can see
+    each other arrive and start on the same countdown, rather than passing codes back and
+    forth. It is never sent your name, an account, or your collection beyond the five cards you
+    chose to field, and nothing it holds is linked to you between matches. Single-player
+    battles never touch it, and if it is unreachable the game falls back to copy-paste. See
+    <em>What your browser contacts</em> below.
+  </p>
 
   <h2>Your YouTube API key</h2>
   <p>
@@ -89,6 +122,22 @@
     <li><strong>googleapis.com</strong> — not contacted while playing. Only the developer-only
       Live mode reaches it, only with a key entered there, and only when a channel is asked
       for.</li>
+    <li><strong>Our own match lobby</strong> (<code>/api/ready/…</code>, same domain) — contacted
+      <em>only</em> if you start a two-player battle, and only while that match is being set up.
+      It exists so both players can see each other arrive and start the same fight on the same
+      countdown.
+      <br>
+      What it receives is a <strong>match id</strong> — a hash both browsers work out for
+      themselves from the battle code you were sent — the single letter <code>a</code> or
+      <code>b</code> saying which side pressed, and, once, the <strong>battle code of the
+      player who accepted</strong>, so the challenger's browser can work out the fight without
+      a second copy-paste. That code describes five cards: public channel names and the
+      subscriber, view and video counts already printed on them. It carries no account, no
+      identity and none of your collection beyond the five you chose to field.
+      <br>
+      All of it is discarded automatically after ten minutes. Nothing is logged by us, nothing
+      is linked to you between matches, and if the service is unavailable the battle still runs
+      — the screen falls back to the manual copy-paste flow the game has always had.</li>
   </ul>
   <p>
     Each of those sees a request from your browser and applies its own privacy policy, which we

@@ -7,6 +7,7 @@ import { currentPool, addToCollection, persistCollection } from './state.js';
 import { initBanner } from './ui/banner.js';
 import { renderCollection, notePulled } from './ui/collection.js';
 import { openReveal } from './ui/reveal.js';
+import { openArena } from './ui/battle.js';
 
 function doPull(count) {
   const pool = currentPool();
@@ -47,4 +48,10 @@ function doDevPull() {
 }
 
 initBanner({ onPull: doPull, onDevPull: doDevPull, onSetLoaded: renderCollection });
+
+/* The arena's own enabled state is maintained by ui/collection.js (it is the
+   module that knows how many different creators are owned); introducing the two
+   is main's job, which is the whole of what this file is for. */
+document.getElementById('battle-open').addEventListener('click', openArena);
+
 renderCollection();

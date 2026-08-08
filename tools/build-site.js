@@ -70,6 +70,19 @@ async function main() {
      the host did. */
   await cp(from('_headers'), to('_headers'));
   await cp(from('src'), to('src'), { recursive: true });
+  /* THE ONE SERVER-SIDE THING THIS PROJECT HAS. `wrangler pages deploy` compiles
+     whatever it finds in <dir>/functions, so the ready-check endpoint has to be
+     copied INTO the upload rather than deployed separately — which is also why
+     it needs no CORS and no second domain.
+
+     It is a deliberate, narrow amendment to the client-only decision: the
+     endpoint receives a room hash and the letter 'a' or 'b', never a card. See
+     functions/api/ready/[room].js. If the directory is ever absent the site
+     still builds and still works — the arena falls back to its manual
+     countdown — so this is not made a hard requirement. */
+  if (await exists(from('functions'))) {
+    await cp(from('functions'), to('functions'), { recursive: true });
+  }
   /* Gitignored, so it is absent from a clean checkout — removed anyway, because
      this script runs on the machine that HAS one. */
   await rm(to('src/config.local.js'), { force: true });

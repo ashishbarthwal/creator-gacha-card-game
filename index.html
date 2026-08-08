@@ -128,6 +128,11 @@
     <div class="panel-head">
       <h2 id="coll-h">Collection</h2>
       <span id="coll-summary" class="hint"></span>
+      <!-- The arena lives here rather than up on the banner because you battle
+           WITH your cards — the button belongs next to the thing it operates on.
+           Disabled until there are five different creators to field; battle.js
+           says so in words when opened, so this is a signpost, not the gate. -->
+      <button id="battle-open" type="button" class="btn ghost btn-battle" disabled>⚔ Battle</button>
       <!-- Saved in this browser only. The button is what makes that claim
            honest: data kept on someone's device with no way to remove it is
            not "local and yours", it is just data you cannot delete. -->
@@ -240,6 +245,27 @@
   <div class="inspect-box">
     <div id="inspect-holder" class="inspect-holder"></div>
     <button id="inspect-close" class="btn ghost" type="button">Close</button>
+  </div>
+</div>
+
+<!-- The arena. A shell only: every panel inside is built by src/ui/battle.js,
+     the same way #reveal and #inspect hold nothing but a mount point. The three
+     flows (quick battle, challenge, accept) differ enough in shape that markup
+     for all of them would be three hidden layouts fighting over one container.
+
+     Two windows fight each other by passing a code through the player — see
+     src/engine/challenge.js. There is no backend and no connection: a normal
+     window and an incognito one share no storage at all, so the string IS the
+     channel, and the pure seed-deterministic engine is what makes both sides
+     replay the identical battle from it. -->
+<div id="arena" hidden role="dialog" aria-modal="true" aria-label="Arena">
+  <div class="arena-box">
+    <header class="arena-head">
+      <h2>Arena</h2>
+      <ol class="ar-steps" id="ar-steps"></ol>
+      <button id="arena-close" class="btn ghost" type="button">Close</button>
+    </header>
+    <div id="ar-body" class="arena-body"></div>
   </div>
 </div>
 

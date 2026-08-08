@@ -238,6 +238,48 @@
       "slug": "core",
       "cards": 15831,
       "snapshotDate": "2026-08-06"
+    },
+    {
+      "at": "2026-08-08T14:22:18.228Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15831,
+      "snapshotDate": "2026-08-06"
+    },
+    {
+      "at": "2026-08-08T14:31:22.997Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15831,
+      "snapshotDate": "2026-08-06"
+    },
+    {
+      "at": "2026-08-08T14:37:35.692Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15831,
+      "snapshotDate": "2026-08-06"
+    },
+    {
+      "at": "2026-08-08T14:48:14.493Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15831,
+      "snapshotDate": "2026-08-06"
+    },
+    {
+      "at": "2026-08-08T15:13:38.779Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15831,
+      "snapshotDate": "2026-08-06"
+    },
+    {
+      "at": "2026-08-08T15:17:29.268Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 15831,
+      "snapshotDate": "2026-08-06"
     }
   ]
 }

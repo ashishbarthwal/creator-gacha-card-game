@@ -3,6 +3,7 @@
    Reads shared state; owns its own DOM refs. */
 
 import { RARITY_ORDER, toCount } from '../engine/core.js';
+import { TEAM_SIZE } from '../engine/battle.js';
 import { state, resetCollection } from '../state.js';
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
@@ -13,6 +14,10 @@ const collSummary = document.getElementById('coll-summary');
 const collEmpty = document.getElementById('coll-empty');
 const collNone = document.getElementById('coll-none');
 const collClear = document.getElementById('coll-clear');
+/* Owned here because this module is the one that knows how many DIFFERENT
+   creators are in the binder; the click itself is wired in main.js, which is
+   where modules get introduced to each other. */
+const battleBtn = document.getElementById('battle-open');
 const collTools = document.getElementById('coll-tools');
 const collSearch = document.getElementById('coll-search');
 const collFilters = document.getElementById('coll-filters');
@@ -221,6 +226,19 @@ export function renderCollection() {
   collClear.hidden = items.length === 0;
   collNone.hidden = !items.length || shown.length > 0;
   if (!collNone.hidden) collNone.textContent = emptyMessage();
+
+  /* A team is five DIFFERENT creators, so the gate is unique cards — not total
+     pulled, which a pile of duplicates would satisfy while leaving nothing to
+     field. Counted off `items` (the whole collection) rather than `shown`,
+     because a rarity filter is a way of looking at the binder, not a change to
+     what you own. */
+  if (battleBtn) {
+    const canField = unique >= TEAM_SIZE;
+    battleBtn.disabled = !canField;
+    battleBtn.title = canField
+      ? 'Build a team of five and fight'
+      : `Needs ${TEAM_SIZE} different creators — you have ${unique}`;
+  }
 
   /* The toolbar is always present now, and so are the two controls a player
      reaches for on purpose: the rarity chips and the search box. Only SORT keeps

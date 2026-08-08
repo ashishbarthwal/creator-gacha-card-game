@@ -3155,3 +3155,264 @@ weight, not just by being "more pink." The ember keyframe was renamed `ur-ember`
 ember` to match. 425 tests pass unchanged — none of this touched engine logic, weights, or mults.
 
 </details>
+
+## Two windows fight by passing a code, because they share nothing else (2026-08-08)
+
+The arena moved out of `prototype/` and into the app: a Battle button on the collection
+panel, a team builder over your own cards, and three ways to fight — a matched AI, a
+challenge you hand out, and a challenge you accept. The AI path is the one that always
+works; the other two are the reason this entry exists.
+
+**The problem is not networking, it is that there is nothing to network with.** The ask was
+a 1v1 between a normal window and an incognito window on the same machine. Those two are
+**storage-partitioned by design** — localStorage, IndexedDB, cookies, SharedWorker and
+BroadcastChannel are all isolated between them, and that isolation is the entire point of a
+private window. There is no same-machine shortcut hiding in the platform. Locked decision 3
+(client-side only, static host) rules out the obvious answer of a room on a server, and it
+also quietly rules out WebRTC: a data channel needs signalling, and a signalling service is
+the backend again wearing a hat.
+
+So the channel between the two windows is **the player**. They copy a string out of one and
+paste it into the other.
+
+**What makes that a real fight rather than two simulations** is a property the engine already
+had, from a decision taken for a completely different reason: `engine/battle.js` takes its
+randomness as an injected `rng` and `engine/battle-stats.js` takes its clock as an injected
+`now`, both so the balance tests could assert distributions over thousands of seeded runs.
+Feed two windows the same teams, the same seed and the same `now` and they do not merely
+agree about who won — they replay the identical fight, hit for hit, crit for crit. Verified
+against the live 15,831-card deck: two independently decoded sides produced byte-identical
+53-attack logs.
+
+That is why all three travel in the code, and why `now` is **pinned rather than read locally
+on arrival**. Channel age drives three of the five battle axes (maturity directly, cadence
+and velocity through their per-year denominators), so two windows opening the same code a
+day apart would otherwise compute two different fights from the same five cards — a bug that
+would surface as "we saw different winners" long after anyone could trace it.
+
+**The reply carries inputs, not a verdict.** A result code holds the defender's five cards
+and the challenger's window re-resolves the whole fight from them. A claimed outcome would
+have to be taken on trust; a recomputed one cannot be wrong. A short fingerprint of the
+challenger's team rides along and is checked on the way back, so a reply to somebody else's
+challenge — or a code mangled in transit — is caught and named instead of being silently
+fought as a different battle.
+
+**Who commits first is the asymmetry the element wheel needs.** The challenger locks their
+five *and the seed* before they can know what they are up against; the defender pastes the
+code, sees the enemy line-up with matchup badges, and builds against it. Countering an
+opponent you cannot see is just picking your best five again, so somebody has to go first
+and the code is what makes "first" mean something. Trade roles for the rematch and the
+advantage trades with it.
+
+**What this closes off:**
+
+- **No lobby, no matchmaking, no presence.** There is no server to hold a room, so there is
+  no "waiting for opponent" state to build and no way to be matched with a stranger.
+- **No live/turn-based play.** The fight is auto-resolved and handed over in one round trip.
+  A turn-by-turn mode would need a message per turn, which is where a real transport starts
+  being worth its cost.
+- **No anti-cheat, and the code says so out loud.** A player can hand-edit their own five to
+  a billion subscribers before encoding. Detecting that needs a secret, and a secret needs a
+  server. There is no ladder and nothing to win, so the honest move was to write the
+  limitation into `engine/challenge.js` rather than build ceremony that implies otherwise.
+- **The format is versioned and frozen.** Channels pack as positional arrays; appending a
+  field is safe, reordering is not, and `CODE_VERSION` makes a mismatch a sentence a player
+  can act on rather than a corrupt decode.
+
+**One storage change came with it, and it was not cosmetic.** `engine/collection.js` was
+dropping `publishedAt` and `element` from saved cards, so every card a player actually owned
+fought as a dateless Unaligned unit — all matchups neutral, the entire element layer inert
+for exactly the cards the arena is built on. Both fields joined the stored allowlist without
+a `COLLECTION_VERSION` bump: adding optional fields is backward-compatible, bumping would
+discard every existing collection to gain two of them, and `reconcileCollection` already
+refreshes owned cards from the set on load — so old saves heal themselves on the next visit
+with no migration ever written.
+
+## The battle had no decision in it, and it was not the reason we thought (2026-08-08)
+
+The complaint was "picking the highest-subscriber cards wins, so there is nothing to
+decide." Measured against the live 15,831-card deck, the first half of that is false and
+the second half is true — which changed what got fixed.
+
+**Picking by subscriber count was already a bad strategy.** Head-to-head over 120 drawn
+collections, a team of the five biggest channels lost to a team picked on views-per-video
+70.8% of the time, and to a raw-rating pick 90%. That part of the stat design — size buys a
+compressed budget, shape decides where it goes — was working as written.
+
+**What was actually broken: `powerOf` is an accurate predictor, and an accurate predictor
+is a solved game.** "Take the five highest-rated cards" beat every other approach 87-100%
+of the time, so the strategy graph was a strict ladder rather than anything with a choice
+in it — and the optimal play was a button, because Auto-pick computes exactly that number.
+
+Three fixes, and the order matters because the first two are corrections and only the third
+is a design addition.
+
+### 1. Two of the five axes were never de-sized
+
+`punch` and `velocity` are measured as residuals against an Influence trend, so what
+survives is "punches above its weight" rather than "big". `devotion` and `cadence` never
+got that treatment, and it showed: correlation with size ran 0.350 and 0.420 against the
+~0.25 the balance tool flags, while the de-sized pair sat at 0.004 and -0.014. Those two
+feed DEF and SPD, so **every big channel was structurally tankier and faster than every
+small one, on every card, forever.** That is the exact "bigger channel is tankier AND hits
+harder" failure the budget split exists to prevent, arriving through the two axes nobody
+had applied the fix to. Both are now residuals against fitted trends, frozen as constants
+for the same reason PUNCH_TREND is. Measured after: -0.010 and 0.027.
+
+### 2. The five stats were not worth the same at equal budget
+
+Shape is zero-sum — a card spends one budget across five stats — so the design only works
+if a point buys comparable value wherever it goes. Five specialists built from an identical
+budget and fought round-robin came out **HP 83.9% · ATK 82.7% · DEF 39.7% · SPD 20.0% ·
+MOM 4.7%**. A point spent on momentum bought a seventeenth of what it bought on health.
+
+The reason is structural and worth stating, because it will come back: **SPD and MOM do not
+deal damage, they multiply an attack the card already has** — and under a zero-sum budget,
+spending on them means having no attack left to multiply. The momentum specialist ramped to
+2.2x on an attack of 81 while the attack specialist simply carried 253, and the ramp was
+capped at +120%, so the one card built entirely around ramping hit its ceiling exactly where
+the trade should have started paying. MOM's scale and the cap both rose; DEF rose less.
+
+Speed is **partially** fixed and deliberately recorded as such: its payoff saturates by
+construction, because `extraActionChance` is a probability and even a perfect roll buys one
+extra swing. Two swings of a budget attack still lose to one swing of a real one. Closing
+that needs a second thing for speed to buy — evasion, or a genuine multi-action roll — not
+another constant.
+
+### 3. The formation bonus — the part that is new design
+
+A bonus for fielding four (+2.5%) or five (+5%) distinct classes, applied in `makeTeam`.
+
+It has to be a property of the TEAM, because that is the only kind of thing `powerOf`
+cannot see — `powerOf` rates cards. The consequence is the point: Auto-pick, greedy on card
+rating, can no longer see the bonus, so it stops being optimal and becomes a decent baseline
+a thinking player beats. Rewarding diversity rather than punishing duplicates was Ash's
+call; the two are mathematically equivalent and only one of them is a sentence the build
+screen can state.
+
+**The number is smaller than it looks, and the first pass got it wrong by a factor of two.**
+A lift on every stat raises both sides of `powerOf = sqrt(effective health x damage)`, so a
+nominal +14% is roughly +30% of fighting strength — measured, the diverse team then beat the
+raw-power team 89% of the time, which is the same dominance problem wearing the other hat.
+
+### What it cost, and the two things that broke on the way
+
+De-sizing the axes made the remaining size coupling — the **budget** — visible, and the
+wider momentum cap added a new multiplicative term to `powerOf`. Together those dropped
+"small cards out-rating the median giant" from 21.8% to **2.3%**, straight through the 15%
+floor, and two tests failed. `BUDGET_GAIN`'s own comment says to retune it whenever a
+multiplicative term enters `powerOf`, against the tool rather than by argument: 60 -> 25
+puts it back at 22.1%.
+
+The second break was subtler and is a real bug this introduced. The AI picks for variety, so
+it reliably EARNS the formation bonus — but it was aiming at a target computed without it,
+and so overshot by the whole size of the bonus on nearly every build. The even-match win
+rate fell from 45% to ~30%: the matchmaker was promising a fair fight and delivering a
+6%-stronger opponent every time. `matchOpponent` now builds twice, using the first team as a
+probe for the lift it earns and aiming the second at `target / lift`.
+
+### Measured, before and after
+
+| | before | after |
+|---|---|---|
+| a small channel out-rates one 10x bigger | 32.1% | 39.2% |
+| views-per-video pick beats biggest-subscriber pick | 70.8% | 82.4% |
+| corr(subscribers, combat rating) | 0.252 | 0.231 |
+| diverse team vs raw-rating team | — (rating dominant at 87-100%) | ~52% |
+| a Riser earns its slot in a diverse team | — | 86.2% |
+| small cards out-rating the median giant | 21.8% | 22.1% |
+
+**What is closed off:** no new data was needed and none was fetched. "Recent viewership"
+remains unavailable — per-video history is ~33,000 quota units per rebuild against the 488
+the whole build costs — but the two archetypes it would have bought already exist as `punch`
+and `velocity`, so this was a pricing problem, not a sourcing one. Magic Search is untouched.
+
+**What is still open:** a team of five max-velocity cards still loses ~99% of the time. That
+is now partly BY DESIGN — it is a stack, and stacks collect no formation bonus — but the
+honest reading is that momentum remains the weakest place to spend a budget even after the
+repricing, for the multiplier-on-a-sacrificed-base reason above. The card is viable in a
+diverse team (86.2%); the mono-strategy is not. `tools/battle-balance.js` now prints a
+STRATEGY table so neither this nor a future return of the dominant-strategy problem can go
+unnoticed again — every card-level figure in that tool was passing while the game was solved.
+
+**Trimmed the same day: the Assassin opener.** A x1.25 on round one, removed after a lever
+audit. It fired on 4.9% of 78,823 measured attacks while its text rode on the face of every
+Assassin — 24.7% of the deck. A quarter of all cards carried a sentence describing something
+a player would essentially never observe, and a rule you cannot observe is pure cognitive
+cost. Backstab (20.7% of attacks) is the class identity and stays.
+
+**Two things the same audit said to cut, and measurement said to keep.** Aegis looked dead at
+0.3% of attacks — but that figure came from rating-picked teams, which rarely contain a
+Bulwark at all. Re-measured on the diverse teams the formation bonus now rewards, it fires on
+8.4%: 74% of those teams field a Bulwark and it lands in the front rank 74% of the time. It is
+not dead, it is the payoff for the strategy this whole entry exists to create.
+
+The back-rank attack tax was dismissed as "a constant, not a decision" because it applies to
+73% of attacks. That was a shallow read of a high number: it applies to every back-rank
+attacker, and WHICH cards stand in the back is the decision. Remove it and the back rank
+becomes strictly better than the front — safe AND undiminished — which deletes the formation
+trade rather than simplifying it. Both kept.
+
+The general lesson, since it has now happened twice in one session: a lever's FIRING RATE is
+not its importance. A low rate can mean the strategy that triggers it is rare rather than that
+the lever is dead, and a high rate can mean it is attached to something the player chooses
+rather than that it is a constant. Measure the lever in the situation it was designed for.
+
+## Locked decision 3 is amended, not overturned: one endpoint that holds two booleans (2026-08-08)
+
+Ash's call, made explicitly, on a decision marked "do not reopen". What follows is the
+shape of the amendment and — more usefully — why the line lands exactly where it does.
+
+**The want:** an "opponent is ready" light, so two players press start and watch the same
+fight at the same moment instead of one watching minutes before the other. That is a live
+signal between two devices, and the pasted battle codes cannot carry it — they are one-shot
+copy-pastes, not a connection.
+
+**What was rejected on the way.** A third code exchange (a tiny "ready" token sent back)
+works with no server at all, but pays for a light with a third round of copy-paste, which is
+more friction than the light removes. WebRTC using the existing codes as the signalling
+channel is genuinely elegant — decision 3 survives intact — but it grows the codes from
+~1,000 to ~3,500 characters and fails behind symmetric NAT without a paid TURN relay, and a
+ready light that works most of the time is worse than none.
+
+**Where the line is, and why there.** `functions/api/ready/[room].js` receives a room hash
+and the letter `a` or `b`. It is never sent a card, a channel, a statistic, a name, a
+collection or a battle code. That boundary is not squeamishness, it is the whole reason this
+is affordable: **a server that is never sent a statistic has no statistic to store**, and
+stored statistics are what carry YouTube's 30-day cap and the opt-out obligation that this
+project's entire architecture — gitignored sets, deploy-time rebuilds, the 25-day cadence —
+exists to satisfy. Cross that line and every one of those problems arrives at once, which is
+what the "full relay" option (server passes the actual codes, no copy-paste at all) would
+have meant. It was the better UX and it was declined for exactly this reason.
+
+**The room id costs nothing to agree on**, which is what makes presence possible with no
+lobby: both windows already hold the challenger's five and the seed, so both derive
+`fingerprint(teamA)+seed` independently, with no round trip. It identifies a match without
+describing one, and being unguessable without the challenge code it doubles as the only
+access control the endpoint needs.
+
+**It stays optional, and that is a hard requirement rather than defensive habit.** Missing KV
+binding, request failure, offline, blocked by an extension — every path resolves to
+`enabled:false` and the arena falls back to the manual countdown it shipped with. The game
+worked without a server for its whole life and still has to; a fight that cannot start
+because a service is down is a broken game. The endpoint answers 200 with `enabled:false`
+rather than 500 for the same reason: the client treats it as "no presence today" and needs no
+error handling at all.
+
+**Two booleans, ten minutes, and a known race.** KV offers no compare-and-set, so two players
+readying in the same instant can each write a state omitting the other. It self-heals on the
+next poll; the cost is one extra poll interval. A lock needs a Durable Object, which is a paid
+plan and a great deal of machinery to shave a second off a ready check. Recorded as a chosen
+trade rather than left as a lurking surprise.
+
+**What the promises cost.** The privacy policy said "Creator Gacha has no server" and "we do
+not know that you visited", in several places, and those stopped being unqualified the moment
+any request reached us. They are now qualified rather than quietly left standing — the page
+names the endpoint, what it receives, what it cannot deduce, and that single-player battles
+never touch it. The claims that actually mattered survive literally true: the collection is
+still local-only and still never transmitted, the API key still never leaves the page, and
+there are still no accounts, cookies or analytics.
+
+**What is NOT covered by this amendment**, and needs its own decision if ever wanted:
+relaying battle codes, lobbies, matchmaking, accounts, persistence of anything, or any
+endpoint that receives channel data. The amendment is presence and nothing else.

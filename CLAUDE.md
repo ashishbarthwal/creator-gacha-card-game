@@ -45,9 +45,30 @@ Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+)
    no popups, no nags. **Hard rule: the coffee buys Ash a coffee. It never unlocks
    anything in the game.** The moment a donation grants in-game value, every IP and legal
    problem comes back.
-3. **Client-side only.** Static host (GitHub Pages / Cloudflare Pages / Netlify — currently
-   Cloudflare Pages, moved off Netlify 2026-08-03 for free-tier credit limits). Users bring
-   their own YouTube Data API key. No backend, no server, near-zero hosting cost.
+3. **Client-side only, with one named exception.** Static host (GitHub Pages / Cloudflare
+   Pages / Netlify — currently Cloudflare Pages, moved off Netlify 2026-08-03 for free-tier
+   credit limits). Users bring their own YouTube Data API key. Near-zero hosting cost.
+
+   **Amended 2026-08-08 — Ash's call, and the amendment is the whole of what changed.**
+   `functions/api/ready/[room].js` is the one piece of server-side code in the project: a
+   two-player lobby holding ONE match under a hashed room id for ten minutes — accepted, two
+   ready flags, and the defender's reply code.
+
+   **The 30-day cap was not the obstacle, and saying so was a mistake worth recording.** The
+   first cut of this endpoint refused to touch card data on the grounds that stored statistics
+   carry YouTube's 30-day cap. That cap is a MAXIMUM AGE, and ten minutes is comfortably inside
+   it — so the reasoning was wrong, and correcting it is what allowed the lobby to carry a
+   battle code at all. What the endpoint must still never receive is an **account, an identity,
+   or a collection beyond the five cards someone chose to field**, because none of that is
+   needed and all of it would be a real promise to break. The room id is derived independently
+   by both browsers from the challenge code, so establishing a match still costs no round trip
+   and the id is unguessable without the code.
+
+   It must also stay **optional**: if the KV binding is missing or the request fails, the arena
+   falls back to the manual countdown it shipped with. The game worked without a server for its
+   whole life and still has to — a fight that cannot start because a service is down is a
+   broken game. Anything beyond presence (relaying codes, lobbies, accounts) is a fresh
+   decision and is *not* covered by this amendment.
 4. **No build step.** Plain ES modules, served as-is. Vitest runs in dev only.
 5. **Unofficial.** Footer must carry a disclaimer: not affiliated with or endorsed by
    YouTube or Google. (Wikigacha does the same for Wikipedia.)

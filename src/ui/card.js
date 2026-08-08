@@ -12,8 +12,13 @@ import { escapeHtml, formatCount } from './util.js';
 /* The one place the avatar-source switch is read. Everything downstream — the
    ring, the tilt, the reveal, the 403 fallback — is handed a URL and stays
    ignorant of where it came from, which is what keeps this a flag rather than a
-   second rendering path. An emblem is a data URI, so it makes no request. */
-function avatarUrlFor(channel) {
+   second rendering path. An emblem is a data URI, so it makes no request.
+
+   Exported for ui/battle-card.js, which draws the same creator from a different
+   side and must obey the same switch. A second reader of USE_EMBLEMS would be a
+   second place for `?avatars=emblem` to be forgotten — and the whole value of
+   that flag is that exercising it proves it still works everywhere. */
+export function avatarUrlFor(channel) {
   return USE_EMBLEMS ? emblemFor(channel) : channel.avatarUrl;
 }
 
@@ -96,13 +101,23 @@ function accentFor(channel) {
    in silver-plated metal — is 100M (RUBY's band). PewDiePie nicknamed his 50M
    trophy "Ruby" on camera and it stuck. The badge chip still shows the short
    code (UR/RUBY); this is only the full name under it. */
-const TIER_NAME = {
+export const TIER_NAME = {
   N:    'Graphite',
   R:    'Silver',
   SR:   'Gold',
   SSR:  'Diamond',
   UR:   'Ruby Play Button',
   RUBY: 'Red Diamond Play Button',
+};
+
+/* The same ladder, short enough for a battle card's one-line subtitle, where
+   "Red Diamond Play Button" would wrap and crowd out the subscriber count.
+   Kept beside the full names rather than in ui/battle-card.js so the two can
+   only ever be edited together — the award names moved once already
+   (2026-08-07, when they were corrected against the real thresholds) and a
+   second table one folder over would have been missed. */
+export const TIER_NAME_SHORT = {
+  N: 'Graphite', R: 'Silver', SR: 'Gold', SSR: 'Diamond', UR: 'Ruby', RUBY: 'Red Diamond',
 };
 
 export function renderCard(card, { isNew = false, count = 0 } = {}) {

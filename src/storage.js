@@ -27,6 +27,15 @@ import { serializeCollection, parseCollection } from './engine/collection.js';
    migrate it in place. */
 const KEY = 'creator-gacha:collection:v1';
 
+/* The battle line-up, kept separate from the collection rather than folded into
+   it. Two reasons, and the second is the one that matters: a lineup is a
+   PREFERENCE about cards, not a record of owning them, so losing it costs
+   nothing and it must never be able to corrupt the thing that does; and it is
+   written on every slot click while the collection is written once per pull, so
+   sharing a key would rewrite the whole collection dozens of times during a
+   single team-build for no reason. */
+const LINEUP_KEY = 'creator-gacha:lineup:v1';
+
 /* Access is inside the try as well as use: reading window.localStorage can
    itself throw in a sandboxed frame, so a bare `typeof` check is not enough. */
 function store() {
@@ -80,6 +89,47 @@ export function clearCollection() {
   if (!ls) return false;
   try {
     ls.removeItem(KEY);
+    /* The lineup is only meaningful as a pointer INTO the collection, so a
+       cleared collection leaves it pointing at nothing. Removing it here keeps
+       "clear my data" honest — a stale key surviving the button that promises
+       to delete everything is exactly the kind of thing a privacy policy ends
+       up being wrong about. */
+    ls.removeItem(LINEUP_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* ── the battle line-up ────────────────────────────────────────────────────
+   IDS ONLY, never card data. Same discipline as the collection storing channels
+   rather than derived cards, one step further along: a lineup that carried its
+   own copy of a channel would go stale the moment the weekly set refresh
+   updated the real one, and there would be no way to tell which copy was right.
+   Ids are resolved against the live collection on load, so a card that has
+   since been cleared simply drops out of the team. */
+export function loadLineup() {
+  const ls = store();
+  if (!ls) return [];
+  try {
+    const raw = ls.getItem(LINEUP_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    /* Coerced rather than trusted: this is localStorage, which anything on the
+       origin can write, and a non-string here would reach `Map.get` as a key
+       that silently never matches. */
+    return parsed.map(id => (typeof id === 'string' ? id : ''));
+  } catch {
+    return [];
+  }
+}
+
+export function saveLineup(ids) {
+  const ls = store();
+  if (!ls) return false;
+  try {
+    ls.setItem(LINEUP_KEY, JSON.stringify((ids ?? []).map(id => String(id ?? ''))));
     return true;
   } catch {
     return false;
