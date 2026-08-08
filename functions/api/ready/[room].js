@@ -5,6 +5,13 @@
    side has readied, when the second one did, and the defender's reply code.
    Nothing else, and nothing about a person.
 
+   Three ops write it, and the split between the last two is load-bearing:
+   `accept` (the defender has the challenge), `team` (here are my five), and
+   `ready` (I am ready to watch). `team` and `ready` were once the same op, on
+   the reasoning that pressing Ready IS committing the team. That was true of
+   the original copy-paste flow and stopped being true the moment the lobby grew
+   a Ready button of its own — see the note on the `team` branch below.
+
    ── WHY IT NOW CARRIES A CODE, WHEN IT DELIBERATELY DID NOT ──────────────
    The first cut of this endpoint held two booleans and refused to touch card
    data, on the reasoning that a server never sent a statistic can never store
@@ -30,8 +37,13 @@
    The game shipped with no server and still has to work without one. Missing
    binding, failed request, offline: the answer is `enabled: false` and the
    arena falls back to the copy-paste flow it has always had. That fallback is
-   not a degraded mode bolted on, it is the original path kept whole — and right
-   now it is the ONLY path, because the KV namespace is not bound yet. */
+   not a degraded mode bolted on, it is the original path kept whole.
+
+   The KV namespace was bound on 2026-08-08 and the lobby is live. One measured
+   characteristic worth knowing before debugging a room that looks dead: KV
+   caches MISSES, and `cacheTtl` cannot go below 60s, so a room polled before it
+   exists can keep reading empty at that edge for up to a minute after it is
+   written. Writes themselves are reliable — 30 polls over 90s, no flapping. */
 
 const TTL_SECONDS = 600;
 const COUNTDOWN_MS = 3000;
@@ -126,21 +138,41 @@ export async function onRequest(context) {
 
   if (body?.op === 'accept') {
     state.accepted = true;
+  } else if (body?.op === 'team') {
+    /* COMMITTING A TEAM IS NOT READYING, and conflating the two was a real bug:
+       the defender uploaded their five on leaving the builder, which flipped
+       their ready flag before the lobby had even rendered. Both screens then
+       told the truth about a lie — the challenger saw "they are ready", the
+       defender saw "you are ready", and neither player had pressed anything.
+       Worse, the challenger pressing Ready was then enough to stamp `bothAt`
+       and start a fight the defender never agreed to. So the code arrives by
+       its own op, and readiness stays something a person does. */
+    const code = typeof body.code === 'string' ? body.code : '';
+    if (!code || code.length > MAX_CODE) return json({ error: 'bad code' }, 400);
+    state.code = code;
+    /* Committing a team implies having accepted, so this heals a lost `accept`
+       instead of leaving the challenger watching a room that will never flip.
+       The defender's `accept` is a single fire-and-forget request; if it failed
+       — a phone switching networks between reading the code and pasting it —
+       nothing else would ever set this flag. */
+    state.accepted = true;
   } else if (body?.op === 'ready') {
     const side = body.side === 'a' || body.side === 'b' ? body.side : null;
     if (!side) return json({ error: 'bad side' }, 400);
-    /* The defender's five ride along with their ready, because the two are the
-       same moment: pressing Ready IS committing the team, and a code that
-       arrived separately could leave a room ready-but-unfightable. */
-    if (side === 'b') {
-      const code = typeof body.code === 'string' ? body.code : '';
-      if (!code || code.length > MAX_CODE) return json({ error: 'bad code' }, 400);
-      state.code = code;
+    /* The defender re-sends their code alongside Ready even though `team`
+       already stored it. It is idempotent, it costs one field, and it heals the
+       one case that would otherwise deadlock: a `team` write that never landed
+       leaves a room whose only copy of the five is in a browser. */
+    if (side === 'b' && typeof body.code === 'string' && body.code) {
+      if (body.code.length > MAX_CODE) return json({ error: 'bad code' }, 400);
+      state.code = body.code;
     }
-    /* A side cannot ready before the room has a code to fight over — the
-       challenger's button is gated on this in the UI, and gated here too so the
-       rule does not depend on the UI being the only client. */
-    if (side === 'a' && !state.code) return json({ error: 'not ready yet' }, 409);
+    /* NEITHER side may ready before the room has a code to fight over. This
+       used to gate the challenger only, which was half a rule: a defender
+       marked ready with no code on the server is a room that is ready and
+       unfightable. Gated here as well as in the UI so it does not depend on
+       this being the only client. */
+    if (!state.code) return json({ error: 'not ready yet' }, 409);
     state[side] = true;
   } else {
     return json({ error: 'bad op' }, 400);

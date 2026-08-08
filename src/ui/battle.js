@@ -73,7 +73,7 @@ import {
   makeChallenge, makeResult, decodeCode, echoMatches, newSeed, fingerprint, ChallengeError,
 } from '../engine/challenge.js';
 import {
-  roomFor, acceptChallenge, readyWithTeam, readyChallenger, checkRoom,
+  roomFor, acceptChallenge, sendTeam, readyWithTeam, readyChallenger, checkRoom, presenceOff,
 } from '../data/presence.js';
 import { renderBattleCard, armHealthBar, setHealth, ELEMENT_STYLE } from './battle-card.js';
 import { escapeHtml } from './util.js';
@@ -154,6 +154,34 @@ function seedOf(channels) {
 
 const clearTimers = () => { ui.timers.forEach(clearTimeout); ui.timers = []; };
 const later = (fn, ms) => ui.timers.push(setTimeout(fn, ms));
+
+/* A POLL LOOP THAT SURVIVES A BACKGROUNDED TAB.
+
+   Mobile browsers freeze a tab the moment it loses focus: pending timers stop
+   or are throttled to roughly once a minute, and in-flight requests are torn
+   down. This matters here more than anywhere else in the app, because the
+   challenger is the one player who MUST leave the app — to paste their code
+   into a chat — while a loop is waiting on the other side.
+
+   So the loop wakes on return rather than waiting out a throttled timer.
+   Clearing the pending timer inside `next` is what stops a wake-up from
+   starting a SECOND chain running alongside the first: at most one timer is
+   ever outstanding, whoever asked for it. */
+function pollChain(gen, run) {
+  let timer = null;
+  const next = ms => {
+    if (gen !== readyGen) return;
+    clearTimeout(timer);
+    timer = setTimeout(run, ms);
+    ui.timers.push(timer);
+  };
+  const onReturn = () => {
+    if (gen !== readyGen) return document.removeEventListener('visibilitychange', onReturn);
+    if (!document.hidden) next(0);
+  };
+  document.addEventListener('visibilitychange', onReturn);
+  return next;
+}
 
 const filled = () => ui.lineup.filter(Boolean);
 const isComplete = () => filled().length === TEAM_SIZE;
@@ -686,9 +714,16 @@ async function createChallenge() {
    Encoding is awaited rather than raced with the replay for the same reason it
    always was: the hand-off panel is built FROM `ui.replyCode`, so a slow encode
    would otherwise render a panel with nothing in it. */
-/* The defender commits. Pressing Ready IS committing the team, so the reply
-   code is built and uploaded in the same breath — a room that was ready but had
-   no code to fight over would be a lobby that could never start.
+/* The defender commits their five and goes to the lobby. The reply code is
+   built and uploaded here, early and on purpose: it is what unlocks the
+   challenger's Ready button, and a lobby with no code to fight over could never
+   start.
+
+   What this must NOT do is ready them. It used to, and both screens then
+   reported a readiness nobody had chosen — the defender was told "you are
+   ready" while still looking at the button, and the challenger could start the
+   fight alone. Committing a team is a statement about cards; readiness is a
+   statement about the person, and only the button below makes it.
 
    The upload is attempted; the copy-paste screen is the answer if it fails. */
 async function fightAsDefender() {
@@ -708,7 +743,11 @@ async function fightAsDefender() {
     them: ui.challenge.name,
   };
 
-  const state = await readyWithTeam(ui.room, ui.replyCode);
+  /* One retry before giving up on the lobby. A single dropped request here used
+     to dump the defender onto the copy-paste screen while their opponent sat in
+     a perfectly healthy lobby — and on a phone, one dropped request is normal. */
+  let state = await sendTeam(ui.room, ui.replyCode);
+  if (!state.enabled && !presenceOff(state)) state = await sendTeam(ui.room, ui.replyCode);
   if (!state.enabled) return renderHandoff();   // no match rooms — hand them the code
   ui.lobby = state;
   renderLobby();
@@ -814,7 +853,13 @@ function renderLobby() {
     go.disabled = true;
     go.classList.remove('is-hot');
     go.textContent = 'Ready ✓';
-    const state = isA ? await readyChallenger(ui.room) : await readyWithTeam(ui.room, ui.replyCode);
+    const send = () => (isA ? readyChallenger(ui.room) : readyWithTeam(ui.room, ui.replyCode));
+    /* Retried once for a reason worth stating: an unreported Ready is worse
+       than a slow one. If this press never reaches the server, the other side
+       waits on a player who believes they already pressed, and the fight simply
+       never starts. */
+    let state = await send();
+    if (!state.enabled && !presenceOff(state)) state = await send();
     if (gen !== readyGen) return;
     if (!state.enabled) return runCountdown(view, COUNTDOWN_MS);   // room vanished mid-lobby
     ui.lobby = state;
@@ -856,19 +901,27 @@ function renderLobby() {
       const elapsed = Math.max(0, (state.now || Date.now()) - state.bothAt);
       return runCountdown(view, Math.max(0, (state.countdownMs ?? COUNTDOWN_MS) - elapsed));
     }
-    later(poll, POLL_MS);
+    nextPoll(POLL_MS);
   }
 
   function poll() {
     if (gen !== readyGen) return;
     checkRoom(ui.room).then(state => {
       if (gen !== readyGen) return;
-      if (!state.enabled) return;    // room gone: leave the lobby as it stands
+      if (!state.enabled) {
+        /* Settled — presence is off, so the lobby stands as it is and the two
+           of them fall back to counting down together. */
+        if (presenceOff(state)) return;
+        /* Transient. Someone reading their phone mid-lobby is the common case,
+           and their opponent's Ready must still be able to reach them. */
+        return nextPoll(POLL_MS);
+      }
       ui.lobby = state;
       handle(state);
     });
   }
 
+  const nextPoll = pollChain(gen, poll);
   paint(ui.lobby ?? { accepted: false, a: false, b: false, bothAt: null, code: '' });
   poll();
 }
@@ -1078,8 +1131,17 @@ function renderChallengeOut(code) {
     checkRoom(ui.room).then(st => {
       if (gen !== readyGen) return;
       if (!st.enabled) {
-        waiting.textContent = 'Live lobby unavailable — use the paste box below when they reply.';
-        return;                                   // stop polling; nothing to poll
+        /* Settled: no namespace, no lobby today. Say so and stop. */
+        if (presenceOff(st)) {
+          waiting.textContent = 'Live lobby unavailable — use the paste box below when they reply.';
+          return;
+        }
+        /* A dropped request — almost always this tab having been frozen while
+           its owner was in a chat app sending the code. It says nothing about
+           whether anyone accepted, so keep waiting rather than declaring the
+           lobby dead. This loop giving up here is precisely what made
+           challenging from a phone impossible. */
+        return nextPoll(POLL_MS);
       }
       ui.lobby = st;
       if (st.accepted) {
@@ -1087,9 +1149,10 @@ function renderChallengeOut(code) {
         waiting.textContent = '✔ Challenge accepted — opening the lobby…';
         return later(() => { if (gen === readyGen) renderLobby(); }, 1100);
       }
-      later(poll, POLL_MS);
+      nextPoll(POLL_MS);
     });
   };
+  const nextPoll = pollChain(gen, poll);
   poll();
 }
 
