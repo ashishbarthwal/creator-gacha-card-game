@@ -252,6 +252,61 @@ const CADENCE_SPREAD = 1.5;
    Retune against `node tools/battle-balance.js`, never by argument. */
 const SCALE = { hp: 1.7, atk: 0.5, def: 0.5, spd: 0.42, mom: 0.07 };
 
+/* NOBODY IS ZERO AT ANYTHING.
+
+   The four residual axes clamp to [0, 100], and a card whose residual fell off
+   the bottom scored a literal 0 — which becomes a 0% share, which becomes a
+   stat of 1, because `stat()` floors there. Measured on the live deck that is
+   3.7% of cards at punch 0: roughly 590 channels walking into a fight with an
+   attack of ONE. They cannot win, and no amount of speed or crit rescues them,
+   because both of those multiply an attack that has to already exist.
+
+   Those are real creators — the daily grinder whose views-per-video is modest
+   precisely BECAUSE they upload constantly — and the game should read them as
+   specialists in something else, not as harmless. A floor says "worst on this
+   axis" instead of "absent from this axis", which is what a residual measured
+   against a trend actually means: below average, not nonexistent.
+
+   12 rather than 0, retuned against `node tools/battle-balance.js` and not by
+   argument. Low enough that the shape design still separates specialists,
+   high enough that a bottomed axis still buys a stat worth having. */
+const AXIS_FLOOR = 12;
+
+/* WHAT CRIT RIDES ON, AND WHY IT MOVED.
+
+   It used to ride on the SPD share, on the theory that the spiky, high-cadence
+   profile that acts first should also occasionally spike. The trouble is that
+   cadence measures how OFTEN someone posts, and "posts constantly" is not the
+   shape anyone pictures when they picture a critical hit.
+
+   A critical hit is a video that lands far harder than this channel's normal —
+   so it belongs on PUNCH, the views-per-upload residual. The card that
+   occasionally detonates is the one whose uploads outperform what its
+   subscriber count predicts, and that is exactly what a high punch residual is.
+
+   SPD keeps a smaller share of it, because acting first and acting twice still
+   suit a spikier card, and stripping crit from Assassins entirely would leave
+   that class holding only the one bonus the balance pass already recorded as
+   saturating.
+
+   ── THE LIMIT, STATED RATHER THAN IMPLIED ─────────────────────────────────
+   This CANNOT see variance. "A few bangers and a lot of duds" and "uniformly
+   strong uploads" produce the same views-per-video, and telling them apart
+   needs per-video statistics that cost ~67x the entire build's quota (see the
+   header). So this is a proxy for spikiness, not a measurement of it: it reads
+   "this channel's uploads punch above its weight", which is the closest thing
+   the three numbers on a card can honestly support. */
+/* PUNCH's coefficient and the cap were both raised deliberately, to make the
+   spiky small channel genuinely dangerous rather than merely interesting. A
+   card whose uploads land far above its weight now reaches ~45% — it will take
+   a chunk out of something four times its size often enough to be feared, which
+   is the whole appeal of fielding one. The cost is variance, and that is the
+   intended cost: this is the one term in the game that is allowed to be unfair. */
+const CRIT_BASE = 0.05;
+const CRIT_FROM_PUNCH = 0.95;
+const CRIT_FROM_SPD = 0.20;
+const CRIT_CAP = 0.45;
+
 /* The ramp cannot run away with a long fight — but +120% was so low that the
    cap bound hardest on the only cards built to reach it, which made momentum
    self-defeating (see the repricing note above). At +220% a card that spent
@@ -388,7 +443,7 @@ export function axesFrom(channel, now = Date.now()) {
   const perVideo = videos > 0 ? views / videos : views;
   const rawPunch = norm(Math.log10(perVideo + 1), ANCHOR.punchLog);
   const expected = PUNCH_TREND.intercept + PUNCH_TREND.slope * influence;
-  const punch = Math.max(0, Math.min(100, 50 + (rawPunch - expected) * PUNCH_SPREAD));
+  const punch = Math.max(AXIS_FLOOR, Math.min(100, 50 + (rawPunch - expected) * PUNCH_SPREAD));
 
   /* How hard the audience it already has actually watches — DE-SIZED against
      Influence, exactly as punch is, so what survives is "watched harder than a
@@ -401,7 +456,7 @@ export function axesFrom(channel, now = Date.now()) {
     : 50;
   const devotionExpected = DEVOTION_TREND.intercept + DEVOTION_TREND.slope * influence;
   const devotion = subs > 0
-    ? Math.max(0, Math.min(100, 50 + (rawDevotion - devotionExpected) * DEVOTION_SPREAD))
+    ? Math.max(AXIS_FLOOR, Math.min(100, 50 + (rawDevotion - devotionExpected) * DEVOTION_SPREAD))
     : 50;
 
   /* Output rate. Separates the daily grinder from the once-a-season poster, and
@@ -412,7 +467,7 @@ export function axesFrom(channel, now = Date.now()) {
   const perYear = age === null || age < 0.5 ? videos : videos / age;
   const rawCadence = norm(Math.log10(perYear + 1), ANCHOR.cadenceLog);
   const cadenceExpected = CADENCE_TREND.intercept + CADENCE_TREND.slope * influence;
-  const cadence = Math.max(0, Math.min(100, 50 + (rawCadence - cadenceExpected) * CADENCE_SPREAD));
+  const cadence = Math.max(AXIS_FLOOR, Math.min(100, 50 + (rawCadence - cadenceExpected) * CADENCE_SPREAD));
 
   /* How fast the audience was won — de-sized against Influence exactly as
      punch is, so what survives is "faster than a channel this size usually
@@ -425,7 +480,7 @@ export function axesFrom(channel, now = Date.now()) {
   const subsPerYear = age === null || age < 0.5 ? subs : subs / age;
   const rawVelocity = norm(Math.log10(subsPerYear + 1), ANCHOR.velocityLog);
   const velocityExpected = VELOCITY_TREND.intercept + VELOCITY_TREND.slope * influence;
-  const velocity = Math.max(0, Math.min(100, 50 + (rawVelocity - velocityExpected) * VELOCITY_SPREAD));
+  const velocity = Math.max(AXIS_FLOOR, Math.min(100, 50 + (rawVelocity - velocityExpected) * VELOCITY_SPREAD));
 
   return {
     influence: Math.round(influence),
@@ -498,13 +553,10 @@ export function battleStatsFrom(channel, now = Date.now()) {
        out of the same budget as the others, so a ramp is paid for in toughness
        rather than handed out free. */
     mom: stat('mom'),
-    /* Crit is the small chaos term. It rides on the SPD share because the same
-       spiky, high-cadence profile that acts first is the one that should
-       occasionally spike — and it is capped well below certainty so a fight is
-       never decided by a single roll. The coefficient rose from 0.6 to 0.75
-       when the fifth axis shrank every share by a fifth, so the felt crit rate
-       is unchanged. */
-    crit: Math.min(0.35, 0.05 + 0.75 * shape.spd),
+    /* The small chaos term — mostly PUNCH now, a little SPD, capped well below
+       certainty so no fight is decided by one roll. See the constants above for
+       why it moved off speed and what it can and cannot see. */
+    crit: Math.min(CRIT_CAP, CRIT_BASE + CRIT_FROM_PUNCH * shape.atk + CRIT_FROM_SPD * shape.spd),
   };
 }
 
@@ -621,3 +673,33 @@ export function powerOf(combatant) {
     * (1 + extraActionChance(combatant.spd));
   return Math.round(Math.sqrt(effectiveHp * damage));
 }
+
+/* ── EVERY KNOB THIS FILE OWNS, IN ONE PLACE ────────────────────────────────
+   Exported so `tools/battle-balance.js` can PRINT the live values instead of
+   keeping its own copy. A tuning report whose numbers have drifted from the
+   engine is worse than no report: it is a confident lie, and it would be
+   consulted precisely when someone is about to change one of these.
+
+   Frozen because this is a window, not a control panel — nothing may tune the
+   game by writing here. Each entry carries what moving it does, since the
+   reason to read this list at all is that you are about to move something. */
+export const STAT_TUNING = Object.freeze({
+  /* Size -> points. The single knob that makes the game more pay-to-pull. */
+  BUDGET_BASE, BUDGET_GAIN,
+  /* Points -> the five stats. Per-stat scaling of the same budget. */
+  SCALE,
+  /* No axis may read as absent. Raising this flattens specialists. */
+  AXIS_FLOOR,
+  /* The chaos term. PUNCH is what makes a spiky small channel scary. */
+  CRIT_BASE, CRIT_FROM_PUNCH, CRIT_FROM_SPD, CRIT_CAP, CRIT_MULTIPLIER,
+  /* Damage mitigation K/(K+def): higher K means defence matters less. */
+  MITIGATION_K,
+  /* Ceiling on a Riser's ramp, and the Balanced class's flat lift. */
+  MOMENTUM_CAP, ADAPTIVE_BONUS,
+  /* How far above an even split a share must sit to earn a class name. */
+  SPECIALIST_MARGIN,
+  /* What speed buys: chance of a second action. Saturates by construction. */
+  SPD_FLOOR, SPD_PER_EXTRA,
+  /* How spread out each residual axis is around its trend line. */
+  PUNCH_SPREAD, DEVOTION_SPREAD, CADENCE_SPREAD, VELOCITY_SPREAD,
+});

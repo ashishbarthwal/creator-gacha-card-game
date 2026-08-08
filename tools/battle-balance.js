@@ -30,8 +30,10 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-import { axesFrom, battleStatsFrom, powerOf, BATTLE_AXES, BATTLE_CLASSES } from '../src/engine/battle-stats.js';
-import { battle, makeTeam, resolveBattle, TEAM_SIZE } from '../src/engine/battle.js';
+import {
+  axesFrom, battleStatsFrom, powerOf, BATTLE_AXES, BATTLE_CLASSES, STAT_TUNING,
+} from '../src/engine/battle-stats.js';
+import { battle, makeTeam, resolveBattle, TEAM_SIZE, BATTLE_TUNING } from '../src/engine/battle.js';
 import { matchOpponent, arrangeFormation } from '../src/engine/opponent.js';
 import { ELEMENTS, elementOf } from '../src/engine/element.js';
 
@@ -217,6 +219,33 @@ async function main() {
   const biggest = Math.max(...Object.values(classes)) / stats.length;
   console.log(`  largest class ${pct(biggest)}  ${biggest < 0.5 ? 'OK' : 'FAILS — a class system where one class is most of the deck is not one'}`);
 
+  /* PER CLASS, because "median ATK 110" across the whole deck describes a card
+     that does not exist. Tuning happens per archetype — the question is never
+     "is attack too high", it is "is the Carry worth being", and only this table
+     answers that. The rating column is the one to watch: if two classes sit far
+     apart on it, the matchmaker will quietly stop offering the lower one. */
+  console.log('\nPER CLASS        share      HP     ATK     DEF     SPD     MOM    crit   rating');
+  for (const name of BATTLE_CLASSES) {
+    const members = stats.filter(s => s.class === name);
+    if (!members.length) { console.log(`  ${name.padEnd(12)}   (none)`); continue; }
+    const med = key => quant(members.map(s => s[key]), 0.5);
+    const critMed = quant(members.map(s => s.crit), 0.5);
+    const rating = quant(members.map(s => powerOf(s)), 0.5);
+    console.log(
+      `  ${name.padEnd(12)}${pct(members.length / stats.length).padStart(7)}`
+      + `${String(med('hp')).padStart(8)}${String(med('atk')).padStart(8)}`
+      + `${String(med('def')).padStart(8)}${String(med('spd')).padStart(8)}`
+      + `${String(med('mom')).padStart(8)}${(critMed * 100).toFixed(0).padStart(7)}%`
+      + `${String(rating).padStart(9)}`);
+  }
+  const ratings = BATTLE_CLASSES
+    .map(n => stats.filter(s => s.class === n))
+    .filter(m => m.length)
+    .map(m => quant(m.map(s => powerOf(s)), 0.5));
+  const spread = Math.max(...ratings) / Math.min(...ratings);
+  console.log(`  best/worst class rating  ${spread.toFixed(2)}`
+    + `   ${spread < 1.5 ? 'OK' : 'WIDE — the weak class is one the matchmaker will stop picking'}`);
+
   const elements = tally(deck.map(c => elementOf(c)), ELEMENTS);
   console.log('\nELEMENTS ' + Object.entries(elements).sort((a, b) => b[1] - a[1])
     .map(([k, v]) => `${k} ${pct(v / deck.length)}`).join('   '));
@@ -270,6 +299,7 @@ async function main() {
   console.log(`  decided by elimination ${pct(wipes / played)}   (a fight going to the round cap is a stalemate the player watched)`);
 
   strategies(deck);
+  knobs();
 }
 
 /* ── IS THERE A DECISION IN IT? ────────────────────────────────────────────
@@ -362,6 +392,25 @@ function strategies(deck) {
   }
   console.log('\n  No strategy should sit much above ~65% average — that is a solved game.');
   console.log('  "biggest subs" losing is the design working: size buys a budget, not a win.');
+}
+
+/* The knobs, printed LAST and read from the engine rather than copied. Last
+   because it is a reference, not a finding: you scroll to it once a measurement
+   above has told you something needs moving. */
+function knobs() {
+  const show = (label, value) => {
+    const v = typeof value === 'object' && value !== null
+      ? Object.entries(value).map(([k, n]) => `${k} ${n}`).join('  ')
+      : String(value);
+    console.log(`  ${label.padEnd(20)} ${v}`);
+  };
+  console.log('\nKNOBS  (live values, read from the engine — not a copy)');
+  console.log('\n  derivation — src/engine/battle-stats.js');
+  for (const [k, v] of Object.entries(STAT_TUNING)) show(k, v);
+  console.log('\n  combat — src/engine/battle.js');
+  for (const [k, v] of Object.entries(BATTLE_TUNING)) show(k, v);
+  console.log('\n  Retune against this tool, never by argument. Change ONE at a time:');
+  console.log('  every number above feeds powerOf, so two changes at once measure neither.');
 }
 
 /* Only run when invoked directly. `syntheticDeck` is exported so an experiment

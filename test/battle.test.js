@@ -13,7 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   axesFrom, shapeFrom, classFrom, battleStatsFrom, channelAgeYears, powerOf,
-  momentumMultiplier, BATTLE_AXES, BATTLE_CLASSES, MOMENTUM_CAP,
+  momentumMultiplier, BATTLE_AXES, BATTLE_CLASSES, MOMENTUM_CAP, STAT_TUNING,
 } from '../src/engine/battle-stats.js';
 import {
   toCombatant, makeTeam, resolveBattle, battle, teamPower, pickTarget, matchupPreview,
@@ -283,11 +283,18 @@ describe('battleStatsFrom', () => {
     expect(ELEMENTS).toContain(battleStatsFrom(channel(), NOW).element);
   });
 
+  /* Asserted against the engine's OWN cap rather than a copy of the number.
+     The claim worth protecting is "crit is never a coin flip" — a tune that
+     raises the ceiling should have to justify crossing 50%, not merely edit
+     0.35 in two files. Written the other way this test failed the moment crit
+     moved from cadence to punch, which told us nothing except that a constant
+     had changed, which we already knew. */
   it('crit stays inside a sane band — never a coin flip', () => {
+    expect(STAT_TUNING.CRIT_CAP).toBeLessThan(0.5);
     for (const ch of syntheticDeck(200)) {
       const { crit } = battleStatsFrom(ch, NOW);
-      expect(crit).toBeGreaterThanOrEqual(0.05);
-      expect(crit).toBeLessThanOrEqual(0.35);
+      expect(crit).toBeGreaterThanOrEqual(STAT_TUNING.CRIT_BASE);
+      expect(crit).toBeLessThanOrEqual(STAT_TUNING.CRIT_CAP);
     }
   });
 });

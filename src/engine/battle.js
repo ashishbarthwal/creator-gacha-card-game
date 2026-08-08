@@ -201,6 +201,25 @@ export function toCombatant(channel, now = Date.now(), slot = 0) {
    should: worth taking, not automatic. */
 export const FORMATION_BONUS = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1.025, 5: 1.05 };
 
+/* ── EVERY KNOB THE COMBAT LOOP OWNS ────────────────────────────────────────
+   Same purpose as STAT_TUNING one file over: `tools/battle-balance.js` prints
+   live values so a tuning report can never quietly disagree with the engine it
+   is reporting on. Frozen — a window, not a control panel. */
+export const BATTLE_TUNING = Object.freeze({
+  /* Shape of the board. */
+  TEAM_SIZE, FRONT_SLOTS, MAX_ROUNDS,
+  /* Damage roll spread, +/- this fraction on every swing. The luck dial. */
+  VARIANCE,
+  /* Reaching from the back rank costs this much attack. */
+  BACK_RANK_ATTACK,
+  /* Titan's Aegis: incoming damage to the back rank, multiplied. */
+  AEGIS_REDUCTION,
+  /* Assassin's Execute: bonus, and the health fraction that triggers it. */
+  EXECUTE_BONUS, EXECUTE_THRESHOLD,
+  /* Team-wide lift by number of distinct classes fielded. */
+  FORMATION_BONUS,
+});
+
 export function distinctClasses(units) {
   return new Set((units ?? []).map(u => u?.class).filter(Boolean)).size;
 }
