@@ -133,7 +133,7 @@ const BUDGET_BASE = 200;
    mind about how much a big channel should be worth. Retune it whenever a new
    multiplicative term enters powerOf, and retune it against
    `node tools/battle-balance.js` rather than by argument. */
-const BUDGET_GAIN = 60;
+const BUDGET_GAIN = 25;
 
 /* The size-vs-punch trend line, fitted once against the live 23.5k-card deck
    and then FROZEN as a constant — the same reasoning that rules out percentile
@@ -165,6 +165,41 @@ const PUNCH_SPREAD = 3.0;
 const VELOCITY_TREND = { intercept: 15.672, slope: 0.8186 };
 const VELOCITY_SPREAD = 3.5;
 
+/* ── THE SAME TREATMENT, FINALLY APPLIED TO THE OTHER TWO (2026-08-08) ─────
+   `punch` and `velocity` were de-sized against Influence from the start,
+   because raw views-per-video and raw subscribers-per-year are dominated by
+   how big a channel is. `devotion` and `cadence` never were, and measuring the
+   live 15,831-card deck says that was the single biggest way size still bought
+   power:
+
+       punch  0.004    velocity -0.014     (de-sized, working as designed)
+       devotion 0.350  cadence   0.420     (raw — well past the ~0.25 the tool flags)
+
+   Those two feed DEF and SPD, so a big channel was structurally tankier AND
+   faster than a small one, on every card, forever. That is precisely the
+   "bigger channel is tankier AND hits harder" failure the budget split exists
+   to prevent, sneaking back in through two axes that were never given the fix
+   the other two got. It is also why picking a team by subscriber count worked
+   at all.
+
+   Fitted here the same way punch was — least squares against Influence over
+   the live deck, then frozen as constants. Frozen rather than re-fitted per
+   build for the reason stated at PUNCH_TREND: a fit that re-ran would make a
+   card's DEF depend on which other cards happened to ship, and would leave the
+   eight-channel demo set with nothing to fit against.
+
+   Measured after: devotion -0.013, cadence 0.027. Size is gone from both.
+
+   THE SPREADS ARE DELIBERATELY NARROWER THAN PUNCH'S 3.0. Both residuals are
+   naturally wider than punch's, so stretching them as hard would pin a quarter
+   of the deck at 0 or 100 — the exact "clipped by construction" failure the
+   velocityLog anchor comment warns about. At 1.5 the floor and cap stay in the
+   few-percent range that punch sits at. */
+const DEVOTION_TREND = { intercept: 45.677, slope: 0.2904 };
+const DEVOTION_SPREAD = 1.5;
+const CADENCE_TREND = { intercept: 28.178, slope: 0.5167 };
+const CADENCE_SPREAD = 1.5;
+
 /* Per-stat scale. Shape hands out fractions that sum to 1; these turn those
    fractions into numbers that read well in combat — HP in the hundreds so a
    fight lasts several rounds, SPD small so turn order is legible.
@@ -181,13 +216,49 @@ const VELOCITY_SPREAD = 3.5;
    the safe pacing knob precisely because it is uniform: every power rating
    moves by the same sqrt factor, so ratios, class mix and the matchmaker are
    untouched. It is the only number in this file that may be tuned for feel. */
-const SCALE = { hp: 1.7, atk: 0.5, def: 0.42, spd: 0.42, mom: 0.05 };
+/* ── REPRICED 2026-08-08, AND THE REASON IS MEASURED ──────────────────────
+   Shape is zero-sum: a card spends ONE budget across five stats. That only
+   works as a design if a point of shape buys comparable combat value wherever
+   it goes. It did not. Five specialists built from an identical budget and
+   fought round-robin came out:
 
-/* The ramp cannot run away with a long fight: at the observed MOM range
-   (~4-25) an uncapped Riser would triple its attack by round 12. Capped at
-   +120%, a ramp is a reason to survive the early rounds rather than a reason
-   to stall forever. */
-export const MOMENTUM_CAP = 1.2;
+       HP 83.9%   ATK 82.7%   DEF 39.7%   SPD 20.0%   MOM 4.7%
+
+   A point spent on momentum bought about a SEVENTEENTH of what the same point
+   bought on health. That is not a stat with a trade-off, it is a trap: the
+   player pays full budget and receives almost nothing, and every downstream
+   symptom followed from it — a team of the fastest-growing channels lost ~100%
+   of its fights, Riser was 7.2% of the deck and unplayable, and "just take the
+   five highest-rated cards" was the whole game because rating tracks the two
+   stats that actually worked.
+
+   WHY THE MULTIPLIER STATS WERE THE ONES THAT BROKE. SPD and MOM do not deal
+   damage, they multiply the attack a card already has — and under a zero-sum
+   shape budget, spending on them means having no attack left to multiply. The
+   momentum specialist ramped to 2.2x on an attack of 81 while the attack
+   specialist simply carried 253. Compounding it, the ramp was capped at +120%,
+   so the one card built entirely around ramping hit its ceiling at exactly the
+   point the trade was supposed to start paying.
+
+   So MOM's scale and the cap both rise, and they rise together: the scale makes
+   a point of momentum worth having, the cap lets a card that committed its
+   whole budget actually collect. A Riser (which doubles the rate) now reaches
+   the ceiling around round 4 instead of never mattering, which is the "survive
+   the early rounds and win the late ones" trade the class was always described
+   as making. DEF rises for the same reason at a smaller magnitude. HP comes
+   down slightly, because it was the overpriced side of the same imbalance and
+   because it is the safe pacing knob — see the note below.
+
+   Retune against `node tools/battle-balance.js`, never by argument. */
+const SCALE = { hp: 1.7, atk: 0.5, def: 0.5, spd: 0.42, mom: 0.07 };
+
+/* The ramp cannot run away with a long fight — but +120% was so low that the
+   cap bound hardest on the only cards built to reach it, which made momentum
+   self-defeating (see the repricing note above). At +220% a card that spent
+   its whole budget on growth roughly triples its attack by the late rounds,
+   which is worth the health it gave up to get there; a median card (MOM ~13)
+   never comes near the cap and is unaffected. */
+export const MOMENTUM_CAP = 2.2;
 
 /* Balanced is the one class with no verb, because there is nothing for an
    even shape to be especially good at — inventing a special for it would be
@@ -319,19 +390,29 @@ export function axesFrom(channel, now = Date.now()) {
   const expected = PUNCH_TREND.intercept + PUNCH_TREND.slope * influence;
   const punch = Math.max(0, Math.min(100, 50 + (rawPunch - expected) * PUNCH_SPREAD));
 
-  /* How hard the audience it already has actually watches. Hidden subscriber
-     counts arrive as absent, which would divide by zero and hand those cards
-     an infinite score — they read as the middle instead, on the same "unknown
-     is not extreme" rule as maturity. */
-  const devotion = subs > 0
+  /* How hard the audience it already has actually watches — DE-SIZED against
+     Influence, exactly as punch is, so what survives is "watched harder than a
+     channel this size usually is" rather than "big". 50 is exactly on trend.
+     Hidden subscriber counts arrive as absent, which would divide by zero and
+     hand those cards an infinite score — they read as the middle instead, on
+     the same "unknown is not extreme" rule as maturity. */
+  const rawDevotion = subs > 0
     ? norm(Math.log10(views / subs + 1), ANCHOR.devotionLog)
     : 50;
+  const devotionExpected = DEVOTION_TREND.intercept + DEVOTION_TREND.slope * influence;
+  const devotion = subs > 0
+    ? Math.max(0, Math.min(100, 50 + (rawDevotion - devotionExpected) * DEVOTION_SPREAD))
+    : 50;
 
-  /* Output rate. Separates the daily grinder from the once-a-season poster.
-     Without an age, treat the whole library as one year's work — an upper
-     bound, which keeps prolific demo channels reading as prolific. */
+  /* Output rate. Separates the daily grinder from the once-a-season poster, and
+     de-sized for the same reason as the rest: a large channel usually posts
+     more, so raw cadence was reading as size. Without an age, treat the whole
+     library as one year's work — an upper bound, which keeps prolific demo
+     channels reading as prolific. */
   const perYear = age === null || age < 0.5 ? videos : videos / age;
-  const cadence = norm(Math.log10(perYear + 1), ANCHOR.cadenceLog);
+  const rawCadence = norm(Math.log10(perYear + 1), ANCHOR.cadenceLog);
+  const cadenceExpected = CADENCE_TREND.intercept + CADENCE_TREND.slope * influence;
+  const cadence = Math.max(0, Math.min(100, 50 + (rawCadence - cadenceExpected) * CADENCE_SPREAD));
 
   /* How fast the audience was won — de-sized against Influence exactly as
      punch is, so what survives is "faster than a channel this size usually
@@ -477,7 +558,21 @@ export const CRIT_MULTIPLIER = 1.6;
    distribution is a multiplier on whatever the distribution is sorted by; a
    threshold in its tail is just a floor. */
 const SPD_FLOOR = 20;
-const SPD_PER_EXTRA = 300;
+/* 300 -> 190 as part of the 2026-08-08 repricing. Speed measured at 20.0%
+   against a 50% target, and it suffers the same structural problem momentum
+   does: an extra action multiplies an attack the card could not afford. Unlike
+   momentum this one cannot be fixed by widening a cap, because the payoff
+   saturates by construction — `extraActionChance` is a PROBABILITY, so even a
+   perfect roll buys at most one more swing per round, and two swings of a
+   budget attack still lose to one swing of a real one.
+
+   So this is a partial fix by design: it takes the top of the speed range from
+   ~0.64 expected extra actions to a reliable 1, which is the whole of what the
+   current mechanic can give. Speed remains the weakest place to spend a budget,
+   and closing that properly needs a second thing for speed to buy (evasion, or
+   a genuine multi-action roll) rather than another constant. Recorded rather
+   than quietly left at 20%. */
+const SPD_PER_EXTRA = 190;
 
 export function extraActionChance(spd) {
   return Math.max(0, Math.min(1, ((spd ?? 0) - SPD_FLOOR) / SPD_PER_EXTRA));

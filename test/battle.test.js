@@ -17,6 +17,7 @@ import {
 } from '../src/engine/battle-stats.js';
 import {
   toCombatant, makeTeam, resolveBattle, battle, teamPower, pickTarget, matchupPreview,
+  formationBonus, distinctClasses, FORMATION_BONUS,
   TEAM_SIZE, MAX_ROUNDS, FRONT_SLOTS, CLASS_ABILITY, rowForSlot,
 } from '../src/engine/battle.js';
 import {
@@ -758,5 +759,84 @@ describe('balance — rarity must not decide the fight', () => {
     expect(median).toBeGreaterThanOrEqual(4);
     expect(median).toBeLessThanOrEqual(12);
     expect(capped / lengths.length).toBeLessThan(0.05);
+  });
+});
+
+/* ── THE FORMATION BONUS ────────────────────────────────────────────────────
+   Added 2026-08-08 to answer a measured problem:  predicts a fight
+   accurately, so before this the whole game was 'bring the five highest-rated
+   cards' — that strategy beat every alternative 87-100% of the time and five
+   of one class beat a mixed team 99%. The fix has to be something the RATING
+   CANNOT SEE, which is why this is a property of the team rather than of any
+   card in it, and why it lives in makeTeam rather than in battleStatsFrom. */
+describe('formation — what a mixed team is worth', () => {
+  const DECK = syntheticDeck(400);
+  const ofClass = (klass, i) => {
+    /* Walk the fixture for a channel that actually DERIVES the class wanted,
+       rather than asserting one onto a combatant — the class is a read of the
+       shape, so a hand-set one would be testing a value the engine never
+       produces. */
+    for (const ch of DECK) {
+      if (battleStatsFrom(ch, NOW).class === klass) {
+        if (i-- <= 0) return ch;
+      }
+    }
+    return null;
+  };
+
+  it('counts distinct classes, not cards', () => {
+    const titans = [0, 1, 2, 3, 4].map(i => ofClass('Titan', i)).filter(Boolean);
+    if (titans.length < TEAM_SIZE) return;
+    expect(distinctClasses(makeTeam(titans, NOW))).toBe(1);
+    expect(formationBonus(titans, NOW).lift).toBe(1);
+  });
+
+  it('lifts every stat of a diverse team, and nothing on a stacked one', () => {
+    const titans = [0, 1, 2, 3, 4].map(i => ofClass('Titan', i)).filter(Boolean);
+    if (titans.length < TEAM_SIZE) return;
+    const stacked = makeTeam(titans, NOW);
+    for (const [i, unit] of stacked.entries()) {
+      expect(unit.hp).toBe(toCombatant(titans[i], NOW, i).hp);
+    }
+  });
+
+  it('re-seats maxHp and currentHp AFTER the lift', () => {
+    /* The bug this guards: toCombatant sets maxHp/currentHp from the UNLIFTED
+       hp, so a team whose lift was applied afterwards would start every fight
+       already wounded — and it would look like a balance problem, not a bug. */
+    const mixed = ['Titan', 'Carry', 'Bulwark', 'Assassin', 'Riser']
+      .map(k => ofClass(k, 0)).filter(Boolean);
+    if (mixed.length < TEAM_SIZE) return;
+    const team = makeTeam(mixed, NOW);
+    expect(distinctClasses(team)).toBeGreaterThanOrEqual(4);
+    for (const unit of team) {
+      expect(unit.maxHp).toBe(unit.hp);
+      expect(unit.currentHp).toBe(unit.hp);
+    }
+  });
+
+  it('is priced into teamPower, so the matchmaker cannot under-rate a mixed team', () => {
+    const mixed = ['Titan', 'Carry', 'Bulwark', 'Assassin', 'Riser']
+      .map(k => ofClass(k, 0)).filter(Boolean);
+    if (mixed.length < TEAM_SIZE) return;
+    const lifted = teamPower(makeTeam(mixed, NOW));
+    const unlifted = teamPower(mixed.map((ch, i) => toCombatant(ch, NOW, i)));
+    expect(lifted).toBeGreaterThan(unlifted);
+  });
+
+  it('never rewards fewer than four classes — three is the neutral baseline', () => {
+    expect(FORMATION_BONUS[1]).toBe(1);
+    expect(FORMATION_BONUS[2]).toBe(1);
+    expect(FORMATION_BONUS[3]).toBe(1);
+    expect(FORMATION_BONUS[4]).toBeGreaterThan(1);
+    expect(FORMATION_BONUS[5]).toBeGreaterThan(FORMATION_BONUS[4]);
+  });
+
+  it('stays small — a lift applies to BOTH sides of powerOf, so it compounds', () => {
+    /* The first pass used +14% and the diverse team beat the raw-power team
+       89% of the time: sqrt(effective health x damage) means a lift of L is
+       worth about L^2 in the fight. Anything much above ~1.06 re-creates the
+       dominance problem it exists to solve. */
+    expect(FORMATION_BONUS[5]).toBeLessThanOrEqual(1.08);
   });
 });

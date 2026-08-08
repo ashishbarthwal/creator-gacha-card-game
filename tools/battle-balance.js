@@ -268,6 +268,100 @@ async function main() {
   console.log(`  even-match win rate   ${pct(wins / played)}   over ${played} fights   (must stay 30-70%)`);
   console.log(`  length                median ${quant(rounds, 0.5)} rounds, p95 ${quant(rounds, 0.95)}   (aim 5-10; a replay has to be watchable)`);
   console.log(`  decided by elimination ${pct(wipes / played)}   (a fight going to the round cap is a stalemate the player watched)`);
+
+  strategies(deck);
+}
+
+/* ── IS THERE A DECISION IN IT? ────────────────────────────────────────────
+   Everything above measures CARDS. This measures PICKING, and they are not the
+   same question: an engine where no single card is overpowered can still have
+   one dominant strategy, because a strategy is about which five you bring.
+
+   Added 2026-08-08 after exactly that turned out to be true. Every card-level
+   figure above was passing while "take the five highest-rated cards" beat every
+   other approach 87-100% of the time — the strategy graph was a strict ladder,
+   so there was nothing to decide and the optimal play was a button. Nothing in
+   the tool could see it, which is why it is now in the tool.
+
+   READ THE LAST COLUMN. A healthy game has no strategy much above ~65%: the
+   thinking play should beat the naive one, and not by so much that the naive
+   one is pointless. A strategy at 90%+ is a solved game; one at ~0% is a trap
+   the player pays full price for. */
+function strategies(deck) {
+  const rate = ch => powerOf(battleStatsFrom(ch, NOW));
+  const num = v => Number(v) || 0;
+
+  const PICKS = {
+    'biggest subs':   coll => [...coll].sort((a, b) => num(b.subscriberCount) - num(a.subscriberCount)).slice(0, TEAM_SIZE),
+    'highest rating': coll => [...coll].sort((a, b) => rate(b) - rate(a)).slice(0, TEAM_SIZE),
+    'best punch':     coll => [...coll].sort((a, b) => axesFrom(b, NOW).punch - axesFrom(a, NOW).punch).slice(0, TEAM_SIZE),
+    'fastest growing': coll => [...coll].sort((a, b) => axesFrom(b, NOW).velocity - axesFrom(a, NOW).velocity).slice(0, TEAM_SIZE),
+    /* One of each class, so the formation bonus is collected — the thinking
+       play, and deliberately NOT the highest-rated five. */
+    diverse: coll => {
+      const sorted = [...coll].sort((a, b) => rate(b) - rate(a));
+      const byClass = new Map();
+      for (const ch of sorted) {
+        const k = battleStatsFrom(ch, NOW).class;
+        if (!byClass.has(k)) byClass.set(k, ch);
+      }
+      const picked = [...byClass.values()].slice(0, TEAM_SIZE);
+      const have = new Set(picked.map(c => c.id));
+      for (const ch of sorted) {
+        if (picked.length >= TEAM_SIZE) break;
+        if (!have.has(ch.id)) { picked.push(ch); have.add(ch.id); }
+      }
+      return picked;
+    },
+  };
+
+  const names = Object.keys(PICKS);
+  const tally = Object.fromEntries(names.flatMap(a => names.filter(b => b !== a).map(b => [`${a}|${b}`, { w: 0, n: 0 }])));
+
+  /* Deterministic collections drawn straight from the deck rather than through
+     the gacha, so this section needs no drop-rate assumptions and reproduces
+     exactly from the deck alone. */
+  const COLLECTIONS = 60, SEEDS = 8, SIZE = 40;
+  for (let k = 0; k < COLLECTIONS; k++) {
+    const coll = [];
+    const seen = new Set();
+    for (let i = 0; i < SIZE; i++) {
+      const at = (k * 631 + i * 7919) % deck.length;
+      const ch = deck[at];
+      if (ch?.id && !seen.has(ch.id)) { seen.add(ch.id); coll.push(ch); }
+    }
+    if (coll.length < TEAM_SIZE) continue;
+    const teams = Object.fromEntries(names.map(n => [n, arrangeFormation(PICKS[n](coll), NOW)]));
+    for (const a of names) {
+      for (const b of names) {
+        if (a === b) continue;
+        for (let s = 1; s <= SEEDS; s++) {
+          const r = battle(teams[a], teams[b], { now: NOW, rng: mulberry32(k * 1000 + s) });
+          const rec = tally[`${a}|${b}`];
+          rec.n++;
+          if (r.winner === 'a') rec.w++;
+        }
+      }
+    }
+  }
+
+  console.log('\nSTRATEGY  (row beats column — is there a decision in the picking?)');
+  const w = 16;
+  console.log(' '.repeat(w) + names.map(n => n.slice(0, 13).padStart(14)).join('') + '       avg');
+  for (const a of names) {
+    let line = a.padEnd(w);
+    let tot = 0, cnt = 0;
+    for (const b of names) {
+      if (a === b) { line += '—'.padStart(14); continue; }
+      const rec = tally[`${a}|${b}`];
+      const r = rec.n ? rec.w / rec.n : 0;
+      line += pct(r).padStart(14);
+      tot += r; cnt++;
+    }
+    console.log(line + pct(tot / (cnt || 1)).padStart(10));
+  }
+  console.log('\n  No strategy should sit much above ~65% average — that is a solved game.');
+  console.log('  "biggest subs" losing is the design working: size buys a budget, not a win.');
 }
 
 /* Only run when invoked directly. `syntheticDeck` is exported so an experiment

@@ -22,7 +22,7 @@
    greedy walk toward a power TARGET with a randomized candidate pool: it lands
    near the requested strength while still fielding different cards each run. */
 
-import { toCombatant, teamPower, TEAM_SIZE, FRONT_SLOTS } from './battle.js';
+import { toCombatant, makeTeam, teamPower, formationBonus, TEAM_SIZE, FRONT_SLOTS } from './battle.js';
 import { powerOf, MITIGATION_K } from './battle-stats.js';
 
 /* The difficulty dial. 1.0 is the fair fight Ash asked for as the default;
@@ -157,17 +157,50 @@ export function buildOpponentTeam(pool, targetPower, { rng = Math.random, exclud
    draw from, return an opponent at the requested difficulty. */
 export function matchOpponent(playerChannels, pool, { difficulty = 'even', rng = Math.random, now = Date.now() } = {}) {
   const setting = DIFFICULTY[difficulty] ?? DIFFICULTY.even;
-  const player = playerChannels.slice(0, TEAM_SIZE).map(ch => toCombatant(ch, now));
+  /* THROUGH makeTeam, not a bare map of toCombatant — the formation bonus
+     (battle.js) lives in makeTeam, so rating the player's five card-by-card
+     would under-price a diverse team by up to 14% and hand it an opponent it
+     is meant to beat. "Even match" has to mean even against the team that
+     actually takes the field. */
+  const player = makeTeam(playerChannels, now);
   const target = teamPower(player) * setting.factor;
   const exclude = new Set(player.map(u => u.id));
 
-  const channels = buildOpponentTeam(pool, target, { rng, exclude, now });
+  const channels = aimedBuild(pool, target, { rng, exclude, now });
   return {
     channels: arrangeFormation(channels, now),
     difficulty: setting,
     targetPower: Math.round(target),
-    actualPower: teamPower(channels.map(ch => toCombatant(ch, now))),
+    /* Through makeTeam so the reported figure includes the formation bonus the
+       team will actually fight with — matchQuality compares it against the
+       target, and a rating that omitted the bonus would report a fair match as
+       fair while fielding something 6% stronger. */
+    actualPower: teamPower(makeTeam(arrangeFormation(channels, now), now)),
   };
+}
+
+/* Build to a target the assembled team will actually HIT.
+
+   THE AI PICKS FOR VARIETY (pickForSlot scores class and element diversity
+   above a tie in raw power), so it reliably ends up with four or five distinct
+   classes — which since 2026-08-08 means it reliably collects the formation
+   bonus. Aiming the greedy walk at the raw target therefore overshot by the
+   whole size of that bonus on almost every build: measured, the balance tool's
+   even-match win rate fell from 45% to ~30%, because the matchmaker was
+   promising a fair fight and delivering a 6%-stronger opponent every time.
+
+   Two passes rather than one. The first build is a probe: assemble a team, see
+   what lift it earns, then rebuild aiming at target/lift so the LIFTED rating
+   lands on target. Cheap (the pool sample is 40 cards a slot), and it cannot
+   loop — the second pass is final whatever it earns. The rng is shared across
+   both passes on purpose: it stays seeded and reproducible, and the second team
+   genuinely differs from the probe rather than being a re-derivation of it. */
+function aimedBuild(pool, target, opts) {
+  const probe = buildOpponentTeam(pool, target, opts);
+  const { lift } = formationBonus(probe, opts.now);
+  if (lift === 1 || probe.length < TEAM_SIZE) return probe;
+  const corrected = buildOpponentTeam(pool, target / lift, opts);
+  return corrected.length === TEAM_SIZE ? corrected : probe;
 }
 
 /* ── FORMATION ─────────────────────────────────────────────────────────────
@@ -227,7 +260,10 @@ export function bestTeamFrom(draft, { now = Date.now(), count = TEAM_SIZE } = {}
 }
 
 export function draftPower(draft, { now = Date.now() } = {}) {
-  return teamPower(bestTeamFrom(draft, { now }).map(ch => toCombatant(ch, now)));
+  /* Same reason matchOpponent uses it: this is the ceiling of what a draft
+     could FIELD, and what it fields is a team, which carries a formation
+     bonus. */
+  return teamPower(makeTeam(bestTeamFrom(draft, { now }), now));
 }
 
 /* Build the AI's line-up out of ITS OWN draft, aimed at a difficulty-scaled
@@ -238,13 +274,13 @@ export function draftPower(draft, { now = Date.now() } = {}) {
 export function draftOpponent(playerDraft, aiDraft, { difficulty = 'even', rng = Math.random, now = Date.now() } = {}) {
   const setting = DIFFICULTY[difficulty] ?? DIFFICULTY.even;
   const target = draftPower(playerDraft, { now }) * setting.factor;
-  const picked = buildOpponentTeam(aiDraft, target, { rng, now });
+  const picked = aimedBuild(aiDraft, target, { rng, now });
   const channels = arrangeFormation(picked, now);
   return {
     channels,
     difficulty: setting,
     targetPower: Math.round(target),
-    actualPower: teamPower(channels.map((ch, slot) => toCombatant(ch, now, slot))),
+    actualPower: teamPower(makeTeam(channels, now)),
   };
 }
 

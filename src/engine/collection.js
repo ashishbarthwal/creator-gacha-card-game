@@ -42,7 +42,27 @@ export const COLLECTION_VERSION = 1;
 /* The Channel fields worth keeping. A positive allowlist, for the same reason
    engine/candidates.js and engine/setbuild.js use one: a blocklist would start
    persisting whatever field the seam grows next, into storage we do not control
-   and cannot clear remotely. `country` is absent by construction here too. */
+   and cannot clear remotely. `country` is absent by construction here too.
+
+   `publishedAt` AND `element` WERE ADDED FOR BATTLES, and they are not
+   cosmetic. engine/battle-stats.js derives three of its five axes from channel
+   age (maturity, and the per-year denominators under cadence and velocity), and
+   engine/element.js reads the stored element in preference to re-deriving it
+   from topic URLs a shipped set does not carry. Without these two fields every
+   card in a collection fought as a dateless Unaligned unit: matchups all
+   neutral, so the entire element layer — the one thing that makes team-building
+   a decision rather than a sort — was inert for exactly the cards a player
+   actually owns.
+
+   NO VERSION BUMP, deliberately. Adding fields is backward-compatible in the
+   only direction that matters: an old save simply lacks them, which every
+   reader downstream already tolerates (a missing date reads as the middle of
+   the range, a missing element as Unaligned — both are documented fallbacks,
+   not error paths). Bumping COLLECTION_VERSION would DISCARD every existing
+   collection to add two optional fields, which is a far worse trade. And the
+   old saves heal themselves: `reconcileCollection` refreshes every owned card
+   still in print from the set on load, so a returning player's cards pick both
+   fields up on their next visit without a migration ever being written. */
 function toStoredChannel(channel) {
   const stored = {
     id: String(channel.id),
@@ -56,6 +76,13 @@ function toStoredChannel(channel) {
   /* Omitted rather than zeroed when hidden, matching the live API and the
      typedef — the core reads absence as the bottom band on purpose. */
   if (channel.subscriberCount != null) stored.subscriberCount = String(channel.subscriberCount);
+  /* Both omitted rather than empty-stringed when absent, for the same reason:
+     `channelAgeYears` tests for a falsy date and `elementOf` tests membership,
+     so an absent field and an empty one behave identically — but only the
+     absent one keeps a demo-set card's stored shape honest about what is
+     actually known. */
+  if (channel.publishedAt) stored.publishedAt = String(channel.publishedAt);
+  if (channel.element) stored.element = String(channel.element);
   return stored;
 }
 

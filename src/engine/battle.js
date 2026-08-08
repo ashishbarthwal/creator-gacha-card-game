@@ -107,7 +107,7 @@ export const CLASS_ABILITY = {
   },
   Assassin: {
     name: 'Backstab',
-    text: 'Ignores the front rank and hits the enemy’s hardest hitter. +25% on round one.',
+    text: 'Ignores the front rank and hits the enemy’s hardest hitter.',
   },
   Carry: {
     name: 'Execute',
@@ -128,7 +128,20 @@ export const CLASS_ABILITY = {
 const AEGIS_REDUCTION = 0.75;
 const EXECUTE_BONUS = 1.60;
 const EXECUTE_THRESHOLD = 0.30;
-const ASSASSIN_OPENER = 1.25;
+
+/* ASSASSIN_OPENER (a x1.25 on round one) was removed 2026-08-08, and the
+   reason is the one that should retire any rule: it was a SECOND clause on a
+   class that already had a verb, and measurement said nobody would ever notice
+   it. Counted over 78,823 attacks on the live deck it fired on 4.9% of them —
+   while its text rode on the face of every Assassin, which is 24.7% of the
+   deck. A quarter of all cards carried a sentence describing something that
+   almost never happens.
+
+   Backstab is the class identity and stays (20.7% of attacks). The opener was
+   a modifier on a modifier, and the whole of what it bought was a slightly
+   spikier first round — which the crit roll already provides, on 16.1% of
+   attacks, with a pop-up that says so. Cutting rules a player cannot observe is
+   how a game stays small enough to learn. */
 
 /* Turn a card into a combatant: battle stats plus the mutable fight state.
    `channel` is kept so the UI can render a real card from an event without a
@@ -148,8 +161,80 @@ export function toCombatant(channel, now = Date.now(), slot = 0) {
   };
 }
 
+/* ── FORMATION: WHAT A MIXED TEAM IS WORTH ─────────────────────────────────
+   Added 2026-08-08, and it is the answer to a measured problem rather than a
+   flourish. Before it, the whole game was one number: `powerOf` predicts a
+   fight accurately, so "bring the five highest-rated cards" beat every other
+   strategy 87-100% of the time, and the strategy graph was a strict ladder
+   rather than anything with a decision in it. Worse, stacking was actively
+   REWARDED — five Titans beat a best-of-each mixed team 99% of the time, five
+   Carries 100%.
+
+   The fix cannot be a better rating, because an accurate rating is exactly
+   what produces a total order. It has to be something the rating CANNOT SEE.
+   Element matchup was already the one such lever and it demonstrably works
+   (counter-picking beats a raw-power team ~89%). This is the second: a bonus
+   that depends on the SHAPE OF THE TEAM rather than on any card in it.
+
+   That is why it lives here, in `makeTeam`, and not in `battleStatsFrom` — a
+   card has no diversity, only a team does, and `powerOf` rates cards. The
+   consequence is deliberate: Auto-pick (`bestTeamFrom`, greedy on card rating)
+   can no longer see the bonus, so it stops being the optimal play and becomes
+   a decent baseline a thinking player beats. That is the whole point.
+
+   REWARDING DIVERSITY RATHER THAN PUNISHING DUPLICATES — Ash's call, and the
+   two are mathematically equivalent. The difference is legibility: a card that
+   quietly gets weaker because of its neighbours is confusing on a card face,
+   while "you earned this for fielding four classes" is a sentence the build
+   screen can state and the player can aim at. Three or fewer is the neutral
+   baseline, not a penalty, so nothing a player has already built gets worse.
+
+   No bonus for elements. One team-shape lever is a decision; two interacting
+   ones is a spreadsheet, and the element wheel already earns its keep by
+   pointing at the ENEMY rather than at your own bench. */
+/* THE NUMBERS ARE SMALLER THAN THEY LOOK, and the first pass got this wrong by
+   a factor of two. A lift applied to every stat raises BOTH sides of
+   `powerOf` = sqrt(effective health x damage), so a nominal +14% is roughly
+   1.14 x 1.14 = +30% of actual fighting strength. Measured at +14% the diverse
+   team beat the raw-power team 89% of the time — the same dominance problem
+   over again, just wearing the other hat. Halved, it lands where a choice
+   should: worth taking, not automatic. */
+export const FORMATION_BONUS = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1.025, 5: 1.05 };
+
+export function distinctClasses(units) {
+  return new Set((units ?? []).map(u => u?.class).filter(Boolean)).size;
+}
+
+/* Exported so the team builder can show the bonus while it is still a choice.
+   Takes channels rather than combatants so the UI never has to assemble a team
+   just to ask what one would be worth. */
+export function formationBonus(channels, now = Date.now()) {
+  const classes = distinctClasses((channels ?? []).filter(Boolean).map(ch => toCombatant(ch, now)));
+  return { classes, lift: FORMATION_BONUS[classes] ?? 1 };
+}
+
+/* THE LIFT IS APPLIED TO THE STATS THEMSELVES, not folded into the damage
+   formula, and that is what keeps it honest: `teamPower` sums `powerOf` over
+   these same combatants, so the matchmaker prices a diverse team correctly
+   for free and an "even match" stays even. A bonus applied only inside
+   `strike` would have made the rating quietly wrong about every mixed team. */
 export function makeTeam(channels, now = Date.now()) {
-  return channels.slice(0, TEAM_SIZE).map((ch, slot) => toCombatant(ch, now, slot));
+  const units = channels.slice(0, TEAM_SIZE).map((ch, slot) => toCombatant(ch, now, slot));
+  const lift = FORMATION_BONUS[distinctClasses(units)] ?? 1;
+  if (lift === 1) return units;
+  for (const unit of units) {
+    unit.hp = Math.max(1, Math.round(unit.hp * lift));
+    unit.atk = Math.max(1, Math.round(unit.atk * lift));
+    unit.def = Math.max(1, Math.round(unit.def * lift));
+    unit.spd = Math.max(1, Math.round(unit.spd * lift));
+    unit.mom = Math.max(1, Math.round(unit.mom * lift));
+    /* Re-seated after the lift, not before — `toCombatant` set these from the
+       unlifted hp, and a team whose maxHp disagreed with its hp would start
+       every fight already wounded. */
+    unit.maxHp = unit.hp;
+    unit.currentHp = unit.hp;
+  }
+  return units;
 }
 
 export function teamPower(team) {
@@ -221,10 +306,7 @@ function strike(attacker, defender, defenderTeam, round, rng) {
   if (attacker.class === 'Carry' && defender.currentHp / defender.maxHp < EXECUTE_THRESHOLD) {
     situational *= EXECUTE_BONUS; tags.push('execute');
   }
-  if (attacker.class === 'Assassin') {
-    if (defender.row === 'back') tags.push('backstab');
-    if (round === 1) { situational *= ASSASSIN_OPENER; tags.push('opener'); }
-  }
+  if (attacker.class === 'Assassin' && defender.row === 'back') tags.push('backstab');
   if (defender.class === 'Titan' && defender.row === 'front') tags.push('taunt');
 
   const swing = 1 + (rng() * 2 - 1) * VARIANCE;
