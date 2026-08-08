@@ -7,6 +7,7 @@
 
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
+import { makeStars } from './stars.js';
 
 /* A point somewhere on the card's frame band, as a `background-position` pair.
    `u` walks the perimeter as 0..4 (one unit per edge, clockwise from the top
@@ -52,6 +53,16 @@ export function openInspect(card, meta = {}) {
   lastTrigger = document.activeElement;
   inspectHolder.innerHTML = '';
   const cardEl = renderCard(card, meta);
+  /* SR+ get their star field here too, not just in the pull reveal. Built
+     unconditionally (cheap — a handful of absolutely-positioned dots) and
+     left to CSS to gate: `#inspect .card .stars` only turns visible under
+     `(hover: none)` (styles.css), because a fine-pointer device already gets
+     motion from the tilt + holo shine below (holo.js). Touch never lights
+     `.lit` at all (device-tilt was removed 2026-08-07), so without this a
+     phone's admire screen would just sit there static — the stars are what
+     it gets instead. */
+  const stars = makeStars(card.rarity);
+  if (stars) cardEl.appendChild(stars);
   /* The travelling edge light (styles.css, `.gem-edge`) needs a real element:
      it ROTATES, and both of the card's own pseudo-elements are already spoken
      for by layers that must stay put. Added here rather than in card.js so the

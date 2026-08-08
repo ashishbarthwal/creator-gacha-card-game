@@ -15,6 +15,7 @@
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
 import { enableCardTilt } from './holo.js';
+import { STARS, makeStars } from './stars.js';
 
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
@@ -59,34 +60,11 @@ const OPENING_BEAT = 300;  // let the overlay settle before the first flip
 
 const SWEPT = new Set(['SR', 'SSR', 'UR', 'RUBY']);   // get the specular sweep
 
-/* Twinkling stars, now starting at SR: a sparse small shimmer there, the dense
-   quick field at SSR, a little denser again at UR, denser still at RUBY.
-   Ranges are [min, max] — count, dot size (px), twinkle period (s). Tint is
-   per-tier in CSS and follows the frame, so SR reads gold, SSR cold diamond,
-   UR hot amber, RUBY cold diamond-white with a red cast. */
-const STARS = {
-  SR:   { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
-  SSR:  { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
-  UR:   { count: 26, size: [2.0, 4.4], tw: [1.1, 2.8] },
-  /* RUBY goes DOWN, against the escalation every other row follows, and that
-     inversion is the point. Up to UR the ladder buys drama with density. The
-     gem cut buys it with restraint: a cut stone throws a few big, deliberate
-     reflections, and a dense field of small ones is what costume jewellery
-     looks like. Fewer, larger, slower — and rendered as four-point sparkles
-     rather than round dots (`.glow-RUBY .star` in styles.css). */
-  RUBY: { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
-};
-
 /* The top-of-ladder finale — ignition, discharge and breathing aura — was
    UR-exclusive when UR was the top tier. RUBY inherits the same mechanics
    (WP-Ruby Tier); its own colours come from CSS (.glow-RUBY), keyed off the
    same class this set gates. */
 const TOP_TIER = new Set(['UR', 'RUBY']);
-
-/* Avatar exclusion in card-relative fractions (the ringed centrepiece), so
-   stars never land on the pfp. y is scaled by the 5:7 aspect for a round check. */
-const AV = { cx: 0.5, cy: 0.45, r: 0.33 };
-const ASPECT = 7 / 5;
 
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -198,33 +176,6 @@ export function openReveal(results) {
     revealTimers.push(setTimeout(() => flip(cell), cursor + fx.beam));
     cursor += fx.beam + BASE_GAP + fx.hold;
   }
-}
-
-/* Scatter twinkling stars over the card, rejecting any that fall inside the
-   avatar circle. Positions + per-star timing/size are random (inline styles);
-   the twinkle itself is a CSS animation, so there's no JS running per frame. */
-function makeStars(rarity) {
-  const { count, size, tw } = STARS[rarity];
-  const span = (lo, hi) => lo + Math.random() * (hi - lo);
-  const wrap = document.createElement('div');
-  wrap.className = 'stars';
-  for (let placed = 0, guard = 0; placed < count && guard < count * 40; guard++) {
-    const x = 0.06 + Math.random() * 0.88;
-    const y = 0.06 + Math.random() * 0.88;
-    const dx = x - AV.cx;
-    const dy = (y - AV.cy) * ASPECT;
-    if (dx * dx + dy * dy < AV.r * AV.r) continue; // inside the pfp — skip
-    const star = document.createElement('i');
-    star.className = 'star';
-    star.style.left = (x * 100).toFixed(1) + '%';
-    star.style.top = (y * 100).toFixed(1) + '%';
-    star.style.setProperty('--sz', span(...size).toFixed(1) + 'px');
-    star.style.setProperty('--tw', span(...tw).toFixed(2) + 's');
-    star.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's'; // desync the twinkle
-    wrap.appendChild(star);
-    placed++;
-  }
-  return wrap;
 }
 
 /* UR aftermath — a breathing aura behind the card that sheds small motes.
