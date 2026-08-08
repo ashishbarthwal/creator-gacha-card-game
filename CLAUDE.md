@@ -145,8 +145,16 @@ the axis review runs on — a name worth arguing about is a name someone recogni
 
 ## Scope boundaries
 
-Currently out of scope: battles, decks, pity system, `/c/` vanity URL resolution
-(handles and UC ids only), server-side persistence, accounts.
+**Battles came INTO scope 2026-08-05 and shipped into the app 2026-08-08** — 5v5
+auto-resolved combat (`engine/battle.js`, `battle-stats.js`, `element.js`, `opponent.js`),
+an arena UI (`ui/battle.js`), and cross-device 1v1 through a pasted code
+(`engine/challenge.js`). This line used to list them as out of scope; leaving that
+standing would have made the file describe a game that no longer exists.
+
+Still out of scope: decks beyond the five-card battle team, a pity system, `/c/`
+vanity URL resolution (handles and UC ids only), accounts, and any server-side
+persistence beyond the ten-minute match lobby named in decision 3 — no profiles,
+no saved history, no ladder.
 
 Card look (revised WP3): the metal-bevel **tier frame and the holo/tilt finish carry the
 card** — that principle is unchanged. What changed is the avatar's role. It is no longer a
@@ -210,11 +218,17 @@ input (@handle | URL | UC id)
 - **The tree is organized by what a module may touch.** A new file's home follows from
   that one question, not from its topic:
   - touches nothing (pure, headless) → `src/engine/` — `core.js` derivation, `gacha.js`
-    pull, `discover.js` Magic Search sourcing core. `engine/core.js` imports nothing; if it
-    ever needs an import, the design is wrong.
-  - touches the network → `src/data/`, behind the seam.
+    pull, `discover.js` Magic Search sourcing core, plus the battle layer (`battle.js`,
+    `battle-stats.js`, `element.js`, `opponent.js`) and `challenge.js`, the battle-code
+    codec. `engine/core.js` imports nothing; if it ever needs an import, the design is wrong.
+  - touches the network → `src/data/`, behind the seam. `presence.js` lives here too — it is
+    the only module that talks to a server of ours, which is exactly the question this folder
+    answers.
   - touches the DOM → `src/ui/`.
   - `state.js` (mutable app state) and `main.js` (wiring) are neither, and stay at the root.
+  - runs on the SERVER → `functions/`. One file, and it is the only one — a Cloudflare Pages
+    Function compiled into the upload by `tools/build-site.js`. Anything added here reopens
+    decision 3, so nothing should be.
 - Fonts: Anton (display), Space Grotesk (body), Space Mono (stats/numbers).
 - Palette: dark plum stage, YouTube-red accents.
 - Record any new decision that closes off an option in `DECISIONS.md`.

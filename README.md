@@ -106,13 +106,25 @@ input (@handle | URL | UC id)
   gacha engine (weighted RNG, ×1/×10, dupes stack)
         │
   collection → card render + reveal
+        │
+  battle (PURE, seeded)         ← the same channel object, read a second way
+        │
+   ┌────┴────┐
+ vs AI    vs a player  ← a pasted code carries teams + seed + pinned clock,
+                          so both windows replay the identical fight
 ```
+
+The battle layer is the data seam's second payoff. A card's five combat stats are derived
+from the *same* channel object the rarity and ATK/DEF came from — nothing new is fetched, and
+nothing downstream can tell a demo channel from a live one. Because that derivation is pure
+and the fight takes its randomness and its clock as parameters, two browsers that share
+nothing at all can be handed one string and resolve the same battle independently.
 
 Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk / Space Mono.
 
 ### Tests
 
-307 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+452 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery
@@ -122,6 +134,15 @@ through JSON, and that an opted-out creator stays out when a later sourcing run 
 again. CI
 runs them on every push (that's the badge above); each run uploads a self-contained HTML
 report as an artifact.
+
+Two blocks in there are doing something different from the rest, and are worth naming. The
+**balance block** asserts *design goals* rather than behaviour — that a well-shaped small card
+can out-rate a giant, that no class swallows the deck, that an even match stays even — so a
+tuning change that quietly re-couples power to channel size fails a test instead of being
+noticed months later by a player. And the **battle-code round trip** resolves the same fight
+twice, once from live objects and once from a decoded string, and asserts the two event logs
+are *identical*: if those ever diverge, two players are watching different battles, which is
+the one failure this feature cannot survive.
 
 ```
 npm test              # run the suite
@@ -203,6 +224,32 @@ into a tested, modular, deployable project in dependency order (full detail in
 - [x] ~~**Card → PNG export.**~~ Built, then **scrapped before shipping**. An exported image
       outlives a removal request, so the feature quietly broke the opt-out promise. Deleted
       rather than hidden behind a flag.
+- [x] **WP-Arena — battles, and a real 1v1.** The 5v5 engine had been shippable since
+      2026-08-05 with no way to reach it; this is the arena in the app — a team builder over
+      your own cards, front/back ranks, and three ways to fight (a matched AI, a challenge you
+      hand out, a challenge you accept).
+
+      **Two players share one fight without sharing anything.** A normal window and an
+      incognito one are storage-partitioned by design, so the channel between them is the
+      *player*: a pasted code. What makes that a real 1v1 rather than two simulations is a
+      property the engine already had for an unrelated reason — combat takes its randomness as
+      an injected `rng` and its clock as an injected `now`, both so the balance tests could
+      seed thousands of runs. Same teams, seed and clock ⇒ both windows replay the identical
+      fight, hit for hit. The reply carries *inputs, not a verdict*, so a claimed outcome never
+      has to be trusted.
+
+      A small match lobby was added afterwards (the one exception to the guardrail below) so
+      the two sides can see each other arrive and start on the same countdown.
+- [x] **WP-Battle Balance — the game was solved, and not for the obvious reason.** Picking the
+      biggest-subscriber cards was already a *bad* strategy (it lost to a views-per-video team
+      70.8% of the time). The real problem: the combat rating predicts fights accurately, and
+      an accurate predictor is a solved game — "take the five highest-rated" beat everything
+      87–100%, and Auto-pick computes exactly that. Fixed by de-sizing the two axes that had
+      never had it (`devotion` and `cadence` were leaking channel size at 0.350/0.420),
+      repricing stats that were worth wildly different amounts at equal budget (momentum bought
+      a *seventeenth* of what health did), and adding a formation bonus that depends on the
+      shape of the *team* — the one thing a per-card rating cannot see. A channel 10× smaller
+      now out-rates a bigger one 39% of the time.
 - [ ] **Next.** SSR-band depth (the binding constraint at 92.8 lower walls), Series 2 rotation,
       and procedural creator emblems to dissolve the likeness question entirely.
 
@@ -214,9 +261,12 @@ A few decisions are deliberately locked (see [`DECISIONS.md`](DECISIONS.md) for 
 
 - **No monetization in the game.** No paid pulls, currency, perks, or ads. The one exception
   is a passive Buy Me a Coffee link that never unlocks anything in-game.
-- **Client-side only.** Static hosting, no backend, no accounts, no database. Cards ship as
-  static JSON, so a player needs no API key — the key only ever exists on the machine that
-  builds a set.
+- **Client-side only, with one named exception.** Static hosting, no accounts, no database.
+  Cards ship as static JSON, so a player needs no API key — the key only ever exists on the
+  machine that builds a set. The exception, added 2026-08-08, is a single endpoint
+  (`functions/api/ready/[room].js`) that holds one two-player match for ten minutes so both
+  players can start a battle together. It is optional by construction: when it is unreachable
+  the game falls back to the copy-paste flow it shipped with.
 - **No build step.** Plain ES modules, served as-is. Vitest is a dev-only dependency.
 
 ---
