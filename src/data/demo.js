@@ -1,4 +1,4 @@
-/* data/demo — the bundled demo set: eight fictional channels with generated
+/* data/demo — the bundled demo set: nine fictional channels with generated
    avatars and zero network. It is the built-in sampler, the app's default pool,
    and the offline fallback — always available even if the fetchable set
    manifest (sets/index.json) cannot be loaded.
@@ -122,6 +122,17 @@ export const DEMO_SET = {
       viewCount: '32000000000',
       videoCount: '5480',
       publishedAt: '2012-07-19T00:00:00Z',
+    },
+    {
+      id: 'UCstarter-the-last-broadcast',
+      title: 'The Last Broadcast',
+      handle: '@thelastbroadcast',
+      avatarUrl: avatar('L', 355),
+      subscriberCount: '150000000',
+      hiddenSubscriberCount: false,
+      viewCount: '65000000000',
+      videoCount: '8200',
+      publishedAt: '2009-01-01T00:00:00Z',
     },
   ],
 };

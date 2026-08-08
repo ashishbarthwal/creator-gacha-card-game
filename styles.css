@@ -736,7 +736,11 @@
      be dark enough to contrast its neighbour, but true black reads as a gap in
      the frame rather than a plane turned away from the light — and nothing else
      in this UI is black. */
-  .r-RUBY { --t-hi:#ffb3bb; --t-mid:#8c0f24; --t-lo:#3a0c1e; --t-soft:#c8354a; --t-glow:#d61030; --t-ink:#fdf0f1; --rc: var(--t-glow); }
+  /* Deepened toward wine 2026-08-08: --t-hi and --t-soft were bright enough
+     to read as pink rather than red. Darker interiors, brighter accents only
+     where something is actually meant to catch light (sparkles, specular
+     rings) — the base palette itself should sit closer to the dark end. */
+  .r-RUBY { --t-hi:#d98a96; --t-mid:#8c0f24; --t-lo:#3a0c1e; --t-soft:#a9303f; --t-glow:#d61030; --t-ink:#fdf0f1; --rc: var(--t-glow); }
 
   /* card — a metal-bevel frame (the seam) around a dark inner face. Internal
      sizes are container-query units, so one card scales cleanly from the
@@ -1062,29 +1066,41 @@
        meeting at a hard edge read as cut planes catching light differently,
        which is what a faceted stone actually does. Alternating dark/bright is
        what gives the frame its depth. */
+    /* Contrast pushed further than a first pass: brights lifted, darks
+       deepened, so each wedge reads as a distinct facet catching (or not
+       catching) the light rather than a smooth gradient wearing a red hue. */
     background:
       radial-gradient(130% 80% at 28% -6%, rgba(255, 190, 190, 0.34), transparent 62%),
       conic-gradient(from 208deg,
         #7d0f22 0deg 26deg,
-        #4a1024 26deg 52deg,
-        #c02840 52deg 76deg,
-        #6b1226 76deg 104deg,
-        #92162c 104deg 130deg,
-        #3a0c1e 130deg 158deg,
-        #d8455e 158deg 182deg,
-        #5c1229 182deg 212deg,
-        #a81e35 212deg 240deg,
-        #430e21 240deg 268deg,
-        #b52236 268deg 296deg,
-        #521228 296deg 330deg,
+        #3c0c1c 26deg 52deg,
+        #c22e48 52deg 76deg,
+        #55101d 76deg 104deg,
+        #7c1025 104deg 130deg,
+        #2e0917 130deg 158deg,
+        #d4536a 158deg 182deg,
+        #4a0f22 182deg 212deg,
+        #b02940 212deg 240deg,
+        #370a1a 240deg 268deg,
+        #c02f4d 268deg 296deg,
+        #420f20 296deg 330deg,
         #7d0f22 330deg 360deg);
-    /* box-shadow cannot survive clip-path — it paints outside the silhouette
-       and is cut away with it. drop-shadow follows the clipped shape instead,
-       so the glow is octagonal like the card rather than a rectangle peeking
-       out behind the bevels. This is also why RUBY has no ember animation: the
-       brief calls for light that MOVES across the stone, not a frame that
-       pulses, and that lives on ::before below. */
-    box-shadow: none;
+    /* An OUTWARD box-shadow cannot survive clip-path — it paints outside the
+       silhouette and is cut away with it, which is why the ambient glow below
+       is a drop-shadow (it follows the clipped shape) rather than a shadow.
+       This is also why RUBY has no ember animation: the brief calls for light
+       that MOVES across the stone, not a frame that pulses, and that lives on
+       ::before below.
+
+       INSET shadows are a different story — they paint inside the box that is
+       already clipped, so clip-path never touches them. That is what buys the
+       extra bevel layer: outer cut edge (the conic-gradient facets above) ->
+       a small recessed dark bevel -> a bright reflective edge -> the dark
+       inner wall where .card-inner begins. Four visible steps instead of one
+       flat cut reads as carved, not painted on. */
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+      inset 0 0 0 3px rgba(255, 214, 210, 0.4);
     filter: drop-shadow(0 0 16px rgba(190, 20, 46, 0.45));
   }
 
@@ -1103,35 +1119,49 @@
       100% 4.7%, 100% 95.3%,
       93.4% 100%, 6.6% 100%,
       0% 95.3%, 0% 4.7%);
-    /* THE FACE IS NOT OVERRIDDEN, and that is deliberate after getting it wrong
-       once. The gem-cut pass darkened it to near-black (#150a12 -> #0a0509) on
-       the theory that a dense backing would make the stone read heavier. What it
-       actually did was punch a black rectangle into a UI that contains no black
-       anywhere else — every other card face is the same dark navy-purple, and so
-       is the stage behind them — so the card stopped looking like an object on
-       the page and started looking like a hole in it.
+    /* THE FACE IS NOT REPLACED, which is deliberate after getting it wrong once
+       already. The first gem-cut pass darkened it to near-black (#150a12 ->
+       #0a0509) on the theory that a dense backing would make the stone read
+       heavier. What it actually did was punch a black rectangle into a UI that
+       contains no black anywhere else — every other card face is the same dark
+       navy-purple, and so is the stage behind them — so the card stopped
+       looking like an object on the page and started looking like a hole in it.
 
-       The tier's identity is carried by the cut, the facets and the frame. The
-       face is shared, so a RUBY card sits on the same surface as every other
-       card in the binder. */
+       This is a much smaller move than that: an 8% flat black wash layered on
+       TOP of the same shared gradient, not a swap to a different base. The
+       border is meant to be the hero, and a slightly darker interior makes the
+       frame's brights read hotter by contrast without reopening the hole bug —
+       8% is close enough to the shared tone that the face still reads as "the
+       same surface, dimmed" rather than "a different, blacker material". */
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)),
+      radial-gradient(120% 90% at 50% -12%, color-mix(in srgb, var(--t-glow) 14%, #1a2130) 0%, transparent 55%),
+      linear-gradient(180deg, #141a29 0%, #0d1120 100%);
   }
 
   /* The travelling light — one slow pass across the gem edge, then a long rest.
      Sits BELOW `.card-inner` (which is opaque, positioned, and later in the DOM),
      so it is only ever visible on the frame band. That containment is the whole
      reason this reads as light moving through the setting rather than a shine
-     wiping across a creator's face. */
+     wiping across a creator's face.
+
+     NARROWED FROM A BLOOM TO A STREAK. A wide, soft-edged band reads as a
+     screen glare wiping across glass — the previous version was 24% wide with
+     only a 3%-wide bright core. A real stone under a spotlight throws a
+     hairline reflection off one facet, not a wash across several, so the band
+     is now ~7% wide with almost all of it feathering into the near-white
+     core. Same travel and timing; only the width of what's traveling changed. */
   .card.r-RUBY::before {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
     background: linear-gradient(115deg,
-      transparent 38%,
-      rgba(255, 214, 214, 0.5) 46.5%,
-      rgba(255, 255, 255, 0.92) 50%,
-      rgba(255, 214, 214, 0.5) 53.5%,
-      transparent 62%);
+      transparent 44%,
+      rgba(255, 225, 225, 0.55) 48.4%,
+      rgba(255, 255, 255, 1) 49.6%,
+      rgba(255, 225, 225, 0.55) 50.8%,
+      transparent 55%);
     background-size: 280% 280%;
     mix-blend-mode: screen;
     animation: gem-sweep 8s cubic-bezier(0.4, 0, 0.5, 1) infinite;
@@ -1145,38 +1175,41 @@
     100%     { background-position: -45% -45%; }
   }
 
-  /* Three four-point reflections, sitting on the bevels. Each is a pair of
-     crossed thin ellipses — the shape a facet actually throws — rather than a
-     round dot, which is what separates "cut stone" from "particle effect".
-     Two are placed on the cut corners, where the frame is at its widest and a
-     glint has room to read; the third rides the right edge. Kept under the
-     face by the z-index above, so none of them can ever land on a creator's
-     portrait. */
+  /* TWO, NOT THREE — fewer but brighter, per the brief. The middle edge glint
+     is gone; the two corner ones (where the frame is widest and a glint has
+     the most room to read) are bigger and closer to pure white. Each is a
+     pair of crossed thin ellipses — the shape a facet actually throws — rather
+     than a round dot, which is what separates "cut stone" from "particle
+     effect". Kept under the face by the z-index above, so neither can ever
+     land on a creator's portrait. */
   .card.r-RUBY::after {
     content: '';
     position: absolute;
     inset: 0;
     pointer-events: none;
     background-image:
-      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 242, 240, 0.95) 32%, transparent 70%),
-      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 242, 240, 0.95) 32%, transparent 70%),
-      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 232, 228, 0.8) 32%, transparent 70%),
-      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 232, 228, 0.8) 32%, transparent 70%),
-      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 246, 244, 0.85) 32%, transparent 70%),
-      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 246, 244, 0.85) 32%, transparent 70%);
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 245, 244, 1) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 245, 244, 1) 32%, transparent 70%),
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 240, 238, 0.95) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 240, 238, 0.95) 32%, transparent 70%);
     background-repeat: no-repeat;
-    background-size: 17% 12%, 17% 12%, 13% 9%, 13% 9%, 15% 10.5%, 15% 10.5%;
+    background-size: 19% 13%, 19% 13%, 16% 11%, 16% 11%;
     background-position:
       3.5% 2.5%, 3.5% 2.5%,
-      99% 44%, 99% 44%,
       96.5% 97.5%, 96.5% 97.5%;
     animation: gem-glint 8s ease-in-out infinite;
   }
 
+  /* A FLASH, not a breathing glow. The old keyframes spent most of the cycle
+     visibly lit (0.28 floor, 0.95 peak, back down to 0.34); a stone under
+     moving light doesn't hum, it catches and lets go. Now it rests low and
+     spikes to full brightness for an instant near the end of the cycle — the
+     same "occasional" cadence as the sweep above, timed to land shortly after
+     it so the sweep's pass reads as what triggered the catch. */
   @keyframes gem-glint {
-    0%, 100% { opacity: 0.28; }
-    18%      { opacity: 0.95; }
-    44%      { opacity: 0.34; }
+    0%, 88%, 100% { opacity: 0.2; }
+    93%           { opacity: 1; }
+    96%           { opacity: 0.3; }
   }
 
   /* The face behind the portrait: a brilliant-cut silhouette and faint
@@ -1216,9 +1249,32 @@
       rgba(255, 255, 255, 0.04) 315deg 360deg);
   }
 
+  /* THE FAVOURITE IDEA: the crystal beneath the portrait turns, the portrait
+     does not. 0.2deg/s — a full turn takes half an hour — so slow that
+     nothing looks animated on arrival; only staring at it for a few seconds
+     gives it away, the same way a real jewel-display turntable does. Rotation
+     added to the SAME transform that already centres this element, so the
+     centring survives the animation rather than needing to be re-derived. */
+  #inspect .card.r-RUBY .monogram::after {
+    animation: ruby-crystal-rotate 1800s linear infinite;
+  }
+  @keyframes ruby-crystal-rotate {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
   /* The badge as a set stone rather than a rounded label: bevelled to echo the
      card silhouette, gold hairline for the setting, and lettering cut INTO the
-     face (light below, shadow above) instead of sitting on it. */
+     face (light below, shadow above) instead of sitting on it.
+
+     ENGRAVED, NOT STICKERED. It used to carry a `filter: drop-shadow` beneath
+     it — a shadow cast onto the surrounding surface, which is exactly what an
+     object floating ABOVE that surface does. A plaque set INTO the frame is
+     flush with it and casts nothing; instead the frame's own lip throws a
+     shadow briefly INTO the recess. That is now two inset shadows instead of
+     one outward one: dark falling from the top-left, as if the frame's edge
+     overhangs the plaque there, and a thin light catching the bottom-right lip
+     where the recess is shallowest. The gold hairline setting is unchanged. */
   .card.r-RUBY .rarity-badge {
     border-radius: 0;
     clip-path: polygon(
@@ -1226,45 +1282,104 @@
       86% 100%, 14% 100%, 0% 74%, 0% 26%);
     color: #2a0208;
     background: linear-gradient(155deg,
-      #f0c8cd 0%, #c02840 22%, #5c0a19 54%, #8f1729 78%, #e8b0b8 100%);
+      #d9a4ab 0%, #c02840 22%, #5c0a19 54%, #8f1729 78%, #cf8f98 100%);
     text-shadow:
       0 1px 0 rgba(255, 224, 224, 0.42),
       0 -1px 0 rgba(0, 0, 0, 0.55);
-    box-shadow: 0 0 0 1px rgba(217, 164, 65, 0.5) inset;
-    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
+    box-shadow:
+      inset 2px 2px 3px rgba(0, 0, 0, 0.5),
+      inset -1px -1px 0 rgba(255, 226, 220, 0.4),
+      0 0 0 1px rgba(217, 164, 65, 0.5) inset;
   }
 
-  .card.r-RUBY .tier-label { color: #e6a9b2; }
+  .card.r-RUBY .tier-label { color: #c98a94; }
 
-  /* The setting around the portrait — alternating stone and gold facets, hard
-     stops again so the ring reads as cut rather than plated. */
+  /* THE RING BECOMES A STONE, not a plated circle around one. This was the
+     weakest part of the treatment: a smooth 16-stop conic-gradient dressed as
+     a ring, sitting inside a card whose frame is cut, not painted. Two changes
+     close that gap, both borrowing from elsewhere on this same card rather
+     than inventing a new shape:
+
+     1. The silhouette becomes the brilliant-cut octagon `.monogram::after`
+        already draws behind the portrait — the same outline read twice (once
+        as a faint watermark, once as the bezel holding the photo) is what
+        makes the two feel like one stone rather than a ring sitting on a
+        stone. `border-radius` drops to 0 to match; `.avatar` (the photo
+        itself) keeps its own circular clip, same reasoning as the card face
+        never being recoloured — a portrait forced into a jagged crop reads as
+        broken, not faceted, so only the SETTING cuts, not the photograph.
+     2. The gradient drops from 16 soft stops to 8 hard ones, one per facet
+        edge of the octagon above — matching the frame's own wedge count and
+        contrast instead of a smoother, higher-frequency pattern that reads as
+        spinning metal rather than cut stone. */
   .card.r-RUBY .avatar-ring {
-    background: conic-gradient(from 128deg,
-      #45101f 0deg 22deg,
-      #c9304a 22deg 40deg,
-      #d9a441 40deg 52deg,
-      #6e1426 52deg 78deg,
-      #f2b8bf 78deg 92deg,
-      #7d0f22 92deg 120deg,
-      #d9a441 120deg 132deg,
-      #4a1024 132deg 162deg,
-      #b52236 162deg 186deg,
-      #f5d6da 186deg 198deg,
-      #5c1229 198deg 232deg,
-      #d9a441 232deg 244deg,
-      #92162c 244deg 274deg,
-      #3a0c1e 274deg 306deg,
-      #c02840 306deg 334deg,
-      #45101f 334deg 360deg);
+    border-radius: 0;
+    clip-path: polygon(50% 0%, 79% 18%, 100% 50%, 79% 82%, 50% 100%, 21% 82%, 0% 50%, 21% 18%);
+    background: conic-gradient(from 112deg,
+      #45101f 0deg 45deg,
+      #c93650 45deg 90deg,
+      #4a1024 90deg 135deg,
+      #d9a441 135deg 180deg,
+      #6e1426 180deg 225deg,
+      #d99aa2 225deg 270deg,
+      #3a0c1e 270deg 315deg,
+      #c02840 315deg 360deg);
     box-shadow:
       0 0 clamp(8px, 4cqw, 22px) -6px rgba(214, 16, 48, 0.7),
       0 8px 20px rgba(0, 0, 0, 0.5);
   }
 
   .card.r-RUBY .avatar-ring::after {
+    border-radius: 0;
+    clip-path: polygon(50% 0%, 79% 18%, 100% 50%, 79% 82%, 50% 100%, 21% 82%, 0% 50%, 21% 18%);
     box-shadow:
       0 0 0 1px rgba(217, 164, 65, 0.55) inset,
       0 0 0 3px rgba(0, 0, 0, 0.42) inset;
+  }
+
+  /* THE PORTRAIT OWNS MORE OF THE CARD, inspector only — "image, then frame,
+     then everything else" was the ask. +7% over the shared 54cqw base,
+     comfortably inside avatar-stage's own max-height cap so nothing crowds
+     the stats below it.
+
+     BREATHES IN, THEN BREATHES ON. Two animations sharing one property is a
+     hand-off, not a blend: `ruby-portrait-enter` runs once — a fade-up with
+     an overshoot past 100% before settling, so the arrival has weight — and
+     `ruby-portrait-breathe` starts exactly when it ends and takes over. Its
+     own 0% is the same scale(1)/opacity(1) the entrance settles on, so there
+     is no visible seam between "arriving" and "idling forever". Delayed
+     0.2s so the portrait appears to catch light FROM the frame igniting just
+     before it, rather than the two happening at once. */
+  #inspect .card.r-RUBY .avatar-ring {
+    width: 58cqw;
+    height: 58cqw;
+    animation:
+      ruby-portrait-enter 0.5s cubic-bezier(0.3, 1.6, 0.6, 1) 0.2s both,
+      ruby-portrait-breathe 6s ease-in-out 0.7s infinite;
+  }
+  @keyframes ruby-portrait-enter {
+    0%   { transform: scale(0.9);  opacity: 0; }
+    45%  { opacity: 1; }
+    60%  { transform: scale(1.02); }
+    100% { transform: scale(1);    opacity: 1; }
+  }
+  @keyframes ruby-portrait-breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.01); }
+  }
+
+  /* THE SIGNATURE EFFECT — a vertex-hopping reflection crawling around the
+     portrait ring's own facets — was tried here and pulled 2026-08-08. In
+     practice it read as a plain white ball drifting across the pfp, not a
+     glint catching individual facets; the crawl was too slow and too solid
+     to sell "reflection" rather than "object". `.avatar-ring::before` is
+     free again. Corner/edge twinkles on the outer frame (below, on ::after)
+     carry the crystal-catching-light idea instead. */
+
+  @media (prefers-reduced-motion: reduce) {
+    #inspect .card.r-RUBY .avatar-ring {
+      animation: none;
+    }
   }
 
   /* A stone does not move on its own. With motion reduced, the sweep and the
@@ -1273,6 +1388,344 @@
   @media (prefers-reduced-motion: reduce) {
     .card.r-RUBY::before { animation: none; background-position: 40% 40%; opacity: 0.5; }
     .card.r-RUBY::after  { animation: none; opacity: 0.55; }
+  }
+
+  /* ---- RUBY — INSPECTOR EXCLUSIVE: the museum display ---------------------
+     Everything below only ever matches inside #inspect. The pull screen and
+     the binder grid keep exactly the treatment tuned above — clutter stays
+     out of the path to the next pull. The inspector is the one place a RUBY
+     card gets looked at rather than glanced past, so this is where it gets
+     to move: idle light, not more geometry. Selectors here are simply more
+     specific than the ones above (`#inspect` beats no id), so within the
+     inspector these override the base rule for the same property; the base
+     rule is untouched and still governs everywhere else.
+
+     ALL THREE new animated layers below lean on one trick: a gradient layer
+     with no motion of its own reads as either "there" or "not there" —
+     `background-position` alone decides which, by parking a layer far
+     outside the element's own box (nothing to paint) versus at its real
+     coordinate. That sidesteps the one real limit of CSS here: one element
+     has one `opacity`, so several independently-timed sparkles cannot each
+     fade in and out on their own schedule — but they CAN each teleport into
+     view on their own schedule, which reads the same way for something this
+     quick. Every layer below is choreographed this way. */
+
+  /* THE FRAME IGNITES, then breathes. Needs no `.ruby-entrance` flag — this
+     is the card's own filter, so it's already scoped correctly by `.r-RUBY`,
+     and it plays every time because the card is a fresh element each open.
+     Same hand-off trick as the portrait below: `ruby-ignite` runs once and
+     its last frame is exactly `ruby-breathe`'s 0%/100% value, so the two
+     meet with no visible seam — a flare that settles into "soft breathing
+     glow", 6-8s, per the brief. */
+  #inspect .card.r-RUBY {
+    animation:
+      ruby-ignite 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s both,
+      ruby-breathe 7s ease-in-out 0.65s infinite;
+  }
+  @keyframes ruby-ignite {
+    0%   { filter: drop-shadow(0 0 0 rgba(190, 20, 46, 0)); }
+    60%  { filter: drop-shadow(0 0 34px rgba(214, 30, 60, 0.85)); }
+    100% { filter: drop-shadow(0 0 14px rgba(190, 20, 46, 0.4)); }
+  }
+  @keyframes ruby-breathe {
+    0%, 100% { filter: drop-shadow(0 0 14px rgba(190, 20, 46, 0.4)); }
+    50%      { filter: drop-shadow(0 0 25px rgba(214, 30, 60, 0.62)); }
+  }
+
+  /* CUT FROM A JEWEL, NOT A METAL STRIP. Two more inset rings than the base
+     bevel, alternating dark/bright again: outer cut edge (the facets) ->
+     small recessed bevel -> bright reflective edge -> a second, deeper dark
+     bevel -> a second, dimmer bright edge -> the dark inner wall where
+     .card-inner begins. Six steps instead of two is what turns "a strip"
+     into "something light bounces around inside of".
+
+     THINNER THAN THE FIRST PASS, on both axes. The band itself narrows (the
+     padding below, which is what actually reserves the frame's width — the
+     rings above just add detail inside whatever width that padding buys)
+     and each ring's own reach comes in too, so six steps still read as fine
+     bevels rather than the frame ballooning to fit them. */
+  #inspect .card.r-RUBY {
+    padding: clamp(4px, 2cqw, 7px);
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.55),
+      inset 0 0 0 2px rgba(255, 214, 210, 0.48),
+      inset 0 0 0 3.5px rgba(0, 0, 0, 0.42),
+      inset 0 0 0 5px rgba(255, 190, 190, 0.3);
+  }
+
+  /* THE ATMOSPHERE: two slow caustic blobs drifting the whole cycle, plus two
+     brief events riding the same 24s timeline — a vertical light leak along
+     the left edge early on, and a small bright point that enters one corner
+     of the frame and exits another, as if the stone is bending a point of
+     light through itself. Confined to the frame band for free: this pseudo
+     paints below `.card-inner` (opaque, z-index 1, later in the DOM — see
+     the comment on the base rule), so none of it can ever wash over the
+     portrait. `mix-blend-mode: screen` carried over from the base sweep so
+     light layers add onto the facets rather than sitting on top of them. */
+  #inspect .card.r-RUBY::before {
+    background-image:
+      radial-gradient(ellipse closest-side, #fff 0%, rgba(255, 255, 255, 0.85) 45%, transparent 75%),
+      linear-gradient(180deg, transparent 0%, rgba(255, 60, 80, 0.22) 45%, rgba(255, 100, 120, 0.32) 50%, rgba(255, 60, 80, 0.22) 55%, transparent 100%),
+      radial-gradient(circle, rgba(214, 16, 48, 0.38) 0%, transparent 72%),
+      radial-gradient(circle, rgba(176, 10, 38, 0.32) 0%, transparent 72%);
+    background-size: 9% 5%, 18% 240%, 130% 130%, 120% 120%;
+    background-repeat: no-repeat;
+    background-position: -300% -300%, -300% 0%, 20% 15%, 68% 72%;
+    mix-blend-mode: screen;
+    animation: ruby-atmosphere 24s linear infinite;
+  }
+  /* A SECOND REFRACTION PASS added early in the cycle (6-10%) alongside the
+     original one at 48-54% — twice per 24s instead of once, closer to the
+     "every 8-10 seconds" the border was asked to catch light on. */
+  @keyframes ruby-atmosphere {
+    0%   { background-position: -300% -300%, -300%   0%, 20% 15%, 68% 72%; }
+    6%   { background-position:  108%    8%, -300%   0%, 23% 17%, 66% 70%; }
+    10%  { background-position:   -8%   92%, -300%   0%, 25% 19%, 64% 68%; }
+    14%  { background-position: -300% -300%,    6% -60%, 26% 20%, 62% 66%; }
+    24%  { background-position: -300% -300%,    6% -60%, 32% 25%, 56% 60%; }
+    30%  { background-position: -300% -300%, -300%   0%, 36% 28%, 52% 56%; }
+    48%  { background-position:  108%    8%, -300%   0%, 42% 36%, 46% 50%; }
+    54%  { background-position:   -8%   92%, -300%   0%, 46% 40%, 42% 46%; }
+    56%  { background-position: -300% -300%, -300%   0%, 47% 41%, 41% 45%; }
+    78%  { background-position: -300% -300%, -300%   0%, 32% 26%, 56% 62%; }
+    100% { background-position: -300% -300%, -300%   0%, 20% 15%, 68% 72%; }
+  }
+
+  /* SIX POINTS, and none of them travel. Two of the six are a crossed-ellipse
+     four-point sparkle; the other four are plain round points, smaller and in
+     a slightly cooler or warmer white each, so the frame reads as a cut stone
+     catching light unevenly at several facets rather than the same ornament
+     repeated.
+
+     SIZE IS ANIMATED, NOT POSITION, and that is the fix for a real bug. The
+     first version teleported each point between its spot and a parking
+     coordinate far off-element — but `background-position` INTERPOLATES like
+     any other animated property, so what actually rendered was every sparkle
+     flying in from off-card and back out again. Scaling from `0 0` up to its
+     size and back leaves the point exactly where it was put: it swells and
+     fades in place, which is what a facet catching the light looks like.
+     A zero-area background layer is not painted at all, so `0 0` is a true
+     "off" rather than a very small dot.
+
+     POSITION IS THEREFORE STATIC — which is what lets inspect.js randomise
+     it. The six coordinates come in as custom properties (`--tw-a` … `--tw-f`)
+     re-rolled on every open AND every hover, so the sparkles land somewhere
+     new around the frame each time rather than on the same six anchors. The
+     fallbacks below are only a sane still frame if that JS never runs.
+
+     THE LOOP STARTS ON A BURST. 0% is the first sparkle already at full size,
+     not an empty frame — which is what makes both forced twinkles work
+     without a second animation to co-ordinate: opening the inspector builds a
+     fresh element, so the loop begins at 0% and the card twinkles the instant
+     it appears, and a hover RESTARTS this same loop (see `.fx-restart` below),
+     which lands on 0% again. 100% repeats 0% so the wrap is a burst too. */
+  #inspect .card.r-RUBY::after {
+    background-image:
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 245, 244, 1) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 245, 244, 1) 32%, transparent 70%),
+      radial-gradient(circle, #fff 0%, rgba(255, 238, 225, 0.9) 40%, transparent 75%),
+      radial-gradient(circle, #fff 0%, rgba(230, 240, 255, 0.85) 40%, transparent 75%),
+      radial-gradient(ellipse 50% 7% at 50% 50%, #fff 0%, rgba(255, 240, 238, 0.95) 32%, transparent 70%),
+      radial-gradient(ellipse 7% 50% at 50% 50%, #fff 0%, rgba(255, 240, 238, 0.95) 32%, transparent 70%),
+      radial-gradient(circle, #fff 0%, rgba(255, 238, 225, 0.85) 40%, transparent 75%),
+      radial-gradient(circle, #fff 0%, rgba(230, 240, 255, 0.8) 40%, transparent 75%);
+    background-repeat: no-repeat;
+    background-position:
+      var(--tw-a, 3.5% 2.5%), var(--tw-a, 3.5% 2.5%),
+      var(--tw-b, 96.5% 2.5%),
+      var(--tw-c, 99% 44%),
+      var(--tw-d, 96.5% 97.5%), var(--tw-d, 96.5% 97.5%),
+      var(--tw-e, 3.5% 97.5%),
+      var(--tw-f, 1% 44%);
+    background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+    /* --fx-dur is set per open by inspect.js (16-20s), so two viewings of the
+       same card drift out of step with each other. */
+    animation: ruby-twinkle var(--fx-dur, 18s) ease-in-out infinite;
+  }
+  /* TEN BURSTS NOW, not six — "more frequent" was the ask. Each of the six
+     points gets reused across the loop rather than adding more points: A/B/D/E
+     twinkle twice a cycle, C/F once, cycling A-D-B-E-C-F-A-D-B-E so the same
+     point never fires twice in a row. Peaks sit at 0 / 1.3 / 3.3 / 4.8 / 7.1 /
+     8.5 / 10.6 / 12.2 / 14.1 / 15.5s of an 18s loop — gaps of 1.3, 2.0, 1.5,
+     2.3, 1.4, 2.1, 1.6, 1.9, 1.4 and 2.5s, noticeably tighter than the first
+     pass's 2-4.5s band and still no two alike. Generated rather than
+     hand-typed so all eight layers stay in sync at every one of 31 stops. */
+  @keyframes ruby-twinkle {
+        0% { background-size: 19% 13%, 19% 13%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+     1.22% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+        6% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+     7.22% { background-size: 0 0, 0 0, 0 0, 0 0, 17% 12%, 17% 12%, 0 0, 0 0; }
+     8.44% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    17.11% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    18.33% { background-size: 0 0, 0 0, 6% 4%, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    19.56% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    25.44% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    26.67% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 7% 4.6%, 0 0; }
+    27.89% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    38.22% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    39.44% { background-size: 0 0, 0 0, 0 0, 5% 3.3%, 0 0, 0 0, 0 0, 0 0; }
+    40.67% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+       46% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    47.22% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 4.5% 3%; }
+    48.44% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    57.67% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    58.89% { background-size: 19% 13%, 19% 13%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    60.11% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    66.56% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    67.78% { background-size: 0 0, 0 0, 0 0, 0 0, 17% 12%, 17% 12%, 0 0, 0 0; }
+       69% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    77.11% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    78.33% { background-size: 0 0, 0 0, 6% 4%, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    79.56% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    84.89% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    86.11% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 7% 4.6%, 0 0; }
+    87.33% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    98.41% { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+      100% { background-size: 19% 13%, 19% 13%, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  }
+
+  /* A "background depth" layer (nebula + rising dust) behind the grid was
+     tried here and pulled 2026-08-08 — `repeating-radial-gradient` draws
+     CONCENTRIC RINGS from its one center point, not a tiled field of small
+     dots, and a 100%-wide/25%-tall tile stretched those rings into large
+     visible ripples spanning the whole face, moving upward, looking exactly
+     like what it was: a bug, not an effect. `.card-inner`'s clip-path is
+     also nearly the full card (only the corners are nipped, to match the
+     frame's own cut) rather than the small diamond around the portrait, so
+     "confined to the backdrop" was never true either. Removed outright
+     rather than patched — the engraved "RUBY" watermark that rode along on
+     the same pseudo went with it; it can come back on its own if wanted. */
+
+  /* THE TRAVELLING EDGE TWINKLE. A small conic wedge painted on an oversized
+     square centred on the card, and the square is ROTATED. The card's own
+     clip-path trims it to the gem silhouette and `.card-inner` covers the
+     middle, so the only place it can ever show is the frame band — what reads
+     on screen is a short glint sliding a little way along the edge, then
+     going out.
+
+     DELIBERATELY SMALL. A first pass had this as a wide, near-opaque band
+     making a full stepped lap of the card every five seconds, and it was far
+     too much for a screen you sit and look at: the eye went to the moving
+     light instead of the card. What survives is the same mechanism at a
+     fraction of the size — an 18deg wedge instead of 42, one wedge instead of
+     two, and a short arc rather than a lap.
+
+     SMOOTH, NOT STEPPED, for the same reason. The stepped version read as
+     deliberately retro, which is a strong flavour to put on something that
+     repeats forever; eased travel just reads as light.
+
+     RANDOM BY CONSTRUCTION. Six bursts across the loop at uneven spacings
+     (3.4, 2.6, 4.2, 2.7, 2.9, 2.2s — all inside the 2-4.5s band, no two
+     alike) with unrelated start angles, so consecutive glints land on
+     different edges rather than marching round in order and the rhythm never
+     resolves into a countable beat. inspect.js additionally varies the cycle
+     length per open, so two viewings of the same card drift out of step.
+
+     LIKE THE STAR TWINKLES, THE LOOP STARTS ON A BURST — 0% is mid-glint, not
+     dark. That is what makes it fire the instant the inspector opens and
+     again on every hover restart, without a separate one-shot animation to
+     keep in step with this one.
+
+     Needs a real element (added by inspect.js) rather than a third pseudo:
+     it rotates, and both of the card's own pseudo-elements carry layers that
+     have to stay where they are put. */
+  #inspect .card.r-RUBY .gem-edge {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    /* Square, and wider than the card's own diagonal — the card is 5:7, so
+       its half-diagonal is ~0.86x its width and any square past ~1.72x covers
+       every rotation. At 185% no turn can swing an uncovered corner into the
+       frame band. */
+    width: 185%;
+    aspect-ratio: 1;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    background: conic-gradient(from 0deg,
+      transparent 0deg,
+      rgba(255, 235, 238, 0.32) 5deg,
+      rgba(255, 255, 255, 0.9) 9deg,
+      rgba(255, 235, 238, 0.32) 13deg,
+      transparent 18deg,
+      transparent 360deg);
+    animation: gem-edge-run var(--fx-dur, 18s) ease-in-out infinite;
+  }
+  /* Six bursts, each ~0.9s of travel across ~45deg. Peaks at 0 / 3.4 / 6.0 /
+     10.2 / 12.9 / 15.8s of the 18s loop — offset from the star twinkles'
+     peaks on purpose, so the two effects interleave into one irregular
+     sparkle rather than always firing together. */
+  @keyframes gem-edge-run {
+         0% { opacity: 0.85; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 20deg)); }
+       2.5% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 43deg)); }
+
+     16.39% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 150deg)); }
+     18.89% { opacity: 0.8; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 172deg)); }
+     21.39% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 195deg)); }
+
+     30.83% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 285deg)); }
+     33.33% { opacity: 0.85; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 307deg)); }
+     35.83% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 330deg)); }
+
+     54.17% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 95deg)); }
+     56.67% { opacity: 0.8; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 117deg)); }
+     59.17% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 140deg)); }
+
+     69.17% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 225deg)); }
+     71.67% { opacity: 0.85; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 247deg)); }
+     74.17% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 270deg)); }
+
+     85.28% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 15deg)); }
+     87.78% { opacity: 0.8; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 37deg)); }
+     90.28% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 60deg)); }
+
+      99.5% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 20deg)); }
+       100% { opacity: 0.85; transform: translate(-50%, -50%) rotate(calc(var(--edge-spin, 0deg) + 20deg)); }
+  }
+
+  /* THE FORCED TWINKLE. Both effects above loop from a burst at 0%, so
+     restarting them is the same thing as firing them — and killing the
+     animation for one frame is what restarts it. inspect.js adds this class,
+     forces a reflow, and takes it straight back off; the browser sees the
+     animation removed and re-added, so it begins again from 0%. Used on
+     hover, which is the one moment the card is being actively looked at. */
+  #inspect .card.r-RUBY.fx-restart::after,
+  #inspect .card.r-RUBY.fx-restart .gem-edge {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #inspect .card.r-RUBY,
+    #inspect .card.r-RUBY::before,
+    #inspect .card.r-RUBY::after,
+    #inspect .card.r-RUBY .monogram::after,
+    #inspect .card.r-RUBY .gem-edge {
+      animation: none;
+    }
+    /* Held at a resting frame rather than the initial 0,0 the properties
+       would otherwise fall back to — the moving events (leak, refraction,
+       twinkles) settle at "not there"; the caustics settle at their cycle
+       start, which is a perfectly ordinary still frame of both. */
+    #inspect .card.r-RUBY::before { background-position: -300% -300%, -300% 0%, 20% 15%, 68% 72%; }
+    /* The twinkles are scaled to nothing rather than parked off-element now,
+       so the still frame is every layer at zero size. */
+    #inspect .card.r-RUBY::after  { background-size: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+    /* The sweep is motion and nothing else — with motion reduced there is no
+       resting frame worth holding, so it simply is not there. */
+    #inspect .card.r-RUBY .gem-edge { opacity: 0; }
+  }
+
+  /* THE RUBY BADGE OWNS THE CORNER. A bright solid-red NEW pill next to a
+     deliberately dark, jewelled badge competes for the one spot on a RUBY
+     card meant to read as unmistakably premium — so on this tier alone it
+     steps back: smaller, translucent, gold-lined like the rest of the
+     setting instead of shouting in saturated red. Still legible, still in
+     the same corner, just no longer the loudest thing in it. Applies
+     everywhere a RUBY card renders, not just the inspector — the badge
+     fights the frame in the binder and the reveal too. */
+  .card.r-RUBY .new-badge {
+    background: rgba(20, 6, 10, 0.55);
+    color: #f2c9ce;
+    box-shadow: 0 0 0 1px rgba(217, 164, 65, 0.5) inset;
   }
 
   /* ---- THE CARD AT SMALL SIZES --------------------------------------------
@@ -1408,12 +1861,18 @@
      itself once it is sitting in a grid of forty. */
   .cards-grid .card.r-SSR:hover { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 0 40px -6px var(--t-glow); }
   .cards-grid .card.r-UR:hover  { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.24) inset, 0 0 52px -6px var(--t-glow); }
-  /* RUBY hovers through `filter`, not `box-shadow` — its clip-path cuts a
-     box-shadow away with the rest of the rectangle, so the hover glow has to
-     come from a drop-shadow that follows the gem silhouette instead. Coloured
-     only, no black component, for the same reason as every rule above. */
+  /* RUBY's OUTWARD hover glow moves through `filter`, not `box-shadow` — its
+     clip-path cuts an outward box-shadow away with the rest of the rectangle,
+     so that part of the hover has to come from a drop-shadow that follows the
+     gem silhouette instead. But the carved-frame bevel from `.card.r-RUBY`
+     above is an INSET box-shadow, which clip-path does not touch — so it has
+     to be restated here rather than zeroed out, or the frame would go flat
+     the instant a card is hovered. Brightened a touch on the reflective ring
+     so the stone reads as catching more light, not just glowing hotter. */
   .cards-grid .card.r-RUBY:hover {
-    box-shadow: none;
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+      inset 0 0 0 3px rgba(255, 224, 220, 0.55);
     filter: drop-shadow(0 0 26px rgba(214, 16, 48, 0.65));
   }
 
@@ -2463,11 +2922,49 @@
   #inspect[hidden] { display: none; }
 
   .inspect-box {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 18px;
     animation: rise 0.25s ease;
+  }
+
+  /* THE MUSEUM-DISPLAY SPOTLIGHT: a RUBY-only opening flourish. Lives here,
+     not on the card, because it needs to shine down from ABOVE the card
+     against the dark backdrop — the card's own clip-path would cut a
+     spotlight off at its edge the same way it clips everything else painted
+     inside it. `.ruby-entrance` is a class the JS adds only when the card
+     being opened is RUBY (see inspect.js) — this element is shared by every
+     rarity's inspector open, so unlike the card's own entrance effects
+     (which just replay because they're a fresh DOM node each time) this one
+     needs an explicit flag to stay out of every other tier's open. One-shot:
+     it flares in, holds a moment, then fades out for good — the spotlight is
+     what announces the reveal, not a permanent fixture over the case. */
+  .ruby-entrance .inspect-box::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -45%;
+    width: 70%;
+    height: 145%;
+    transform: translateX(-50%);
+    clip-path: polygon(46% 0%, 54% 0%, 78% 100%, 22% 100%);
+    background: linear-gradient(180deg,
+      rgba(255, 210, 210, 0.55) 0%, rgba(214, 16, 48, 0.22) 55%, transparent 90%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: ruby-spotlight 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+  @keyframes ruby-spotlight {
+    0%   { opacity: 0;    transform: translateX(-50%) scaleY(0.4); }
+    35%  { opacity: 0.9;  transform: translateX(-50%) scaleY(1); }
+    70%  { opacity: 0.5;  transform: translateX(-50%) scaleY(1); }
+    100% { opacity: 0;    transform: translateX(-50%) scaleY(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ruby-entrance .inspect-box::before { animation: none; opacity: 0; }
   }
 
   /* The hero card renders at ~2x the grid size; its container-query units do

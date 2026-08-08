@@ -149,7 +149,7 @@ describe('channelAgeYears', () => {
     expect(channelAgeYears(yearsAgo(10), NOW)).toBeCloseTo(10, 5);
   });
 
-  /* The demo set ships eight hand-written channels and a missing date must not
+  /* The demo set ships nine hand-written channels and a missing date must not
      throw or produce NaN anywhere downstream. */
   it.each([undefined, '', null, 'not-a-date'])('%p yields null, never NaN', (bad) => {
     expect(channelAgeYears(bad, NOW)).toBeNull();
