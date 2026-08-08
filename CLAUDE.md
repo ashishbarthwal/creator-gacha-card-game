@@ -54,6 +54,15 @@ Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+)
    two-player lobby holding ONE match under a hashed room id for ten minutes — accepted, two
    ready flags, and the defender's reply code.
 
+   **Live since 2026-08-09.** KV namespace `creator-gacha-ready` is bound as `READY` on the
+   Pages project, and a real cross-device 1v1 has been played on it. Three ops write a room:
+   `accept`, `team` (here are my five) and `ready` (I am ready) — the last two are separate
+   because conflating them let a fight start that one player never agreed to. Two things to
+   know before debugging a lobby that looks dead: **KV caches MISSES** for up to 60s and
+   `cacheTtl` cannot go lower, so a room polled before it exists can read empty for a minute;
+   and a failed request is NOT the same as presence being off, which is why `presence.js`
+   reports `off` and `error` separately and callers only give up on the former.
+
    **The 30-day cap was not the obstacle, and saying so was a mistake worth recording.** The
    first cut of this endpoint refused to touch card data on the grounds that stored statistics
    carry YouTube's 30-day cap. That cap is a MAXIMUM AGE, and ten minutes is comfortably inside
@@ -229,6 +238,12 @@ input (@handle | URL | UC id)
   - runs on the SERVER → `functions/`. One file, and it is the only one — a Cloudflare Pages
     Function compiled into the upload by `tools/build-site.js`. Anything added here reopens
     decision 3, so nothing should be.
+  - explains the game to a human → `Battle Layout/`. Reference documents about how the game
+    works, not code and not shipped with the site. `battle-system.html` is the combat
+    reference: derivation, the five stats, six classes with real cards, the element ring, the
+    damage formula. **Every number in it is measured** — regenerate them with
+    `node tools/battle-balance.js` rather than editing figures by hand, or it becomes the
+    thing this repo most dislikes, a confident document that disagrees with its own code.
 - Fonts: Anton (display), Space Grotesk (body), Space Mono (stats/numbers).
 - Palette: dark plum stage, YouTube-red accents.
 - Record any new decision that closes off an option in `DECISIONS.md`.

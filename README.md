@@ -240,6 +240,27 @@ into a tested, modular, deployable project in dependency order (full detail in
 
       A small match lobby was added afterwards (the one exception to the guardrail below) so
       the two sides can see each other arrive and start on the same countdown.
+- [x] **WP-Lobby — the room goes live, and two bugs only real play could find.** The lobby
+      shipped inert (no KV namespace bound); binding it produced a genuine cross-device 1v1 on
+      two machines and two networks, with no account, password or email anywhere in it — the
+      challenge code *is* the credential and consent *is* the access control. Then two failures
+      that no test would have caught. **Readiness was being inferred rather than performed:**
+      committing a team and pressing Ready were one server op, so the defender was marked ready
+      on leaving the builder and the challenger alone could start a fight nobody had agreed to.
+      **And a dropped request was indistinguishable from a missing lobby:** challenging from a
+      phone meant leaving the app to paste the code, mobile froze the tab, the poll died, and
+      the wait loop concluded there was no lobby anywhere — permanently. Now `off` (settled)
+      and `error` (retry) are different answers, and the loops wake on `visibilitychange`
+      instead of waiting out a throttled timer.
+- [x] **WP-Battle Tuning — nobody is zero at anything.** 3.7% of the deck sat at an axis of
+      exactly 0, which became an attack of **1** — roughly 590 real channels, typically the
+      daily grinder whose views-per-video is modest precisely *because* they upload constantly.
+      A residual measured against a trend means below average, not absent, so the axes floor at
+      12; small cards out-rating the median giant went 22.1% → 29.5%. Crit also moved from
+      cadence to **punch**: a critical hit is a video landing far above this channel's normal,
+      not a channel that posts often. The tuning knobs are now exported and printed live by
+      `tools/battle-balance.js`, alongside a per-class table — which immediately showed the
+      next problem, Assassin rating 249 against Carry's 462.
 - [x] **WP-Battle Balance — the game was solved, and not for the obvious reason.** Picking the
       biggest-subscriber cards was already a *bad* strategy (it lost to a views-per-video team
       70.8% of the time). The real problem: the combat rating predicts fights accurately, and

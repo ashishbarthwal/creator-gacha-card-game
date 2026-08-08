@@ -1,0 +1,963 @@
+<title>Creator Gacha — How the Battle System Works</title>
+
+<style>
+  /* ── TOKENS ────────────────────────────────────────────────────────────────
+     Light is the bare :root. Dark is redefined twice: once behind
+     prefers-color-scheme (guarded so an explicit light choice still wins) and
+     once behind the [data-theme="dark"] stamp. Every component below styles
+     through these names and never inside a media block. */
+  :root {
+    color-scheme: light dark;
+
+    --ground:      #F6F3F0;
+    --surface:     #FFFFFF;
+    --surface-2:   #EFEAE9;
+    --line:        #DDD4D8;
+    --line-strong: #C3B7BE;
+
+    --ink:         #221629;
+    --ink-2:       #4A3D52;
+    --ink-3:       #766A7C;
+
+    --accent:      #D62828;
+    --accent-ink:  #FFFFFF;
+
+    /* Straight from the game — the doc must not invent a second palette. */
+    --s-hp:  #2E9E5B;
+    --s-atk: #DA3450;
+    --s-def: #2C7CC4;
+    --s-spd: #B98200;
+    --s-mom: #7B3FCC;
+
+    --el-gaming:    #7B3FCC;
+    --el-tech:      #0F8E9C;
+    --el-knowledge: #A8760B;
+    --el-music:     #CC4076;
+    --el-comedy:    #C25610;
+    --el-lifestyle: #2E9E5B;
+    --el-unaligned: #6B7280;
+
+    --shadow: 0 1px 2px rgba(34, 22, 41, 0.06), 0 8px 24px -12px rgba(34, 22, 41, 0.18);
+
+    --display: ui-sans-serif, "Segoe UI Semibold", "Helvetica Neue", Arial, sans-serif;
+    --body: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #150E1F;
+      --surface:     #1E1530;
+      --surface-2:   #271C3C;
+      --line:        #362A4C;
+      --line-strong: #4C3D68;
+
+      --ink:         #F2ECF7;
+      --ink-2:       #C3B6D4;
+      --ink-3:       #8C7EA0;
+
+      --accent:      #FF5A5A;
+      --accent-ink:  #1A0E12;
+
+      --s-hp:  #4FD67F;
+      --s-atk: #FF5A72;
+      --s-def: #57B0FF;
+      --s-spd: #FFD166;
+      --s-mom: #B06CFF;
+
+      --el-gaming:    #B06CFF;
+      --el-tech:      #35D6E8;
+      --el-knowledge: #FFC44D;
+      --el-music:     #FF6BA8;
+      --el-comedy:    #FF8A3D;
+      --el-lifestyle: #4FD67F;
+      --el-unaligned: #8B93A7;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px -14px rgba(0, 0, 0, 0.8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #150E1F;
+    --surface:     #1E1530;
+    --surface-2:   #271C3C;
+    --line:        #362A4C;
+    --line-strong: #4C3D68;
+
+    --ink:         #F2ECF7;
+    --ink-2:       #C3B6D4;
+    --ink-3:       #8C7EA0;
+
+    --accent:      #FF5A5A;
+    --accent-ink:  #1A0E12;
+
+    --s-hp:  #4FD67F;
+    --s-atk: #FF5A72;
+    --s-def: #57B0FF;
+    --s-spd: #FFD166;
+    --s-mom: #B06CFF;
+
+    --el-gaming:    #B06CFF;
+    --el-tech:      #35D6E8;
+    --el-knowledge: #FFC44D;
+    --el-music:     #FF6BA8;
+    --el-comedy:    #FF8A3D;
+    --el-lifestyle: #4FD67F;
+    --el-unaligned: #8B93A7;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px -14px rgba(0, 0, 0, 0.8);
+  }
+
+  /* ── BASE ──────────────────────────────────────────────────────────────── */
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16.5px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 72px) clamp(18px, 4vw, 40px) 96px;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(40px, 6vw, 72px);
+  }
+
+  .prose { max-width: 68ch; }
+
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(34px, 6vw, 60px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(21px, 3vw, 27px);
+    line-height: 1.15;
+    letter-spacing: -0.012em;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.006em;
+  }
+
+  p { margin: 0; }
+  strong { font-weight: 680; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .lede { font-size: clamp(17px, 2.2vw, 20px); line-height: 1.5; color: var(--ink-2); }
+
+  section { display: flex; flex-direction: column; gap: 20px; }
+
+  .head { display: flex; flex-direction: column; gap: 7px; }
+
+  .rule { height: 1px; background: var(--line); border: 0; margin: 0; }
+
+  code, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  code {
+    font-size: 0.88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.08em 0.36em;
+  }
+
+  /* ── HERO ──────────────────────────────────────────────────────────────── */
+  .hero { display: flex; flex-direction: column; gap: 18px; }
+
+  .thesis {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px 14px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(19px, 3.2vw, 29px);
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    padding: 22px 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+  }
+  .thesis .vs { color: var(--accent); font-size: 0.72em; letter-spacing: 0.06em; }
+
+  /* ── CHAIN (derivation) ────────────────────────────────────────────────── */
+  .chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .chain-step {
+    flex: 1 1 170px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .chain-step .k {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .chain-step .v { font-weight: 660; font-size: 15px; line-height: 1.35; }
+  .chain-step .n { font-size: 13px; color: var(--ink-2); line-height: 1.42; }
+  .chain-step.is-pure { border-color: var(--line-strong); }
+
+  /* ── TABLES ────────────────────────────────────────────────────────────── */
+  .scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+
+  th, td { text-align: left; padding: 11px 15px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+    white-space: nowrap;
+    background: var(--surface-2);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.n, th.n { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  .statname { font-family: var(--mono); font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+  .s-hp { color: var(--s-hp); }
+  .s-atk { color: var(--s-atk); }
+  .s-def { color: var(--s-def); }
+  .s-spd { color: var(--s-spd); }
+  .s-mom { color: var(--s-mom); }
+
+  /* ── CLASS DOSSIERS ────────────────────────────────────────────────────── */
+  .dossiers { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+
+  .dossier {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    box-shadow: var(--shadow);
+  }
+
+  .dossier-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .dossier-top .share { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+
+  .verb {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 11px 13px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    border-left: 3px solid var(--dossier-hue, var(--ink-3));
+  }
+  .verb b { font-family: var(--mono); font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--dossier-hue, var(--ink)); }
+  .verb span { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+
+  .bars { display: flex; flex-direction: column; gap: 5px; }
+  .bar-row { display: grid; grid-template-columns: 34px 1fr 42px; align-items: center; gap: 9px; }
+  .bar-row .lbl { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; color: var(--ink-3); }
+  .bar-row .track { height: 7px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+  .bar-row .fill { height: 100%; border-radius: 999px; }
+  .bar-row .val { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+
+  .picks { display: flex; flex-direction: column; gap: 7px; font-size: 13.5px; }
+  .pick { display: flex; gap: 9px; align-items: baseline; }
+  .pick .who { font-weight: 640; }
+  .pick .why { color: var(--ink-3); font-family: var(--mono); font-size: 11.5px; }
+
+  .swings { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; line-height: 1.45; }
+  .swings div { display: flex; gap: 8px; }
+  .swings .mark { font-family: var(--mono); font-weight: 700; flex: none; }
+  .up .mark { color: var(--s-hp); }
+  .down .mark { color: var(--s-atk); }
+
+  /* ── ELEMENT RING ──────────────────────────────────────────────────────── */
+  .ring-wrap { display: grid; gap: 22px; grid-template-columns: minmax(280px, 420px) minmax(260px, 1fr); align-items: center; }
+  .ring-wrap svg { width: 100%; height: auto; display: block; }
+  .ring-legend { display: flex; flex-direction: column; gap: 9px; }
+  .legend-row { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .dot { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+
+  /* ── FORMULA ───────────────────────────────────────────────────────────── */
+  .formula { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .term {
+    flex: 1 1 128px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--term-hue, var(--line-strong));
+    border-radius: 3px;
+    padding: 12px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .term .t { font-family: var(--mono); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+  .term .r { font-family: var(--mono); font-size: 15px; font-weight: 700; }
+  .term .d { font-size: 12.5px; color: var(--ink-2); line-height: 1.4; }
+
+  /* ── CALLOUT ───────────────────────────────────────────────────────────── */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 3px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .callout .eyebrow { color: var(--accent); }
+
+  ol.steps { margin: 0; padding-left: 0; list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 11px; }
+  ol.steps li { counter-increment: step; display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: baseline; }
+  ol.steps li::before {
+    content: counter(step);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+    text-align: center;
+    padding: 1px 0;
+  }
+
+  footer { color: var(--ink-3); font-size: 13.5px; display: flex; flex-direction: column; gap: 6px; }
+
+  @media (max-width: 720px) {
+    .ring-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Creator Gacha · combat reference · 9 August 2026</div>
+    <h1>How a fight is decided</h1>
+    <p class="lede prose">
+      Every card in the game is built from three public numbers — subscribers, total views, video
+      count — plus the channel's age. This is the whole path from those numbers to a winner, with
+      real cards from the live 15,831-card deck as the worked examples.
+    </p>
+    <div class="thesis">
+      <span>Size buys a budget.</span>
+      <span class="vs">/</span>
+      <span>Shape decides the fight.</span>
+    </div>
+  </header>
+
+  <hr class="rule">
+
+  <!-- ── DERIVATION ──────────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Step one</div>
+      <h2>From a channel to a combatant</h2>
+    </div>
+    <p class="prose">
+      Nothing about a card is authored. The chain below runs the same way for every channel, in
+      the browser, every time — which is why two players on two devices always compute an
+      identical fight.
+    </p>
+
+    <div class="chain">
+      <div class="chain-step">
+        <span class="k">Input</span>
+        <span class="v">3 numbers + age</span>
+        <span class="n">subscribers, views, videos, and when the channel started.</span>
+      </div>
+      <div class="chain-step is-pure">
+        <span class="k">Six axes</span>
+        <span class="v">What it's like</span>
+        <span class="n">influence, maturity, punch, devotion, cadence, velocity — each 0–100.</span>
+      </div>
+      <div class="chain-step is-pure">
+        <span class="k">Budget</span>
+        <span class="v">How many points</span>
+        <span class="n">200 + 25 × influence. The largest channel alive gets ~1.32× the smallest.</span>
+      </div>
+      <div class="chain-step is-pure">
+        <span class="k">Shape</span>
+        <span class="v">Where they go</span>
+        <span class="n">the five axes as fractions of each other, summing to 1. Size cancels out.</span>
+      </div>
+      <div class="chain-step">
+        <span class="k">Output</span>
+        <span class="v">Five stats + class</span>
+        <span class="n">budget × share, per stat. The class is a <em>read</em> of the shape.</span>
+      </div>
+    </div>
+
+    <div class="callout prose">
+      <div class="eyebrow">Why the budget is nearly flat</div>
+      <p>
+        A 300M-subscriber channel receives about <strong>1.3× the points</strong> of a 1,000-subscriber
+        one — not 10×. If size bought both more health <em>and</em> more damage, no small card could
+        ever win and rarity would decide fights. Instead size buys a slightly bigger pot, and the
+        channel's own proportions decide what that pot is spent on.
+      </p>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th>Axis</th><th>Measures</th><th>Pays for</th><th>De-sized?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>influence</code></td>
+            <td>Subscriber count</td>
+            <td>The size of the budget only</td>
+            <td>— it <em>is</em> the size term</td>
+          </tr>
+          <tr>
+            <td><code>maturity</code></td>
+            <td>How long the channel has existed</td>
+            <td><span class="statname s-hp">HP</span></td>
+            <td>Not de-sized — age genuinely differs</td>
+          </tr>
+          <tr>
+            <td><code>punch</code></td>
+            <td>Views per upload</td>
+            <td><span class="statname s-atk">ATK</span></td>
+            <td>Yes — residual vs. its own size</td>
+          </tr>
+          <tr>
+            <td><code>devotion</code></td>
+            <td>Views per subscriber</td>
+            <td><span class="statname s-def">DEF</span></td>
+            <td>Yes — residual vs. its own size</td>
+          </tr>
+          <tr>
+            <td><code>cadence</code></td>
+            <td>Uploads per year</td>
+            <td><span class="statname s-spd">SPD</span></td>
+            <td>Yes — residual vs. its own size</td>
+          </tr>
+          <tr>
+            <td><code>velocity</code></td>
+            <td>Subscribers won per year</td>
+            <td><span class="statname s-mom">MOM</span></td>
+            <td>Yes — residual vs. its own size</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose">
+      <strong>"Residual" is the load-bearing word.</strong> An axis doesn't score raw views-per-video;
+      it scores the <em>gap</em> between this channel's views-per-video and what a channel of its
+      size normally manages. 50 means exactly on trend. Above 50 means punching above its weight.
+      That is why a 200K-subscriber channel whose videos land like a 5M one becomes genuinely
+      dangerous, and why a giant coasting on reach does not.
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── THE FIVE STATS ──────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Step two</div>
+      <h2>What the five stats actually do</h2>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Stat</th><th>In the fight</th><th>The catch</th><th class="n">Deck median</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="statname s-hp">HP</span></td>
+            <td>Damage it can absorb before it falls.</td>
+            <td>Does nothing offensively. A wall that cannot hit still loses.</td>
+            <td class="n">452</td>
+          </tr>
+          <tr>
+            <td><span class="statname s-atk">ATK</span></td>
+            <td>The base of every strike it makes.</td>
+            <td>The only stat that <em>creates</em> damage. Everything else multiplies it.</td>
+            <td class="n">110</td>
+          </tr>
+          <tr>
+            <td><span class="statname s-def">DEF</span></td>
+            <td>Reduces incoming damage on a curve: <code>110 / (110 + DEF)</code>.</td>
+            <td>Diminishing. Going from 0→110 halves damage; 110→220 only shaves a third more.</td>
+            <td class="n">104</td>
+          </tr>
+          <tr>
+            <td><span class="statname s-spd">SPD</span></td>
+            <td>Acts earlier, and may act <em>twice</em> in a round.</td>
+            <td>Saturates by design — even a perfect roll buys one extra swing.</td>
+            <td class="n">76</td>
+          </tr>
+          <tr>
+            <td><span class="statname s-mom">MOM</span></td>
+            <td>Adds this % of its own attack every round, up to +220%.</td>
+            <td>Worth nothing in round one, and nothing at all on a card with no attack.</td>
+            <td class="n">12</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout prose">
+      <div class="eyebrow">The trap worth understanding</div>
+      <p>
+        <span class="statname s-spd">SPD</span> and <span class="statname s-mom">MOM</span>
+        <strong>do not deal damage — they multiply an attack the card already owns.</strong> Because
+        the budget is zero-sum, spending heavily on them means having little attack left to
+        multiply. Two swings of a feeble attack still lose to one swing of a real one. This single
+        fact explains most of the balance work on this game.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── CLASSES ─────────────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Step three</div>
+      <h2>The six classes</h2>
+    </div>
+    <p class="prose">
+      A class is <strong>a read of the shape, not an input to it</strong>. Whichever stat takes the
+      biggest share of the budget names the card; if nothing stands out far enough, it is Balanced.
+      The class then grants one verb — a single rule, so a fight stays learnable. Numbers below are
+      medians across the live deck.
+    </p>
+
+    <div class="dossiers">
+
+      <article class="dossier" style="--dossier-hue: var(--s-hp);">
+        <div class="dossier-top"><h3>Titan</h3><span class="share">37.6% of deck</span></div>
+        <div class="verb"><b>Taunt</b><span>Enemy attacks aimed at its rank strike it instead. Assassins ignore this.</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:100%; background:var(--s-hp);"></span></span><span class="val">576</span></div>
+          <div class="bar-row"><span class="lbl">ATK</span><span class="track"><span class="fill" style="width:63%; background:var(--s-atk);"></span></span><span class="val">106</span></div>
+          <div class="bar-row"><span class="lbl">DEF</span><span class="track"><span class="fill" style="width:64%; background:var(--s-def);"></span></span><span class="val">95</span></div>
+          <div class="bar-row"><span class="lbl">SPD</span><span class="track"><span class="fill" style="width:44%; background:var(--s-spd);"></span></span><span class="val">64</span></div>
+          <div class="bar-row"><span class="lbl">MOM</span><span class="track"><span class="fill" style="width:43%; background:var(--s-mom);"></span></span><span class="val">10</span></div>
+        </div>
+        <div class="picks">
+          <div class="pick"><span class="who">MrBeast</span><span class="why">511M · HP 619 · crit 27%</span></div>
+          <div class="pick"><span class="who">Stokes Twins</span><span class="why">143M · HP 810 · rating 507</span></div>
+          <div class="pick"><span class="who">Mark Rober</span><span class="why">81M · ATK 149 · crit 32%</span></div>
+        </div>
+        <div class="swings">
+          <div class="up"><span class="mark">▲</span><span>Old channels. Age drives HP, so anything that has been around a decade lands here.</span></div>
+          <div class="down"><span class="mark">▼</span><span>Taunt drags every enemy attack onto it — durable, but it soaks so the others can work.</span></div>
+        </div>
+      </article>
+
+      <article class="dossier" style="--dossier-hue: var(--s-atk);">
+        <div class="dossier-top"><h3>Carry</h3><span class="share">23.8% of deck</span></div>
+        <div class="verb"><b>Execute</b><span>Deals 60% more to any target below 30% health.</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:68%; background:var(--s-hp);"></span></span><span class="val">392</span></div>
+          <div class="bar-row"><span class="lbl">ATK</span><span class="track"><span class="fill" style="width:100%; background:var(--s-atk);"></span></span><span class="val">168</span></div>
+          <div class="bar-row"><span class="lbl">DEF</span><span class="track"><span class="fill" style="width:76%; background:var(--s-def);"></span></span><span class="val">113</span></div>
+          <div class="bar-row"><span class="lbl">SPD</span><span class="track"><span class="fill" style="width:21%; background:var(--s-spd);"></span></span><span class="val">31</span></div>
+          <div class="bar-row"><span class="lbl">MOM</span><span class="track"><span class="fill" style="width:52%; background:var(--s-mom);"></span></span><span class="val">12</span></div>
+        </div>
+        <div class="picks">
+          <div class="pick"><span class="who">Bad Bunny</span><span class="why">53M · ATK 183 · crit 37%</span></div>
+          <div class="pick"><span class="who">The Weeknd</span><span class="why">40M · ATK 171 · rating 563</span></div>
+          <div class="pick"><span class="who">MrBeast Gaming</span><span class="why">59M · ATK 168 · crit 37%</span></div>
+        </div>
+        <div class="swings">
+          <div class="up"><span class="mark">▲</span><span>Few uploads, huge views each. Musicians dominate — an album's worth of videos, billions of plays.</span></div>
+          <div class="down"><span class="mark">▼</span><span>Slowest class in the game. It hits hardest and often hits last.</span></div>
+        </div>
+      </article>
+
+      <article class="dossier" style="--dossier-hue: var(--s-spd);">
+        <div class="dossier-top"><h3>Assassin</h3><span class="share">24.7% of deck</span></div>
+        <div class="verb"><b>Backstab</b><span>Ignores the front rank and hits the enemy's hardest hitter.</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:53%; background:var(--s-hp);"></span></span><span class="val">303</span></div>
+          <div class="bar-row"><span class="lbl">ATK</span><span class="track"><span class="fill" style="width:33%; background:var(--s-atk);"></span></span><span class="val">56</span></div>
+          <div class="bar-row"><span class="lbl">DEF</span><span class="track"><span class="fill" style="width:68%; background:var(--s-def);"></span></span><span class="val">101</span></div>
+          <div class="bar-row"><span class="lbl">SPD</span><span class="track"><span class="fill" style="width:100%; background:var(--s-spd);"></span></span><span class="val">146</span></div>
+          <div class="bar-row"><span class="lbl">MOM</span><span class="track"><span class="fill" style="width:61%; background:var(--s-mom);"></span></span><span class="val">14</span></div>
+        </div>
+        <div class="picks">
+          <div class="pick"><span class="who">PewDiePie</span><span class="why">110M · 4,665 vids · ATK 28</span></div>
+          <div class="pick"><span class="who">Kids Diana Show</span><span class="why">138M · SPD 119 · rating 431</span></div>
+          <div class="pick"><span class="who">Topper Guild</span><span class="why">94M · SPD 129 · rating 394</span></div>
+        </div>
+        <div class="swings">
+          <div class="up"><span class="mark">▲</span><span>Daily uploaders. Its verb is the counter to hiding a Carry behind a wall.</span></div>
+          <div class="down"><span class="mark">▼</span><span>Posting constantly costs views-per-video, so it reaches the enemy's best card with the weakest punch on the board.</span></div>
+        </div>
+      </article>
+
+      <article class="dossier" style="--dossier-hue: var(--s-def);">
+        <div class="dossier-top"><h3>Bulwark</h3><span class="share">5.2% of deck</span></div>
+        <div class="verb"><b>Aegis</b><span>While it holds the front rank, the whole back rank takes 25% less damage.</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:60%; background:var(--s-hp);"></span></span><span class="val">347</span></div>
+          <div class="bar-row"><span class="lbl">ATK</span><span class="track"><span class="fill" style="width:65%; background:var(--s-atk);"></span></span><span class="val">109</span></div>
+          <div class="bar-row"><span class="lbl">DEF</span><span class="track"><span class="fill" style="width:100%; background:var(--s-def);"></span></span><span class="val">149</span></div>
+          <div class="bar-row"><span class="lbl">SPD</span><span class="track"><span class="fill" style="width:58%; background:var(--s-spd);"></span></span><span class="val">84</span></div>
+          <div class="bar-row"><span class="lbl">MOM</span><span class="track"><span class="fill" style="width:35%; background:var(--s-mom);"></span></span><span class="val">8</span></div>
+        </div>
+        <div class="picks">
+          <div class="pick"><span class="who">The Police</span><span class="why">2.3M · DEF 149 · crit 34%</span></div>
+          <div class="pick"><span class="who">Summer Walker</span><span class="why">2.9M · DEF 136 · rating 436</span></div>
+          <div class="pick"><span class="who">Jay &amp; Sharon</span><span class="why">10.2M · DEF 139</span></div>
+        </div>
+        <div class="swings">
+          <div class="up"><span class="mark">▲</span><span>Enormous views-per-subscriber — an audience that watches everything. Rare, and mostly mid-sized.</span></div>
+          <div class="down"><span class="mark">▼</span><span>Two Bulwarks don't stack. Aegis only works from the front, where it is most exposed.</span></div>
+        </div>
+      </article>
+
+      <article class="dossier" style="--dossier-hue: var(--s-mom);">
+        <div class="dossier-top"><h3>Riser</h3><span class="share">4.7% of deck</span></div>
+        <div class="verb"><b>Snowball</b><span>Its momentum ramp counts double.</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:48%; background:var(--s-hp);"></span></span><span class="val">278</span></div>
+          <div class="bar-row"><span class="lbl">ATK</span><span class="track"><span class="fill" style="width:69%; background:var(--s-atk);"></span></span><span class="val">116</span></div>
+          <div class="bar-row"><span class="lbl">DEF</span><span class="track"><span class="fill" style="width:25%; background:var(--s-def);"></span></span><span class="val">37</span></div>
+          <div class="bar-row"><span class="lbl">SPD</span><span class="track"><span class="fill" style="width:60%; background:var(--s-spd);"></span></span><span class="val">88</span></div>
+          <div class="bar-row"><span class="lbl">MOM</span><span class="track"><span class="fill" style="width:100%; background:var(--s-mom);"></span></span><span class="val">23</span></div>
+        </div>
+        <div class="picks">
+          <div class="pick"><span class="who">Cristiano</span><span class="why">83M · MOM 35 · HP 92</span></div>
+          <div class="pick"><span class="who">MrBeast 2</span><span class="why">60M · MOM 22 · crit 35%</span></div>
+          <div class="pick"><span class="who">English with Lucy</span><span class="why">14M · MOM 22</span></div>
+        </div>
+        <div class="swings">
+          <div class="up"><span class="mark">▲</span><span>Won its audience fast. Survive to round four and it is hitting for triple.</span></div>
+          <div class="down"><span class="mark">▼</span><span>Buys the ramp with toughness — lowest DEF of any class. Often dead before the ramp pays.</span></div>
+        </div>
+      </article>
+
+      <article class="dossier" style="--dossier-hue: var(--accent);">
+        <div class="dossier-top"><h3>Balanced</h3><span class="share">3.9% of deck</span></div>
+        <div class="verb"><b>Adaptive</b><span>Has no special, and carries +8% on every stat instead.</span></div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:71%; background:var(--s-hp);"></span></span><span class="val">408</span></div>
+          <div class="bar-row"><span class="lbl">ATK</span><span class="track"><span class="fill" style="width:71%; background:var(--s-atk);"></span></span><span class="val">120</span></div>
+          <div class="bar-row"><span class="lbl">DEF</span><span class="track"><span class="fill" style="width:78%; background:var(--s-def);"></span></span><span class="val">116</span></div>
+          <div class="bar-row"><span class="lbl">SPD</span><span class="track"><span class="fill" style="width:68%; background:var(--s-spd);"></span></span><span class="val">99</span></div>
+          <div class="bar-row"><span class="lbl">MOM</span><span class="track"><span class="fill" style="width:61%; background:var(--s-mom);"></span></span><span class="val">14</span></div>
+        </div>
+        <div class="picks">
+          <div class="pick"><span class="who">BLACKPINK</span><span class="why">101M · rating 521</span></div>
+          <div class="pick"><span class="who">Vlad and Niki</span><span class="why">150M · rating 480</span></div>
+          <div class="pick"><span class="who">Like Nastya</span><span class="why">133M · rating 503</span></div>
+        </div>
+        <div class="swings">
+          <div class="up"><span class="mark">▲</span><span>No axis stands more than 4.5 points above an even split. Rarest class in the game.</span></div>
+          <div class="down"><span class="mark">▼</span><span>No verb at all. It wins on raw numbers or not at all.</span></div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── ELEMENTS ────────────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Step four</div>
+      <h2>The element ring</h2>
+    </div>
+    <p class="prose">
+      Element comes from what a channel is <em>about</em>, not how big it is — the only signal in the
+      game that isn't a re-expression of the three numbers. Each element beats the next one round
+      the ring and loses to the one before it. Attacking into an advantage is <strong>×1.25</strong>;
+      into a disadvantage, <strong>×0.8</strong>. Unaligned neither counters nor is countered.
+    </p>
+
+    <div class="ring-wrap">
+      <svg viewBox="0 0 320 320" role="img" aria-label="The six elements arranged in a ring, each beating the next clockwise">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.55" marker-end="url(#arrow)" color="var(--ink-3)">
+          <path d="M 178 46 A 120 120 0 0 1 264 116"></path>
+          <path d="M 272 148 A 120 120 0 0 1 240 250"></path>
+          <path d="M 212 274 A 120 120 0 0 1 110 276"></path>
+          <path d="M 80 252 A 120 120 0 0 1 46 150"></path>
+          <path d="M 54 118 A 120 120 0 0 1 138 46"></path>
+          <path d="M 152 40 A 120 120 0 0 1 170 40"></path>
+        </g>
+        <g font-family="ui-monospace, monospace" font-size="12.5" font-weight="700" text-anchor="middle">
+          <g><circle cx="160" cy="36" r="27" fill="var(--el-gaming)"></circle><text x="160" y="41" fill="#fff">GAME</text></g>
+          <g><circle cx="267" cy="98" r="27" fill="var(--el-tech)"></circle><text x="267" y="103" fill="#fff">TECH</text></g>
+          <g><circle cx="267" cy="222" r="27" fill="var(--el-knowledge)"></circle><text x="267" y="227" fill="#241629">KNOW</text></g>
+          <g><circle cx="160" cy="284" r="27" fill="var(--el-music)"></circle><text x="160" y="289" fill="#fff">MUSIC</text></g>
+          <g><circle cx="53" cy="222" r="27" fill="var(--el-comedy)"></circle><text x="53" y="227" fill="#fff">FUNNY</text></g>
+          <g><circle cx="53" cy="98" r="27" fill="var(--el-lifestyle)"></circle><text x="53" y="103" fill="#fff">LIFE</text></g>
+        </g>
+      </svg>
+
+      <div class="ring-legend">
+        <div class="legend-row"><span class="dot" style="background:var(--el-gaming);"></span><span><strong>Gaming</strong> beats Tech — <span class="num">10.7%</span> of deck</span></div>
+        <div class="legend-row"><span class="dot" style="background:var(--el-tech);"></span><span><strong>Tech</strong> beats Knowledge — <span class="num">3.6%</span></span></div>
+        <div class="legend-row"><span class="dot" style="background:var(--el-knowledge);"></span><span><strong>Knowledge</strong> beats Music — <span class="num">10.6%</span></span></div>
+        <div class="legend-row"><span class="dot" style="background:var(--el-music);"></span><span><strong>Music</strong> beats Comedy — <span class="num">47.5%</span></span></div>
+        <div class="legend-row"><span class="dot" style="background:var(--el-comedy);"></span><span><strong>Comedy</strong> beats Lifestyle — <span class="num">10.5%</span></span></div>
+        <div class="legend-row"><span class="dot" style="background:var(--el-lifestyle);"></span><span><strong>Lifestyle</strong> beats Gaming — <span class="num">14.7%</span></span></div>
+        <div class="legend-row"><span class="dot" style="background:var(--el-unaligned);"></span><span><strong>Unaligned</strong> — neutral both ways — <span class="num">2.3%</span></span></div>
+      </div>
+    </div>
+
+    <p class="prose">
+      <strong>Music is nearly half the deck</strong>, which makes Knowledge cards quietly valuable
+      (they beat Music) and Comedy cards quietly awkward (Music beats them). That imbalance is a
+      property of who has a Wikipedia entry, not a design choice.
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── ONE ATTACK ──────────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Step five</div>
+      <h2>One attack, term by term</h2>
+    </div>
+    <p class="prose">
+      Every strike in the game is a single product. Attack is the only term that creates damage;
+      the rest scale it up or down.
+    </p>
+
+    <div class="formula">
+      <div class="term" style="--term-hue: var(--s-atk);">
+        <span class="t">Base</span><span class="r">ATK</span>
+        <span class="d">The attacker's attack stat.</span>
+      </div>
+      <div class="term" style="--term-hue: var(--s-mom);">
+        <span class="t">× Ramp</span><span class="r">1 → 3.2</span>
+        <span class="d">Momentum, compounding each round. Doubled for a Riser, capped at +220%.</span>
+      </div>
+      <div class="term" style="--term-hue: var(--s-def);">
+        <span class="t">× Mitigation</span><span class="r">110/(110+DEF)</span>
+        <span class="d">The defender's armour. At DEF 110 it halves the hit.</span>
+      </div>
+      <div class="term" style="--term-hue: var(--el-music);">
+        <span class="t">× Element</span><span class="r">0.8 / 1 / 1.25</span>
+        <span class="d">Ring matchup. Unaligned is always 1.</span>
+      </div>
+      <div class="term" style="--term-hue: var(--ink-3);">
+        <span class="t">× Situation</span><span class="r">0.85 / 0.75 / 1.6</span>
+        <span class="d">Reaching from the back rank, Aegis cover, or a Carry executing.</span>
+      </div>
+      <div class="term" style="--term-hue: var(--s-spd);">
+        <span class="t">× Swing</span><span class="r">0.75 – 1.25</span>
+        <span class="d">The luck dial. ±25% on every single hit.</span>
+      </div>
+      <div class="term" style="--term-hue: var(--accent);">
+        <span class="t">× Crit</span><span class="r">1.6</span>
+        <span class="d">On a roll under the card's crit chance — 5% to 45%.</span>
+      </div>
+    </div>
+
+    <div class="callout prose">
+      <div class="eyebrow">Where crit comes from</div>
+      <p>
+        Crit is <strong>mostly punch, a little speed</strong>:
+        <code>0.05 + 0.95 × punch share + 0.20 × speed share</code>, capped at 45%. A critical hit
+        means a video that landed far above this channel's normal — so it belongs on
+        views-per-upload, not on how often someone posts. A small channel whose uploads
+        overperform its subscriber count is the most dangerous thing in the game per point of
+        budget.
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── THE ROUND ───────────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Step six</div>
+      <h2>How a round runs</h2>
+    </div>
+
+    <div class="prose">
+      <ol class="steps">
+        <li><span><strong>Roll extra actions.</strong> Every living unit gets one turn; fast ones may earn a second, rolled once at the top of the round.</span></li>
+        <li><span><strong>Sort.</strong> Fastest first. All second actions come after all first actions — "everyone acts, then the quick ones act again" is something a player can follow while watching.</span></li>
+        <li><span><strong>Each unit picks a target.</strong> An Assassin ignores the wall and takes the enemy's highest-attack card in the back. Otherwise only the front rank is reachable while any of it stands, and a living Titan in that rank absorbs the hit.</span></li>
+        <li><span><strong>Damage resolves</strong> by the product above, minimum 1.</span></li>
+        <li><span><strong>Repeat</strong> until one side is wiped, or 30 rounds pass. Real fights end in about six.</span></li>
+      </ol>
+    </div>
+
+    <h3>Two rules that live at the team level</h3>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Rule</th><th>Effect</th><th>Why it exists</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Rows</strong><br><span class="num" style="color:var(--ink-3); font-size:12.5px;">2 front · 3 back</span></td>
+            <td>The back rank is unreachable until the front falls, but attacks <em>from</em> the back cost 15%.</td>
+            <td>Placement becomes a real decision: safety is paid for in damage.</td>
+          </tr>
+          <tr>
+            <td><strong>Formation bonus</strong><br><span class="num" style="color:var(--ink-3); font-size:12.5px;">4 classes +2.5% · 5 classes +5%</span></td>
+            <td>Applied to every stat on every unit in the team.</td>
+            <td>It is the one advantage a per-card rating cannot see — which is exactly why Auto-pick can't find it and you can.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose">
+      That bonus is larger than it looks. A lift on every stat raises both health <em>and</em>
+      damage, so a nominal +5% is closer to +10% of real fighting strength.
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── WORKED EXAMPLE ──────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Putting it together</div>
+      <h2>Three real cards, and why they differ</h2>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th>Card</th><th class="n">Subs</th><th class="n">Videos</th><th class="n">Views/video</th>
+            <th>Class</th><th class="n">HP</th><th class="n">ATK</th><th class="n">Crit</th><th class="n">Rating</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>MrBeast</strong></td>
+            <td class="n">511M</td><td class="n">995</td><td class="n">137M</td>
+            <td>Titan</td><td class="n">619</td><td class="n">106</td><td class="n">27%</td><td class="n">470</td>
+          </tr>
+          <tr>
+            <td><strong>Bad Bunny</strong></td>
+            <td class="n">53M</td><td class="n">190</td><td class="n">257M</td>
+            <td>Carry</td><td class="n">474</td><td class="n">183</td><td class="n">37%</td><td class="n">548</td>
+          </tr>
+          <tr>
+            <td><strong>PewDiePie</strong></td>
+            <td class="n">110M</td><td class="n">4,665</td><td class="n">6.3M</td>
+            <td>Assassin</td><td class="n">641</td><td class="n">28</td><td class="n">17%</td><td class="n">265</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="prose">
+      <strong>Bad Bunny out-rates MrBeast with a tenth of the subscribers.</strong> His 190 videos
+      average 257M views each against MrBeast's 137M — so his punch residual is far higher, which
+      buys attack and, now, crit. Size bought MrBeast a marginally bigger budget and a decade of
+      age bought him health; neither is worth as much as landing twice as hard per upload.
+    </p>
+    <p class="prose">
+      <strong>PewDiePie is the clearest illustration of the whole design.</strong> 110M subscribers
+      and one of the largest view counts on the platform — but spread across 4,665 videos, which is
+      6.3M per upload against what a 110M-subscriber channel is expected to manage. His punch
+      residual sits on the floor. He is old, so he is tough: HP 641, the highest of the three. He is
+      prolific, so he is fast: SPD 160. And he hits for 28. That is not a bug — it is the model
+      saying, accurately, that this is a channel whose recent uploads underperform its own audience.
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ── KNOWN GAPS ──────────────────────────────────────────────────────── -->
+  <section>
+    <div class="head">
+      <div class="eyebrow">Honest notes</div>
+      <h2>What is still wrong</h2>
+    </div>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Issue</th><th class="n">Measured</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Assassin is underpowered</strong></td>
+            <td class="n">rating 249<br>vs Carry 462</td>
+            <td>A quarter of the deck rates at half of everything else. Speed saturates by construction, and crit moved away from it.</td>
+          </tr>
+          <tr>
+            <td><strong>Two classes barely exist</strong></td>
+            <td class="n">Bulwark 5.2%<br>Riser 4.7%</td>
+            <td>The specialist margin rarely triggers on defence or momentum, so four of six classes are uncommon.</td>
+          </tr>
+          <tr>
+            <td><strong>Picking is close to solved</strong></td>
+            <td class="n">78% win rate</td>
+            <td>Both "highest rating" and "most diverse" sit near 78%, against a 65% healthy ceiling.</td>
+          </tr>
+          <tr>
+            <td><strong>Matchmaker runs cold</strong></td>
+            <td class="n">33.3%</td>
+            <td>An "even" match is won by the player a third of the time — just inside the 30% floor.</td>
+          </tr>
+          <tr>
+            <td><strong>Variance is invisible</strong></td>
+            <td class="n">—</td>
+            <td>"A few bangers and many duds" and "uniformly strong" produce identical views-per-video. Telling them apart needs per-video data costing ~67× the entire build's quota.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <hr class="rule">
+    <p>Every number here was measured against the live Core Set — 15,831 cards — with
+      <code>node tools/battle-balance.js</code>, not estimated.</p>
+    <p>Engine: <code>src/engine/battle-stats.js</code>, <code>battle.js</code>, <code>element.js</code>.
+      Tuning knobs print at the end of every balance run.</p>
+  </footer>
+
+</div>

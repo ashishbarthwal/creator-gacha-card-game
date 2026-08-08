@@ -3416,3 +3416,97 @@ there are still no accounts, cookies or analytics.
 **What is NOT covered by this amendment**, and needs its own decision if ever wanted:
 relaying battle codes, lobbies, matchmaking, accounts, persistence of anything, or any
 endpoint that receives channel data. The amendment is presence and nothing else.
+
+## The presence entry above is out of date, and the correction is the point (2026-08-09)
+
+The section above says the endpoint "is never sent a card, a channel, a statistic, a name, a
+collection or a battle code". That was true of the first cut and stopped being true the same
+day, when the defender's reply code had to reach the challenger without a second copy-paste.
+`CLAUDE.md` and `privacy.html` were both updated; this file was not, so for a day the
+project's decision log contradicted its own running code.
+
+Left standing rather than edited away, because the reasoning above is still the reasoning —
+what changed is one fact inside it. **What the endpoint holds is a room id, two booleans, a
+timestamp and one reply code, for ten minutes.** What it still never receives is an account,
+an identity, or a collection beyond the five cards someone chose to field. The 30-day cap
+objection that originally ruled the code out was simply wrong: the cap is a MAXIMUM AGE and
+ten minutes is comfortably inside it.
+
+## Readiness is something a person does, not something a server infers (2026-08-09)
+
+The bug: two players sat in a lobby, neither had pressed Ready, and both screens reported the
+defender as ready — the challenger saw "they are ready", the defender saw "you are ready".
+
+Nothing was corrupt. The server had one op, `ready`, and it was the only way to upload a
+team, so committing a team flipped a readiness flag as a side effect. The defender was marked
+ready on leaving the builder, before the lobby had rendered. Worse than the wrong lamp: the
+challenger pressing Ready was then enough to stamp `bothAt` and start a fight the defender
+had never agreed to.
+
+**Split into two ops: `team` (here are my five) and `ready` (I am ready to watch).** The
+endpoint header had asserted that "pressing Ready IS committing the team", and that was true
+of the original copy-paste flow — it stopped being true the moment the lobby grew a Ready
+button of its own, and nobody reconciled the two ideas.
+
+`ready` now also gates BOTH sides on a code existing, where it used to gate only the
+challenger. That was half a rule: a defender marked ready with no code on the server is a
+room that is ready and unfightable. And `team` now sets `accepted` too, because committing a
+team implies having accepted — which heals a lost `accept` instead of leaving the challenger
+watching a room that will never flip.
+
+## A dropped request is not a missing lobby (2026-08-09)
+
+Challenging from a phone did not work, and the shape of the failure is worth keeping.
+
+`presence.js` returned one value, `OFFLINE`, for every non-answer: a five-second timeout, an
+aborted fetch, a dead connection, and the server saying "no KV namespace bound". The
+challenger's wait loop read that as settled and **stopped polling permanently**.
+
+Only the challenger has to leave the app — to paste their code into a chat. Mobile browsers
+freeze a backgrounded tab and tear down its in-flight requests, so switching to WhatsApp
+killed the poll, the loop concluded there was no lobby anywhere, and the acceptance arrived
+at a screen that had stopped listening. Phone-as-defender never hit it: they receive the code
+elsewhere and switch INTO the browser. Desktop-as-challenger never hit it: desktop tabs are
+not frozen.
+
+**Two outcomes, not one.** `off` is settled — ask again and the answer is the same, so fall
+back for good. `error` is one request that did not complete, which says nothing about whether
+a lobby exists, so keep trying. One field of difference, and the difference is whether the
+caller gives up.
+
+Both poll loops now survive transient failure, both wake immediately on `visibilitychange`
+rather than waiting out a timer mobile has throttled to once a minute, and `Ready` retries
+once — an unreported Ready is worse than a slow one, because the other side waits forever on
+a player who believes they already pressed.
+
+## Nobody is zero at anything, and crit belongs on punch (2026-08-09)
+
+Two changes to the derivation, both found by playing rather than by reading.
+
+**The floor.** The four residual axes clamped to `[0, 100]`, and an axis that fell off the
+bottom scored a literal 0 — which is a 0% share, which is a stat of 1. Measured: **3.7% of
+the deck sat at punch 0**, roughly 590 real channels walking into a fight with an attack of
+ONE. They could not win, and no amount of speed or crit rescued them, because both multiply
+an attack that has to already exist. Those are real creators — typically the daily grinder
+whose views-per-video is modest precisely BECAUSE they upload constantly. A residual measured
+against a trend means *below average*, not *absent*, so the axes now floor at 12. Small cards
+out-rating the median giant went 22.1% → 29.5%.
+
+**Crit moved from cadence to punch.** It rode on the SPD share, on the theory that a spiky,
+high-cadence profile should occasionally spike. But cadence measures how OFTEN someone posts,
+and that is not what a critical hit is. A critical hit is a video that lands far above this
+channel's normal — the views-per-upload residual. Now `0.05 + 0.95 × punch + 0.20 × spd`,
+capped at 45%. Speed keeps a share, because stripping crit from Assassins entirely leaves
+that class holding only the bonus the balance pass already recorded as saturating.
+
+**The limit, stated rather than implied:** this cannot see variance. "A few bangers and a lot
+of duds" and "uniformly strong uploads" produce identical views-per-video, and separating
+them needs per-video statistics costing ~67x the entire build's quota. It is a proxy for
+spikiness, not a measurement of it.
+
+**The knobs are now exported.** `STAT_TUNING` and `BATTLE_TUNING` are frozen objects listing
+every tunable, and `tools/battle-balance.js` prints them live rather than keeping a copy — a
+tuning report whose numbers have drifted from the engine is a confident lie, consulted
+precisely when someone is about to change one of them. The tool also grew a per-class table,
+because "median ATK 110" describes a card that does not exist; tuning happens per archetype.
+It immediately showed the open problem: **Assassin rates 249 against Carry's 462.**
