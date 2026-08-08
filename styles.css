@@ -3483,10 +3483,18 @@
   }
 
   /* ── THE BATTLE CARD ────────────────────────────────────────────────────── */
+  /* THE RATIO IS A FLOOR, NOT A GUILLOTINE. `aspect-ratio` alone sets the height
+     from the width and then lets anything taller overflow — and since
+     `.bcard-inner` clips, "overflow" meant a stat row sliced through the middle.
+     A card that shows three and a half of its five stats is worse than an ugly
+     card: it silently misreports what a unit is. `min-height: max-content` makes
+     the height the LARGER of the ratio and what the card actually contains, so
+     the shape is kept whenever it can be and abandoned when it cannot. */
   .bcard {
     container-type: inline-size;
     position: relative;
     aspect-ratio: 5 / 7.4;
+    min-height: max-content;
     border-radius: clamp(9px, 5cqw, 16px);
     padding: clamp(2px, 1.4cqw, 4px);
     background: conic-gradient(from 210deg,
@@ -3498,7 +3506,10 @@
 
   .bcard-inner {
     position: relative;
-    height: 100%;
+    /* `min-height` rather than `height` so the inner can grow past the ratio and
+       carry the card with it — with a fixed height it would clip its own content
+       no matter how much room the outer card was willing to give. */
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     gap: clamp(2px, 1.2cqw, 5px);
@@ -3720,14 +3731,22 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   }
 
-  /* ── card at small widths: shed detail rather than shear it ─────────────── */
+  /* ── card at small widths: shed PROSE, never numbers ────────────────────── */
   @container (max-width: 168px) {
     .bability { display: none; }
     .bsubs { display: none; }
   }
   @container (max-width: 124px) {
-    .bstat.s-mom,
-    .bstat.s-def { display: none; }
+    /* DEF and MOM used to be dropped here, and that was the wrong thing to shed.
+       The ability text and the subscriber line are commentary — a player who
+       loses them loses flavour. The five stats ARE the card: they are what the
+       fight is computed from and the only reason to look at it during one, and a
+       card showing three of them is a card lying about a unit. So the stats stay
+       at every width, and the type tightens to make room instead. */
+    .bstat { grid-template-columns: clamp(15px, 9cqw, 26px) 1fr clamp(17px, 11cqw, 32px); gap: 3px; }
+    .bstat em { font-size: 6px; letter-spacing: 0.2px; }
+    .bstat b { font-size: 7.5px; }
+    .bstat .bar { height: 3.5px; }
     .cls-chip { font-size: 7px; padding: 1px 4px; }
   }
 
@@ -3735,6 +3754,15 @@
     .arena-head h2 { font-size: 18px; }
     .ar-pool { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
     .ar-readout { margin-left: 0; flex-basis: 100%; }
+
+    /* TALLER ON A PHONE, because width is the scarce axis and height is not.
+       A phone card is ~92-130px wide, and at 5/7.4 that bought roughly 140px of
+       height for content that wants closer to 150 — so the ratio, not the
+       content, was what pushed MOM off the bottom. Height costs nothing here:
+       the arena already scrolls vertically, and nothing sits beside a card that
+       a taller card would crowd. The stat block gets its room, and the portrait
+       keeps its proportions instead of being squeezed to make space. */
+    .bcard { aspect-ratio: 5 / 8.2; }
 
     /* THE BACK RANK MUST FIT IN ONE ROW. Three slots at the desktop minimum
        (104px + 10px gaps) need 332px, which overflows a 360px phone once the
