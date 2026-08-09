@@ -5,28 +5,34 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,833 cards**
-(deployed 2026-08-05, commit `e509076`) — every staged institution permanently cut, series
-numbering retired. See "Core Set replaces Series 1" below. (This section was stale until now —
-the deploy happened but the doc was never updated after it.)
-**Next:** WP-Ruby Tier — **built and tested, not yet deployed.** A genuine sixth rarity band,
-internal key `RUBY`, for 100M+ subscriber channels — displayed as **Red Diamond Play Button**
-(UR's band is the real Ruby Play Button, 50M; names were swapped 2026-08-07 after Ash asked
-whether "Ruby" was even the right call — see DECISIONS.md), fully decoupled from UR's weight.
-The old UR band (31 cards) splits into UR 22 / RUBY 9 on a fresh local build
-(`sets/built/core.json`, 2026-08-06/07). Full reveal-FX escalation (ignition/discharge/aura,
-frame ember, holo sheen — all in `styles.css`) and card-frame tokens (`.r-RUBY`, dark blood-red
-after the naming fix) are in; 425 tests pass. Deploy needs `npx wrangler pages deploy _site
---project-name=creator-gacha --branch=main && node tools/record-deploy.js`, pending Ash's
-go-ahead. See below.
-Separately: WP12's battle system engine is built and tested with a playable prototype at
-`prototype/index.html` (local only); the in-app UI is still missing.
+**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,831 cards**
+(snapshot **2026-08-06** — that is what the CDN is serving). A fresh hydrate ran **2026-08-09**
+and `sets/built/core.json` is now stamped 2026-08-09, same 15,831 cards, 4 candidates vanished
+— but **that is a local file until `npm run deploy` uploads it.** Building resets the clock on
+this machine; deploying is what resets it for players. Both were 3 days old at the time, well
+inside the 25-day cadence, so nothing was at risk either way.
+Everything below that was once "built, not deployed" has shipped:
+**RUBY** went live 2026-08-07 (`da4a635`), and the **arena** — battles, the team builder and
+the two-player lobby — went live 2026-08-08 (`7c2fa72`). 452 tests pass.
+
+**This file was stale until 2026-08-09** and the correction is worth recording rather than
+quietly overwriting: three separate sections still read "not yet deployed" for work that had
+been on the public site for days, and one open finding had already been acted on. The receipts
+are the exhibit here, so a checklist that disagrees with the deploy log is a defect in its own
+right.
+
+**Next:** refit `VELOCITY_TREND` against **real** channel ages. It is the last constant in
+`engine/battle-stats.js` still fitted against a synthetic age profile — the file says so itself
+and names the trigger: "refit after the first build that ships `publishedAt`". That build
+happened on 2026-08-05, so the trigger has fired and the refit has not. `punch`, `devotion` and
+`cadence` were all refitted against the live deck on 2026-08-08; velocity is the odd one out.
+Measure with `node tools/battle-balance.js`, never by argument.
 
 ---
 
 ## Open
 
-### WP-Ruby Tier — a real sixth band for 100M+ (built 2026-08-07, not yet deployed)
+### WP-Ruby Tier — a real sixth band for 100M+ (LIVE 2026-08-07)
 Started as "should UR be rarer" (Ash: pulling MrBeast should be a YOOOO moment). A first-pass
 continuous within-UR skew was considered and set aside: it dilutes as the UR roster grows, since
 the whole band still gets a fixed share of pulls no matter how many cards sit in it. Built instead
@@ -52,12 +58,16 @@ already loop generically over `RARITY_ORDER`, so almost no new pull logic was ne
       with the other bands, so RUBY is excluded from that parity check and UR's own tolerance
       widened slightly (10% → 15%) now that a 6th band thins its share too.
 - [X] Local rebuild: UR 22 / RUBY 9 (split from the old 31-card UR band). 425 tests pass.
-- [ ] **Not yet deployed.** Needs `tools/build-site.js` + `wrangler pages deploy` — independent
-      of the Core Set data deploy. The live site still runs the old flat-UR pull table and card
-      frame until this ships.
-- [ ] `test/gacha.test.js`/`test/core.test.js` cover the new band, but nobody has looked at the
-      reveal animation or the collection-grid RUBY card in a real browser yet — do that before
-      calling the visual side done.
+- [X] **Deployed 2026-08-07** (`da4a635`, "Record deploy: RUBY admire-screen visuals live") —
+      core, 15,831 cards, composition unchanged by the deploy itself. The live site runs the
+      six-band pull table and the `.r-RUBY` frame.
+- [X] **The admire screen** (`f29abd1`) — gem-cut refinements and a museum-display sequence,
+      plus stars on it (`0969fbe`), which is the one thing moving on a phone at that moment.
+      Two card-finish fixes landed alongside: the black cutout ring (`bc79e63`) and a mobile
+      holo rework that dropped gyro tilt (`69982a7`).
+- [ ] Nobody has looked at the reveal animation or the collection-grid RUBY card in a real
+      browser **since the finish rework**. The band itself is covered by
+      `test/gacha.test.js`/`test/core.test.js`; the visuals are not testable from the suite.
 
 ### WP10 — Deploy + README
 - [X] **Netlify direct upload + live link.** LIVE at https://creator-gacha.netlify.app
@@ -123,20 +133,24 @@ already loop generically over `RARITY_ORDER`, so almost no new pull logic was ne
       already-updated hydrate path (`CHANNEL_PARTS` requests `topicDetails`, `setbuild.js` keeps
       `publishedAt`), so the new `sets/built/core.json` carries **real dates on 100% of cards**
       and **real elements** (`node tools/battle-balance.js` no longer synthesizes anything).
-- [ ] **New finding from real data, not yet acted on:** cadence and devotion now correlate with
-      channel size at 0.42 and 0.35 — both above the tool's own ~0.25 "stopped being size-free"
-      flag. Every balance THRESHOLD still passes (largest class 40.6%, power ratio 1.15, small-
-      out-rating-giant 21.8%, win rate 60.6%), so nothing is broken, but the anchors were tuned
-      against synthesized ages and real ages read differently (median maturity 65 vs. the
-      synthetic 51 — the deck skews older than assumed). Worth a deliberate retune pass; not
-      done as a side effect of this rebuild.
-- [ ] **Not yet deployed.** `sets/built/core.json` is local only — `npm run deploy` (the
-      `wrangler pages deploy` step) needs a separate go-ahead before real users see this.
+- [X] **The size-correlation finding was acted on** (2026-08-08, `662fd73`). Cadence and
+      devotion correlated with channel size at 0.42 and 0.35, well past the tool's ~0.25
+      "stopped being size-free" flag — so both were de-sized against Influence the same way
+      `punch` always had been, with `DEVOTION_TREND`/`CADENCE_TREND` fitted on the live deck
+      and then frozen. Measured after: devotion **-0.013**, cadence **0.027**. Those two feed
+      DEF and SPD, so this was the single biggest way size still bought power, and it is also
+      why picking a team by subscriber count used to work.
+- [X] **Deployed 2026-08-05** (`e509076`, "WP-Core Set: … deploy").
 
-### WP12 — Battle system — engine done, no UI
-5v5, auto-resolved, against an AI matched to the player's own team power. Client-side only, so
-locked decision 3 is untouched. Rationale and the three measured failures behind the design are
-in DECISIONS.md.
+### WP12 — Battle system — LIVE 2026-08-08
+5v5, auto-resolved, against an AI matched to the player's own team power. Rationale and the
+three measured failures behind the design are in DECISIONS.md.
+
+**This section used to say "client-side only, so locked decision 3 is untouched", and that
+stopped being true on 2026-08-08.** Decision 3 was *amended* — not overturned — for exactly one
+file: `functions/api/ready/[room].js`, a two-player lobby holding one match under a hashed room
+id for ten minutes. It must stay optional, and it is: no KV binding, a failed request or being
+offline all fall back to the copy-paste flow the arena shipped with.
 - [X] **`engine/battle-stats.js`** — channel → five size-free axes → HP/ATK/DEF/SPD/MOM + class.
       Size buys a compressed *budget*; shape decides where it goes, so rarity does not decide
       the fight.
@@ -156,21 +170,85 @@ in DECISIONS.md.
 - [X] **`tools/battle-balance.js`** — measures the engine against the real deck: axis spread and
       size-correlation, class and element mix, the size claims, fight length and matchmaker
       fairness. The test block says "still true"; this says "how true, and where".
-- [X] **83 tests** across `battle` and `element`, including a balance block that asserts the
-      design goals rather than hoping. Current live-deck figures: attack flat with size at 1.02,
-      power median ratio 1.15, small cards out-rating the median giant 32.0%, even-match win rate
-      ~44-50%, median fight 6 rounds.
+- [X] **117 tests** across `battle` and `element` (452 in the suite overall), including a balance
+      block that asserts the design goals rather than hoping. Figures below are measured against
+      the **2026-08-09 rebuild** with `node tools/battle-balance.js`, not carried over: attack
+      flat with size at **0.94**, power median ratio **1.13**, small cards out-rating the median
+      giant **29.5%**, even-match win rate **37.2%**, median fight **6** rounds, 100% decided by
+      elimination.
+- [X] **All five axes are size-free on real data** — the thing the residual trends exist to
+      guarantee, now confirmed against real ages rather than synthetic ones. `corr(size)`:
+      maturity 0.189, punch -0.004, devotion -0.027, cadence 0.038, velocity -0.058, all well
+      inside the ~0.25 flag. The 2026-08-08 de-sizing of devotion and cadence holds up.
 - [X] **A playable prototype** — `prototype/index.html`. Five packs each side, the opposition
       commits first so you build against something visible, formation, and the event log replayed
       on the cards. Fictional deck, real engine; not in the deploy allowlist.
-- [X] **The rebuild happened** (2026-08-05, as part of the Core Set rename — see above). Real
-      dates and real elements now flow through; the "every card is Unaligned" fallback is gone
-      on the new local build. **Not yet deployed**, so the *live* site is still on the old
-      fallback path until `npm run deploy` runs.
-- [ ] **UI in the real app** — team picker, battle screen, log replay. The prototype is the design,
-      not the shipped feature.
+      **Superseded by the shipped arena** — kept as the design record, not a live path. The
+      shipped app deliberately does not import from it (`ui/battle.js` re-implements mulberry32
+      rather than depend on a file that exists to be thrown away).
+- [X] **The rebuild happened** (2026-08-05, as part of the Core Set rename — see above) **and
+      shipped** (`e509076`). Real dates and real elements flow through on the live site; the
+      "every card is Unaligned" fallback is gone.
+- [X] **UI in the real app** — `src/ui/battle.js` (`4fd217a`), reached from the ⚔ Battle button.
+      Team picker with front/back ranks, matchup preview against a scouted enemy, the formation
+      bonus shown while it is still a choice, and the event log replayed on the cards. Wiring
+      only: every rule it enforces comes from `engine/`.
+- [X] **Cross-device 1v1 without a backend** — `engine/challenge.js` (`4fd217a`). A whole fight
+      folded into a pasteable `CGB1.` string: both teams, the seed, and a pinned `now`, so two
+      windows replay the identical fight hit for hit rather than merely agreeing on a winner.
+      The reply carries **inputs, not a verdict** — the challenger re-resolves, so a claimed
+      outcome cannot be taken on trust. Not tamper-proof, and `challenge.js` says so plainly:
+      detecting an edited team needs a secret, and a secret needs a server.
+- [X] **The lobby** — `functions/api/ready/[room].js` + `data/presence.js` (`d336cac`). Live on
+      KV since 2026-08-08; a real cross-device 1v1 has been played on it. Two lessons pinned in
+      the code: **readiness is something a person does**, so `team` and `ready` are separate ops
+      (conflating them started a fight one player never agreed to), and **a dropped request is
+      not a missing lobby**, so `presence.js` reports `off` and `error` separately.
+- [X] **The balance pass** (`fa22642`) — the game was solved, and not for the reason it looked
+      like. "Bring your five highest-rated cards" beat everything 87-100%, and an accurate
+      rating is exactly what produces a total order, so the fix had to be something the rating
+      cannot see: a **formation bonus** on the number of distinct classes fielded. Auto-pick is
+      greedy on card rating, so it can no longer see the bonus either — it stops being optimal
+      and becomes a baseline a thinking player beats.
+- [X] **The repricing** (`662fd73`) — five specialists built from one budget came out HP 83.9% /
+      ATK 82.7% / DEF 39.7% / SPD 20.0% / MOM 4.7%. A point spent on momentum bought a
+      seventeenth of what the same point bought on health, which is not a trade-off but a trap.
+      MOM's scale and cap both rose; `AXIS_FLOOR` went in so **nobody is zero at anything**
+      (3.7% of the deck was walking into fights with an attack of 1); crit moved off cadence
+      onto **punch**, where "this channel's uploads land above its weight" actually means
+      something.
+- [X] **A combat reference for humans** — `Battle Layout/battle-system.html` (`50ec6e0`). Every
+      number in it is measured; regenerate with `node tools/battle-balance.js` rather than
+      editing figures by hand.
+- [ ] **Refit `VELOCITY_TREND` against real ages** — the one constant still fitted on a
+      synthetic age profile. See "Next" at the top.
 - [ ] Decide whether individual matchups should stay deterministic (see DECISIONS.md — currently
       a fight is decided by composition, not luck, which is what auto-battle means).
+- [ ] **Three findings from the 2026-08-09 rebuild, measured and not yet acted on.** None
+      breaks a threshold; all three are the same shape of problem the repricing was aimed at,
+      surviving it.
+      - **Class ratings span 1.86x** and the tool flags it itself: *"WIDE — the weak class is
+        one the matchmaker will stop picking."* Carry rates 462, Assassin 249. Assassin is
+        24.8% of the deck, so a quarter of all cards sit in the worst-rated class — the same
+        failure that got Speed its second action in the first place, re-appearing one layer up.
+      - **Three of six classes are under 6% of the deck** — Bulwark 5.2%, Riser 4.7%,
+        Balanced 3.9%, against Titan's 37.7%. The formation bonus rewards fielding four or five
+        distinct classes, which is hard to do when half the roster does not exist.
+      - **Music is 47.6% of the element wheel.** Nearly half the deck is one element, while
+        Tech is 3.6%. The counter-pick layer is the reason team-building is a decision rather
+        than a sort, and it is lopsided: the element that beats Music (Knowledge) is 10.6% of
+        the deck. Worth checking whether this is YouTube's `topicCategories` being generous
+        with the music tag before it is treated as a mapping problem in `element.js`.
+- [ ] **A momentum team still loses essentially everything** — the "fastest growing" strategy
+      averages **0.9%** across the strategy matrix, and 0.0% against a diverse team. The
+      2026-08-08 repricing raised MOM's scale and cap and moved the needle for individual
+      Risers, but building *around* growth is still not a strategy. Related to the speed item
+      below; both are stats that multiply an attack the card could not afford.
+- [ ] **Speed is still the weakest place to spend a budget** (~20% against a 50% target), and
+      `battle-stats.js` records why the fix is partial by construction: `extraActionChance` is a
+      probability, so even a perfect roll buys one extra swing, and two swings of a budget
+      attack lose to one swing of a real one. Closing it needs a *second* thing for speed to
+      buy — evasion, or a genuine multi-action roll — not another constant.
 
 ### WP11 — Procedural Creator Emblems  (proposed, not started)
 Replaces the creator's profile picture with a deterministic generated emblem, dissolving the
