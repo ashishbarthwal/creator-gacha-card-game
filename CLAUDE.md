@@ -36,26 +36,46 @@ unless they say otherwise.
 
 Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+) -> RUBY (100M+)
 
-**The right-hand column changed on 2026-08-09 and the change is the whole point.** It used to
-read "View count -> ATK" and "Video count -> DEF", and those were computed in `engine/core.js`
-as `log10(count) * k * RARITY[rarity].mult`, with the multiplier running 1.0 at N to 3.0 at
-RUBY. Measured on the live 15,831-card deck, the printed ATK correlated with subscriber count
-at **0.897** and spanned **5.22x** from the N median to the RUBY median: an N card could never,
-in the entire deck, out-stat a UR.
+The right-hand column changed 2026-08-09: it used to be raw `log10(count) * k *
+RARITY[rarity].mult` computed in `core.js`, a SECOND derivation whose printed ATK correlated
+with subscriber count at 0.897 while the engine ran at 0.187. Deleted; see "One derivation"
+under Architecture, and DECISIONS.md 2026-08-09 for the full record.
 
-The battle engine had never agreed. It spans 1.19x, correlates at 0.187, and 19% of N cards
-out-rate the median UR/RUBY. So the game PLAYED as a contest of shape and matchup while READING
-as "whoever has more subscribers wins" — on the screen a player looks at most.
+## Battle balance — already measured, do not redo
 
-There is now **one derivation** (`engine/battle-stats.js`) and the card face shows it. A card is
-`{ channel, rarity }` and carries no numbers of its own, so a second answer to "how strong is
-this?" cannot exist to drift. `RARITY.mult` is gone with it: rarity buys a compressed budget and
-is otherwise only how hard the card was to pull, which is what `battle-stats.js` always said.
+**The engine is tuned. Treat these as settled unless a NEW measurement says otherwise**, and
+retune only against `node tools/battle-balance.js`, never by argument.
 
-**Rarity is still worth pulling, and this is the measured claim to preserve:** median power
-climbs 396 -> 470 across the bands (1.19x), a top-decile N beats the median UR/RUBY, and no N
-beats the best of them. Raising `BUDGET_GAIN` to make rarity "count for more" was tried and
-measured — it collapses that structure (N above the median UR: 19% -> 4.4%) and buys nothing.
+*The invariant to preserve.* Median power climbs 396 -> 470 across the bands (**1.19x**), a
+top-decile N beats the median UR/RUBY, **19%** of N cards clear it and **0%** clear the best
+one. That is "your best commons beat a mediocre legendary, nothing beats the best one" — the
+shape Ash asked for. Any change that moves the 19% materially is a regression.
+
+*Tried, measured, rejected (2026-08-09):*
+
+| Idea | What it actually did |
+|---|---|
+| Raise `BUDGET_GAIN` so rarity counts for more | N-above-median-UR 19% -> 4.4%. Kills the invariant. |
+| Evasion keyed on SPD | small-out-rating-giant 29% -> 8% |
+| Multi-action speed roll | same re-coupling, plus it barely moved class spread |
+| Rescale `SCALE` (bigger SPD/MOM) | fights fall to 3-4 rounds, variety 2.83x -> 1.76x |
+| Equalise/centre the five axes | class floor 3.9% -> 8.2%, but N-above-median-UR 19% -> 13% and marginal class balance gets *worse* |
+
+**THE RECURRING TRAP, hit three separate ways: every stat is budget-scaled, and the budget is
+the only thing size buys — so any mechanic keyed to an ABSOLUTE stat threshold silently
+re-couples power to subscriber count.** Assume this of the next such idea too. (It also bit
+`SPD_FLOOR` in an earlier pass; that comment tells the same story.)
+
+**Measure the decision a player makes, not the tidiest number.** Two figures say Assassin is
+broken — a 1.86x rating spread, and 6.3% in an all-one-class round robin — and *both are
+misleading*: `powerOf` cannot see class verbs, and nobody fields five of one class. The honest
+test holds four slots and swaps a rating-matched fifth; measured that way every class sits at
+**47-60%**. `battle-balance.js` prints this as MARGINAL VALUE. Trust that row.
+
+*Genuinely still open:* Bulwark 5.2% / Riser 4.7% of the deck, picking strategies ~78% against
+a ~65% healthy ceiling, matchmaker cold at 37.2%, a momentum-built team winning ~0%, and Music
+at 47.6% of the element wheel (a SOURCING skew — 234 of 246 Music cards carry a real genre
+slug, so `element.js` is reading YouTube correctly and re-mapping cannot fix a population).
 
 ## Locked decisions — do not reopen
 
@@ -214,12 +234,21 @@ change: locked decision 3 is about hosting, and the live adapter (`data/youtube.
 still live pipeline code — `tools/add-candidates.js` imports it. The seam still has three
 sources; only the UI stopped offering one of them.
 
-**The pure core.** `rarityFromSubs` and `statsFrom` are pure and deterministic — no I/O,
-no randomness, no DOM. They sit between the seam and everything stateful. This is the
-test target. They live in **`src/engine/`** with the pull engine, which is the same
-boundary drawn once as a folder: everything in `engine/` runs headless — no DOM, no
-network, no I/O. `gacha.js` takes its randomness as an injected parameter, so it is
-deterministic under a seed and belongs there too.
+**The pure core.** `rarityFromSubs` (core.js) and `battleStatsFrom` (battle-stats.js) are
+pure and deterministic — no I/O, no randomness, no DOM. They sit between the seam and
+everything stateful. This is the test target. They live in **`src/engine/`** with the pull
+engine, which is the same boundary drawn once as a folder: everything in `engine/` runs
+headless — no DOM, no network, no I/O. `gacha.js` takes its randomness as an injected
+parameter, so it is deterministic under a seed and belongs there too.
+
+**ONE DERIVATION. There is exactly one function that turns a channel into numbers, and it is
+`battleStatsFrom`.** `core.js` owns the BAND and nothing else: `toCard` returns
+`{ channel, rarity }`, carries no stats, and `RARITY` holds a pull weight with no multiplier.
+The collection card, the battle card and the fight all read the same five numbers. This is a
+rule, not an accident — it replaced a second derivation whose printed ATK correlated with
+subscriber count at 0.897 while the engine ran at 0.187 (see below). **Never add a second
+place that computes a stat**, and never store a derived number on a card: a card that carries
+only its source and its band cannot drift.
 
 ```
 input (@handle | URL | UC id)
@@ -233,12 +262,15 @@ input (@handle | URL | UC id)
    |            |            |
    +------------+------------+---------+
         |
-  derivation core (PURE)  <- rarityFromSubs, statsFrom      | src/engine/
+  band          (PURE)  <- rarityFromSubs          core.js  | src/engine/
         |                                                   |
   gacha engine (band-first weighted pull, x1/x10, dupes)    | headless
-        |
-  collection state
-        |
+        |                                                   |
+  collection state                                          |
+        |                                                   |
+  stats         (PURE)  <- battleStatsFrom   battle-stats.js|
+        |            the ONLY derivation. Feeds the card     |
+        |            face, the battle card and the fight.    |
   card render + reveal
 ```
 

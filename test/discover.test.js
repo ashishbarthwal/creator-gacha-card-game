@@ -182,10 +182,12 @@ describe('passesFloor — cull the too-small and too-inactive', () => {
   });
 
   /* Found by playing, 2026-07-31: a channel with thousands of videos and no
-     view count rendered a card with ATK 0. statsFrom is log10-scaled, so one
-     view scores 36 — an ATK of exactly 0 means there was nothing to derive
-     from, and a zero stat reads as a bug whether or not the number is real. */
-  it('fails a channel with no views — it would render ATK 0', () => {
+     view count rendered a card with ATK 0 under the card-face derivation of the
+     time. That derivation was deleted 2026-08-09 (see engine/core.js) and the
+     current one floors every axis, so the zero itself can no longer appear —
+     the rule stays because a channel reporting no views tells us nothing about
+     what kind of creator it is, and every axis would fall back to a default. */
+  it('fails a channel with no views — there is nothing to derive a card from', () => {
     expect(passesFloor(channel({ viewCount: '0', videoCount: '8100' }))).toBe(false);
   });
 

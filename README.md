@@ -82,10 +82,17 @@ apart. This is why the app runs offline, why tests never need an API key, and wh
 set is a real adapter rather than a hack. Adding the `sets` source needed no changes to the
 gacha, reveal, render, or collection code — it's just another pool behind the seam.
 
-**The pure core.** `rarityFromSubs` and `statsFrom` are pure and deterministic — no I/O, no
-randomness, no DOM. They sit between the data seam and everything stateful, which makes them
+**The pure core.** `rarityFromSubs` and `battleStatsFrom` are pure and deterministic — no I/O,
+no randomness, no DOM. They sit between the data seam and everything stateful, which makes them
 the natural test target. The gacha engine takes an injectable RNG (`rng = Math.random` as a
 default parameter) so pulls can be tested with a fixed seed.
+
+**One derivation.** `core.js` owns the rarity band and nothing else — `toCard` returns
+`{ channel, rarity }` and carries no stats. Every number a player sees, on the collection card
+and in a fight alike, comes from `battleStatsFrom`. It used to be two: the card face printed
+`log10(views) × 120 × rarityMultiplier`, which correlated with subscriber count at 0.897 while
+the battle engine ran at 0.187 — so the game played as a contest of shape and matchup and read
+as "whoever has more subscribers wins". Collapsed to one on 2026-08-09.
 
 Both live in `src/engine/`, because the source tree is organized by *what a module may touch*
 rather than by topic: nothing → `src/engine/` (headless — it would run unchanged in Node),
@@ -101,12 +108,14 @@ input (@handle | URL | UC id)
  (bundled)(JSON)  (user key)
    └──────┼────────┘
         │
-  derivation core (PURE)        ← rarityFromSubs, statsFrom
+  band (PURE)                   ← rarityFromSubs          core.js
         │
   gacha engine (weighted RNG, ×1/×10, dupes stack)
         │
   collection → card render + reveal
         │
+  stats (PURE)                  ← battleStatsFrom   battle-stats.js
+        │                         the ONE derivation: card face and fight
   battle (PURE, seeded)         ← the same channel object, read a second way
         │
    ┌────┴────┐

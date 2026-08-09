@@ -21,12 +21,30 @@ been on the public site for days, and one open finding had already been acted on
 are the exhibit here, so a checklist that disagrees with the deploy log is a defect in its own
 right.
 
-**Next:** refit `VELOCITY_TREND` against **real** channel ages. It is the last constant in
-`engine/battle-stats.js` still fitted against a synthetic age profile — the file says so itself
-and names the trigger: "refit after the first build that ships `publishedAt`". That build
-happened on 2026-08-05, so the trigger has fired and the refit has not. `punch`, `devotion` and
-`cadence` were all refitted against the live deck on 2026-08-08; velocity is the odd one out.
-Measure with `node tools/battle-balance.js`, never by argument.
+**Next — and read this before touching battle balance.** The 2026-08-09 pass measured the
+engine hard (validated replica, 280-combination grid search, real fights) and the result was
+*leave it alone*: every direction tried made something worse, and the rejected list with its
+numbers is in CLAUDE.md under "Battle balance — already measured, do not redo". **Do not
+re-derive that from scratch.** The one invariant to protect is that 19% of N cards out-rate
+the median UR/RUBY while 0% out-rate the best one.
+
+So the honest next items are the ones with no cheap fix, in rough value order:
+
+1. **Picking is close to solved** — "highest rating" and "diverse" both ~78% against a ~65%
+   healthy ceiling. This is the one that most affects whether the game is interesting, and
+   nothing has been tried against it yet.
+2. **The matchmaker runs cold** — 37.2% even-match win rate, inside the 30% floor but well
+   under the 47-53% band competitive games aim for. Likely cheap: `opponent.js` aims at a
+   power target, so the bias is probably in `aimedBuild` or the formation correction.
+3. **Three classes under 6% of the deck** — cause known (maturity is the one uncentred axis),
+   fixes all measured as costing more than they buy. Needs a mechanism that does not trade
+   against the upset structure.
+4. **`VELOCITY_TREND` is still fitted on a synthetic age profile** — the file names its own
+   trigger and the trigger has fired. Low impact (velocity already measures size-free at
+   -0.058), so it is bookkeeping rather than balance.
+
+Measure with `node tools/battle-balance.js`, never by argument — and read its MARGINAL VALUE
+row rather than the per-class rating, which overstates class imbalance badly.
 
 ---
 
