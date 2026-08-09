@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { parseSet } from '../src/data/sets.js';
 import { DEMO_SET } from '../src/data/demo.js';
 import { RARITY_ORDER, toCard } from '../src/engine/core.js';
+import { battleStatsFrom, BATTLE_CLASSES } from '../src/engine/battle-stats.js';
 
 function validRaw() {
   return {
@@ -95,10 +96,21 @@ describe('parseSet — output feeds the pure core unchanged', () => {
     for (const ch of parseSet(validRaw()).channels) {
       const card = toCard(ch);
       expect(RARITY_ORDER).toContain(card.rarity);
-      expect(Number.isInteger(card.atk)).toBe(true);
-      expect(Number.isInteger(card.def)).toBe(true);
-      expect(card.atk).toBeGreaterThanOrEqual(0);
-      expect(card.def).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  /* The seam's real promise, and the one worth asserting now that a card
+     carries no numbers of its own: a parsed set feeds the BATTLE derivation
+     cleanly, because that is where every number a player sees now comes from —
+     the card face included (see engine/core.js, 2026-08-09). */
+  it('every parsed channel derives usable battle stats', () => {
+    for (const ch of parseSet(validRaw()).channels) {
+      const s = battleStatsFrom(ch, Date.parse('2026-08-09T00:00:00Z'));
+      for (const key of ['hp', 'atk', 'def', 'spd', 'mom']) {
+        expect(Number.isInteger(s[key])).toBe(true);
+        expect(s[key]).toBeGreaterThan(0);
+      }
+      expect(BATTLE_CLASSES).toContain(s.class);
     }
   });
 });

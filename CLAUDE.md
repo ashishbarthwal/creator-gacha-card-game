@@ -31,10 +31,31 @@ unless they say otherwise.
 | Wikigacha | Creator Gacha |
 |---|---|
 | Article quality rank -> rarity | Subscriber count -> rarity |
-| Pageviews -> ATK | View count -> ATK |
-| Article length -> DEF | Video count -> DEF |
+| Pageviews -> ATK | Views **per video**, against what a channel that size manages -> ATK |
+| Article length -> DEF | Views **per subscriber**, against the same -> DEF |
 
-Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+)
+Rarity bands: N (<100K) -> R (<1M) -> SR (<10M) -> SSR (<50M) -> UR (50M+) -> RUBY (100M+)
+
+**The right-hand column changed on 2026-08-09 and the change is the whole point.** It used to
+read "View count -> ATK" and "Video count -> DEF", and those were computed in `engine/core.js`
+as `log10(count) * k * RARITY[rarity].mult`, with the multiplier running 1.0 at N to 3.0 at
+RUBY. Measured on the live 15,831-card deck, the printed ATK correlated with subscriber count
+at **0.897** and spanned **5.22x** from the N median to the RUBY median: an N card could never,
+in the entire deck, out-stat a UR.
+
+The battle engine had never agreed. It spans 1.19x, correlates at 0.187, and 19% of N cards
+out-rate the median UR/RUBY. So the game PLAYED as a contest of shape and matchup while READING
+as "whoever has more subscribers wins" — on the screen a player looks at most.
+
+There is now **one derivation** (`engine/battle-stats.js`) and the card face shows it. A card is
+`{ channel, rarity }` and carries no numbers of its own, so a second answer to "how strong is
+this?" cannot exist to drift. `RARITY.mult` is gone with it: rarity buys a compressed budget and
+is otherwise only how hard the card was to pull, which is what `battle-stats.js` always said.
+
+**Rarity is still worth pulling, and this is the measured claim to preserve:** median power
+climbs 396 -> 470 across the bands (1.19x), a top-decile N beats the median UR/RUBY, and no N
+beats the best of them. Raising `BUDGET_GAIN` to make rarity "count for more" was tried and
+measured — it collapses that structure (N above the median UR: 19% -> 4.4%) and buys nothing.
 
 ## Locked decisions — do not reopen
 

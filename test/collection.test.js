@@ -110,7 +110,21 @@ describe('parseCollection — every failure is recoverable', () => {
     const after = parseCollection(serializeCollection(before, { now: NOW }));
     expect(after.get('UC_a').count).toBe(4);
     expect(after.get('UC_a').card.rarity).toBe(before.get('UC_a').card.rarity);
-    expect(after.get('UC_a').card.atk).toBe(before.get('UC_a').card.atk);
+    /* Was `card.atk` — which silently became undefined === undefined, and so
+       passed while asserting nothing, when cards stopped carrying numbers
+       (2026-08-09). Compare the CHANNEL instead: that is what a collection
+       actually stores, and every number is re-derived from it on read.
+
+       Field by field rather than a whole-object equality, because the stored
+       shape is a deliberate ALLOWLIST — `country` is dropped on the way in and
+       must stay dropped. Asserting the two objects equal would fail for the
+       right reason and read like a bug; this asserts what is actually promised. */
+    const stored = after.get('UC_a').card.channel;
+    const original = before.get('UC_a').card.channel;
+    for (const key of ['id', 'title', 'handle', 'avatarUrl', 'subscriberCount', 'viewCount', 'videoCount']) {
+      expect(stored[key]).toBe(original[key]);
+    }
+    expect('country' in stored).toBe(false);
   });
 
   it('re-derives rarity rather than trusting anything stored', () => {

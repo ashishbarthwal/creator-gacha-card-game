@@ -3510,3 +3510,75 @@ tuning report whose numbers have drifted from the engine is a confident lie, con
 precisely when someone is about to change one of them. The tool also grew a per-class table,
 because "median ATK 110" describes a card that does not exist; tuning happens per archetype.
 It immediately showed the open problem: **Assassin rates 249 against Carry's 462.**
+
+## The card was lying about itself, and the battle engine was fine (2026-08-09)
+
+Ash asked for the game to stop being "100% deterministic by just seeing higher subs count =
+better card every single time" — and, in the same breath, for the opposite not to be true
+either, because a rare pull that buys nothing punishes good luck. The instruction that framed
+the whole pass was **"do not balance things too hard and make the game sterile."**
+
+The obvious reading is that this is a battle-balance problem. It is not, and the measurement
+that settles it is the first thing worth recording.
+
+**THERE WERE TWO STAT SYSTEMS AND THEY DISAGREED BY 4.4x.**
+
+| | corr with log(subs) | N → RUBY median | can an N out-do a UR? |
+|---|---|---|---|
+| card face (`core.statsFrom`) | **0.897** | **5.22x** | **0.0%** — never, in 15,831 cards |
+| battle (`battle-stats.js`) | 0.187 | 1.19x | 19% clear the median UR/RUBY |
+
+The card face computed `log10(views) × 120 × RARITY[rarity].mult`, the multiplier running 1.0
+at N to 3.0 at RUBY — so rarity was counted twice, once in the band and again in the number
+printed beside it. The battle engine, which decides every fight, had never agreed with any of
+it. The game PLAYED as a contest of shape and matchup and READ as "whoever has more subscribers
+wins", and the card face is the screen a player looks at constantly. **The complaint was about
+the card, not the combat.**
+
+So there is one derivation now. `toCard` returns `{ channel, rarity }` and nothing else, the
+card face asks `battle-stats.js` for its two numbers, and `RARITY.mult` is deleted rather than
+left dangling — `battle-stats.js` already held the opposite position in writing, that rarity
+buys a compressed budget and is otherwise only "how hard this was to pull". Measured after:
+the printed ATK correlates with subscriber count at **0.042**, and an N out-stats a UR/RUBY on
+the face **53.7%** of the time.
+
+**THE BATTLE ENGINE WAS LEFT ALONE, AND THAT IS THE FINDING, NOT THE OMISSION.**
+
+A validated replica of the derivation was built (exact match against the engine on every
+sampled card), 280+ parameter combinations were grid-searched, and the survivors were run
+through real fights. Every direction made something Ash asked for worse:
+
+- **Raising `BUDGET_GAIN` so rarity "counts for more" destroys the thing worth protecting.**
+  Today a top-decile N beats the median UR/RUBY and 19% of N cards clear it, while 0% clear
+  the best one — "your best commons beat a mediocre legendary, nothing beats the best one",
+  which is exactly the shape asked for. At gain 45 that 19% becomes 4.4% and the top-decile N
+  stops clearing it at all.
+- **Evasion, a multi-action speed roll, and rescaling all re-amplify SIZE.** Every stat is
+  budget-scaled and the budget is the only thing size buys, so any mechanic keyed to an
+  absolute stat threshold quietly re-couples power to subscriber count. Small-cards-out-rating-
+  the-median-giant fell 29% → 8% on evasion alone. This is the third time this trap has been
+  hit (see the `SPD_FLOOR` note) and it should be assumed of the next such idea too.
+- **Rescaling also shortens fights to 3-4 rounds and cuts card-to-card variety from 2.83x to
+  1.76x** — measurably the sterility the instruction warned against.
+
+**THE CLASS PANIC WAS A MEASUREMENT ARTIFACT, AND THE TOOL NOW SAYS SO.** The per-class table
+reports Assassin at 249 against Carry's 462, and an all-one-class round robin looks worse still
+— Assassin wins 6.3% of those, a 12.9x spread. Both numbers are real and neither is the
+question, because **nobody fields five Assassins.** Five low-attack cards cannot between them
+kill anything; one Assassin behind four normal cards walks past the wall and removes the
+enemy's biggest hitter. Measured properly — hold four slots, drop in a rating-matched card of
+each class — the spread is **47%-60%, twelve and a half points**, and an Assassin contributes
+more than a Titan. `tools/battle-balance.js` grew a MARGINAL VALUE section that measures this,
+and the rating spread's warning now points at it, because acting on either of the other two
+figures would have cost the size-neutrality the whole stat design exists to protect.
+
+**Music is 47.6% of the element wheel, and that is sourcing, not mapping.** A 500-channel
+hydrate (10 quota units) says 50.6% of the deck carries a `music` topic and 234 of 246 Music
+cards carry a specific GENRE slug — `pop_music`, `rock_music`, `independent_music` — not the
+bare tag. YouTube genuinely thinks half this deck is musicians, which follows from sourcing
+notable people out of Wikidata. `element.js` is reading it correctly. Left alone: a seventh
+element was already rejected on its own merits, and re-mapping cannot fix a population.
+
+What did not change: `BUDGET_GAIN`, `SCALE`, `AXIS_FLOOR`, the crit terms, the momentum cap,
+the element table, and every combat constant. The balance report is byte-identical before and
+after, which is the intended result of a change that was only ever about what the card says.

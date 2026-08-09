@@ -5,6 +5,7 @@
    and the channel initial sits behind it as a faint monogram. */
 
 import { toCount } from '../engine/core.js';
+import { battleStatsFrom } from '../engine/battle-stats.js';
 import { emblemFor, emblemAccent } from '../engine/emblem.js';
 import { USE_EMBLEMS } from '../config.js';
 import { escapeHtml, formatCount } from './util.js';
@@ -120,8 +121,26 @@ export const TIER_NAME_SHORT = {
   N: 'Graphite', R: 'Silver', SR: 'Gold', SSR: 'Diamond', UR: 'Ruby', RUBY: 'Red Diamond',
 };
 
+/* THE TWO NUMBERS ON THE CARD ARE THE NUMBERS IT FIGHTS WITH (2026-08-09).
+
+   They used to come from `core.statsFrom`, which multiplied a raw view count by
+   a rarity multiplier — so the printed ATK correlated with subscriber count at
+   0.897 and no N card could ever out-stat a UR. The battle engine never agreed
+   with any of that. See the header of engine/core.js for the measurements.
+
+   ATK and DEF, not all five, and no bars: the battle card
+   (ui/battle-card.js) exists precisely so this one does not have to answer
+   "what does this do in a fight". This card shows a creator and is an object to
+   want. What changed is only that its two numbers stopped being fiction — a
+   card whose ATK reads 168 really does hit for 168, and the small channel that
+   out-punches a giant now says so on its face.
+
+   The class name rides along in the subs line, because without it a low ATK
+   reads as "bad card" rather than "this one is built out of something else".
+   It costs one word and no layout: `.subs-line` is already a two-child flex. */
 export function renderCard(card, { isNew = false, count = 0 } = {}) {
-  const { channel, rarity, atk, def } = card;
+  const { channel, rarity } = card;
+  const { atk, def, class: klass } = battleStatsFrom(channel);
   const el = document.createElement('article');
   el.className = `card r-${rarity}`;
   const initial = [...channel.title][0]?.toUpperCase() ?? '?';
@@ -149,7 +168,7 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
         ${isNew ? '<span class="new-badge">NEW</span>' : ''}
       </div>
       <div class="card-bottom">
-        <div class="subs-line"><span>${escapeHtml(subsLabel)}</span></div>
+        <div class="subs-line"><span>${escapeHtml(subsLabel)}</span><span class="card-class">${escapeHtml(klass)}</span></div>
         <div class="stats">
           <div class="stat atk"><em>ATK</em><b>${atk}</b></div>
           <div class="stat def"><em>DEF</em><b>${def}</b></div>

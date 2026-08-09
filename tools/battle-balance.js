@@ -244,7 +244,7 @@ async function main() {
     .map(m => quant(m.map(s => powerOf(s)), 0.5));
   const spread = Math.max(...ratings) / Math.min(...ratings);
   console.log(`  best/worst class rating  ${spread.toFixed(2)}`
-    + `   ${spread < 1.5 ? 'OK' : 'WIDE — the weak class is one the matchmaker will stop picking'}`);
+    + `   ${spread < 1.5 ? 'OK' : 'WIDE — but read MARGINAL VALUE below before acting on it'}`);
 
   const elements = tally(deck.map(c => elementOf(c)), ELEMENTS);
   console.log('\nELEMENTS ' + Object.entries(elements).sort((a, b) => b[1] - a[1])
@@ -298,8 +298,78 @@ async function main() {
   console.log(`  length                median ${quant(rounds, 0.5)} rounds, p95 ${quant(rounds, 0.95)}   (aim 5-10; a replay has to be watchable)`);
   console.log(`  decided by elimination ${pct(wipes / played)}   (a fight going to the round cap is a stalemate the player watched)`);
 
+  marginal(deck);
   strategies(deck);
   knobs();
+}
+
+/* ── IS THIS CLASS WORTH A SLOT? ───────────────────────────────────────────
+   Added 2026-08-09, because the two figures above it were both misleading and
+   in opposite directions, and acting on either would have made the game worse.
+
+   `powerOf` cannot see a class verb. Backstab bypasses an entire rank; Aegis
+   protects one. So the RATING column above said Assassin sits at 249 against
+   Carry's 462 — a 1.86x gap that reads like a broken class.
+
+   The obvious next measurement is a round robin of five-of-a-class against
+   five-of-another, and that is worse than useless here: it reports Assassin at
+   a 6.3% win rate, a 12.9x spread. Both numbers are real and neither is the
+   question, because NOBODY FIELDS FIVE ASSASSINS. Five low-attack cards cannot
+   between them kill anything; one Assassin behind four normal cards is a card
+   that walks past the wall and removes the enemy's biggest hitter.
+
+   So this measures the question a player actually faces: hold four slots fixed,
+   drop a RATING-MATCHED card of each class into the fifth, and see what the win
+   rate does. Measured on the live deck the answer is 47%-60% — the class system
+   is healthy in play, and a rebalance aimed at either figure above would have
+   cost the size-neutrality this file exists to protect. Trust this row. */
+function marginal(deck) {
+  const rated = deck.map(ch => { const s = battleStatsFrom(ch, NOW); return { ch, cls: s.class, r: powerOf(s) }; });
+  const byClass = Object.fromEntries(BATTLE_CLASSES.map(c => [c, []]));
+  for (const x of rated) byClass[x.cls]?.push(x);
+  for (const c of BATTLE_CLASSES) byClass[c].sort((a, b) => a.r - b.r);
+
+  /* Binary search for the nearest card of this class to a target rating, so
+     what is compared is the CLASS and not the card's raw strength. */
+  const near = (c, target) => {
+    const arr = byClass[c];
+    if (!arr.length) return null;
+    let lo = 0, hi = arr.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid].r < target) lo = mid + 1; else hi = mid; }
+    return arr[lo].ch;
+  };
+
+  const target = quant(rated.map(x => x.r), 0.5);
+  const wins = Object.fromEntries(BATTLE_CLASSES.map(c => [c, { w: 0, n: 0 }]));
+
+  for (let trial = 0; trial < 26; trial++) {
+    const pick = k => rated[(trial * 7919 + k * 104729) % rated.length].ch;
+    const mates = [pick(1), pick(2), pick(3), pick(4)];
+    /* Arranged by the same rule the player's side gets, for the reason stated
+       in the fight loop above: giving only one side a formation measures the
+       formation layer instead of the thing under test, and would lift every
+       number here by the same irrelevant amount. */
+    const foe = arrangeFormation([pick(5), pick(6), pick(7), pick(8), pick(9)], NOW);
+    if (new Set([...mates, ...foe].map(c => c.id)).size < 9) continue;
+    for (const c of BATTLE_CLASSES) {
+      const fifth = near(c, target);
+      if (!fifth || mates.some(m => m.id === fifth.id) || foe.some(m => m.id === fifth.id)) continue;
+      const team = arrangeFormation([...mates, fifth], NOW);
+      for (let s = 1; s <= 12; s++) {
+        if (battle(team, foe, { rng: mulberry32(trial * 1000 + s), now: NOW }).winner === 'a') wins[c].w++;
+        wins[c].n++;
+      }
+    }
+  }
+
+  const rates = BATTLE_CLASSES.map(c => (wins[c].n ? wins[c].w / wins[c].n : null));
+  const live = rates.filter(r => r !== null);
+  console.log('\nMARGINAL VALUE  (win rate when the 5th slot is a rating-matched card of…)');
+  console.log('  ' + BATTLE_CLASSES.map((c, i) => `${c} ${rates[i] === null ? '—' : pct(rates[i])}`).join('   '));
+  const gap = (Math.max(...live) - Math.min(...live)) * 100;
+  console.log(`  spread ${gap.toFixed(1)} points   ${gap < 20 ? 'OK — every class is worth a slot' : 'WIDE — one of these is not worth bringing'}`);
+  console.log('  This is the class figure to trust. See the comment above for why the');
+  console.log('  rating spread and an all-one-class round robin are both misleading.');
 }
 
 /* ── IS THERE A DECISION IN IT? ────────────────────────────────────────────

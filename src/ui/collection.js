@@ -3,6 +3,7 @@
    Reads shared state; owns its own DOM refs. */
 
 import { RARITY_ORDER, toCount } from '../engine/core.js';
+import { battleStatsFrom } from '../engine/battle-stats.js';
 import { TEAM_SIZE } from '../engine/battle.js';
 import { state, resetCollection } from '../state.js';
 import { renderCard } from './card.js';
@@ -117,8 +118,13 @@ const SORTS = {
      arbitrary. */
   recent: (a, b) => (pulledAt.get(b.card.channel.id) ?? 0) - (pulledAt.get(a.card.channel.id) ?? 0) || byRarity(a, b),
   rarity: byRarity,
-  atk:    (a, b) => b.card.atk - a.card.atk,
-  def:    (a, b) => b.card.def - a.card.def,
+  /* Derived on demand rather than read off the card, because a card no longer
+     carries numbers — there is one derivation and it lives in battle-stats.js
+     (see engine/core.js). Memoized: sorting a few hundred cards would otherwise
+     re-derive each one on every comparison, which is O(n log n) calls into the
+     same pure function for the same answer. */
+  atk:    (a, b) => statOf(b, 'atk') - statOf(a, 'atk'),
+  def:    (a, b) => statOf(b, 'def') - statOf(a, 'def'),
   subs:   (a, b) => toCount(b.card.channel.subscriberCount) - toCount(a.card.channel.subscriberCount),
   name:   (a, b) => a.card.channel.title.localeCompare(b.card.channel.title),
 };
@@ -126,6 +132,18 @@ const SORTS = {
 function byRarity(a, b) {
   return RARITY_ORDER.indexOf(b.card.rarity) - RARITY_ORDER.indexOf(a.card.rarity)
     || toCount(b.card.channel.subscriberCount) - toCount(a.card.channel.subscriberCount);
+}
+
+/* One derivation per channel per sort, cached by id. Cleared nowhere on
+   purpose: battleStatsFrom is deterministic in the channel and the clock, and
+   the clock only matters at the granularity of channel AGE — so a value cached
+   for the life of a page view cannot be stale in any way a player could see. */
+const statCache = new Map();
+function statOf(item, key) {
+  const id = item.card.channel.id;
+  let s = statCache.get(id);
+  if (!s) { s = battleStatsFrom(item.card.channel); statCache.set(id, s); }
+  return s[key];
 }
 
 /* What the empty grid says. "Nothing matches those filters" is accurate and

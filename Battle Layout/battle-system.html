@@ -380,6 +380,15 @@
       <span class="vs">/</span>
       <span>Shape decides the fight.</span>
     </div>
+    <p class="prose" style="margin-top:1.4rem">
+      <strong>Updated 2026-08-09.</strong> Until this date the collection card printed a
+      different set of numbers from the ones it fought with — an ATK derived as
+      <code>log10(views) × 120 × rarityMultiplier</code>, which correlated with subscriber count
+      at <strong>0.897</strong> and spanned <strong>5.22×</strong> from the N median to the RUBY
+      median. No N card, in the entire deck, could out-stat a UR. The engine described on this
+      page never agreed: it spans 1.19× and 19% of N cards out-rate the median UR. The game
+      played one way and read another. There is now one derivation, and the card face shows it.
+    </p>
   </header>
 
   <hr class="rule">
@@ -570,7 +579,7 @@
     <div class="dossiers">
 
       <article class="dossier" style="--dossier-hue: var(--s-hp);">
-        <div class="dossier-top"><h3>Titan</h3><span class="share">37.6% of deck</span></div>
+        <div class="dossier-top"><h3>Titan</h3><span class="share">37.7% of deck</span></div>
         <div class="verb"><b>Taunt</b><span>Enemy attacks aimed at its rank strike it instead. Assassins ignore this.</span></div>
         <div class="bars">
           <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:100%; background:var(--s-hp);"></span></span><span class="val">576</span></div>
@@ -612,7 +621,7 @@
       </article>
 
       <article class="dossier" style="--dossier-hue: var(--s-spd);">
-        <div class="dossier-top"><h3>Assassin</h3><span class="share">24.7% of deck</span></div>
+        <div class="dossier-top"><h3>Assassin</h3><span class="share">24.8% of deck</span></div>
         <div class="verb"><b>Backstab</b><span>Ignores the front rank and hits the enemy's hardest hitter.</span></div>
         <div class="bars">
           <div class="bar-row"><span class="lbl">HP</span><span class="track"><span class="fill" style="width:53%; background:var(--s-hp);"></span></span><span class="val">303</span></div>
@@ -877,7 +886,7 @@
         <tbody>
           <tr>
             <td><strong>MrBeast</strong></td>
-            <td class="n">511M</td><td class="n">995</td><td class="n">137M</td>
+            <td class="n">512M</td><td class="n">996</td><td class="n">137M</td>
             <td>Titan</td><td class="n">619</td><td class="n">106</td><td class="n">27%</td><td class="n">470</td>
           </tr>
           <tr>
@@ -923,14 +932,25 @@
         <thead><tr><th>Issue</th><th class="n">Measured</th><th>What it means</th></tr></thead>
         <tbody>
           <tr>
-            <td><strong>Assassin is underpowered</strong></td>
-            <td class="n">rating 249<br>vs Carry 462</td>
-            <td>A quarter of the deck rates at half of everything else. Speed saturates by construction, and crit moved away from it.</td>
+            <td><strong>Assassin is underpowered</strong> — <em>withdrawn 2026-08-09</em></td>
+            <td class="n">rating 249<br>but 54.8% in play</td>
+            <td>This page said a quarter of the deck rated at half of everything else, and that
+              reading was wrong. <code>powerOf</code> cannot see a class verb, and Backstab
+              bypasses an entire rank. An all-Assassin round robin looks worse still (6.3%) and is
+              equally misleading, because nobody fields five Assassins — five low-attack cards
+              cannot between them kill anything. Measured the way a player actually decides
+              (hold four slots, drop in a rating-matched fifth) every class lands between
+              <strong>47% and 60%</strong>, and an Assassin contributes more than a Titan.
+              <code>battle-balance.js</code> now prints that row.</td>
           </tr>
           <tr>
             <td><strong>Two classes barely exist</strong></td>
             <td class="n">Bulwark 5.2%<br>Riser 4.7%</td>
-            <td>The specialist margin rarely triggers on defence or momentum, so four of six classes are uncommon.</td>
+            <td>The specialist margin rarely triggers on defence or momentum, so four of six
+              classes are uncommon — which makes the formation bonus (four or five distinct
+              classes) harder to collect than intended. Every fix measured so far costs more
+              than it buys: equalising the axes lifts the floor to 8% but drops the share of N
+              cards out-rating the median UR from 19% to 13%.</td>
           </tr>
           <tr>
             <td><strong>Picking is close to solved</strong></td>
@@ -939,8 +959,18 @@
           </tr>
           <tr>
             <td><strong>Matchmaker runs cold</strong></td>
-            <td class="n">33.3%</td>
-            <td>An "even" match is won by the player a third of the time — just inside the 30% floor.</td>
+            <td class="n">37.2%</td>
+            <td>An "even" match is won by the player just over a third of the time — inside the
+              30% floor, but well under the 47-53% band competitive games aim for.</td>
+          </tr>
+          <tr>
+            <td><strong>Half the deck is Music</strong></td>
+            <td class="n">47.6%<br>Tech 3.6%</td>
+            <td>Not a mapping fault. A 500-channel sample says 50.6% carry a <code>music</code>
+              topic and 234 of 246 Music cards carry a specific genre slug, not the generic tag —
+              YouTube really does think half this deck is musicians, which follows from sourcing
+              notable people out of Wikidata. It dilutes the element ring: the counter to Music
+              (Knowledge) is only 10.6% of the deck. Re-mapping cannot fix a population.</td>
           </tr>
           <tr>
             <td><strong>Variance is invisible</strong></td>
@@ -954,8 +984,12 @@
 
   <footer>
     <hr class="rule">
-    <p>Every number here was measured against the live Core Set — 15,831 cards — with
-      <code>node tools/battle-balance.js</code>, not estimated.</p>
+    <p>Every number here was measured against the live Core Set — 15,831 cards, snapshot
+      2026-08-09 — with <code>node tools/battle-balance.js</code>, not estimated.</p>
+    <p><strong>Read MARGINAL VALUE before acting on a class figure.</strong> The per-class
+      rating and an all-one-class round robin both overstate class imbalance badly, for
+      opposite reasons; the marginal row measures the question a player actually faces, which
+      is whether a card is worth a slot.</p>
     <p>Engine: <code>src/engine/battle-stats.js</code>, <code>battle.js</code>, <code>element.js</code>.
       Tuning knobs print at the end of every balance run.</p>
   </footer>

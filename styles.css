@@ -996,6 +996,17 @@
     color: var(--muted);
   }
 
+  /* The card's archetype, sitting opposite the subscriber count in the line
+     above the numbers. `.subs-line` was already a `space-between` flex with one
+     child, so this needs no layout of its own. Dimmer than the subs figure on
+     purpose: it explains the two numbers rather than competing with them — an
+     ATK of 46 reads as a broken card until the word "Assassin" is next to it. */
+  .card-class {
+    opacity: 0.72;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(5px, 2.5cqw, 9px); }
 
   /* The stat panel is the card's only block of hard data, so it gets a real
@@ -1754,6 +1765,12 @@
        buys the name a single line — and the tier is already said, louder, by the
        rarity badge directly above it and by the frame's own metal. */
     .tier-label { display: none; }
+
+    /* Same trade as the tier label, one line down. The class is context for the
+       two numbers rather than one of them, and at this width the subs figure and
+       the class name were competing for a line that fits one comfortably. The
+       battle card says it properly, with a glyph and a colour. */
+    .card-class { display: none; }
 
     /* One line, not two. The second line is what pushed the avatar down into the
        subs figure; a name that needs two lines at this size was going to be

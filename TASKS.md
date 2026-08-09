@@ -224,26 +224,39 @@ offline all fall back to the copy-paste flow the arena shipped with.
       synthetic age profile. See "Next" at the top.
 - [ ] Decide whether individual matchups should stay deterministic (see DECISIONS.md — currently
       a fight is decided by composition, not luck, which is what auto-battle means).
-- [ ] **Three findings from the 2026-08-09 rebuild, measured and not yet acted on.** None
-      breaks a threshold; all three are the same shape of problem the repricing was aimed at,
-      surviving it.
-      - **Class ratings span 1.86x** and the tool flags it itself: *"WIDE — the weak class is
-        one the matchmaker will stop picking."* Carry rates 462, Assassin 249. Assassin is
-        24.8% of the deck, so a quarter of all cards sit in the worst-rated class — the same
-        failure that got Speed its second action in the first place, re-appearing one layer up.
-      - **Three of six classes are under 6% of the deck** — Bulwark 5.2%, Riser 4.7%,
-        Balanced 3.9%, against Titan's 37.7%. The formation bonus rewards fielding four or five
-        distinct classes, which is hard to do when half the roster does not exist.
-      - **Music is 47.6% of the element wheel.** Nearly half the deck is one element, while
-        Tech is 3.6%. The counter-pick layer is the reason team-building is a decision rather
-        than a sort, and it is lopsided: the element that beats Music (Knowledge) is 10.6% of
-        the deck. Worth checking whether this is YouTube's `topicCategories` being generous
-        with the music tag before it is treated as a mapping problem in `element.js`.
+- [X] **"Class ratings span 1.86x" — INVESTIGATED AND WITHDRAWN 2026-08-09.** The figure is
+      real and the conclusion drawn from it was wrong. `powerOf` cannot see a class verb, and
+      Backstab bypasses a whole rank. An all-one-class round robin looks worse still (Assassin
+      6.3%, a 12.9x spread) and is equally misleading, because **nobody fields five Assassins**
+      — five low-attack cards cannot between them kill anything. Measured the way a player
+      actually decides, holding four slots and dropping in a rating-matched fifth, every class
+      lands between **47% and 60%** and an Assassin contributes more than a Titan.
+      `tools/battle-balance.js` grew a MARGINAL VALUE section so the next reader is not
+      misled the same way. Acting on the 1.86x would have cost real size-neutrality.
+- [ ] **Three of six classes are under 6% of the deck** — Bulwark 5.2%, Riser 4.7%,
+      Balanced 3.9%, against Titan's 37.7%. Still open, and it has a known cause: `maturity`
+      is the one axis not centred where the other four are (deck median 65 against ~50), so
+      the median card is a Titan by construction. **Every fix measured so far costs more than
+      it buys** — centring maturity and equalising all five axes lifts the floor to 8.2%, but
+      drops the share of N cards out-rating the median UR/RUBY from 19% to 13% and makes
+      marginal class balance *worse* (12.2 → 25.6 points). Worth revisiting only with a
+      mechanism that does not trade against the upset structure.
+- [ ] **Music is 47.6% of the element wheel — SOURCING, not mapping.** Diagnosed 2026-08-09
+      with a 500-channel hydrate (10 quota units): 50.6% of the deck carries a `music` topic
+      and **234 of 246** Music cards carry a specific genre slug (`pop_music`, `rock_music`,
+      `independent_music`), not the bare generic tag. `element.js` is reading YouTube
+      correctly; YouTube really does think half this deck is musicians, which follows from
+      sourcing notable people out of Wikidata. It dilutes the ring — the counter to Music
+      (Knowledge) is 10.6% of the deck — but a seventh element was already rejected on its own
+      merits and re-mapping cannot fix a population. Fixable only at the sourcing layer.
 - [ ] **A momentum team still loses essentially everything** — the "fastest growing" strategy
       averages **0.9%** across the strategy matrix, and 0.0% against a diverse team. The
       2026-08-08 repricing raised MOM's scale and cap and moved the needle for individual
       Risers, but building *around* growth is still not a strategy. Related to the speed item
-      below; both are stats that multiply an attack the card could not afford.
+      below; both are stats that multiply an attack the card could not afford. Note the
+      constraint any fix must respect: raising MOM's or SPD's scale re-amplifies SIZE, because
+      every stat is budget-scaled — measured, it cuts small-cards-out-rating-giants from 29%
+      to 7%.
 - [ ] **Speed is still the weakest place to spend a budget** (~20% against a 50% target), and
       `battle-stats.js` records why the fix is partial by construction: `extraActionChance` is a
       probability, so even a perfect roll buys one extra swing, and two swings of a budget
