@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-08-06",
+  "updated": "2026-08-09",
   "note": "Channel IDs and our own tags only — never channel data. See src/engine/candidates.js.",
   "candidates": [
     {
@@ -4581,7 +4581,7 @@
     },
     {
       "id": "UC1LRJF2VFd1gLRR2NJXYs9A",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
