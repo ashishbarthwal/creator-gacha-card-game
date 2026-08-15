@@ -211,11 +211,12 @@ export function openReveal(results) {
    as noise) and nothing drifts across the avatar. Motes spawn on the card's
    perimeter and drift outward along their own angle, so they look shed by the
    card rather than sprinkled around it. */
-/* Per-tier, because the two top tiers are shedding different things. UR is an
-   ember throwing sparks, and a lot of them is what makes it read as burning.
-   RUBY is a cut stone: what comes off it is the occasional glint, so the same
-   field at the same density would just look like UR again with a red filter —
-   the exact "recoloured UR" outcome the gem cut exists to avoid. */
+/* Per-tier, because the two top tiers are shedding different things. UR is a
+   charged gem throwing violet sparks, and a lot of them is what makes it read
+   as crackling. RUBY is a cut stone: what comes off it is the occasional
+   glint, so the same field at the same density would just look like UR again
+   with a recolor — the exact "recoloured UR" outcome the gem cut exists to
+   avoid. */
 const MOTE_COUNT = { UR: 50, RUBY: 14 };
 
 function makeAura(rarity) {

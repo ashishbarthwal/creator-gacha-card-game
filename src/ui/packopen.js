@@ -201,6 +201,13 @@ export function playPackOpen(results) {
     });
 
     const draw = anchored ? DRAW_MS : 120;
+    const charge = CHARGE_MS[rarity] ?? CHARGE_MS.N;
+    /* The swell (`po-swell` on .po-fan) runs for the whole build-up and ends
+       in a sharp anticipation dip, so its duration must equal travel + charge
+       exactly — a fixed CSS duration would land the dip mid-charge on a RUBY
+       and after the burst on an N. Told to the stylesheet here, once, because
+       this is the only place that knows both numbers. */
+    stage.style.setProperty('--po-buildup', `${draw + charge}ms`);
     at(() => {
       if (mine !== gen) return;
       /* SWAPPED, not stacked. Leaving `is-charging` on would leave the rumble
@@ -209,16 +216,18 @@ export function playPackOpen(results) {
          overwriting the burst's own transform and the front card would jitter
          in place instead of punching forward. Removing the class ends the
          animation, which is the only thing that reliably yields the transform
-         back to the burst rules. */
+         back to the burst rules. (Dropping it also ends the fan's swell mid-dip
+         — that one-frame snap back to full size under the burst's scale-up is
+         the impact kick the compression was winding up, not a bug.) */
       stage.classList.remove('is-charging');
       stage.classList.add('is-burst');
-    }, draw + (CHARGE_MS[rarity] ?? CHARGE_MS.N));
+    }, draw + charge);
 
     /* Explicit `false` rather than passing `finish` straight to setTimeout:
        the timer would call it with no argument, which happens to mean the same
        thing today and would silently stop meaning it the moment the signature
        grows a second parameter. */
-    at(() => finish(false), draw + (CHARGE_MS[rarity] ?? CHARGE_MS.N) + BURST_TO_REVEAL_MS);
+    at(() => finish(false), draw + charge + BURST_TO_REVEAL_MS);
   });
 }
 

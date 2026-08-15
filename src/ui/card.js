@@ -9,6 +9,7 @@ import { battleStatsFrom } from '../engine/battle-stats.js';
 import { emblemFor, emblemAccent } from '../engine/emblem.js';
 import { USE_EMBLEMS } from '../config.js';
 import { escapeHtml, formatCount } from './util.js';
+import { makeEdgeTwinkles, makeFrameTwinkles } from './stars.js';
 
 /* The one place the avatar-source switch is read. Everything downstream — the
    ring, the tilt, the reveal, the 403 fallback — is handed a URL and stays
@@ -183,6 +184,24 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
   const avatar = el.querySelector('.avatar');
   if (!avatarUrl) avatar.remove();
   else avatar.addEventListener('error', () => avatar.remove(), { once: true });
+  /* THE TWO TOP TIERS GET THE POINT TWINKLE, and it is built HERE rather than
+     in the reveal so it belongs to the card instead of to a moment — one of
+     these sitting in the binder keeps catching light, which is the whole of
+     what Ash asked for. Appended inside `.card-inner` so its
+     `overflow: hidden` clips the points to the rounded face and none can ever
+     sit on the metal bevel. RUBY runs a lower count than UR on purpose — see
+     the comment above `makeEdgeTwinkles` in stars.js: RUBY's own principle
+     everywhere else is fewer, larger, slower, and this is no exception. */
+  if (rarity === 'UR') el.querySelector('.card-inner').append(makeEdgeTwinkles(8));
+  if (rarity === 'RUBY') el.querySelector('.card-inner').append(makeEdgeTwinkles(5));
+  /* UR ALONE also gets the frame twinkle — RUBY's own frame already catches
+     light (the `::after` glints + the inspector's travelling `.gem-edge`), so
+     this is what closes the same gap on UR's side. A sibling of `.card-inner`,
+     not a child of it: the bevel band is `.card`'s own background, outside
+     `.card-inner`'s box entirely, so appending here needs no clipping and no
+     z-index trick. See `makeFrameTwinkles` in stars.js for why the shape stays
+     a point rather than borrowing RUBY's crossed-ellipse glint. */
+  if (rarity === 'UR') el.append(makeFrameTwinkles());
   accentFor(channel).then(color => el.style.setProperty('--accent', color));
   return el;
 }

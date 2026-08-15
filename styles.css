@@ -467,13 +467,21 @@
 
   @keyframes po-veil { from { opacity: 0; } to { opacity: 1; } }
 
+  /* The two top tiers get a deeper stage. Same veil, ~8% darker: a UR or RUBY
+     charge happens in a dimmed room, which is the cheapest drama there is —
+     one static gradient swap, nothing animated. */
+  #packopen.po-tier-UR,
+  #packopen.po-tier-RUBY {
+    background: radial-gradient(120% 90% at 50% 50%, rgba(16, 10, 25, 0.9) 0%, rgba(14, 9, 21, 0.98) 70%);
+  }
+
   #packopen[hidden] { display: none; }
 
   .po-tier-N    { --po: #9aa3b2; --po-soft: #c9ced8; }
   .po-tier-R    { --po: #cdd8ea; --po-soft: #f6f9fd; }
   .po-tier-SR   { --po: #ffcf6b; --po-soft: #ffe9a6; }
   .po-tier-SSR  { --po: #7fe7ff; --po-soft: #eaf7ff; }
-  .po-tier-UR   { --po: #ff3b57; --po-soft: #ffe4bf; }
+  .po-tier-UR   { --po: #a855f7; --po-soft: #efdcff; }
   .po-tier-RUBY { --po: #d61030; --po-soft: #d98a96; }
 
   .po-stage {
@@ -535,6 +543,39 @@
     aspect-ratio: 5 / 7;
     transform-origin: 50% 50%;
     transition: transform 400ms cubic-bezier(0.2, 0.7, 0.3, 1.05);
+  }
+
+  /* The swell layer. A SEPARATE element from .po-pack, and that is the whole
+     reason it exists: the swell is an animation on `transform`, and an
+     animation outranks a transition in the cascade whatever the specificity —
+     put it on .po-pack and the FLIP travel from the banner would snap to
+     centre the moment charging began. On its own wrapper the two compose.
+
+     The choreography is anticipation, the oldest trick in animation: the pack
+     inhales slowly through the whole charge, then pulls IN sharply over the
+     last tenth — and when the burst drops this class, the animation vanishes
+     and the wrapper snaps from 0.95 back to 1 in a single frame while
+     .po-pack's own transition carries on to 1.14. That one-frame kick is not
+     a glitch to be smoothed; it IS the impact frame the compression was
+     winding up. `--po-buildup` is set by packopen.js to travel + charge, so
+     the dip always lands exactly on the burst whatever the tier's hold.
+
+     THE ONE FLOURISH THAT SURVIVED THE 2026-08-16 LAG PASS, and it survived on
+     exactly the terms the block above lays out: one transform, one element, no
+     mask, no clip, not infinite, and it ends. Three keyframe stops rather than
+     four — the extra stop bought a nuance nobody could see at this duration. */
+  .po-fan {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 50%;
+  }
+  .po-stage.is-charging .po-fan {
+    animation: po-swell var(--po-buildup, 900ms) cubic-bezier(0.4, 0, 0.6, 1) both;
+  }
+  @keyframes po-swell {
+    0%   { transform: scale(1); }
+    82%  { transform: scale(1.05); }
+    100% { transform: scale(0.95); }
   }
 
   .po-card {
@@ -600,6 +641,30 @@
     box-shadow: 0 0 26px 5px color-mix(in srgb, var(--po) 70%, transparent);
   }
   .po-stage.is-burst .po-seam { opacity: 0; transform: scaleX(9) scaleY(1); transition-duration: 260ms; }
+
+  /* ── WHAT WAS TRIED HERE AND REMOVED 2026-08-16 (it made the pull lag) ─────
+     Three additions were pulled back out on Ash's report of stutter, and the
+     reason each was expensive is worth keeping so none of them gets rebuilt:
+
+       .po-orbit  — comet arcs on a conic-gradient behind a radial MASK,
+                    rotating at 1.3s. A masked layer cannot be composited as a
+                    plain transform: the mask has to be rasterised, and this one
+                    was ~400px square turning 17x faster than .po-rays (22s).
+                    Fast rotation of a large masked gradient is the single most
+                    expensive thing this overlay ever did.
+       .po-glint  — a light bar sweeping the front card, infinite, inside
+                    `overflow: hidden`. The clip forces its own paint, and it sat
+                    on the ONE element already running `po-rumble` at 70-110ms —
+                    two animations fighting for the same layer.
+       .po-pillar — a 160vh column. Cheap per frame in theory, but it is a
+                    layer taller than the screen appearing at the exact moment
+                    the burst, the streaks, both rings and the flash all fire.
+
+     THE LESSON, AND IT IS THE ONE THIS FILE ALREADY KNEW: "transform and
+     opacity only" is necessary but NOT sufficient. A masked or clipped layer
+     still costs a rasterisation, and stacking effects at the same instant costs
+     whatever they sum to. The swell below is what survived — one transform, on
+     one element, not masked, not clipped, not infinite. */
 
   /* Charge shake. Amplitude escalates by tier — a common barely trembles, a
      RUBY is visibly straining to stay shut. Applied to the fan rather than the
@@ -1043,14 +1108,25 @@
      UR=Ruby Play Button, RUBY=Red Diamond Play Button — the same 100K / 1M /
      10M / 50M / 100M thresholds YouTube's own play buttons use (award names
      swapped 2026-08-07 to match reality — see card.js's TIER_NAME comment).
-     RUBY (Red Diamond) runs darker and less saturated than UR (Ruby) — a
+
+     UR WEARS VIOLET, NOT RED, AS OF 2026-08-16 — Ash's call, and it departs
+     from the award-color mapping on purpose. Two reasons. Purple is the color
+     every gaming rarity ladder already teaches for "very rare" (WoW's epic,
+     Fortnite's epic, Destiny's legendary), so a violet UR reads instantly to
+     the audience this game is for. And it hands RED to RUBY alone: the two top
+     tiers used to compete on the same hue — UR a bright red, RUBY a darker one
+     — which made the ceiling a shade of the tier below it. Now the ladder ends
+     silver → gold → diamond-blue → VIOLET → blood-red crystal, and no rung
+     shares a hue with its neighbor. The award NAME is unchanged (the band is
+     still the Ruby Play Button threshold); only the paint moved.
+     RUBY still runs darker and less saturated than every bright tier — a
      near-black crystal rather than a brighter gem — so the top of the ladder
-     reads as denser and heavier, not just a different red. */
+     reads as denser and heavier. */
   .r-N    { --t-hi:#c9ced8; --t-mid:#828a97; --t-lo:#4d535e; --t-soft:#a7adb8; --t-glow:#9aa3b2; --t-ink:#12151b; --rc: var(--t-glow); }
   .r-R    { --t-hi:#f6f9fd; --t-mid:#c2ccda; --t-lo:#93a3b8; --t-soft:#e7eef7; --t-glow:#cdd8ea; --t-ink:#0f1622; --rc: var(--t-glow); }
   .r-SR   { --t-hi:#ffe9a6; --t-mid:#eec04b; --t-lo:#cf992a; --t-soft:#ffd977; --t-glow:#ffcf6b; --t-ink:#241a05; --rc: var(--t-glow); }
   .r-SSR  { --t-hi:#eaf7ff; --t-mid:#a9d4e8; --t-lo:#7fbfe0; --t-soft:#dff3ff; --t-glow:#7fe7ff; --t-ink:#0c1524; --rc: var(--t-glow); }
-  .r-UR   { --t-hi:#ffe4bf; --t-mid:#ff5566; --t-lo:#b3162e; --t-soft:#ffb066; --t-glow:#ff3b57; --t-ink:#2a060c; --rc: var(--t-glow); }
+  .r-UR   { --t-hi:#efdcff; --t-mid:#b45bff; --t-lo:#5d13a6; --t-soft:#cf8fff; --t-glow:#a855f7; --t-ink:#240a45; --rc: var(--t-glow); }
   /* --t-lo is a deep WINE, not the near-black it started as. A facet needs to
      be dark enough to contrast its neighbour, but true black reads as a gap in
      the frame rather than a plane turned away from the light — and nothing else
@@ -2482,7 +2558,7 @@
   .glow-SSR.reveal-cell.flipped { --seam: rgba(127, 231, 255, 0.6);  --seam-peak: 46px 7px; --seam-rest: 14px 0; }
   /* UR still rests wider and hotter than the others — it has an aura to sit
      inside — it just no longer rests wider than the gap it sits in. */
-  .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 18px 1px; }
+  .glow-UR.reveal-cell.flipped  { --seam: rgba(168, 85, 247, 0.78); --seam-peak: 64px 11px; --seam-rest: 18px 1px; }
   /* RUBY (Red Diamond) rests wider again, one step past UR, but darker and less
      saturated — a deep blood-red glow rather than a brighter pink one. */
   .glow-RUBY.reveal-cell.flipped { --seam: rgba(196, 16, 40, 0.85);  --seam-peak: 78px 13px; --seam-rest: 22px 1px; }
@@ -2546,13 +2622,13 @@
     opacity: 0;
     animation: twinkle var(--tw, 2.4s) ease-in-out infinite;
   }
-  /* Tints track the frame tokens: SR gold, SSR cold diamond, UR hot amber,
-     RUBY cold diamond-white with a red cast — so UR never reads as "SSR with
-     more dots", and RUBY never reads as "UR with more dots". */
+  /* Tints track the frame tokens: SR gold, SSR cold diamond, UR electric
+     violet, RUBY cold diamond-white with a red cast — so UR never reads as
+     "SSR with more dots", and RUBY never reads as "UR with more dots". */
   .glow-SR  .star { --star: rgba(255, 214, 140, 0.85); }
   .glow-SSR .star { --star: rgba(190, 240, 255, 0.9); }
   .glow-UR  .star {
-    --star: rgba(255, 210, 172, 0.98);
+    --star: rgba(220, 185, 255, 0.98);
     box-shadow: 0 0 8px var(--star), 0 0 17px var(--star); /* UR dots carry a second, wider halo */
   }
   /* Red Diamond's are not dots at all — they are four-point reflections, the
@@ -2602,7 +2678,7 @@
   .glow-R    .beam { --beam: #cdd8ea; }
   .glow-SR   .beam { --beam: #ffcf6b; }
   .glow-SSR  .beam { --beam: #7fe7ff; }
-  .glow-UR   .beam { --beam: #ff5566; }
+  .glow-UR   .beam { --beam: #b45bff; }
   .glow-RUBY .beam { --beam: #c81030; }
   /* Back-loaded curve: ease-out spent the beam in its first third and left the
      rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
@@ -2657,7 +2733,7 @@
      card that's facing you. Rarer = slower and brighter. */
   .glow-SR   .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.46s; }
   .glow-SSR  .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
-  .glow-UR   .sweep { --sweep: rgba(255, 232, 214, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
+  .glow-UR   .sweep { --sweep: rgba(240, 224, 255, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
   .glow-UR   .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
   .glow-RUBY .sweep { --sweep: rgba(255, 226, 220, 1);    --sweep-ms: 1.3s;  --sweep-delay: 0.72s; }
   .glow-RUBY .sweep::before { width: 58%; filter: blur(2.6px); } /* broader still than UR's */
@@ -2703,16 +2779,16 @@
        subtree, so they can't be inherited here. */
     background: conic-gradient(from 0deg,
       transparent 0 52%,
-      rgba(179, 22, 46, 0.55) 68%,
-      #ff5566 83%,
-      #ffb066 93%,
-      #ffe4bf 97.5%,
+      rgba(93, 19, 166, 0.55) 68%,
+      #b45bff 83%,
+      #cf8fff 93%,
+      #efdcff 97.5%,
       #fff 99.4%,
       transparent 100%);
   }
 
   /* Red Diamond's ignition runs a hair longer than Ruby's — a near-black-red
-     head brightening to white, against UR's amber-into-crimson, so the top of
+     head brightening to white, against UR's violet-into-white, so the top of
      the ladder reads as denser and heavier rather than a recolor of the same
      ring. */
   .glow-RUBY .fuse i {
@@ -2767,8 +2843,8 @@
     border-radius: 12px;
     pointer-events: none;
     opacity: 0;
-    background: radial-gradient(closest-side, rgba(255, 90, 110, 0.2), transparent 76%);
-    box-shadow: 0 0 0 2px rgba(255, 140, 130, 0.85), 0 0 40px 8px rgba(255, 70, 95, 0.5);
+    background: radial-gradient(closest-side, rgba(178, 105, 255, 0.2), transparent 76%);
+    box-shadow: 0 0 0 2px rgba(214, 170, 255, 0.85), 0 0 40px 8px rgba(168, 85, 247, 0.5);
   }
   /* The discharge is a ghost of the card's own silhouette pushing outward, so
      for RUBY it has to be the gem's silhouette, not a rounded rectangle. The
@@ -2822,15 +2898,15 @@
     inset: -6%;
     border-radius: 50% / 42%;
     background: radial-gradient(closest-side,
-      rgba(255, 80, 100, 0.4) 0%,
-      rgba(255, 120, 80, 0.15) 58%,
+      rgba(170, 90, 250, 0.4) 0%,
+      rgba(120, 60, 220, 0.15) 58%,
       transparent 78%);
     filter: blur(10px);
     animation: aura-breathe 3.8s ease-in-out infinite;
   }
 
   /* Red Diamond's aura runs deep blood-red fading to near-black rather than
-     Ruby's orange-red, and breathes a touch wider — the field behind the top
+     Ruby's violet, and breathes a touch wider — the field behind the top
      card in the game. */
   .glow-RUBY .aura::before {
     background: radial-gradient(closest-side,
@@ -2853,13 +2929,13 @@
     height: var(--sz, 2px);
     margin: calc(var(--sz, 2px) / -2);
     border-radius: 50%;
-    background: radial-gradient(circle, #fff4e2 0%, #ffab72 45%, transparent 74%);
-    box-shadow: 0 0 5px rgba(255, 150, 110, 0.8);
+    background: radial-gradient(circle, #f5ecff 0%, #c084ff 45%, transparent 74%);
+    box-shadow: 0 0 5px rgba(190, 130, 255, 0.8);
     opacity: 0;
   }
 
-  /* Red Diamond sheds white-hot-into-deep-red motes rather than Ruby's amber
-     ones — a colder core than Ruby's, matching the crystal. */
+  /* Red Diamond sheds white-hot-into-deep-red motes rather than Ruby's violet
+     ones — a hotter core than Ruby's, matching the crystal. */
   .glow-RUBY .mote {
     background: radial-gradient(circle, #fff0ee 0%, #c8102e 45%, transparent 74%);
     box-shadow: 0 0 5px rgba(196, 16, 40, 0.85);
@@ -3121,16 +3197,17 @@
      touchscreen laptop) where a real pointer can still hover the reveal grid. */
   #reveal-grid .card.lit { transform: none; }
 
-  /* UR's signature molten sheen — a warm gold→crimson holo (not the cool
-     rainbow), so the top tier reads hotter and richer than SSR's diamond
-     instead of competing on the same rainbow. */
+  /* UR's signature arcane sheen — a violet→magenta→indigo holo (not the cool
+     rainbow), so the tier reads richer and stranger than SSR's diamond
+     instead of competing on the same rainbow. Recolored with the 2026-08-16
+     violet pass; the escalation logic is unchanged. */
   .card.r-UR .holo {
     background: repeating-linear-gradient(115deg,
-      rgba(255, 214, 130, 0.46)  0%,
-      rgba(255, 135, 95, 0.46)  12%,
-      rgba(255, 90, 120, 0.46)  24%,
-      rgba(255, 165, 90, 0.46)  36%,
-      rgba(255, 214, 130, 0.46) 48%);
+      rgba(216, 156, 255, 0.46)  0%,
+      rgba(150, 95, 255, 0.46)  12%,
+      rgba(255, 110, 220, 0.46) 24%,
+      rgba(120, 140, 255, 0.46) 36%,
+      rgba(216, 156, 255, 0.46) 48%);
     filter: saturate(1.25);
   }
 
@@ -3147,9 +3224,11 @@
     filter: saturate(1.15);
   }
 
-  /* UR (Ruby Play Button): a low, smouldering flicker at the seam — the tier
-     reading as legendary without a distracting full-card colour sweep. Only
-     the frame glow moves; irregular keyframe stops make it flicker like heat. */
+  /* UR (Ruby Play Button band, violet paint): a low, arcing flicker at the
+     seam — the tier reading as legendary without a distracting full-card
+     colour sweep. Only the frame glow moves; irregular keyframe stops make it
+     flicker like a charge looking for ground. (The animation keeps its
+     `ur-ember` name from the red era — renaming an identifier buys nothing.) */
   @media (prefers-reduced-motion: no-preference) {
     .card.r-UR { animation: ur-ember 4.2s ease-in-out infinite; }
     /* RUBY (Red Diamond) deliberately has NO ember. It briefly did, and it was
@@ -3172,9 +3251,58 @@
        drama, they were the resting state three quarters of the time. The flicker
        is unchanged in shape and rhythm; only its radius came in. */
     0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 12px -8px var(--t-glow); }
-    28%      { box-shadow: 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 20px -6px #ff5a3c; }
+    28%      { box-shadow: 0 0 0 1px rgba(200,140,255,0.20) inset, 0 0 20px -6px #c07dff; }
     52%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 15px -8px var(--t-glow); }
-    76%      { box-shadow: 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 24px -6px #ff7a33; }
+    76%      { box-shadow: 0 0 0 1px rgba(180,110,255,0.17) inset, 0 0 24px -6px #9a4df5; }
+  }
+
+  /* ---- the point twinkle -----------------------------------------------------
+     Pinpoints that flash once and go dark, each on its own 1-3s cycle. UR gets
+     two placements of it — `makeEdgeTwinkles` (just inside the face, sides
+     only) and `makeFrameTwinkles` (walking the metal bevel) — and RUBY gets the
+     first one too, at a lower count. Built by ui/stars.js (which carries the
+     reasoning for every choice here); this is only the paint and the flash,
+     shared by both wrappers and both tiers.
+
+     The dot is a plain radial gradient with a small box-shadow halo and nothing
+     else — no blur filter, no mask, no clip of its own. That matters: this runs
+     permanently on every UR and RUBY card on screen, so it had to be built out
+     of the things that are genuinely free to animate. `--t-glow` is inherited
+     from `.r-UR` or `.r-RUBY` on the card, so the colour is never repeated here
+     — violet on one, blood-red on the other, automatically, and either would
+     follow its token anywhere it moved again. */
+  .pt-twinkles {
+    position: absolute;
+    inset: 0;
+    z-index: 3;          /* above .holo (2), so a point stays crisp through the sheen */
+    pointer-events: none;
+  }
+
+  .pt-twinkle {
+    position: absolute;
+    width: var(--tw-size, 2px);
+    height: var(--tw-size, 2px);
+    /* Centre the dot on its own point, so the inline left/top are the middle of
+       the light rather than its top-left corner — same trick as `.star`. */
+    margin: calc(var(--tw-size, 2px) / -2) 0 0 calc(var(--tw-size, 2px) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, var(--t-glow) 55%, transparent 76%);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--t-glow) 65%, transparent);
+    opacity: 0;
+  }
+
+  /* MOSTLY DARK BY DESIGN. The flash occupies about a quarter of the cycle and
+     the rest is held at zero, which is what makes this read as "a point catches
+     the light every second or two" instead of a constant shimmer. */
+  @media (prefers-reduced-motion: no-preference) {
+    .pt-twinkle { animation: pt-twinkle var(--tw-dur, 2s) ease-in-out infinite; }
+  }
+
+  @keyframes pt-twinkle {
+    0%        { opacity: 0; transform: scale(0.3); }
+    10%       { opacity: 1; transform: scale(1); }
+    26%       { opacity: 0; transform: scale(0.3); }
+    100%      { opacity: 0; transform: scale(0.3); }
   }
 
   /* Touch / no-hover devices can't poke-holo — this is mobile's holo treatment,
@@ -3192,40 +3320,81 @@
      OFF-CENTRE ON PURPOSE. A highlight sitting exactly in the middle of every
      card reads as a sticker; one that falls unevenly reads as a surface. And
      richness ESCALATES WITH RARITY, the same language the seam glow and the
-     UR ember already speak elsewhere on this card: SR gets one soft sheen,
-     SSR two crossing facets (a cut gem's internal reflections), UR a warm
-     corner glow underneath a molten sheen. A mobile pull still feels rarer the
-     rarer it is, even with nothing moving and nothing tracking your thumb. */
+     UR ember already speak elsewhere on this card: R a whisper of brushed
+     silver, SR one soft sheen over a gold corner light, SSR crossing facets
+     under an icy crown, UR a violet corner bloom beneath an arcane sheen. A
+     mobile pull still feels rarer the rarer it is, even with nothing moving
+     and nothing tracking your thumb.
+
+     DEEPENED 2026-08-16 ("flat and bland" — Ash). Three changes, all static
+     paint on layers that already exist, so the phone pays nothing new at
+     runtime: R joins the ladder (it was the one framed tier with a bare
+     face), every tier gains one gradient layer and ~0.1 opacity, and the
+     card face itself takes a stronger tier-coloured cast (below) — on
+     desktop the cast stays subtle because tilt + tracked holo carry the
+     tier; here the paint is all there is, so it speaks up. */
   @media (hover: none) {
+    /* Brushed silver: two soft parallel strokes, unmistakably metal, quiet
+       enough that R keeps reading as the second rung and not a prize. */
+    .card.r-R .holo {
+      opacity: 0.42;
+      background:
+        linear-gradient(132deg,
+          transparent 30%,
+          color-mix(in srgb, var(--t-soft) 45%, transparent) 44%,
+          color-mix(in srgb, var(--t-hi)   75%, transparent) 50%,
+          color-mix(in srgb, var(--t-soft) 45%, transparent) 56%,
+          transparent 70%),
+        linear-gradient(132deg, transparent 68%, color-mix(in srgb, var(--t-soft) 35%, transparent) 78%, transparent 88%);
+    }
     .card.r-SR .holo {
-      opacity: 0.55;
-      background: linear-gradient(128deg,
-        transparent 36%,
-        color-mix(in srgb, var(--t-soft) 65%, transparent) 46%,
-        color-mix(in srgb, var(--t-hi)   85%, transparent) 50%,
-        color-mix(in srgb, var(--t-soft) 65%, transparent) 54%,
-        transparent 64%);
+      opacity: 0.66;
+      background:
+        linear-gradient(128deg,
+          transparent 36%,
+          color-mix(in srgb, var(--t-soft) 65%, transparent) 46%,
+          color-mix(in srgb, var(--t-hi)   85%, transparent) 50%,
+          color-mix(in srgb, var(--t-soft) 65%, transparent) 54%,
+          transparent 64%),
+        radial-gradient(120% 80% at 88% 106%, color-mix(in srgb, var(--t-glow) 40%, transparent) 0%, transparent 58%);
     }
     .card.r-SSR .holo {
-      opacity: 0.6;
+      opacity: 0.7;
       background:
         linear-gradient(112deg, transparent 28%, color-mix(in srgb, var(--t-hi)   82%, transparent) 40%, transparent 50%),
-        linear-gradient(206deg, transparent 58%, color-mix(in srgb, var(--t-glow) 60%, transparent) 68%, transparent 80%);
+        linear-gradient(206deg, transparent 58%, color-mix(in srgb, var(--t-glow) 60%, transparent) 68%, transparent 80%),
+        radial-gradient(140% 60% at 50% -14%, color-mix(in srgb, var(--t-glow) 38%, transparent) 0%, transparent 55%);
     }
     .card.r-UR .holo {
-      opacity: 0.62;
+      opacity: 0.72;
       background:
-        radial-gradient(130% 95% at 18% 104%, color-mix(in srgb, var(--t-glow) 55%, transparent) 0%, transparent 62%),
-        linear-gradient(122deg, transparent 42%, color-mix(in srgb, var(--t-soft) 78%, transparent) 51%, transparent 62%);
+        radial-gradient(130% 95% at 18% 104%, color-mix(in srgb, var(--t-glow) 60%, transparent) 0%, transparent 62%),
+        linear-gradient(122deg, transparent 42%, color-mix(in srgb, var(--t-soft) 82%, transparent) 51%, transparent 62%),
+        linear-gradient(244deg, transparent 60%, color-mix(in srgb, var(--t-mid) 45%, transparent) 71%, transparent 82%);
     }
     /* RUBY one step past UR again: a corner glow AND two crossing facets, same
        escalation language as the desktop repeating-gradient above. */
     .card.r-RUBY .holo {
-      opacity: 0.66;
+      opacity: 0.72;
       background:
-        radial-gradient(130% 95% at 82% 104%, color-mix(in srgb, var(--t-glow) 55%, transparent) 0%, transparent 62%),
-        linear-gradient(112deg, transparent 30%, color-mix(in srgb, var(--t-soft) 70%, transparent) 42%, transparent 54%),
-        linear-gradient(250deg, transparent 55%, color-mix(in srgb, var(--t-hi)   60%, transparent) 66%, transparent 78%);
+        radial-gradient(130% 95% at 82% 104%, color-mix(in srgb, var(--t-glow) 60%, transparent) 0%, transparent 62%),
+        linear-gradient(112deg, transparent 30%, color-mix(in srgb, var(--t-soft) 76%, transparent) 42%, transparent 54%),
+        linear-gradient(250deg, transparent 55%, color-mix(in srgb, var(--t-hi)   66%, transparent) 66%, transparent 78%);
+    }
+
+    /* The tier cast on the face itself. Desktop paints this at 14% on every
+       card (see .card-inner) and lets motion do the rest; a phone has no
+       motion, so the cast carries more of the tier here — 22% and a longer
+       fall. RUBY keeps its own carved interior (.card.r-RUBY .card-inner) and
+       is deliberately absent; N stays at the base 14%, because a common's job
+       is to make the others look like what they are. */
+    .card.r-R .card-inner,
+    .card.r-SR .card-inner,
+    .card.r-SSR .card-inner,
+    .card.r-UR .card-inner {
+      background:
+        radial-gradient(120% 90% at 50% -12%, color-mix(in srgb, var(--t-glow) 22%, #1a2130) 0%, transparent 60%),
+        linear-gradient(180deg, #141a29 0%, #0d1120 100%);
     }
   }
 

@@ -241,13 +241,20 @@
     <div class="po-glow"></div>
     <div class="po-rays"></div>
     <div id="po-pack" class="po-pack">
-      <span class="po-card"></span>
-      <span class="po-card"></span>
-      <span class="po-card">
-        <span class="po-rings"></span>
-        <span class="po-play"></span>
+      <!-- .po-fan exists so the charge swell has its own transform layer: the
+           swell is an ANIMATION, and an animation on .po-pack itself would
+           outrank the FLIP travel transition in the cascade and snap the pack
+           to centre. The .po-card:nth-child() rules still hold — the cards
+           stay the first three children of their parent. -->
+      <span class="po-fan">
+        <span class="po-card"></span>
+        <span class="po-card"></span>
+        <span class="po-card">
+          <span class="po-rings"></span>
+          <span class="po-play"></span>
+        </span>
+        <span class="po-seam"></span>
       </span>
-      <span class="po-seam"></span>
     </div>
     <div id="po-streaks" class="po-streaks"></div>
     <div class="po-ring"></div>
