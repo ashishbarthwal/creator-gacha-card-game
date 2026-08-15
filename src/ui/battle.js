@@ -460,8 +460,16 @@ function renderChallengeChoice() {
     if (!bare.isConnected || !presenceOff(state)) return;
     bare.disabled = true;
     bare.classList.add('is-unavailable');
-    bare.innerHTML = '<b>Send the challenge now</b><span>Unavailable — this needs the live lobby, '
-      + 'and it cannot be reached right now. Build a team first and send that instead.</span>';
+    /* NAMES QUICK BATTLE, NOT A DEAD END. This used to read "Build a team
+       first and send that instead" — advice for a path that no longer exists:
+       "Build my team first" was removed in the 2026-08-15 rework (see the
+       comment above `bare`), so the only thing the player could do with that
+       sentence was look for a button that is not there. With no lobby there is
+       no cross-device battle at all, and the honest way on is the one that
+       never needed a server — the same wording the waiting screen already
+       uses when it loses the room. */
+    bare.innerHTML = '<b>Send the challenge</b><span>Unavailable — a cross-device challenge needs '
+      + 'the live lobby, and it cannot be reached right now. Quick battle does not need it.</span>';
   });
 }
 
@@ -508,7 +516,12 @@ function renderAcceptPaste() {
             return enterSharedBuild('b');
           }
           if (!decoded.teamA) {
-            return note('This challenge was sent without a team, which needs the live lobby to settle — and the lobby cannot be reached right now, so there is nothing here to build against. Ask them to build a team first and resend.', true);
+            /* No "ask them to build a team first" — that instruction named the
+               removed pre-build option, so it asked the sender for something
+               their own screen no longer offers. Every new challenge is bare by
+               design now, which makes a reachable lobby the whole requirement,
+               and saying so is the only actionable thing left. */
+            return note('This challenge needs the live lobby to settle, and it cannot be reached right now — so there is nothing here to build against yet. Try again once it is back, or take a Quick battle, which needs no connection.', true);
           }
           /* MANUAL FALLBACK, unchanged from v1: no live room, but the
              challenger DID commit a team before sending, so the old
