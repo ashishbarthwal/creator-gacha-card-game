@@ -20,6 +20,24 @@ import { STARS, makeStars } from './stars.js';
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
 const revealDone = document.getElementById('reveal-done');
+const revealAgain = document.getElementById('reveal-again');
+
+/* THE LOOP, wired by main rather than reached for. The reveal is the moment a
+   player is most likely to want another pull, and a screen whose only exit is
+   "Done" spends that on nothing — but this module has no business knowing what
+   a pull IS, so it takes the action and the size as callbacks from the
+   composition root, exactly as ui/banner.js takes `onPull`.
+
+   Left null until wired, and the button hides itself in that case rather than
+   sitting there dead. */
+let againAction = null;
+let againSize = null;
+
+export function initReveal({ onPullAgain = null, packSize = null } = {}) {
+  againAction = onPullAgain;
+  againSize = packSize;
+  if (revealAgain) revealAgain.hidden = !onPullAgain;
+}
 
 /* Pointer-tilt on a fine-pointer device (was previously only wired up in the
    collection grid and the inspector — the reveal screen itself had none, on
@@ -130,6 +148,14 @@ export function openReveal(results) {
   applyColumns(results.length);
 
   const cells = results.map(result => buildCell(result));
+
+  /* Labelled per open, because the size toggle can change between pulls and a
+     button that promises ×10 while the banner is set to ×1 is a lie the player
+     only finds out about by pressing it. */
+  if (revealAgain && againSize) {
+    const n = againSize();
+    revealAgain.textContent = Number.isFinite(n) && n > 1 ? `Pull again ×${n}` : 'Pull again';
+  }
 
   snapArmed = false;
   revealEl.hidden = false;
@@ -358,6 +384,15 @@ export function closeReveal() {
 
 revealDone.addEventListener('click', closeReveal);
 revealEl.addEventListener('click', e => { if (e.target === revealEl) closeReveal(); });
+
+/* Close FIRST, then pull. The next pull opens the summon overlay and then this
+   same reveal again, so leaving the old one up would stack a fresh sequence
+   behind a screen still showing the previous pull's cards. */
+revealAgain?.addEventListener('click', () => {
+  if (!againAction) return;
+  closeReveal();
+  againAction();
+});
 
 /* Escape closes the TOP overlay only. Now that the inspector can open from the
    reveal, both are listening on document, and one Escape would otherwise close

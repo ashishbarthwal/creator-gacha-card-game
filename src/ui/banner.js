@@ -58,6 +58,13 @@ let statusTimer = null;
    a choice about size rather than a second button that also pulls. */
 let packCount = 10;
 
+/* Read by the reveal's "pull again" button, so that button can offer the size
+   the player actually chose instead of a hardcoded ten. Exported as a GETTER
+   rather than the value, because `packCount` is reassigned by the size toggle
+   and a plain export would hand callers a stale copy of whatever it was at
+   import time. */
+export const packSize = () => packCount;
+
 function showStatus(message, isError = false) {
   clearTimeout(statusTimer);
   statusEl.textContent = message;

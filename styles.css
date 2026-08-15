@@ -387,6 +387,39 @@
   .pack:hover .pack-card:nth-child(3),
   .pack:focus-visible .pack-card:nth-child(3) { animation: none; }
 
+  /* A GLINT, not a shine. The pack is the primary call to action and it was the
+     one thing on the stage holding perfectly still apart from its float, which
+     reads as scenery rather than as something you press.
+
+     The long dead interval is the entire design: the sweep occupies the first
+     fifth of the cycle and the rest is nothing, so it lands as an occasional
+     catch of light. A continuous sweep is what storefront banners do, and it
+     would be the first thing in this UI to look like it was trying to sell
+     something. Painted as ::before so it passes UNDER the rings and the play
+     glyph — light moving across the card's surface, beneath the print. */
+  .pack-card:nth-child(3)::before {
+    content: '';
+    position: absolute;
+    inset: -40% -70%;
+    background: linear-gradient(74deg,
+      transparent 44%,
+      rgba(255, 255, 255, 0.13) 50%,
+      transparent 56%);
+    animation: pack-glint 5.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pack-glint {
+    0%        { transform: translateX(-55%); opacity: 0; }
+    3%        { opacity: 1; }
+    18%       { transform: translateX(55%); opacity: 1; }
+    21%, 100% { transform: translateX(55%); opacity: 0; }
+  }
+
+  .pack:disabled .pack-card:nth-child(3)::before { animation: none; opacity: 0; }
+  .pack:hover .pack-card:nth-child(3)::before,
+  .pack:focus-visible .pack-card:nth-child(3)::before { animation: none; opacity: 0; }
+
   /* ---- the instruction -----------------------------------------------------
      Wikigacha's "TAP TO OPEN" does the entire job of a call to action without
      being a button, because the object above it already is one. */
@@ -405,6 +438,255 @@
   @keyframes tap-pulse {
     0%, 100% { opacity: 0.5; }
     50%      { opacity: 1; }
+  }
+
+  /* ---- the summon ----------------------------------------------------------
+     The beat between pressing the pack and seeing the cards. Every layer here
+     is transform/opacity only so the whole sequence stays on the compositor —
+     the same rule the hero ambience and the reveal FX follow, and the reason a
+     ten-card burst costs nothing on a phone.
+
+     Sits at z-index 55: above the page, BELOW the reveal (60). That ordering is
+     load-bearing rather than arbitrary — the reveal is meant to slide over the
+     top of a shockwave still expanding underneath it, which is what makes the
+     hand-off read as one motion instead of two screens in a queue.
+
+     Tier colour comes from --t-glow, the same token the card frames and the
+     reveal's seam glow use, so "the colour the pack charged up" and "the colour
+     the card turns out to be" are the same colour by construction. */
+  #packopen {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    pointer-events: none;
+    /* The stage colour, not a black scrim: the banner stays faintly readable
+       behind it so the pack is opening ON the page rather than in a void. */
+    background: radial-gradient(120% 90% at 50% 50%, rgba(21, 14, 31, 0.82) 0%, rgba(21, 14, 31, 0.96) 70%);
+    animation: po-veil 260ms ease both;
+  }
+
+  @keyframes po-veil { from { opacity: 0; } to { opacity: 1; } }
+
+  #packopen[hidden] { display: none; }
+
+  .po-tier-N    { --po: #9aa3b2; --po-soft: #c9ced8; }
+  .po-tier-R    { --po: #cdd8ea; --po-soft: #f6f9fd; }
+  .po-tier-SR   { --po: #ffcf6b; --po-soft: #ffe9a6; }
+  .po-tier-SSR  { --po: #7fe7ff; --po-soft: #eaf7ff; }
+  .po-tier-UR   { --po: #ff3b57; --po-soft: #ffe4bf; }
+  .po-tier-RUBY { --po: #d61030; --po-soft: #d98a96; }
+
+  .po-stage {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+  }
+
+  /* The charge glow. Grows and warms as the pack holds — this is the whole of
+     the rarity tease, and the reason a RUBY feels different from an N before a
+     single card has turned. */
+  .po-glow {
+    position: absolute;
+    width: min(760px, 150vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--po) 55%, transparent) 0%, transparent 62%);
+    opacity: 0;
+    transform: scale(0.35);
+    transition: opacity 480ms ease, transform 620ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  .po-stage.is-charging .po-glow { opacity: 0.75; transform: scale(1); }
+  .po-stage.is-burst .po-glow { opacity: 0; transform: scale(1.5); transition-duration: 520ms; }
+
+  /* Light rays. The one unmistakably "a rare thing is happening" cue in the
+     gacha vocabulary, so it is gated to feel earned: barely there for commons,
+     unmissable for the top tiers (see the per-tier opacity below). */
+  .po-rays {
+    position: absolute;
+    width: min(900px, 170vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    opacity: 0;
+    background: repeating-conic-gradient(
+      from 0deg,
+      color-mix(in srgb, var(--po) 30%, transparent) 0deg 3deg,
+      transparent 3deg 14deg);
+    mask-image: radial-gradient(circle, transparent 14%, #000 38%, transparent 72%);
+    animation: po-spin 22s linear infinite;
+    transition: opacity 520ms ease;
+  }
+  .po-stage.is-charging .po-rays { opacity: 0.16; }
+  .po-tier-SR .po-stage.is-charging .po-rays  { opacity: 0.3; }
+  .po-tier-SSR .po-stage.is-charging .po-rays { opacity: 0.42; }
+  .po-tier-UR .po-stage.is-charging .po-rays,
+  .po-tier-RUBY .po-stage.is-charging .po-rays { opacity: 0.55; }
+  .po-stage.is-burst .po-rays { opacity: 0; }
+
+  @keyframes po-spin { to { transform: rotate(360deg); } }
+
+  /* The pack itself — same three-card fan and the same vocabulary as the pack
+     on the page, because it is meant to read as that exact object having
+     travelled here rather than a second, similar one. */
+  .po-pack {
+    position: relative;
+    width: min(260px, 62vw);
+    aspect-ratio: 5 / 7;
+    transform-origin: 50% 50%;
+    transition: transform 400ms cubic-bezier(0.2, 0.7, 0.3, 1.05);
+  }
+
+  .po-card {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: radial-gradient(circle at 50% 42%, #3a2757 0%, #1c1229 72%);
+    box-shadow: 0 22px 50px -16px rgba(0, 0, 0, 0.8);
+    transition: transform 420ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms ease;
+  }
+  .po-card:nth-child(1) { transform: rotate(-9deg) translate(-14px, 4px) scale(0.96); filter: brightness(0.62); }
+  .po-card:nth-child(2) { transform: rotate(5deg) translate(10px, 1px) scale(0.98); filter: brightness(0.8); }
+  .po-card:nth-child(3) { transform: rotate(-1deg); }
+
+  .po-rings {
+    position: absolute;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 0 22px rgba(255, 255, 255, 0.045),
+      0 0 0 44px rgba(255, 255, 255, 0.03);
+  }
+
+  .po-play {
+    position: relative;
+    width: 0; height: 0;
+    margin-left: 6px;
+    border-left: 24px solid var(--red);
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    filter: drop-shadow(0 0 12px rgba(255, 45, 85, 0.55));
+    transition: filter 400ms ease;
+  }
+  .po-stage.is-charging .po-play {
+    filter: drop-shadow(0 0 22px color-mix(in srgb, var(--po) 80%, transparent));
+  }
+
+  /* The tear line. A hairline that swells into a blade of light down the middle
+     of the pack — the thing that makes the burst read as the pack SPLITTING
+     rather than simply disappearing in a flash. */
+  .po-seam {
+    position: absolute;
+    left: 50%;
+    top: -6%;
+    width: 3px;
+    height: 112%;
+    margin-left: -1.5px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, transparent, var(--po-soft), var(--po), var(--po-soft), transparent);
+    opacity: 0;
+    transform: scaleY(0.2);
+    filter: blur(0.5px);
+    transition: opacity 300ms ease, transform 420ms cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 300ms ease;
+  }
+  .po-stage.is-charging .po-seam {
+    opacity: 1;
+    transform: scaleY(1);
+    box-shadow: 0 0 26px 5px color-mix(in srgb, var(--po) 70%, transparent);
+  }
+  .po-stage.is-burst .po-seam { opacity: 0; transform: scaleX(9) scaleY(1); transition-duration: 260ms; }
+
+  /* Charge shake. Amplitude escalates by tier — a common barely trembles, a
+     RUBY is visibly straining to stay shut. Applied to the fan rather than the
+     wrapper so it composes with the FLIP travel transform above it. */
+  .po-stage.is-charging .po-card:nth-child(3) { animation: po-rumble 110ms linear infinite; }
+  .po-tier-SSR .po-stage.is-charging .po-card:nth-child(3),
+  .po-tier-UR .po-stage.is-charging .po-card:nth-child(3),
+  .po-tier-RUBY .po-stage.is-charging .po-card:nth-child(3) { animation-duration: 70ms; }
+
+  @keyframes po-rumble {
+    0%   { transform: rotate(-1deg) translate(0, 0); }
+    25%  { transform: rotate(-1.4deg) translate(-1.5px, 1px); }
+    50%  { transform: rotate(-0.6deg) translate(1.5px, -1px); }
+    75%  { transform: rotate(-1.2deg) translate(-1px, -1.5px); }
+    100% { transform: rotate(-1deg) translate(0, 0); }
+  }
+
+  /* Burst: the fan blows apart, the front card punches toward the viewer.
+     `animation: none` is belt-and-braces against the rumble above — packopen.js
+     already swaps `is-charging` off rather than stacking `is-burst` on top of
+     it, for exactly this reason, but a running animation beats a plain
+     declaration in the cascade regardless of specificity, so the one rule that
+     would break silently says so itself. */
+  .po-stage.is-burst .po-pack { transform: scale(1.14); transition-duration: 280ms; }
+  .po-stage.is-burst .po-card { opacity: 0; animation: none; }
+  .po-stage.is-burst .po-card:nth-child(1) { transform: rotate(-34deg) translate(-150px, 40px) scale(0.9); }
+  .po-stage.is-burst .po-card:nth-child(2) { transform: rotate(30deg) translate(150px, 26px) scale(0.9); }
+  .po-stage.is-burst .po-card:nth-child(3) { animation: none; transform: scale(1.5); }
+
+  /* The cards leaving. Card-SHAPED, not generic sparks: what the pack is
+     disgorging is cards, and a radial spray of dots is the animation any app
+     could have had. */
+  .po-streaks { position: absolute; inset: 0; pointer-events: none; }
+
+  .po-streak {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 26px;
+    aspect-ratio: 5 / 7;
+    margin: -18px 0 0 -13px;
+    border-radius: 4px;
+    background: linear-gradient(160deg, var(--po-soft), var(--po));
+    box-shadow: 0 0 16px 2px color-mix(in srgb, var(--po) 55%, transparent);
+    opacity: 0;
+  }
+  .po-stage.is-burst .po-streak {
+    animation: po-fly 620ms cubic-bezier(0.15, 0.75, 0.3, 1) var(--sd, 0ms) both;
+  }
+
+  @keyframes po-fly {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.3); }
+    18%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--sx), var(--sy)) rotate(var(--sr)) scale(1.15); }
+  }
+
+  /* Shockwave. Two rings, the second late and wider, because one ring reads as
+     a circle drawn on screen and two read as a wave with a front and a tail. */
+  .po-ring {
+    position: absolute;
+    width: 180px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--po) 75%, transparent);
+    opacity: 0;
+  }
+  .po-stage.is-burst .po-ring { animation: po-wave 700ms cubic-bezier(0.1, 0.7, 0.2, 1) both; }
+  .po-stage.is-burst .po-ring.is-late { animation-delay: 110ms; animation-duration: 820ms; }
+
+  @keyframes po-wave {
+    0%   { opacity: 0.9; transform: scale(0.2); border-width: 3px; }
+    100% { opacity: 0; transform: scale(5.2); border-width: 1px; }
+  }
+
+  /* The flash. Tier-tinted rather than white — white is the same flash for
+     every pull, and this one moment is worth spending on saying which. */
+  .po-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, var(--po-soft) 0%, color-mix(in srgb, var(--po) 60%, transparent) 34%, transparent 68%);
+    opacity: 0;
+  }
+  .po-stage.is-burst .po-flash { animation: po-flash 420ms ease-out both; }
+
+  @keyframes po-flash {
+    0%   { opacity: 0; }
+    12%  { opacity: 0.92; }
+    100% { opacity: 0; }
   }
 
   /* ---- how many ------------------------------------------------------------
@@ -693,26 +975,63 @@
      guard #live-controls and #sets-controls already carry. */
   #coll-empty[hidden] { display: none; }
 
+  /* An INVITATION, not a report of absence. This is the first thing a visitor
+     with no cards reads in this panel, and "No cards yet" told them something
+     they could already see. The ghost fan repeats the pack's silhouette so the
+     empty tray points at the object that fills it. */
   #coll-empty {
     display: grid;
     place-items: center;
-    gap: 4px;
-    padding: 34px 20px;
+    gap: 5px;
+    padding: 40px 20px 42px;
     border: 1px dashed rgba(255, 255, 255, 0.12);
     border-radius: 14px;
-    background: rgba(0, 0, 0, 0.15);
+    background:
+      radial-gradient(90% 120% at 50% -10%, rgba(255, 45, 85, 0.05) 0%, transparent 60%),
+      rgba(0, 0, 0, 0.15);
     text-align: center;
   }
 
-  #coll-empty::before {
-    content: '';
+  #coll-empty b {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 17px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  #coll-empty .ce-sub { max-width: 46ch; line-height: 1.5; }
+
+  /* Three ghost cards, fanned like the pack. Built from real elements rather
+     than one ::before so the fan can actually splay — and so it can lean toward
+     the pack on hover, which is the whole of the nudge. */
+  .ce-fan {
+    position: relative;
+    display: block;
+    width: 74px;
+    height: 50px;
+    margin-bottom: 12px;
+  }
+
+  .ce-fan i {
+    position: absolute;
+    left: 50%;
+    top: 0;
     width: 30px;
     height: 42px;
-    margin-bottom: 8px;
+    margin-left: -15px;
     border-radius: 5px;
     border: 1px dashed rgba(255, 255, 255, 0.2);
     background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.035) 7px 9px);
+    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1.05);
   }
+  .ce-fan i:nth-child(1) { transform: rotate(-14deg) translate(-15px, 3px); opacity: 0.6; }
+  .ce-fan i:nth-child(2) { transform: rotate(9deg) translate(15px, 2px); opacity: 0.8; }
+  .ce-fan i:nth-child(3) { transform: rotate(-2deg); }
+
+  #coll-empty:hover .ce-fan i:nth-child(1) { transform: rotate(-22deg) translate(-25px, 6px); }
+  #coll-empty:hover .ce-fan i:nth-child(2) { transform: rotate(17deg) translate(25px, 5px); }
 
   /* The grid and the empty state are mutually exclusive; collapsing the grid
      when it has no cards stops it reserving a gap above the empty box. */
@@ -1989,6 +2308,10 @@
     z-index: 5;
     display: flex;
     justify-content: center;
+    /* Two buttons since the loop landed — gap and wrap so a narrow phone stacks
+       them instead of shrinking both below a comfortable tap target. */
+    gap: 10px;
+    flex-wrap: wrap;
     padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px));
     /* Near-solid under the button itself. The fade is not this element's job —
        see ::before — because anything that fades here has to be paid for in
@@ -2596,10 +2919,10 @@
 
   .footer-optout { margin-top: 0; }
 
-  /* Underlined by default, unlike the coffee link one line below it. The two
-     footer links want opposite postures: the coffee is deliberately passive and
-     easy to miss, while the opt-out is a promise to someone who may be unhappy
-     to be here — it has to be findable on the first look. */
+  /* Underlined by default. This is a promise to someone who may be unhappy to be
+     here, so it has to be findable on the first look rather than discovered.
+     (It used to be described in contrast to a deliberately passive donation link
+     below it; that link is gone — see DECISIONS.md 2026-08-15.) */
   .optout-link {
     color: var(--muted);
     text-decoration: underline;
@@ -2609,24 +2932,6 @@
 
   .optout-link:hover,
   .optout-link:focus-visible { color: var(--ink); }
-
-  .footer-coffee { margin-top: 12px; }
-
-  .coffee-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-
-  .coffee-link:hover,
-  .coffee-link:focus-visible {
-    color: var(--c-ssr);
-    border-bottom-color: var(--c-ssr);
-  }
 
   @media (max-width: 560px) {
     /* Two per row, and the card gets every pixel that buys. The old rule here
@@ -2665,8 +2970,15 @@
     .amb-glow { animation: none; opacity: 0.8; }
     .amb-mote { animation: none; opacity: 0; }
     .pack-card:nth-child(3) { animation: none; }
+    .pack-card:nth-child(3)::before { animation: none; opacity: 0; }
+    .ce-fan i { transition: none; }
     .pack { transition: none; }
     .tap-hint { animation: none; opacity: 0.85; }
+    /* The summon does not run at all under reduced motion — playPackOpen()
+       resolves immediately and the reveal opens straight away, so this overlay
+       is never shown. Belt and braces anyway: if it ever were, it must not
+       spin, shake, flash or pulse. */
+    #packopen { display: none !important; }
     .count-btn, .filter-chip, .cards-grid .card { transition: none; }
     /* Still wear the rarity halo, just arrived-at rather than animated-to. */
     .reveal-cell.flipped { animation: none; box-shadow: 0 0 var(--seam-rest, 22px 3px) var(--seam, transparent); }
@@ -3213,6 +3525,131 @@
 
   .arena-body { padding: clamp(12px, 2.4vw, 22px); display: grid; gap: 18px; }
 
+  /* ── THE FIELD MANUAL RAIL ────────────────────────────────────────────────
+     The flow on the left, the reference on the right. Deliberately a COLUMN
+     rather than a help button: the rules are worth reading while you are
+     choosing, and a modal you have to open is one nobody opens twice.
+
+     `minmax(0, 1fr)` on the first track, not `1fr` — the builder holds a card
+     grid, and a grid child's default `min-width: auto` would let it refuse to
+     shrink and push the rail off the edge. */
+  .arena-split { display: grid; }
+
+  @media (min-width: 1100px) {
+    .arena-split {
+      grid-template-columns: minmax(0, 1fr) clamp(280px, 26vw, 360px);
+      align-items: start;
+    }
+    .arena-codex {
+      position: sticky;
+      /* Clears the sticky header rather than guessing — the arena head is
+         ~58px, so the rail parks just under it through a long scroll. */
+      top: 66px;
+      max-height: calc(100dvh - 92px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      border-left: 1px solid var(--line);
+    }
+  }
+
+  .arena-codex {
+    padding: clamp(12px, 2.4vw, 22px);
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    font-size: 13px;
+  }
+
+  .cx-head h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .cx-head p { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+  .cx-block {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 9px 12px;
+  }
+  .cx-block > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .cx-block > summary::-webkit-details-marker { display: none; }
+  /* A rotating caret drawn in CSS — one fewer asset, and it cannot 404. */
+  .cx-block > summary::after {
+    content: '';
+    margin-left: auto;
+    width: 6px; height: 6px;
+    border-right: 1.5px solid var(--muted);
+    border-bottom: 1.5px solid var(--muted);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform 0.18s ease;
+  }
+  .cx-block[open] > summary::after { transform: rotate(-135deg) translate(-1px, -1px); }
+  .cx-block > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+
+  .cx-lede { color: var(--muted); font-size: 12.5px; line-height: 1.55; margin-top: 8px; }
+  .cx-lede b, .cx-hints b { color: var(--ink); }
+
+  .cx-rows { margin-top: 9px; display: grid; gap: 7px; }
+  .cx-rows dt {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #f0c26e;
+  }
+  .cx-rows dd { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 0 0 3px; }
+  .cx-classes dt { color: #7ec8ff; }
+  .cx-verb {
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
+  }
+
+  .cx-ring { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+  .cx-ring li {
+    display: grid;
+    gap: 1px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .cx-ring b { color: var(--ink); }
+  .cx-ring span { font-size: 11.5px; font-style: italic; opacity: 0.8; }
+  .cx-foot { margin-top: 8px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+  .cx-hints { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 9px; }
+  .cx-hints li { display: grid; gap: 2px; }
+  .cx-hints b { font-size: 12.5px; }
+  .cx-hints span { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+  /* On a phone the manual drops BELOW the flow so it never stands between the
+     player and the Fight button. Which sections start open is decided in
+     codex.js, because `open` is an attribute rather than a style. */
+  @media (max-width: 1099px) {
+    .arena-codex {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+  }
+
   .ar-panel {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -3270,6 +3707,20 @@
   .ar-mode-card:active { transform: translateY(1px); }
   .ar-mode-card b { font-size: 15px; }
   .ar-mode-card span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+
+  /* An option that cannot work right now — dimmed and inert rather than removed,
+     so the choice the game offers stays the same shape every time and the reason
+     is readable instead of the option silently not existing. */
+  .ar-mode-card.is-unavailable,
+  .ar-mode-card:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .ar-mode-card.is-unavailable:hover,
+  .ar-mode-card:disabled:hover { background: rgba(255, 255, 255, 0.02); border-color: var(--line); }
+  .ar-mode-card.is-unavailable:active,
+  .ar-mode-card:disabled:active { transform: none; }
 
   /* ── the battle code ────────────────────────────────────────────────────── */
   /* Monospace and wrapped rather than scrolled: a code that runs off the right
@@ -3850,6 +4301,22 @@
   }
   .ar-formation.is-on b { color: #6ee7a0; }
 
+  /* THE COMPARISON LINE, and it is deliberately quieter than the rest of the
+     block. It appears only once five cards are down and there is an enemy to
+     compare against, and it exists because the ratings above it can read "even"
+     while a diversity gap decides the fight — measured, 3 classes against 5 is
+     a ~25% win rate at matched rating. Warm amber rather than red: this is
+     information the player can still act on by swapping a card, not a failure
+     state, and the arena already spends red on damage. */
+  .ar-formation-vs {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+  .ar-formation-vs.is-good { color: #6ee7a0; }
+  .ar-formation-vs.is-warn { color: #f0c26e; }
+
   /* ── THE READY SCREEN ─────────────────────────────────────────────────────
      A deliberately different colour from every other action in the app. The
      magenta primary means "do the thing you came here for" and is on the pack,
@@ -3963,43 +4430,6 @@
   .ar-lamp.is-ready { color: #2ee6d0; }
   .ar-lamp.is-waiting { color: #ffd166; }
 
-  /* Their light is on and yours is not. The button stops being a thing you may
-     press and becomes the thing everyone is waiting for, so it pulses — the one
-     moment in the arena where the UI is genuinely asking for a click. */
-  .btn.go.is-hot {
-    animation: ar-hot 1.15s ease-in-out infinite;
-  }
-  @keyframes ar-hot {
-    0%, 100% { box-shadow: 0 8px 22px -10px #12b5c9, 0 0 0 0 rgba(46, 230, 208, 0.55); }
-    50%      { box-shadow: 0 8px 22px -10px #12b5c9, 0 0 0 9px rgba(46, 230, 208, 0); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .btn.go.is-hot { animation: none; box-shadow: 0 0 0 3px rgba(46, 230, 208, 0.6); }
-  }
-
-  /* The two ready lamps. Side by side because the whole question the lobby
-     answers is a comparison — am I waiting on them, or they on me. */
-  .ar-lamps {
-    display: flex;
-    justify-content: center;
-    gap: clamp(10px, 4vw, 28px);
-    flex-wrap: wrap;
-  }
-  .ar-lampdot {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    letter-spacing: 0.4px;
-    color: var(--muted);
-    padding: 5px 11px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-  }
-  .ar-lampdot.on {
-    color: #2ee6d0;
-    border-color: rgba(46, 230, 208, 0.5);
-    background: rgba(46, 230, 208, 0.1);
-  }
-
   /* The accepted flash. Green rather than the cyan the ready lamps use: this
      fires once, means something different (someone arrived), and is the only
      moment on the challenger screen worth interrupting a wait for. */
@@ -4011,3 +4441,43 @@
   @media (prefers-reduced-motion: reduce) {
     .ar-lamp.is-ready { animation: none; }
   }
+
+  /* ── the shared build phase (2026-08-15) ──────────────────────────────── */
+
+  /* The live 30-second team-building clock — brief item 12's "TEAM BUILDING /
+     00:30" mockup, kept as one line rather than a stacked header+number since
+     it sits inside a panel that already has a title. */
+  .ar-timer {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.6px;
+    color: var(--ink);
+    text-align: center;
+  }
+  .ar-timer.is-low {
+    color: var(--red);
+    animation: ar-timer-pulse 1s ease-in-out infinite;
+  }
+  @keyframes ar-timer-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ar-timer.is-low { animation: none; }
+  }
+
+  /* The "your collection is more than 1.5x theirs" screen — brief item 20. */
+  .ar-fairness p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .ar-fairness p:last-child { margin-bottom: 0; }
+  .ar-fairness b { color: var(--ink); }
+  .ar-fairness-guarantee {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(110, 231, 160, 0.35);
+    border-radius: 10px;
+    background: rgba(110, 231, 160, 0.06);
+  }
+  .ar-fairness-guarantee p { margin: 0 0 6px; color: #6ee7a0; font-size: 13px; }
+  .ar-fairness-guarantee ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 14px; flex-wrap: wrap; }
+  .ar-fairness-guarantee li { font-family: var(--font-mono); font-size: 13px; color: #6ee7a0; }

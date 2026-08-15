@@ -4,7 +4,7 @@
 > A browser-based gacha game where a channel's numbers *become* the card.
 
 **▶ Play it: [creator-gacha.pages.dev](https://creator-gacha.pages.dev)** — no signup, no API key,
-23,000+ cards.
+15,831 cards.
 
 [![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
 
@@ -48,13 +48,22 @@ the rest of this section is for running it locally.
 
 No build step, no dependencies — plain ES modules under `src/`, served as-is.
 
-- **Serve the folder** with any static server, then open `index.html`. The app is ES
-  modules, so `file://` double-click won't work (browsers block module imports over
-  `file://`), and the server must send a JavaScript MIME type for `.js`:
-  - `npx serve` (recommended — correct MIME types out of the box), or
-  - `python -m http.server` **only** if your OS maps `.js` to `text/javascript`; some
-    setups (notably Windows) serve it as `text/plain`, which browsers reject for modules.
-    GitHub Pages / Cloudflare Pages serve it correctly, so deployment is unaffected.
+- **`npm run dev`** — the one that runs *everything*, including the two-player match
+  lobby. It is `wrangler pages dev`, so it serves the folder **and** compiles
+  `functions/api/ready/[room].js` with a local KV namespace bound as `READY`, exactly
+  the way Cloudflare Pages does in production. Open the address it prints (default
+  `http://localhost:8788`). Use this for anything involving Challenge / Accept.
+- **`npm run dev:static`** (`npx serve`) — static files only, no API. Fine for pulling,
+  the collection and Quick battle. **A two-player challenge will correctly report that
+  the live lobby is unreachable**, because a static server has no way to run a Pages
+  Function and answers `404` for `/api/ready/…`. That is not a bug in the game; it is
+  the copy-paste fallback doing its job.
+- Any other static server works too, but it must send a JavaScript MIME type for `.js` —
+  the app is ES modules, so `file://` double-click won't work (browsers block module
+  imports over `file://`), and `python -m http.server` only works if your OS maps `.js`
+  to `text/javascript`; some setups (notably Windows) serve it as `text/plain`, which
+  browsers reject for modules. GitHub Pages / Cloudflare Pages serve it correctly, so
+  deployment is unaffected.
 - **Sets mode** is the only mode a player sees — pick a card set and pull, with no API key and
   no setup at all. The bundled **demo set** ships fictional channels with generated avatars and
   zero network, so the first paint is instant and works offline; the real Series takes over the
@@ -120,7 +129,9 @@ input (@handle | URL | UC id)
         │
    ┌────┴────┐
  vs AI    vs a player  ← a pasted code carries teams + seed + pinned clock,
-                          so both windows replay the identical fight
+    ↑                     so both windows replay the identical fight
+    └ the AI rolls its OWN collection — same size as yours, same drop odds —
+      and brings its best five, rather than being fitted to your rating
 ```
 
 The battle layer is the data seam's second payoff. A card's five combat stats are derived
@@ -133,7 +144,7 @@ Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk /
 
 ### Tests
 
-452 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
+569 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
 malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
 the drop-rate distribution is an exact assertion, including that the odds don't move when a
 band is padded with 200 more cards), the card-set adapter's validation, the discovery
@@ -178,8 +189,9 @@ into a tested, modular, deployable project in dependency order (full detail in
       malformed subscriber counts, monotonic stat scaling, seeded-RNG gacha distribution.
       56 tests as delivered, `npm test`, dev-only dependency. (The suite has grown with every
       WP since; the current total is above.)
-- [x] **WP2 — Footer.** Buy Me a Coffee tip jar (passive, never tied to game state) plus the
-      "not affiliated with YouTube/Google" disclaimer.
+- [x] **WP2 — Footer.** The "not affiliated with YouTube/Google" disclaimer. Originally also
+      carried a passive Buy Me a Coffee tip jar; that was **removed entirely on 2026-08-15**
+      and there is now no donation path of any kind (see DECISIONS.md).
 - [x] **WP3 — Holographic cards.** Pointer-tracked tilt + holo shine gated by rarity, with
       reduced-motion and touch fallbacks. Grew into a full card redesign: metal-bevel frames
       on a tier system mapped to the YouTube Creator Awards (Silver/Gold/Diamond/Red Diamond),
@@ -289,8 +301,10 @@ into a tested, modular, deployable project in dependency order (full detail in
 
 A few decisions are deliberately locked (see [`DECISIONS.md`](DECISIONS.md) for the full log):
 
-- **No monetization in the game.** No paid pulls, currency, perks, or ads. The one exception
-  is a passive Buy Me a Coffee link that never unlocks anything in-game.
+- **No monetization, anywhere.** No paid pulls, currency, perks, or ads — and since
+  2026-08-15 no donation link either. The footer's Buy Me a Coffee tip jar was the last place
+  money touched this project and it is gone; there is no tip jar, sponsor button or payment
+  path left to unlock anything with.
 - **Client-side only, with one named exception.** Static hosting, no accounts, no database.
   Cards ship as static JSON, so a player needs no API key — the key only ever exists on the
   machine that builds a set. The exception, added 2026-08-08, is a single endpoint

@@ -178,7 +178,14 @@
 
     <div id="collection-grid" class="cards-grid"></div>
     <p id="coll-none" class="empty coll-none" hidden>Nothing matches those filters.</p>
-    <p id="coll-empty" class="empty">No cards yet — pull to start your collection.</p>
+    <!-- The first thing a new visitor sees in this panel, so it is written as an
+         invitation rather than a report of absence. The fan echoes the pack's
+         own three-card silhouette, which is the object it is pointing at. -->
+    <div id="coll-empty" class="empty">
+      <span class="ce-fan" aria-hidden="true"><i></i><i></i><i></i></span>
+      <b>Your binder is empty</b>
+      <span class="ce-sub">Open a pack above to start collecting. Every card is a real creator, and its stats are their real numbers.</span>
+    </div>
   </section>
 </main>
 
@@ -220,14 +227,34 @@
         <a class="optout-link" href="mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request">Ask to be removed</a>
         — no questions asked, and you'll be out of every set within 7 days.
       </p>
-      <p class="footer-coffee">
-        <a class="coffee-link" href="https://www.buymeacoffee.com/chunchunmaru" target="_blank" rel="noopener noreferrer">
-          <span aria-hidden="true">☕</span> Buy ChunChunMaru a coffee
-        </a>
-      </p>
     </div>
   </div>
 </footer>
+
+<!-- The summon: the beat between pressing the pack and seeing the cards. Purely
+     decorative and explicitly aria-hidden — it announces nothing a screen-reader
+     user needs, and the reveal dialog that follows it carries the real content.
+     It is skippable on any input, so it must never take focus or trap it.
+     See src/ui/packopen.js for the choreography and why it is this short. -->
+<div id="packopen" hidden aria-hidden="true">
+  <div id="po-stage" class="po-stage">
+    <div class="po-glow"></div>
+    <div class="po-rays"></div>
+    <div id="po-pack" class="po-pack">
+      <span class="po-card"></span>
+      <span class="po-card"></span>
+      <span class="po-card">
+        <span class="po-rings"></span>
+        <span class="po-play"></span>
+      </span>
+      <span class="po-seam"></span>
+    </div>
+    <div id="po-streaks" class="po-streaks"></div>
+    <div class="po-ring"></div>
+    <div class="po-ring is-late"></div>
+    <div class="po-flash"></div>
+  </div>
+</div>
 
 <div id="reveal" hidden role="dialog" aria-modal="true" aria-label="Pull results">
   <div class="reveal-box">
@@ -235,8 +262,14 @@
     <div id="reveal-grid" class="reveal-grid"></div>
     <!-- Its own bar, because the button is sticky: it needs a full-width strip to
          carry the veil that keeps cards legible as they scroll under it. -->
+    <!-- Two exits, and the order is the point: the loop is offered first and
+         styled as the primary, because this is the moment momentum is highest
+         and a reveal that only offers "Done" spends that momentum on nothing.
+         Done stays a real, equal-weight way out — the invitation must never
+         become the only door. -->
     <div class="reveal-foot">
-      <button id="reveal-done" class="btn primary" type="button">Done</button>
+      <button id="reveal-again" class="btn primary" type="button">Pull again</button>
+      <button id="reveal-done" class="btn ghost" type="button">Done</button>
     </div>
   </div>
 </div>
@@ -265,7 +298,18 @@
       <ol class="ar-steps" id="ar-steps"></ol>
       <button id="arena-close" class="btn ghost" type="button">Close</button>
     </header>
-    <div id="ar-body" class="arena-body"></div>
+    <!-- The flow and the field manual sit SIDE BY SIDE rather than the manual
+         living behind a help button. A rule you read while choosing is one you
+         can act on; a rule on a separate page is one you have forgotten by the
+         time it matters. It is a SIBLING of #ar-body, not a child, because
+         every phase renderer calls replaceChildren on that node — nesting it
+         would mean rebuilding the manual on every re-render, and losing which
+         sections the player had opened each time.
+         Populated by src/ui/codex.js, entirely from live engine values. -->
+    <div class="arena-split">
+      <div id="ar-body" class="arena-body"></div>
+      <aside id="ar-codex" class="arena-codex" aria-label="Combat reference"></aside>
+    </div>
   </div>
 </div>
 

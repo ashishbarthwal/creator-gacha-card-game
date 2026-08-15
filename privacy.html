@@ -68,14 +68,17 @@
   no tracking pixels, no advertising, no cookies, no local telemetry of any kind. Play on your
   own and we do not know that you visited.</p>
   <p>
-    The exception is the <strong>two-player lobby</strong>, added 8 August 2026. If — and only
-    if — you start a battle against another person, a small service of ours holds, for ten
-    minutes, the state of that one match: whether it was accepted, which side has pressed
-    Ready, and the battle code of the player who accepted. It exists so the two of you can see
-    each other arrive and start on the same countdown, rather than passing codes back and
-    forth. It is never sent your name, an account, or your collection beyond the five cards you
-    chose to field, and nothing it holds is linked to you between matches. Single-player
-    battles never touch it, and if it is unreachable the game falls back to copy-paste. See
+    The exception is the <strong>two-player lobby</strong>, added 8 August 2026 and reworked 15
+    August 2026 so both players build their team at the same time rather than one after the
+    other. If — and only if — you start a battle against another person through this lobby, a
+    small service of ours holds, for ten minutes, the state of that one match: whether it was
+    accepted, how many distinct cards each side owns (a single number — never which cards), and,
+    once each side locks in, the five cards they chose to field. It exists so the two of you can
+    see each other arrive, build against a shared clock, and start together, rather than passing
+    codes back and forth by hand. It is never sent your name, an account, or your collection
+    beyond the five cards you chose to field and a count of how many you own, and nothing it
+    holds is linked to you between matches. Single-player battles never touch it, and if it is
+    unreachable the game falls back to the original copy-paste flow. See
     <em>What your browser contacts</em> below.
   </p>
 
@@ -128,16 +131,15 @@
       countdown.
       <br>
       What it receives is a <strong>match id</strong> — a hash both browsers work out for
-      themselves from the battle code you were sent — the single letter <code>a</code> or
-      <code>b</code> saying which side pressed, and, once, the <strong>battle code of the
-      player who accepted</strong>, so the challenger's browser can work out the fight without
-      a second copy-paste. That code describes five cards: public channel names and the
-      subscriber, view and video counts already printed on them. It carries no account, no
-      identity and none of your collection beyond the five you chose to field.
+      themselves from the battle code you were sent — a count of how many distinct cards you own
+      (never which ones), and, once you press Ready, the <strong>five cards you chose to
+      field</strong>: public channel names and the subscriber, view and video counts already
+      printed on them. It carries no account, no identity, and no collection data beyond that one
+      count and the five cards you actually chose to fight with.
       <br>
       All of it is discarded automatically after ten minutes. Nothing is logged by us, nothing
       is linked to you between matches, and if the service is unavailable the battle still runs
-      — the screen falls back to the manual copy-paste flow the game has always had.</li>
+      — the screen falls back to the original copy-paste flow the game has always had.</li>
   </ul>
   <p>
     Each of those sees a request from your browser and applies its own privacy policy, which we

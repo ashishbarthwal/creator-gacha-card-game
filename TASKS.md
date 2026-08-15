@@ -6,45 +6,97 @@ a new guarantee, a new capability. Recurring work goes under Miscellaneous and i
 individually.
 
 **Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,831 cards**
-(snapshot **2026-08-06** — that is what the CDN is serving). A fresh hydrate ran **2026-08-09**
-and `sets/built/core.json` is now stamped 2026-08-09, same 15,831 cards, 4 candidates vanished
-— but **that is a local file until `npm run deploy` uploads it.** Building resets the clock on
-this machine; deploying is what resets it for players. Both were 3 days old at the time, well
-inside the 25-day cadence, so nothing was at risk either way.
-Everything below that was once "built, not deployed" has shipped:
-**RUBY** went live 2026-08-07 (`da4a635`), and the **arena** — battles, the team builder and
-the two-player lobby — went live 2026-08-08 (`7c2fa72`). 452 tests pass.
+(snapshot **2026-08-06** — that is what the CDN is serving). `sets/built/core.json` is stamped
+**2026-08-14, 15,890 cards**, but **that is a local file until `npm run deploy` uploads it.**
+**569 tests pass. Nothing from 2026-08-15 has been deployed** — the live site is running the
+2026-08-06 build and none of the work below.
 
-**This file was stale until 2026-08-09** and the correction is worth recording rather than
-quietly overwriting: three separate sections still read "not yet deployed" for work that had
-been on the public site for days, and one open finding had already been acted on. The receipts
-are the exhibit here, so a checklist that disagrees with the deploy log is a defect in its own
-right.
+**Run it locally with `npm run dev`** (`wrangler pages dev`, default `http://localhost:8788`).
+That is the only command that serves the site AND runs `functions/api/ready/[room].js` against a
+local KV namespace, so it is the only way to exercise a challenge. `npm run dev:static`
+(`npx serve`) is static-only and answers 404 for `/api/ready/…`, which the app now correctly
+reads as "no lobby today".
 
-**Next — and read this before touching battle balance.** The 2026-08-09 pass measured the
-engine hard (validated replica, 280-combination grid search, real fights) and the result was
-*leave it alone*: every direction tried made something worse, and the rejected list with its
-numbers is in CLAUDE.md under "Battle balance — already measured, do not redo". **Do not
-re-derive that from scratch.** The one invariant to protect is that 19% of N cards out-rate
-the median UR/RUBY while 0% out-rate the best one.
+**⚠ READ CLAUDE.md FIRST for anything touching battle, the arena or the pull screen.** Four
+sections there carry the reasoning and the traps: "Battle balance — the 2026-08-15 rebalance is
+now the settled state", "Collection-size fairness", "The lobby — how a live challenge actually
+runs", and "Quick battle — the AI has a collection, not a rating". They supersede everything
+below this paragraph that mentions the OLD invariant (19% N-above-median-UR) — that was
+**deliberately reversed** on Ash's instruction, not regressed. Do not "fix" it back.
 
-So the honest next items are the ones with no cheap fix, in rough value order:
+**DONE 2026-08-15, do not redo.** All of it is uncommitted-to-live; see NEXT item 1.
 
-1. **Picking is close to solved** — "highest rating" and "diverse" both ~78% against a ~65%
-   healthy ceiling. This is the one that most affects whether the game is interesting, and
-   nothing has been tried against it yet.
-2. **The matchmaker runs cold** — 37.2% even-match win rate, inside the 30% floor but well
-   under the 47-53% band competitive games aim for. Likely cheap: `opponent.js` aims at a
-   power target, so the bias is probably in `aimedBuild` or the formation correction.
-3. **Three classes under 6% of the deck** — cause known (maturity is the one uncentred axis),
-   fixes all measured as costing more than they buy. Needs a mechanism that does not trade
-   against the upset structure.
-4. **`VELOCITY_TREND` is still fitted on a synthetic age profile** — the file names its own
-   trigger and the trigger has fired. Low impact (velocity already measures size-free at
-   -0.058), so it is bookkeeping rather than balance.
+*The 40-item brief:*
+1. **Subscriber count dominates raw power** (items 1-3). `BUDGET_GAIN` 25 -> 170 plus a
+   subscriber power floor (`SUBSCRIBER_FLOOR_FRACTION`, `battle-stats.js`). N 1.00x -> RUBY
+   2.05x median.
+2. **Auto Select has an explicit power/rarity-first hierarchy** (items 4-6). `bestTeamFrom`/
+   `pickBestTeam` in `opponent.js`: greedy by power, diversity/element break ties inside an 8%
+   window only.
+3. **Collection-size fairness**, engine and UI (items 15-27, 33-35). `src/engine/fairness.js`
+   + `test/fairness.test.js` (26 tests); the CONTINUE/CHICKEN OUT screen lives in the lobby.
+4. **CODE_VERSION 2** — a challenge may carry no team, every code carries `collectionSize`.
+5. **The challenge flow rework** (items 8-14, 32, 37) — see CLAUDE.md's "The lobby".
+6. **In-arena field manual** — `src/ui/codex.js`, built from live engine exports so it cannot
+   drift from the code.
 
-Measure with `node tools/battle-balance.js`, never by argument — and read its MARGINAL VALUE
-row rather than the per-class rating, which overstates class imbalance badly.
+*Follow-ups the same day, after playtesting caught real bugs:*
+7. **The lobby** — acceptance opens a 10s decision window both sides sit in; the 30s build clock
+   starts on the SECOND `enter`, not on `accept`. Fixes the last asymmetry: the side facing the
+   fairness gate used to lose its deliberation time from its build time (measured: 7s of 30).
+   `bail` (CHICKEN OUT) now reaches the room.
+8. **Countdown arithmetic** — deadlines are resolved to a fixed local timestamp once, not
+   recomputed per tick. The old form froze the clock, never auto-locked, and left the two sides
+   showing different numbers.
+9. **`resetMatch()`** — a match is not the arena's lifetime. Every new match resets through one
+   function; the second fight of a session used to inherit the first one's dead state.
+10. **"Build my team first" removed** and the deck tray starts empty on both sides, every time.
+    Consequence: a cross-device challenge now REQUIRES the lobby (locked decision 3 narrowed —
+    Quick battle still needs no server).
+11. **The AI rolls its own collection** — same size as the player's, same odds, best five.
+    Replaces power-matching. `test/opponent.test.js`, 7 tests.
+12. **Pack-opening summon** — `src/ui/packopen.js`, ~1s, rarity-teased, skippable. Plus the
+    reveal's "Pull again" loop and a rewritten empty-binder state.
+13. **The Buy Me a Coffee link is gone** from the site and every doc (Ash's call). No donation
+    path anywhere; locked decision 2 withdrawn.
+
+**NEXT — start here.**
+1. **Deploy.** Nothing above is live. `npm run deploy` ships the 15,890-card rebuild AND the
+   whole 2026-08-15 body of work, including the `functions/api/ready/[room].js` rewrite. No
+   migration concern: KV rooms expire in 10 minutes, so there are no in-flight rooms on the old
+   protocol to worry about.
+2. **Run the two-window checklist below** if it has not been run since the last change. The
+   arena is untested DOM wiring by design; 569 tests cover the engine under it and none of them
+   touch `src/ui/battle.js`.
+3. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
+   ~1s drags by the tenth pull. Nobody has seen it in motion yet.
+4. Everything below this point is the OLDER backlog, from before the 2026-08-15 brief. Still
+   real, still open, lower priority.
+
+**Manual test checklist — two windows (or two devices), against `npm run dev`.**
+- [ ] **Challenge, live room.** Window A: Challenge someone -> Send the challenge. Paste the code
+      into window B -> Challenge accepted. Both windows should show **LOBBY — 00:10** counting
+      down together, and NEITHER should be able to build during it.
+- [ ] **The gate is one-sided but the wait is not.** With one profile holding a much larger
+      collection, confirm only the larger side sees COLLECTION SIZE / CONTINUE / CHICKEN OUT, the
+      smaller side sees "your opponent is confirming whether to go ahead", and both see the same
+      lobby clock.
+- [ ] **Auto-enter.** Let the lobby hit 00:00 with nobody pressing. Both should enter and the
+      30s build clock should start together.
+- [ ] **Both build clocks match.** In the shared build phase the two windows must show the SAME
+      number, ticking. (They once froze at 30 and 26.)
+- [ ] **Independent lock.** Press Ready in A only: A's slots/pool/Auto-pick/Clear stop responding,
+      A reads "waiting on them", B still edits freely. Lock B -> both move to "Both locked in" and
+      the fight starts without waiting out the timer.
+- [ ] **Build auto-lock.** Let the build clock reach 00:00 in one window with 2-3 slots filled —
+      it should top up to five via Auto Select and lock, not stall.
+- [ ] **CHICKEN OUT reaches the other side.** The waiting player should be told the match is off,
+      not left building alone.
+- [ ] **A second match in the same session.** Finish a fight -> New opponent -> challenge again.
+      The lobby and build clocks must start fresh, and BOTH trays must be empty.
+- [ ] **Empty tray, always.** Neither side opens the shared builder holding cards.
+- [ ] **No lobby.** Run `npm run dev:static` instead: "Challenge someone" should disable the send
+      button and explain, and Quick battle should still work perfectly.
 
 ---
 
@@ -194,6 +246,11 @@ offline all fall back to the copy-paste flow the arena shipped with.
       flat with size at **0.94**, power median ratio **1.13**, small cards out-rating the median
       giant **29.5%**, even-match win rate **37.2%**, median fight **6** rounds, 100% decided by
       elimination.
+      **The 37.2% is left as recorded, and annotated rather than restated** — same rule the
+      `WPn` tags follow. It is what the tool printed that day; what has since changed is the
+      tool. That figure was 9 matchups re-fought 40 times, which is why no CI sits beside it.
+      Re-measured properly on 2026-08-15: **33.2% +/- 4.1** over 500 matchups, and the cause
+      is a class-diversity gap rather than the matchmaker's aim (see Next, item 2).
 - [X] **All five axes are size-free on real data** — the thing the residual trends exist to
       guarantee, now confirmed against real ages rather than synthetic ones. `corr(size)`:
       maturity 0.189, punch -0.004, devotion -0.027, cadence 0.038, velocity -0.058, all well
@@ -307,7 +364,11 @@ DECISIONS.md, move on.
 - **Curation exclusions.** `catalog/excluded.txt` — editorial, revisable, and never to be
   confused with the opt-out denylist.
 - **Printing size changes** and rebuilds at the 25-day cadence.
-- **Card visuals, CSS, page layout, copy tweaks.**
+- **Card visuals, CSS, page layout, copy tweaks.** The 2026-08-15 pack-opening summon
+  (`src/ui/packopen.js`), the reveal's "Pull again" loop and the rewritten empty-binder state
+  all landed under this line rather than as a WP — polish, not architecture. The one thing in
+  them worth reading before changing is the DECISIONS.md entry on why the summon deliberately
+  leaks the pull's best rarity when `ui/reveal.js` deliberately hides it.
 - **Keyword vocabulary tuning** (`KEYWORD_SEEDS`, `KEYWORD_MODIFIERS`).
 - **Roster handle fixes** — ~10% of guessed handles fail at 1 unit each.
 
@@ -333,7 +394,8 @@ One line each. The reasoning is in DECISIONS.md; the receipts are the `wpN` tags
 
 - [X] **WP0 — Split the monolith** (`wp0`). Pure core, gacha engine, data seam, ui, wiring.
 - [X] **WP1 — Test suite** (`wp1`). Vitest, CI on every push, badge, self-contained HTML reports.
-- [X] **WP2 — Footer.** Buy Me a Coffee (never wired to game state) + not-affiliated disclaimer.
+- [X] **WP2 — Footer.** Not-affiliated disclaimer. The Buy Me a Coffee link it also shipped was
+      **removed 2026-08-15** (Ash's call) — no donation path remains anywhere.
 - [X] **WP3 — Holographic cards.** Rarity-gated tilt/holo; grew into the metal-bevel tier
       frames, ringed avatar centrepiece, and the card inspector.
 - [X] **WP4 — Card sets** (`wp4`). Sets adapter behind the seam, manifest, picker, bundled demo

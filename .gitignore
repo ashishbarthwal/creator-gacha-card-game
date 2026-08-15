@@ -29,6 +29,11 @@ reports/
 # The assembled deployable site. Built locally by tools/build-site.js and uploaded
 # straight to the CDN, so it never belongs in git — it carries the built sets.
 _site/
+# `npm run dev` (wrangler pages dev) scratch: the LOCAL KV namespace standing in for
+# the real one, plus bundler temp. It is a machine's dev state, not the project's —
+# and the KV half holds whatever match rooms were created while testing, which is
+# card data by the same rule that keeps built sets out of git.
+.wrangler/
 
 # Magic Search output — generated sets carry real creator data; never committed
 # (see DECISIONS.md: build first, legality before deploying to real users).
