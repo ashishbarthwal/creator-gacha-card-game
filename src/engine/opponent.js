@@ -24,6 +24,8 @@
 
 import { toCombatant, makeTeam, teamPower, formationBonus, TEAM_SIZE, FRONT_SLOTS } from './battle.js';
 import { powerOf, MITIGATION_K } from './battle-stats.js';
+import { ELEMENT_CYCLE, elementMultiplier } from './element.js';
+import { bandsFrom, pullOne } from './gacha.js';
 
 /* The difficulty dial. 1.0 is the fair fight Ash asked for as the default;
    the other two are deliberately mild, because power is already compressed —
@@ -249,14 +251,77 @@ export function arrangeFormation(channels, now = Date.now()) {
    means a player who builds for the matchup rather than for raw power is
    choosing to be under the AI's rating and beating it anyway, which is the
    outcome the whole stat design exists to make possible. */
-export function bestTeamFrom(draft, { now = Date.now(), count = TEAM_SIZE } = {}) {
+/* ── AUTO SELECT'S HIERARCHY (2026-08-15) ────────────────────────────────────
+   Ash's brief, items 4-6: Auto Select is "a fun convenience feature, not a
+   mathematical optimizer" and must never bench a significantly stronger card
+   to chase marginally better synergy — "UR + mediocre synergy should
+   generally be preferred over N + slightly better synergy". The stated
+   priority order (power, rarity, subscriber power, class diversity, obvious
+   elemental advantage, formation) reads as ONE ranking with a tie-break, not
+   six independent scores, and that is what a narrow tolerance window gives
+   for free: `powerOf` already folds rarity and subscriber power into a single
+   number (see the 2026-08-15 rebalance in battle-stats.js), so sorting by
+   power already carries the top three priorities in the list. Diversity and
+   element only get a vote among candidates that are ALREADY close on power —
+   never as a reason to reach past a card that clearly outclasses them.
+
+   8% is deliberately tight. It is meant to catch the case the brief actually
+   describes — "SSR + neutral element vs R/N + favorable element" where the
+   two cards were going to trade places anyway — not to let a modest UR lose a
+   slot to a perfectly-countering N, which is the exact outcome item 4 rules
+   out by name. */
+const SYNERGY_TOLERANCE = 0.08;
+
+/* Which elements would land an attack advantage against at least one element
+   the opponent fields. Built off `elementMultiplier` rather than walking
+   `ELEMENT_CYCLE` by hand, so this can never disagree with the wheel the fight
+   itself uses to decide the same question. */
+function counterElements(enemy, now) {
+  if (!enemy?.length) return null;
+  const enemyElements = new Set(enemy.map(ch => toCombatant(ch, now).element));
+  return new Set(ELEMENT_CYCLE.filter(e => [...enemyElements].some(d => elementMultiplier(e, d) > 1)));
+}
+
+/* Greedy, slot by slot: take the strongest remaining card unless something
+   within the tolerance window offers a class the team does not have yet, or —
+   when an opponent is known — an element that counters them. Ties within the
+   window still fall back to power, so "close enough to matter" never becomes
+   "close enough to ignore power entirely". */
+function pickBestTeam(pool, { count, wantedElements }) {
+  const remaining = [...pool];
+  const picked = [];
+  const usedClasses = new Set();
+
+  for (let slot = 0; slot < count && remaining.length; slot++) {
+    remaining.sort((a, b) => b.power - a.power || a.ch.id.localeCompare(b.ch.id));
+    const window = remaining[0].power * (1 - SYNERGY_TOLERANCE);
+    const eligible = remaining.filter(r => r.power >= window);
+
+    const score = r => (usedClasses.has(r.class) ? 0 : 2) + (wantedElements?.has(r.element) ? 1 : 0);
+    const best = eligible.reduce((b, r) => (score(r) - score(b) || r.power - b.power) > 0 ? r : b, eligible[0]);
+
+    picked.push(best);
+    usedClasses.add(best.class);
+    remaining.splice(remaining.indexOf(best), 1);
+  }
+  return picked.map(r => r.ch);
+}
+
+/* Auto Select's engine: the five cards a player gets when they press
+   Auto-pick, or the ceiling `draftPower` reads off a draft. `enemy` is
+   optional and only ever narrows toward cards the player could already see —
+   passing the scouted opponent (accept-a-challenge mode) is what lets Auto
+   Select use the "obvious elemental advantage" step of the brief's hierarchy;
+   omitting it (quick battle, draft mode, where no enemy exists yet) simply
+   drops that one factor and the rest of the hierarchy is unaffected. */
+export function bestTeamFrom(draft, { now = Date.now(), count = TEAM_SIZE, enemy = null } = {}) {
   /* Deduped for the same reason buildOpponentTeam is: the input here is a
      draft, and "your five strongest" must not be one card five times. */
-  return distinctById(draft)
-    .map(ch => ({ ch, power: powerOf(toCombatant(ch, now)) }))
-    .sort((a, b) => b.power - a.power || String(a.ch?.id).localeCompare(String(b.ch?.id)))
-    .slice(0, count)
-    .map(r => r.ch);
+  const pool = distinctById(draft).map(ch => {
+    const unit = toCombatant(ch, now);
+    return { ch, power: powerOf(unit), class: unit.class, element: unit.element };
+  });
+  return pickBestTeam(pool, { count, wantedElements: counterElements(enemy, now) });
 }
 
 export function draftPower(draft, { now = Date.now() } = {}) {
@@ -292,4 +357,101 @@ export function matchQuality({ targetPower, actualPower }) {
   if (!targetPower) return { close: true, drift: 0 };
   const drift = (actualPower - targetPower) / targetPower;
   return { close: Math.abs(drift) <= CLOSE_ENOUGH, drift };
+}
+
+/* ── THE AI'S OWN COLLECTION (2026-08-15) ──────────────────────────────────
+   Quick battle used to build its opponent with `matchOpponent`: a team aimed
+   at the player's own rating, assembled out of the entire 15,890-card set.
+   That produces an even fight by construction, and it is the wrong kind of
+   even — the AI was never a PLAYER, it was a difficulty setting wearing five
+   cards. Nothing it fielded had anything to do with luck, a collection, or
+   the same odds the player pulls on, so "I finally pulled a RUBY" changed
+   nothing about the fight it walked into.
+
+   So the AI now gets a COLLECTION instead of a target: the same number of
+   distinct cards the player owns, drawn on the same band-first weighted odds
+   from the same set, and then it builds its best five out of that with the
+   same Auto Select the player has. Same rules on both sides of the table —
+   which is exactly the model a live 1v1 already runs on, so Quick battle
+   stops being a different game from the one the arena teaches.
+
+   NOT A SIMULATED PULL SESSION. It draws straight through `pullOne` rather
+   than replaying x10s: no dupe bookkeeping, no reveal, no animation, nothing
+   the player would ever see. The only property that has to survive is the
+   drop curve, and `bandsFrom`/`pullOne` ARE that curve — the same two
+   functions the real pull screen uses, so the AI's collection cannot drift
+   from the odds the player pulls on without the player's own pulls drifting
+   with it.
+
+   DISTINCT cards, because that is the unit the player's side is counted in
+   (`myChannels()` dedupes by id, and a team may not field one creator twice).
+   Drawing `size` times would hand the AI fewer usable cards than the player
+   by however many dupes it happened to roll, which is a quiet handicap rather
+   than a fair one.
+
+   Overlap with the player's collection is ALLOWED, matching `draftOpponent`'s
+   reasoning: two independently drawn collections sharing a creator is the
+   gacha doing its job, not the AI copying a pick it could see. */
+/* How many consecutive already-owned draws before the sampler stops rolling
+   against the whole pool and starts rolling against what is left of it. */
+const STALL_LIMIT = 32;
+
+export function rollAiCollection(cards, size, { rng = Math.random } = {}) {
+  /* Deduped up front so the target can be clamped to what the pool can
+     actually yield, rather than discovered by exhausting it — which is what
+     stops a thin set (the bundled demo, a hand-built live banner) from
+     spinning. */
+  const byId = new Map();
+  for (const card of cards ?? []) {
+    const id = String(card?.channel?.id ?? '');
+    if (id && !byId.has(id)) byId.set(id, card);
+  }
+  const target = Math.min(size, byId.size);
+  if (target <= 0) return [];
+
+  const picked = new Map();
+  let remaining = [...byId.values()];
+  let bands = bandsFrom(remaining);
+  let misses = 0;
+
+  /* TWO SAMPLERS, AND THE SECOND ONE IS NOT AN OPTIMISATION — IT IS THE ONLY
+     REASON THIS TERMINATES AT THE RIGHT COUNT. Rolling against the full pool
+     and discarding duplicates is the cheap, obviously-correct-looking way to
+     do this, and it silently cannot finish: RUBY is 0.1% of the weight, so on
+     a pool holding two of them the chance of never drawing a specific one
+     across a thousand rolls is better than even. Under a fixed try-cap that
+     hands the AI a collection SMALLER than the player's — the exact unfairness
+     this function exists to remove, reintroduced by the sampler.
+
+     So a run of duplicates is treated as evidence that the pool is picked over,
+     and the bands are rebuilt from what is genuinely left. Every subsequent
+     roll then lands on an unpicked card, which both guarantees progress and
+     keeps the draw weighted: the rebuild renormalises over the remaining
+     bands, which is exactly weighted sampling WITHOUT replacement rather than
+     a uniform mop-up that would quietly flatten the odds at the tail. */
+  while (picked.size < target && bands.length) {
+    const card = pullOne(bands, rng);
+    const id = String(card?.channel?.id ?? '');
+    if (id && !picked.has(id)) {
+      picked.set(id, card.channel);
+      misses = 0;
+    } else if (++misses > STALL_LIMIT) {
+      remaining = remaining.filter(c => !picked.has(String(c?.channel?.id ?? '')));
+      bands = bandsFrom(remaining);
+      misses = 0;
+    }
+  }
+  return [...picked.values()];
+}
+
+/* The whole Quick-battle opponent: roll a collection the size of the player's,
+   then field the best five out of it, arranged. Returns the channels plus the
+   collection they came from, so a caller can say how big the AI's binder was
+   without drawing it twice. */
+export function collectionOpponent(cards, size, { now = Date.now(), rng = Math.random } = {}) {
+  const collection = rollAiCollection(cards, size, { rng });
+  return {
+    collection,
+    channels: arrangeFormation(bestTeamFrom(collection, { now }), now),
+  };
 }

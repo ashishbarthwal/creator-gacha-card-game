@@ -71,14 +71,41 @@
    small card, because crit multiplies an attack that is already larger. The
    stated vision was unreachable from the stated math.
 
-   The fix is the split below. Influence sets only the SIZE OF THE BUDGET, and
-   that budget is compressed hard (a 300M-subscriber channel gets ~1.3x the
-   points of a 1K one, not ~10x). Where those points GO is decided by the
-   card's own SHAPE — the four axes measured against each other, within one
-   card, which makes shape entirely size-independent. A giant tends to flat,
-   balanced numbers; a small channel with one breakout video is a glass cannon.
-   That is what lets a well-shaped N beat a UR, and it is why rarity can
-   honestly mean "how hard this was to pull" and nothing else. */
+   The fix is the split below. Influence sets the SIZE OF THE BUDGET, and where
+   those points GO is decided by the card's own SHAPE — the four axes measured
+   against each other, within one card, which makes shape entirely
+   size-independent. A giant tends to flat, balanced numbers; a small channel
+   with one breakout video is a glass cannon. That is what lets a well-shaped
+   small card occasionally beat a big one, and it is why rarity can honestly
+   mean "how hard this was to pull" — it now ALSO means "how strong this
+   generally is", which is the point of the 2026-08-15 rebalance below.
+
+   ── THE 2026-08-15 REBALANCE: SUBSCRIBERS BECOME THE DOMINANT TERM ────────
+   The split above shipped 2026-08-09 with BUDGET_GAIN=25 — a budget range of
+   200-225, about a 1.12x spread from the smallest channel in the game to the
+   largest. `powerOf` then compounds that gently through the mitigation and
+   momentum terms, and the measured result was the design's own stated goal:
+   19% of N cards out-rated the median UR/RUBY. That was deliberate — "your
+   best commons beat a mediocre legendary" was the shape Ash asked for then.
+
+   Ash's follow-up brief overrides it. The pull fantasy this game is actually
+   selling is "I pulled a huge creator, that mattered" first, and "light
+   tactics decide the close ones" second — not the reverse. Concretely: a
+   substantially more popular creator should generally be a substantially
+   stronger card, while a smaller one can still win through element advantage,
+   class verbs, formation, speed, momentum or plain luck. That is a different
+   point on the same dial, not a different mechanism — BUDGET_GAIN is still
+   the single knob, exactly as the comment on it has always said. It moved from
+   25 to 260, which puts the budget range at 200-460 (2.3x) rather than
+   200-225 (1.12x), and because `powerOf` compounds budget through the
+   mitigation and momentum terms rather than passing it through flat, that 2.3x
+   budget spread lands as a substantially larger power spread — see
+   `tools/battle-balance.js`'s SIZE block for the measured figure, which is
+   what this constant is retuned against, never by argument, same as always.
+
+   Shape and the tactical layer (element, class verbs, formation, speed) are
+   UNCHANGED — item 7 of the brief keeps them as they are, and they are still
+   what turns "the bigger card usually wins" into "usually, not always". */
 
 import { elementOf } from './element.js';
 
@@ -108,32 +135,29 @@ const ANCHOR = {
   velocityLog: [0.3, 8.0],    // ~1 -> ~1e8 subscribers won per year
 };
 
-/* The compression that keeps rarity out of raw power. BUDGET_BASE is what
-   every card gets before anything is earned; BUDGET_GAIN is the most that
-   maximum Influence can add. 200 and 90 put the strongest card at ~1.32x the
-   weakest, which is small enough for shape and matchup to overturn. Raising
-   BUDGET_GAIN is the single knob that makes the game more pay-to-pull. */
+/* What every card gets before anything is earned, and the most that maximum
+   Influence can add on top. BUDGET_GAIN is the single knob that decides how
+   pay-to-pull the game feels — raising it makes subscriber count matter more,
+   lowering it makes shape and tactics matter more. See the 2026-08-15 header
+   note for why it sits where it does now; the short version is that it went
+   from 25 (a 1.12x budget spread, tuned so a well-shaped small card would
+   often out-rate a big one) to 260 (a 2.3x spread, tuned so a much more
+   popular creator is USUALLY the stronger card) on Ash's explicit direction —
+   this is a design pivot, not a bug fix, and the old value is not "more
+   correct". */
 const BUDGET_BASE = 200;
-/* 90 until the combat layers landed, then 60 — and the reason is worth
-   stating, because "we made size matter less" is not it.
-
-   BUDGET_GAIN is not the whole compression, it is only the FIRST step of it.
-   powerOf multiplies several "1 + something/constant" terms together, and every
-   one of those somethings is a stat, and every stat is budget-scaled. When the
-   rating carried a single such term (defence) a gain of 90 landed the median
-   giant at 1.16x the median small card. Momentum and speed added two more, and
-   the same 90 compounded through three amplifiers instead of one: the ratio
-   went to 1.26 and the share of small cards out-rating the median giant — the
-   claim this whole file exists to make true — collapsed from 33.1% to 17.0%,
-   a hair above the 15% the balance block allows.
-
-   Measured across the live 23,539-card deck, 60 puts it back: ratio 1.15,
-   overlap 32.0%, attack flat with size at 0.95. So the gain came down to keep
-   the OUTPUT where it always was, rather than because the design changed its
-   mind about how much a big channel should be worth. Retune it whenever a new
-   multiplicative term enters powerOf, and retune it against
-   `node tools/battle-balance.js` rather than by argument. */
-const BUDGET_GAIN = 25;
+/* History, kept because the lesson is still true at any value: BUDGET_GAIN is
+   not the whole story, because `powerOf` multiplies several "1 +
+   something/constant" terms together and every one of those somethings is
+   budget-scaled — so a change here compounds through mitigation, momentum AND
+   speed rather than passing through flat. A gain of 90 (single amplifier: only
+   defence) landed the median giant at 1.16x the median small card; the same 90
+   with momentum and speed added compounded through three amplifiers and the
+   ratio went to 1.26. The number below is not "influence's raw share of
+   power" — it is a knob whose OUTPUT has to be read off `powerOf`, which is
+   why every change to it is measured against `node tools/battle-balance.js`
+   rather than reasoned about in isolation. */
+const BUDGET_GAIN = 170;
 
 /* The size-vs-punch trend line, fitted once against the live 23.5k-card deck
    and then FROZEN as a constant — the same reasoning that rules out percentile
@@ -521,58 +545,24 @@ export function classFrom(shape) {
   return bestShare >= EVEN_SHARE + SPECIALIST_MARGIN ? CLASS_FOR_STAT[best] : 'Balanced';
 }
 
-/* The whole derivation, and the only function the rest of the game needs.
-   Deterministic: the same channel and the same `now` always produce the same
-   combatant, which is what lets the balance tests assert distributions rather
-   than sample them. */
-export function battleStatsFrom(channel, now = Date.now()) {
-  const axes = axesFrom(channel, now);
-  const shape = shapeFrom(axes);
-  const budget = BUDGET_BASE + BUDGET_GAIN * (axes.influence / 100);
+/* ── THE COMBAT RATING, MOVED AHEAD OF battleStatsFrom (2026-08-15) ─────────
+   Used to live below, next to its only caller `powerOf`. It moved up because
+   the new subscriber power floor (see battleStatsFrom below) needs to rate a
+   candidate set of stats DURING derivation, before the card exists — and
+   duplicating the rating formula in two places is exactly the mistake
+   CLAUDE.md's "one derivation" rule exists to prevent. So there is one
+   function, `ratingOf`, and both the floor and the exported `powerOf` call it.
 
-  /* xN because shape sums to 1 across N stats: without it every stat would be
-     1/N of the budget and the SCALE numbers would have to absorb it. Read off
-     BATTLE_AXES rather than written as a literal, so adding a sixth axis one
-     day cannot silently rescale every card in the game. */
-  const n = BATTLE_AXES.length;
-  const klass = classFrom(shape);
-  const lift = klass === 'Balanced' ? ADAPTIVE_BONUS : 1;
-  const stat = key => Math.max(1, Math.round(budget * shape[key] * n * SCALE[key] * lift));
-
-  return {
-    axes,
-    shape,
-    class: klass,
-    element: elementOf(channel),
-    budget: Math.round(budget),
-    hp: stat('hp'),
-    atk: stat('atk'),
-    def: stat('def'),
-    spd: stat('spd'),
-    /* Percent of its own attack this card gains each round. A real stat bought
-       out of the same budget as the others, so a ramp is paid for in toughness
-       rather than handed out free. */
-    mom: stat('mom'),
-    /* The small chaos term — mostly PUNCH now, a little SPD, capped well below
-       certainty so no fight is decided by one roll. See the constants above for
-       why it moved off speed and what it can and cannot see. */
-    crit: Math.min(CRIT_CAP, CRIT_BASE + CRIT_FROM_PUNCH * shape.atk + CRIT_FROM_SPD * shape.spd),
-  };
-}
-
-/* The attack multiplier a card carries into `round` (1-based). Exported so the
-   UI can show a Riser's ramp climbing without re-deriving the rule, and so
-   powerOf below and battle.js cannot disagree about it. */
-export function momentumMultiplier(combatant, round, doubled = false) {
-  const rate = (combatant?.mom ?? 0) / 100 * (doubled ? 2 : 1);
-  return 1 + Math.min(MOMENTUM_CAP, rate * Math.max(0, round - 1));
-}
-
-/* The two combat constants live HERE rather than in battle.js, because
-   powerOf below has to agree with them exactly and battle.js already imports
-   from this file — putting them the other way round would be a cycle, and
-   keeping two copies would let the rating drift away from the fight it is
-   supposed to predict. */
+   IT IS A COMBAT RATING, NOT A SUM OF STATS. The first version added budget,
+   attack and health with hand-picked weights, and the matchmaker built on it
+   produced opponents that lost 100% of the time despite being rated equal: a
+   sum cannot see that defence multiplies health, or that a team with the same
+   total spread differently is not the same team. So the rating is what
+   actually decides a fight: how much damage a card can absorb, times how much
+   it deals. Defence is folded into health through the same mitigation curve
+   combat uses, crit into damage through the same multiplier, and the
+   geometric mean keeps the two in balance — a glass cannon and an unarmed
+   wall both rate low, and neither can be traded for the other at par. */
 export const MITIGATION_K = 110;
 export const CRIT_MULTIPLIER = 1.6;
 
@@ -630,23 +620,6 @@ export function extraActionChance(spd) {
   return Math.max(0, Math.min(1, ((spd ?? 0) - SPD_FLOOR) / SPD_PER_EXTRA));
 }
 
-/* One number for "how strong is this card", used ONLY for matchmaking — never
-   inside combat, where the individual stats do the work.
-
-   IT IS A COMBAT RATING, NOT A SUM OF STATS, and that is a correction rather
-   than a flourish. The first version added budget, attack and health with
-   hand-picked weights, and the matchmaker built on it produced opponents that
-   lost 100% of the time despite being rated equal: a sum cannot see that
-   defence multiplies health, or that a team with the same total spread
-   differently is not the same team. Equal ratings that produce lopsided fights
-   make "even match" a lie, which is the one thing this mode cannot be.
-
-   So the rating is what actually decides a fight: how much damage a card can
-   absorb, times how much it deals. Defence is folded into health through the
-   same mitigation curve combat uses, crit into damage through the same
-   multiplier, and the geometric mean keeps the two in balance — a glass cannon
-   and an unarmed wall both rate low, which is correct, and neither can be
-   traded for the other at par. */
 /* A fight runs about six rounds at these numbers, so the average momentum
    multiplier over one is the ramp at round ~3. Stated as a constant because
    the rating must not depend on how long a PARTICULAR fight ran — it is a
@@ -654,24 +627,171 @@ export function extraActionChance(spd) {
    outcome would not be a matchmaker. */
 const TYPICAL_ROUNDS = 6;
 
-export function powerOf(combatant) {
-  const effectiveHp = combatant.hp * (1 + combatant.def / MITIGATION_K);
+/* The shared core. Takes a bare stats object (not necessarily a real combatant
+   — the floor below builds a hypothetical one) so it can rate a candidate
+   during derivation as easily as a finished card after it. */
+function ratingOf({ hp, atk, def, spd, mom, crit }) {
+  const effectiveHp = hp * (1 + def / MITIGATION_K);
   /* Momentum is folded into DAMAGE rather than added as a term of its own: it
      multiplies the attack a card already has, so a ramp on a weak attack is
      worth little and a ramp on a Carry is worth a lot — which is exactly how
-     it plays. Leaving it out entirely was the alternative, and it would have
-     made every Riser systematically under-rated, so the matchmaker would have
-     handed players "even" fights they lose. */
-  const ramp = 1 + (combatant.mom ?? 0) / 100 * ((TYPICAL_ROUNDS - 1) / 2);
+     it plays. */
+  const ramp = 1 + (mom ?? 0) / 100 * ((TYPICAL_ROUNDS - 1) / 2);
   /* Speed enters as expected ACTIONS per round, for the reason spelled out at
      extraActionChance: a rating that could not see what speed does rated two
      whole classes into oblivion, and the matchmaker faithfully never picked
      them. */
-  const damage = combatant.atk
-    * (1 + combatant.crit * (CRIT_MULTIPLIER - 1))
+  const damage = atk
+    * (1 + crit * (CRIT_MULTIPLIER - 1))
     * Math.min(1 + MOMENTUM_CAP, ramp)
-    * (1 + extraActionChance(combatant.spd));
-  return Math.round(Math.sqrt(effectiveHp * damage));
+    * (1 + extraActionChance(spd));
+  return Math.sqrt(effectiveHp * damage);
+}
+
+/* ── THE SUBSCRIBER POWER FLOOR (2026-08-15) ────────────────────────────────
+   Item 3 of Ash's brief: "a famous creator should not become an absurdly weak
+   card simply because their randomly distributed stats happen to be poor."
+
+   THIS WAS NEVER A BUDGET PROBLEM. A card's total budget is a pure function of
+   influence and nothing else — shape decides only how that budget is SPLIT
+   across five stats, and shape always sums to 1, so a huge channel's full
+   budget is spent no matter how its shape falls. The actual failure mode is
+   allocation: if a giant's shape happens to dump most of its budget into MOM
+   or SPD — which feed `ratingOf` through a multiplier on damage rather than as
+   a direct component of effective health or attack — its rating can land well
+   below what its size alone would suggest, even though nothing was "wasted".
+   That is the exact complaint: a famous creator whose card reads as garbage.
+
+   THE FIX RATES A HYPOTHETICAL BALANCED CARD OF THE SAME BUDGET, not a fixed
+   number, so the floor rises with influence automatically rather than needing
+   a second "is this a big channel" branch. An even shape (1/5 each axis) is
+   what `shapeFrom` already returns for a channel with no signal at all, and
+   `classFrom` would read it as Balanced — so the reference card is literally
+   "a typical, unspecialized card of this size", including the Balanced lift,
+   which keeps the floor calculation honest rather than inventing a bonus.
+
+   THE SCALE-UP IS SOLVED NUMERICALLY, not closed-form, because `ratingOf` is
+   not linear in a uniform stat scale (the mitigation and momentum terms both
+   grow faster than linear) — a closed-form guess would either overshoot or
+   undershoot the floor. Bisection on the scale factor converges in a handful
+   of steps, costs nothing measurable per card, and is exact rather than
+   approximate. Only ever pushes stats UP: a card that already clears the
+   floor is untouched, so this can only help a genuinely unlucky big card, and
+   it can never lower anything. */
+const SUBSCRIBER_FLOOR_FRACTION = 0.82;
+
+function referenceRating(budget) {
+  const n = BATTLE_AXES.length;
+  const evenStat = key => Math.max(1, budget * EVEN_SHARE * n * SCALE[key] * ADAPTIVE_BONUS);
+  const crit = Math.min(CRIT_CAP, CRIT_BASE + CRIT_FROM_PUNCH * EVEN_SHARE + CRIT_FROM_SPD * EVEN_SHARE);
+  return ratingOf({
+    hp: evenStat('hp'), atk: evenStat('atk'), def: evenStat('def'),
+    spd: evenStat('spd'), mom: evenStat('mom'), crit,
+  });
+}
+
+/* Smallest k such that ratingOf(stats scaled by k) >= target. ratingOf is
+   monotone increasing in a uniform scale (every term it reads only grows when
+   hp/atk/def/spd/mom all grow together), so plain bisection is exact here —
+   no need for anything fancier. */
+function floorScale(stats, target) {
+  if (ratingOf(stats) >= target) return 1;
+  let lo = 1;
+  let hi = 4;   // a card needing more than 4x to reach its own size's floor would mean the floor itself is miscalibrated
+  while (ratingOf(scaleStats(stats, hi)) < target && hi < 64) hi *= 2;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (ratingOf(scaleStats(stats, mid)) < target) lo = mid; else hi = mid;
+  }
+  return hi;
+}
+
+const scaleStats = (s, k) => ({
+  hp: s.hp * k, atk: s.atk * k, def: s.def * k, spd: s.spd * k, mom: s.mom * k, crit: s.crit,
+});
+
+/* The whole derivation, and the only function the rest of the game needs.
+   Deterministic: the same channel and the same `now` always produce the same
+   combatant, which is what lets the balance tests assert distributions rather
+   than sample them. */
+export function battleStatsFrom(channel, now = Date.now()) {
+  const axes = axesFrom(channel, now);
+  const shape = shapeFrom(axes);
+  const budget = BUDGET_BASE + BUDGET_GAIN * (axes.influence / 100);
+
+  /* xN because shape sums to 1 across N stats: without it every stat would be
+     1/N of the budget and the SCALE numbers would have to absorb it. Read off
+     BATTLE_AXES rather than written as a literal, so adding a sixth axis one
+     day cannot silently rescale every card in the game. */
+  const n = BATTLE_AXES.length;
+  const klass = classFrom(shape);
+  const lift = klass === 'Balanced' ? ADAPTIVE_BONUS : 1;
+  const stat = key => Math.max(1, Math.round(budget * shape[key] * n * SCALE[key] * lift));
+
+  const raw = {
+    hp: stat('hp'),
+    atk: stat('atk'),
+    def: stat('def'),
+    spd: stat('spd'),
+    /* Percent of its own attack this card gains each round. A real stat bought
+       out of the same budget as the others, so a ramp is paid for in toughness
+       rather than handed out free. */
+    mom: stat('mom'),
+    /* The small chaos term — mostly PUNCH now, a little SPD, capped well below
+       certainty so no fight is decided by one roll. See the constants above for
+       why it moved off speed and what it can and cannot see. */
+    crit: Math.min(CRIT_CAP, CRIT_BASE + CRIT_FROM_PUNCH * shape.atk + CRIT_FROM_SPD * shape.spd),
+  };
+
+  /* THE FLOOR. See the comment above `referenceRating` for the full reasoning
+     — short version: a card's total budget can never be starved by a bad
+     shape (shape always sums to 1), but its RATING can, if that budget landed
+     on stats that barely move `ratingOf`. Scale every stat up together until
+     the rating clears a fraction of what a typical card of this size would
+     read, so an unlucky big creator is never the "somehow this card is
+     garbage" case the brief was written about. Only ever raises stats — a
+     card that already clears the floor comes back untouched. */
+  const target = SUBSCRIBER_FLOOR_FRACTION * referenceRating(budget);
+  const k = floorScale(raw, target);
+  const stats = k === 1 ? raw : {
+    hp: Math.max(1, Math.round(raw.hp * k)),
+    atk: Math.max(1, Math.round(raw.atk * k)),
+    def: Math.max(1, Math.round(raw.def * k)),
+    spd: Math.max(1, Math.round(raw.spd * k)),
+    mom: Math.max(1, Math.round(raw.mom * k)),
+    crit: raw.crit,
+  };
+
+  return {
+    axes,
+    shape,
+    class: klass,
+    element: elementOf(channel),
+    budget: Math.round(budget),
+    ...stats,
+  };
+}
+
+/* The attack multiplier a card carries into `round` (1-based). Exported so the
+   UI can show a Riser's ramp climbing without re-deriving the rule, and so
+   powerOf below and battle.js cannot disagree about it. */
+export function momentumMultiplier(combatant, round, doubled = false) {
+  const rate = (combatant?.mom ?? 0) / 100 * (doubled ? 2 : 1);
+  return 1 + Math.min(MOMENTUM_CAP, rate * Math.max(0, round - 1));
+}
+
+/* MITIGATION_K, CRIT_MULTIPLIER, extraActionChance and the rest of the rating
+   math now live ABOVE `battleStatsFrom`, next to `ratingOf` — moved there
+   2026-08-15 so the subscriber power floor could share the one formula rather
+   than keep a second copy. `powerOf` below is the public name that rest of the
+   game imports; it is a one-line wrapper over `ratingOf`, kept as its own
+   export so nothing outside this file needed to change. */
+
+/* One number for "how strong is this card", used ONLY for matchmaking — never
+   inside combat, where the individual stats do the work. See `ratingOf` above
+   for what it actually computes and why. */
+export function powerOf(combatant) {
+  return Math.round(ratingOf(combatant));
 }
 
 /* ── EVERY KNOB THIS FILE OWNS, IN ONE PLACE ────────────────────────────────
@@ -702,4 +822,7 @@ export const STAT_TUNING = Object.freeze({
   SPD_FLOOR, SPD_PER_EXTRA,
   /* How spread out each residual axis is around its trend line. */
   PUNCH_SPREAD, DEVOTION_SPREAD, CADENCE_SPREAD, VELOCITY_SPREAD,
+  /* The 2026-08-15 subscriber floor: what fraction of a typical same-size
+     card's rating a card may never fall below, regardless of shape. */
+  SUBSCRIBER_FLOOR_FRACTION,
 });

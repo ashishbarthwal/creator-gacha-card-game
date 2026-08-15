@@ -323,6 +323,37 @@ export function applyExcludes(channels, excluded) {
   return { kept, removed };
 }
 
+/* ── THE AVATAR TEMPLATE ────────────────────────────────────────────────────
+   Every avatar Google serves for this project has the same head and the same
+   tail: the host, and the `=s800-…` size spec the live adapter asks for so a
+   face is not soft at card size (CLAUDE.md, "Card look"). Measured on the
+   15,831-card deck, 15,828 of them matched byte for byte — 0.78 MB of the
+   7.29 MB set was one prefix and one suffix, repeated.
+
+   That is worth removing for the PARSE, not for the download. Gzip already
+   sees through the repetition on the wire; what it cannot help with is
+   `JSON.parse` building 15,831 strings of which two thirds are template, on a
+   phone, before the first pull.
+
+   IT DEGRADES TO VERBATIM, which is what makes it safe to ship. A URL that
+   does not match the template is written whole into `avatarUrl` exactly as
+   before, and the reader accepts either field — so an avatar Google starts
+   serving in a new shape costs bytes rather than a broken card face. */
+const AVATAR_PREFIX = 'https://yt3.ggpht.com/';
+const AVATAR_SUFFIX = '=s800-c-k-c0x00ffffff-no-rj';
+
+export function packAvatar(url) {
+  /* http:// on an https page is a BLOCKED IMAGE, not merely an untidy one, and
+     three cards in the live deck shipped that way. Upgrading here rather than
+     in the renderer keeps it fixed for every reader of the set, and costs
+     nothing: the CDN serves the identical bytes over TLS. */
+  const https = String(url ?? '').replace(/^http:\/\//, 'https://');
+  if (https.startsWith(AVATAR_PREFIX) && https.endsWith(AVATAR_SUFFIX)) {
+    return { avatar: https.slice(AVATAR_PREFIX.length, -AVATAR_SUFFIX.length) };
+  }
+  return { avatarUrl: https };
+}
+
 /* The published Channel record. A positive allowlist for the same reason
    engine/candidates.js uses one: a blocklist would start publishing whatever
    field the seam grows next, silently. `country` is absent by construction. */
@@ -331,8 +362,7 @@ function toPublished(channel) {
     id: String(channel.id),
     title: String(channel.title ?? ''),
     handle: String(channel.handle ?? ''),
-    avatarUrl: String(channel.avatarUrl ?? ''),
-    hiddenSubscriberCount: Boolean(channel.hiddenSubscriberCount),
+    ...packAvatar(channel.avatarUrl),
     viewCount: String(channel.viewCount ?? '0'),
     videoCount: String(channel.videoCount ?? '0'),
     /* Channel age, for the battle axes. It costs NOTHING to ship: channels.list
@@ -357,6 +387,13 @@ function toPublished(channel) {
   /* Omitted rather than zeroed when hidden, matching the live API and the
      typedef — the core reads absence as the bottom band on purpose. */
   if (channel.subscriberCount != null) record.subscriberCount = String(channel.subscriberCount);
+  /* WRITTEN ONLY WHEN TRUE, for the same reason and with the same shape as the
+     line above. It was `false` on all 15,831 cards of the live deck — 0.46 MB
+     spent stating the default — and absence already reads as false everywhere
+     that matters: data/sets.js coerces with Boolean(), and rarityFromSubs takes
+     it as an optional second argument. A hidden count is the rare case, so the
+     rare case is what earns the bytes. */
+  if (channel.hiddenSubscriberCount) record.hiddenSubscriberCount = true;
   return record;
 }
 

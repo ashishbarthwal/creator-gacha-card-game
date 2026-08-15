@@ -1,57 +1,74 @@
 /* functions/api/ready/[room] — the match room, and the whole of the backend.
 
    ── WHAT IT HOLDS ────────────────────────────────────────────────────────
-   Per room, for ten minutes: whether the challenge was accepted, whether each
-   side has readied, when the second one did, and the defender's reply code.
-   Nothing else, and nothing about a person.
+   Per room, for ten minutes: whether the challenge was accepted, when the
+   shared build phase started (server-stamped, so both clocks agree on the
+   countdown), the defender's collection size (so the challenger can run the
+   fairness check without a third code exchange), and — once each side locks
+   in — their final five and a locked flag. Nothing else, and nothing about a
+   person.
 
-   Three ops write it, and the split between the last two is load-bearing:
-   `accept` (the defender has the challenge), `team` (here are my five), and
-   `ready` (I am ready to watch). `team` and `ready` were once the same op, on
-   the reasoning that pressing Ready IS committing the team. That was true of
-   the original copy-paste flow and stopped being true the moment the lobby grew
-   a Ready button of its own — see the note on the `team` branch below.
+   ── WHY THIS SHAPE, REWRITTEN 2026-08-15 ──────────────────────────────────
+   v1 held `accepted` + two `ready` flags + one `code` (the defender's reply),
+   because v1's flow was asymmetric on purpose: the challenger committed
+   before sending, so only the defender's team ever needed to travel through
+   the room. Ash's 2026-08-15 brief (items 8-14) removes that asymmetry —
+   both players now land in the SAME team-building screen at the SAME time
+   once accepted, and *either* side may have sent a bare, team-less challenge
+   (item 9). That means the room has to be able to carry BOTH teams, not just
+   one, and readiness stops being "the defender uploads a reply" and becomes
+   "each side locks independently" — hence `lock` replacing `team`+`ready`.
 
-   ── WHY IT NOW CARRIES A CODE, WHEN IT DELIBERATELY DID NOT ──────────────
-   The first cut of this endpoint held two booleans and refused to touch card
-   data, on the reasoning that a server never sent a statistic can never store
-   one. Ash's flow needs more than that: the challenger presses Ready and the
-   match begins, with no second copy-paste — and a fight cannot be resolved
-   without both teams, so the defender's five have to reach the challenger
-   somehow.
+   Teams travel as plain channel objects here, not the compact packed-array
+   codec `engine/challenge.js` uses for copy-paste strings — this is a fetch
+   body, not something a human re-types, so there is no reason to pay the
+   packing complexity twice. Same channel shape, same fields, just JSON.
 
-   The earlier worry that this breaks YouTube's 30-day cap on stored statistics
-   was simply wrong, and is corrected here rather than quietly dropped: the cap
-   is a MAXIMUM AGE, and this holds a code for ten minutes. The real cost was
-   always a documentation one — the privacy policy had to stop saying the
-   endpoint never receives a card — and that has been paid honestly rather than
-   left stale.
-
-   What has NOT changed is everything else about the shape. The room id is still
-   a hash both browsers derive for themselves from the challenge code, so
-   establishing a match still costs no round trip and the id still identifies a
-   match without describing one. There are still no accounts, no cookies, no
-   logging of our own, and nothing here outlives its TTL.
+   ── WHY IT CARRIES A COLLECTION SIZE ──────────────────────────────────────
+   The fairness check (items 15-27) needs each side to know the OTHER side's
+   collection SIZE, never their collection. The challenger's size already
+   travels in the challenge code itself (`engine/challenge.js`'s
+   `collectionSize` field) — that direction needs no server help. The
+   defender's size has nowhere else to go, since the defender has not sent
+   anything yet at the moment the challenger needs it, so `accept` carries it.
+   Never a card, never an id list — one integer, same discipline as the code.
 
    ── IT MUST STAY OPTIONAL ────────────────────────────────────────────────
    The game shipped with no server and still has to work without one. Missing
    binding, failed request, offline: the answer is `enabled: false` and the
-   arena falls back to the copy-paste flow it has always had. That fallback is
-   not a degraded mode bolted on, it is the original path kept whole.
+   arena falls back to the sequential copy-paste flow it has always had. That
+   fallback is not a degraded mode bolted on, it is the original path kept
+   whole — and it is the ONLY path for a bare (team-less) challenge that
+   reaches an unavailable room, since two people passing a string by hand have
+   no live channel to build simultaneously over.
 
    The KV namespace was bound on 2026-08-08 and the lobby is live. One measured
    characteristic worth knowing before debugging a room that looks dead: KV
-   caches MISSES, and `cacheTtl` cannot go below 60s, so a room polled before it
-   exists can keep reading empty at that edge for up to a minute after it is
+   caches MISSES, and `cacheTtl` cannot go below 60s, so a room polled before
+   it exists can keep reading empty at that edge for up to a minute after it is
    written. Writes themselves are reliable — 30 polls over 90s, no flapping. */
 
 const TTL_SECONDS = 600;
-const COUNTDOWN_MS = 3000;
+const COUNTDOWN_MS = 3000;      // the short "both locked, starting…" beat
+const BUILD_MS = 30000;         // the shared team-building window (brief item 12)
 
-/* A reply code for five cards runs ~1,800 characters. The ceiling is generous
-   enough never to reject a real one and low enough that this cannot be used as
-   free storage for something else. */
-const MAX_CODE = 8000;
+/* THE LOBBY, ADDED 2026-08-15 TO CLOSE THE LAST ASYMMETRY. Accepting a
+   challenge used to drop both sides straight into the build phase — but only
+   ONE of them might face the collection-fairness gate, and while they read it
+   and chose, their opponent was already building against a running clock. The
+   side with a decision to make was the side punished for making it.
+
+   So acceptance now opens a LOBBY instead: a fixed window in which the larger
+   side chooses CONTINUE or CHICKEN OUT, the other side is told a decision is
+   being made, and NEITHER is building. The build clock does not start until
+   both sides have entered — which is why `buildStartAt` is no longer stamped
+   here on accept, and why `enter` exists to stamp it. */
+const GATE_MS = 10000;
+
+/* Five real channel objects, JSON rather than packed, so this is a generous
+   ceiling rather than a tight one — low enough that this cannot be used as
+   free storage for something else, high enough to never reject a real team. */
+const MAX_TEAM_JSON = 20000;
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -72,7 +89,11 @@ function cleanRoom(raw) {
 
 const key = room => `match:${room}`;
 
-const EMPTY = { accepted: false, code: '', a: false, b: false, bothAt: null };
+const EMPTY = {
+  accepted: false, lobbyAt: null, buildStartAt: null, csB: null,
+  enteredA: false, enteredB: false, bailed: null,
+  lockedA: false, lockedB: false, teamA: null, teamB: null, bothAt: null,
+};
 
 async function read(env, room) {
   const raw = await env.READY.get(key(room));
@@ -81,9 +102,16 @@ async function read(env, room) {
     const p = JSON.parse(raw);
     return {
       accepted: Boolean(p.accepted),
-      code: typeof p.code === 'string' ? p.code : '',
-      a: Boolean(p.a),
-      b: Boolean(p.b),
+      lobbyAt: Number.isFinite(p.lobbyAt) ? p.lobbyAt : null,
+      buildStartAt: Number.isFinite(p.buildStartAt) ? p.buildStartAt : null,
+      csB: Number.isFinite(p.csB) && p.csB >= 0 ? p.csB : null,
+      enteredA: Boolean(p.enteredA),
+      enteredB: Boolean(p.enteredB),
+      bailed: p.bailed === 'a' || p.bailed === 'b' ? p.bailed : null,
+      lockedA: Boolean(p.lockedA),
+      lockedB: Boolean(p.lockedB),
+      teamA: Array.isArray(p.teamA) ? p.teamA : null,
+      teamB: Array.isArray(p.teamB) ? p.teamB : null,
       bothAt: Number.isFinite(p.bothAt) ? p.bothAt : null,
     };
   } catch {
@@ -94,26 +122,59 @@ async function read(env, room) {
 const save = (env, room, state) =>
   env.READY.put(key(room), JSON.stringify(state), { expirationTtl: TTL_SECONDS });
 
-/* The client never needs `code` echoed back to the side that uploaded it, but
-   sending it to both is simpler than tracking who asked and costs one field. */
 const view = (state, extra = {}) => ({
   enabled: true,
   now: Date.now(),
+  gateMs: GATE_MS,
+  buildMs: BUILD_MS,
   countdownMs: COUNTDOWN_MS,
   accepted: state.accepted,
-  a: state.a,
-  b: state.b,
+  lobbyAt: state.lobbyAt,
+  buildStartAt: state.buildStartAt,
+  csB: state.csB,
+  enteredA: state.enteredA,
+  enteredB: state.enteredB,
+  bailed: state.bailed,
+  lockedA: state.lockedA,
+  lockedB: state.lockedB,
+  teamA: state.teamA,
+  teamB: state.teamB,
   bothAt: state.bothAt,
-  code: state.code,
   ...extra,
 });
+
+/* A team as it arrives over the wire: an array of TEAM_SIZE plain channel
+   objects, each with a non-empty id, no id repeated. Deliberately loose about
+   everything else — this endpoint has no idea what a valid channel looks
+   like and does not need to; `engine/battle-stats.js` on both ends will
+   simply produce whatever it produces from whatever arrives, exactly as it
+   already tolerates any channel shape from the seam. What it must refuse is
+   the shape of an ATTACK: something big enough to matter as storage, or
+   malformed enough to jam a room for the two people trying to use it. */
+/* Five, always — a locked team is a FINAL team (the shared build phase
+   auto-fills any empty slot before it ever calls this), so anything other
+   than exactly five is damage, not a partial draft to tolerate. Hardcoded
+   rather than importing engine/battle.js's TEAM_SIZE: this file is the one
+   deliberately import-free module in the project (see CLAUDE.md's
+   Architecture section), so its handful of constants stay self-contained,
+   the same way TTL_SECONDS and MAX_TEAM_JSON above are. */
+const TEAM_SIZE = 5;
+
+function validTeam(team) {
+  if (!Array.isArray(team) || team.length !== TEAM_SIZE) return false;
+  if (JSON.stringify(team).length > MAX_TEAM_JSON) return false;
+  const ids = team.map(ch => String(ch?.id ?? ''));
+  if (ids.some(id => !id)) return false;
+  return new Set(ids).size === ids.length;
+}
 
 export async function onRequest(context) {
   const { request, env, params } = context;
 
   /* No binding means the namespace has not been attached yet. A 200 saying
-     `enabled:false` rather than a 500 is deliberate: the client reads it as "no
-     match rooms today" and uses the copy-paste flow, needing no error path. */
+     `enabled:false` rather than a 500 is deliberate: the client reads it as
+     "no match rooms today" and uses the sequential fallback, needing no
+     error path. */
   if (!env?.READY) return json({ enabled: false }, 200);
 
   const room = cleanRoom(params?.room);
@@ -138,50 +199,65 @@ export async function onRequest(context) {
 
   if (body?.op === 'accept') {
     state.accepted = true;
-  } else if (body?.op === 'team') {
-    /* COMMITTING A TEAM IS NOT READYING, and conflating the two was a real bug:
-       the defender uploaded their five on leaving the builder, which flipped
-       their ready flag before the lobby had even rendered. Both screens then
-       told the truth about a lie — the challenger saw "they are ready", the
-       defender saw "you are ready", and neither player had pressed anything.
-       Worse, the challenger pressing Ready was then enough to stamp `bothAt`
-       and start a fight the defender never agreed to. So the code arrives by
-       its own op, and readiness stays something a person does. */
-    const code = typeof body.code === 'string' ? body.code : '';
-    if (!code || code.length > MAX_CODE) return json({ error: 'bad code' }, 400);
-    state.code = code;
-    /* Committing a team implies having accepted, so this heals a lost `accept`
-       instead of leaving the challenger watching a room that will never flip.
-       The defender's `accept` is a single fire-and-forget request; if it failed
-       — a phone switching networks between reading the code and pasting it —
-       nothing else would ever set this flag. */
-    state.accepted = true;
-  } else if (body?.op === 'ready') {
+    /* Stamped once, by the server, the moment both sides are confirmed
+       present — the challenger is already watching this room (that is what
+       "waiting for someone to accept" means), so the defender's accept IS
+       that confirmation. This opens the LOBBY, not the build: both clients
+       count the 10-second decision window down against this one server
+       timestamp, so two devices whose clocks disagree still land on the same
+       window. */
+    if (!state.lobbyAt) state.lobbyAt = Date.now();
+    const cs = Number(body.cs);
+    if (Number.isFinite(cs) && cs >= 0) state.csB = Math.floor(cs);
+  } else if (body?.op === 'enter') {
+    /* "I am through the lobby and ready to build" — pressed, or fired
+       automatically when the lobby timer runs out. Deliberately separate from
+       `accept`: accepting says someone is THERE, entering says they have
+       resolved whatever the lobby asked of them, and only the larger-collection
+       side is ever asked anything. */
     const side = body.side === 'a' || body.side === 'b' ? body.side : null;
     if (!side) return json({ error: 'bad side' }, 400);
-    /* The defender re-sends their code alongside Ready even though `team`
-       already stored it. It is idempotent, it costs one field, and it heals the
-       one case that would otherwise deadlock: a `team` write that never landed
-       leaves a room whose only copy of the five is in a browser. */
-    if (side === 'b' && typeof body.code === 'string' && body.code) {
-      if (body.code.length > MAX_CODE) return json({ error: 'bad code' }, 400);
-      state.code = body.code;
-    }
-    /* NEITHER side may ready before the room has a code to fight over. This
-       used to gate the challenger only, which was half a rule: a defender
-       marked ready with no code on the server is a room that is ready and
-       unfightable. Gated here as well as in the UI so it does not depend on
-       this being the only client. */
-    if (!state.code) return json({ error: 'not ready yet' }, 409);
-    state[side] = true;
+    state.accepted = true;
+    if (!state.lobbyAt) state.lobbyAt = Date.now();
+    state[side === 'a' ? 'enteredA' : 'enteredB'] = true;
+  } else if (body?.op === 'bail') {
+    /* CHICKEN OUT, and it has to reach the room. Before the lobby existed this
+       was a purely local retreat, which left the other player waiting on
+       someone who had already gone — tolerable when nobody was watching for it,
+       indefensible now that the whole point of the lobby is one side waiting on
+       the other's decision. */
+    const side = body.side === 'a' || body.side === 'b' ? body.side : null;
+    if (!side) return json({ error: 'bad side' }, 400);
+    if (!state.bailed) state.bailed = side;
+  } else if (body?.op === 'lock') {
+    const side = body.side === 'a' || body.side === 'b' ? body.side : null;
+    if (!side) return json({ error: 'bad side' }, 400);
+    if (!validTeam(body.team)) return json({ error: 'bad team' }, 400);
+    /* Locking implies having accepted, entered and started building — this
+       heals a lost `accept` or `enter` the same way v1's `team` op healed a
+       lost one, for the same reason: a phone switching networks between
+       reading a code and pasting it is normal, not exceptional. */
+    state.accepted = true;
+    if (!state.lobbyAt) state.lobbyAt = Date.now();
+    state[side === 'a' ? 'enteredA' : 'enteredB'] = true;
+    if (side === 'a') { state.teamA = body.team; state.lockedA = true; }
+    else { state.teamB = body.team; state.lockedB = true; }
   } else {
     return json({ error: 'bad op' }, 400);
   }
 
-  /* Stamped once, by the server, when the SECOND side readies. Both clients
-     count down from this against the server's own clock, so two devices whose
-     clocks disagree still land on the same GO. */
-  if (state.a && state.b && !state.bothAt) state.bothAt = Date.now();
+  /* THE BUILD CLOCK STARTS WHEN BOTH SIDES ARE THROUGH THE LOBBY, not when the
+     challenge was accepted. That is the whole fix: whichever side had a
+     decision to make, neither is building while it is being made, and the 30
+     seconds begin for the two of them at one instant the server picks. */
+  if (state.enteredA && state.enteredB && !state.buildStartAt) state.buildStartAt = Date.now();
+
+  /* Stamped once, by the server, when the SECOND side locks. Both clients
+     count down a short shared "starting…" beat from this against the
+     server's own clock, same trick as `buildStartAt` above. Brief item 13:
+     both locked means start immediately, never wait out the remaining build
+     timer — this is what lets a client tell the two apart. */
+  if (state.lockedA && state.lockedB && !state.bothAt) state.bothAt = Date.now();
 
   await save(env, room, state);
   return json(view(state));

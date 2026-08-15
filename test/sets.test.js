@@ -4,7 +4,8 @@
    yields channels the pure core can turn into cards unchanged. */
 
 import { describe, it, expect } from 'vitest';
-import { parseSet } from '../src/data/sets.js';
+import { parseSet, unpackAvatar } from '../src/data/sets.js';
+import { packAvatar } from '../src/engine/setbuild.js';
 import { DEMO_SET } from '../src/data/demo.js';
 import { RARITY_ORDER, toCard } from '../src/engine/core.js';
 import { battleStatsFrom, BATTLE_CLASSES } from '../src/engine/battle-stats.js';
@@ -112,5 +113,70 @@ describe('parseSet — output feeds the pure core unchanged', () => {
       }
       expect(BATTLE_CLASSES).toContain(s.class);
     }
+  });
+});
+
+/* ── THE PACKED AVATAR ROUND TRIP ───────────────────────────────────────────
+   setbuild.js strips the host and the `=s800-…` size spec off Google avatar
+   URLs, because they were identical on 15,828 of the live deck's 15,831 cards
+   and cost 0.78 MB of parse. This file is the other half of that bargain: what
+   the builder packs, the reader has to put back byte for byte, or every card
+   face in the game loses its picture at once.
+
+   Pinned as a genuine round trip through both real functions rather than
+   against a hardcoded string, so the two constants cannot drift apart in a
+   later edit without a test going red. */
+describe('avatar packing round trip', () => {
+  const REAL = 'https://yt3.ggpht.com/ytc/AIdro_kf8YZ4qq9RcHUXjwdVTKayVyiBgfD9CslxMXKGSY7gIw4=s800-c-k-c0x00ffffff-no-rj';
+
+  it('a packed avatar rebuilds to the exact original URL', () => {
+    const packed = packAvatar(REAL);
+    expect(packed).toHaveProperty('avatar');
+    expect(packed).not.toHaveProperty('avatarUrl');
+    expect(unpackAvatar(packed)).toBe(REAL);
+  });
+
+  it('packs the variable middle only — the template does not travel', () => {
+    const { avatar } = packAvatar(REAL);
+    expect(avatar).not.toContain('yt3.ggpht.com');
+    expect(avatar).not.toContain('=s800');
+    /* Exactly the template's own length, not a vague "smaller": the 22-char
+       host plus the 27-char size spec is the whole of what this saves, and
+       49 characters x ~15.8k cards is the 0.78 MB the change is for. */
+    expect(REAL.length - avatar.length).toBe(49);
+  });
+
+  /* THE DEGRADE-TO-VERBATIM PATH, which is what makes this safe to ship the day
+     before a release: a URL Google serves in some other shape must cost bytes,
+     never a broken card. */
+  it.each([
+    ['a different host', 'https://example.com/avatar.png'],
+    ['a different size spec', 'https://yt3.ggpht.com/abc=s176-c-k-c0x00ffffff-no-rj'],
+    ['no avatar at all', ''],
+  ])('leaves %s verbatim in avatarUrl', (_label, url) => {
+    const packed = packAvatar(url);
+    expect(packed).not.toHaveProperty('avatar');
+    expect(unpackAvatar(packed)).toBe(url);
+  });
+
+  /* http:// on an https page is a BLOCKED image, and three cards in the live
+     deck shipped exactly that. The upgrade happens at pack time so every reader
+     of the set gets it, not just the one renderer that might have patched it. */
+  it('upgrades http to https, and still packs', () => {
+    const insecure = REAL.replace('https://', 'http://');
+    expect(unpackAvatar(packAvatar(insecure))).toBe(REAL);
+  });
+
+  it('parseSet accepts a packed channel and yields the same shape as an unpacked one', () => {
+    const raw = validRaw();
+    raw.channels = [
+      { ...raw.channels[0], avatarUrl: undefined, ...packAvatar(REAL) },
+    ];
+    const [ch] = parseSet(raw).channels;
+    expect(ch.avatarUrl).toBe(REAL);
+    expect(ch).not.toHaveProperty('avatar');
+    /* Absence of hiddenSubscriberCount reads as false — the builder stopped
+       writing it when false, so every card in a new set arrives without it. */
+    expect(ch.hiddenSubscriberCount).toBe(false);
   });
 });

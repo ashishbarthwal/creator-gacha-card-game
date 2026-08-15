@@ -3,56 +3,69 @@
    Wiring only, in the spirit of main.js. Every rule it enforces comes from
    engine/ — battle.js resolves the fight, opponent.js builds the AI and
    arranges formations, element.js decides matchups, challenge.js encodes the
-   cross-window code. Nothing here decides anything about the game; if a number
-   looks wrong on this screen, it is wrong in the engine.
+   cross-window code, fairness.js caps a larger collection's search space.
+   Nothing here decides anything about the game; if a number looks wrong on
+   this screen, it is wrong in the engine.
 
-   ── THREE WAYS TO FIGHT, AND WHY ALL THREE ────────────────────────────────
+   ── THREE WAYS TO FIGHT ────────────────────────────────────────────────────
      Quick battle   an AI matched to YOUR team out of the current set pool.
                     The one that always works, including with nobody else
                     around, which is why it is first.
-     Challenge      you commit five and hand out a code.
-     Accept         you paste someone's code, SEE their five, and build
-                    against them.
+     Challenge      send a code — build your five now, or send it bare and
+                    build together once they accept.
+     Accept         paste a code someone sent you.
 
-   The asymmetry between the last two is deliberate and is the whole reason the
-   element wheel is worth having. Countering an opponent you cannot see is just
-   picking your best five again — so somebody has to commit first, and the code
-   is what makes "first" mean something. The challenger commits their team AND
-   the seed before they can know what they are up against; the defender gets to
-   scout. Swap roles for the return match and the advantage swaps with it.
+   ── REWRITTEN 2026-08-15: NO MORE SCOUTING ────────────────────────────────
+   v1 made the challenger commit a team before the defender could even see
+   the challenge, so the defender always built LAST, against a visible enemy
+   — real strategic value, and one-sided. Ash's brief (items 8-14) removes
+   that: once a challenge is accepted through a LIVE match room, both players
+   land on the SAME shared build screen at the SAME time and build blind —
+   neither one scouts the other. The challenger may still build a team before
+   sending ("cocky" — brief item 10), but it is only ever a starting point,
+   editable right up until they press Ready in the shared build phase; the
+   defender never sees it early.
 
-   ── THE LOBBY, AND THE TWO PATHS THROUGH IT ───────────────────────────────
-   A fight cannot be resolved until BOTH teams are known, and when the
-   challenger hands over their code only the defender holds both. Everything
-   about how the two of them meet follows from that one fact.
+   ── THE TWO PATHS, AND WHERE THEY DIVERGE ─────────────────────────────────
+   A fight cannot be resolved until BOTH teams are known. Whether that
+   moment can happen live depends on one thing: is the match room reachable.
 
-     LIVE PATH (a match room is reachable). The challenger commits and waits;
-     the defender pastes, presses Challenge Accepted, and the challenger's
-     screen goes green and opens a lobby. The defender builds against the five
-     they can see and presses Ready, which uploads their team — pressing Ready
-     IS committing, so the two are one act. That upload is what unlocks the
-     challenger's own Ready button, because until it lands their browser
-     literally cannot compute the battle. Both ready, and a countdown anchored
-     to the server's stamp starts them together.
+     LIVE PATH (a match room is reachable). `renderAcceptPaste`'s accept and
+     `renderChallengeOut`'s poll both detect this the same way — the server
+     answers `enabled:true`. Both sides then run `enterSharedBuild`, which
+     runs the collection-fairness check (fairness.js, brief items 15-27) for
+     whichever side is more than 1.5x the other's size, then lands both of
+     them on `renderSharedBuildScreen`: a shared, server-anchored 30-second
+     timer, no enemy panel, Auto Build or manual picks, and a Ready button
+     that LOCKS a side's team the moment it is pressed (or the timer expires
+     — brief items 13-14). Both locked -> a short face-off beat
+     (`renderLockedFaceoff`) -> the fight.
 
-     MANUAL PATH (no match room — unbound, offline, blocked). Exactly what this
-     app shipped with: the defender copies a reply code, sends it, the
-     challenger pastes it, and both press Start on a spoken three-two-one. It
-     is kept whole rather than reduced to a stub, because on the day the lobby
-     breaks it is the only path there is.
+     MANUAL PATH (no match room — unbound, offline, blocked). Exactly what
+     this app shipped with, and deliberately untouched by the 2026-08-15
+     rewrite: two people passing a string by hand have no live channel to
+     build simultaneously over, so it stays sequential. The challenger must
+     have committed a team before sending (a BARE challenge has nothing to
+     fall back to — see the guard in `renderAcceptPaste` and
+     `engine/challenge.js`'s `makeResult`); the defender scouts and builds
+     against the visible five, commits, and hands back a code by hand
+     (`fightAsDefender`/`renderHandoff`); both press Start on a spoken
+     three-two-one (`renderReady`/`runCountdown`).
 
-   The server is told a room hash, which side pressed, and — once — the
-   defender's reply code. See functions/api/ready/[room].js for why the line
-   sits exactly there, and DECISIONS.md for the amendment that allowed it.
+   The server (functions/api/ready/[room].js) is told a room hash, which side
+   accepted or locked, each side's collection SIZE, and — once each side
+   locks — their five cards. See that file for the wire shape and
+   DECISIONS.md for the amendment that allows it to exist at all.
 
    ── HOW TWO WINDOWS SHOW THE SAME FIGHT ───────────────────────────────────
-   Nothing about the battle itself is synchronised, and the lobby does not change
-   that. Both windows resolve the SAME fight independently from the same inputs,
-   because engine/battle.js is pure and seed-deterministic and
-   engine/battle-stats.js takes its clock as a parameter. The code carries the
-   teams, the seed and the pinned `now`; both sides run `resolveBattle` and get
-   identical logs, hit for hit. The lobby only decides WHEN they press play — it
-   never carries a result, and a result it did carry could not be trusted anyway.
+   Nothing about the battle itself is synchronised, live or manual. Both
+   windows resolve the SAME fight independently from the same inputs, because
+   engine/battle.js is pure and seed-deterministic and engine/battle-stats.js
+   takes its clock as a parameter. The seed and the pinned `now` are fixed the
+   moment the challenge is CREATED (before either side can see the other's
+   team) and travel with it; both sides run `battle` and get identical logs,
+   hit for hit. Neither path ever carries a result — only inputs — and a
+   result it did carry could not be trusted anyway (see challenge.js).
 
    TEAM ORDER IS PART OF THE PROTOCOL: side 'a' is always the challenger and
    side 'b' always the defender, in both windows, whichever one the player is
@@ -67,14 +80,19 @@ import {
   TEAM_SIZE, FRONT_SLOTS, battle, makeTeam, teamPower, matchupPreview, formationBonus,
 } from '../engine/battle.js';
 import { battleStatsFrom } from '../engine/battle-stats.js';
-import { matchOpponent, arrangeFormation, bestTeamFrom, matchQuality } from '../engine/opponent.js';
+import { arrangeFormation, bestTeamFrom, collectionOpponent } from '../engine/opponent.js';
+import { mountCodex } from './codex.js';
 import { ELEMENT_CYCLE, ELEMENT_LORE } from '../engine/element.js';
 import {
-  makeChallenge, makeResult, decodeCode, echoMatches, newSeed, fingerprint, ChallengeError,
+  makeChallenge, makeResult, decodeCode, newSeed, fingerprint, ChallengeError,
 } from '../engine/challenge.js';
 import {
-  roomFor, acceptChallenge, sendTeam, readyWithTeam, readyChallenger, checkRoom, presenceOff,
+  roomFor, acceptChallenge, lockTeam, enterBuild, bailOut, checkRoom, presenceOff,
+  presenceAvailable,
 } from '../data/presence.js';
+import {
+  MAX_COLLECTION_RATIO, needsShedding, eligibleSizes, shedCollection, protectedRaritiesPresent,
+} from '../engine/fairness.js';
 import { renderBattleCard, armHealthBar, setHealth, ELEMENT_STYLE } from './battle-card.js';
 import { escapeHtml } from './util.js';
 
@@ -84,6 +102,7 @@ const arenaEl = $('arena');
 const closeBtn = $('arena-close');
 const stepsEl = $('ar-steps');
 const bodyEl = $('ar-body');
+const codexEl = $('ar-codex');
 
 /* A `MODE` table mapping each flow to a side used to live here and was never
    read: the side is decided where the flow actually branches (`ui.side` at
@@ -92,21 +111,34 @@ const bodyEl = $('ar-body');
 const ui = {
   mode: null,
   phase: 'mode',
+  stage: null,           // 'choice' — the challenge build-now/send-first sub-screen
   lineup: new Array(TEAM_SIZE).fill(null),  // channels, by slot
   selectedSlot: 0,
-  enemy: null,          // channels, once known (scouted or generated)
+  enemy: null,          // channels, once known — MANUAL fallback scouting only; the
+                         // live shared build phase never sets this (see file header)
   challenge: null,      // decoded challenge, in accept mode
-  sentTeam: null,       // what we committed, in challenge mode
   sentNow: 0,
+  sentSeed: 0,          // the challenger's seed, kept locally for the live shared-build path
   preview: new Map(),
   timers: [],
   name: '',
   note: '',
-  replyCode: '',        // defender's reply, built BEFORE the replay so it can be sent first
+  replyCode: '',        // defender's reply, MANUAL fallback only
   pendingFight: null,   // a resolved fight held behind a button, so both sides can start together
   room: '',             // match-room id, derived from the challenge by both sides
   side: null,           // 'a' challenger | 'b' defender — the seat, not the team
-  lobby: null,          // last state read from the match room
+  roomState: null,      // last state read from the match room
+  locked: false,        // have I locked my team in the live shared build phase
+  eligiblePool: null,   // this side's battle-eligible collection (fairness.js's shed, or the full collection)
+  /* The shared build phase's end, already converted into THIS browser's clock.
+     One fixed timestamp, not the server's raw numbers — see adoptBuildWindow
+     for why storing the pieces separately is what broke the countdown. */
+  buildDeadline: null,
+  /* The lobby's end, likewise already in THIS browser's clock. Separate from
+     buildDeadline because the two phases are anchored to two different server
+     stamps: the lobby to `lobbyAt` (set on accept), the build to
+     `buildStartAt` (set when the second side enters). */
+  gateDeadline: null,
 };
 
 let lastTrigger = null;
@@ -218,7 +250,7 @@ function setPhase(name) {
 
 function render() {
   if (ui.phase === 'mode') return renderMode();
-  if (ui.phase === 'build') return renderBuild();
+  if (ui.phase === 'build') return ui.stage === 'choice' ? renderChallengeChoice() : renderBuild();
   if (ui.phase === 'fight') return renderFightShell();
 }
 
@@ -286,9 +318,9 @@ function renderMode() {
     modeCard('Quick battle', 'ai',
       'An opponent matched to your team out of the current set. Always available.'),
     modeCard('Challenge someone', 'challenge',
-      'Commit your five and get a code to send. They build against you — that is their edge, so trade roles for the rematch.'),
+      'Send a code — build your five now, or send it bare and build together the moment they accept. Nobody scouts anybody.'),
     modeCard('Accept a challenge', 'accept',
-      'Paste a code. You see their five before you pick yours.'),
+      'Paste a code someone sent you. You both build blind, at the same time, on a shared clock.'),
   );
   panel.append(grid, noteSlot());
   bodyEl.append(panel);
@@ -303,16 +335,134 @@ function modeCard(title, mode, blurb) {
   return b;
 }
 
-function chooseMode(mode) {
-  ui.mode = mode;
-  ui.enemy = null;
+/* ── EVERYTHING THAT BELONGS TO ONE MATCH, CLEARED IN ONE PLACE ────────────
+   A match is not the arena's lifetime, and treating the two as the same thing
+   is what broke the second fight of a session. The per-match fields were only
+   ever reset in `openArena` — so a player who finished a fight, pressed New
+   opponent and challenged again carried the whole previous match forward:
+
+     - `buildDeadline` still held the FIRST match's end time, which by then was
+       minutes in the past. The countdown opened at 00:00 and auto-locked
+       instantly, for whichever side reached the shared build phase first —
+       exactly the "timer began at 0 for one side and the other got no time"
+       report. This is the same class of bug as the frozen countdown it
+       replaced: state that describes one moment being read at another.
+     - `lineup` was reloaded from storage, so the tray came back pre-populated
+       in a phase whose whole premise is that both sides build fresh and blind.
+     - `eligiblePool` still held the previous match's fairness shed, `locked`
+       could still be true, and `room`/`side` still pointed at a dead lobby.
+
+   So there is now exactly one function that says what a match owns, and every
+   entry into a new one goes through it. The fields deliberately NOT reset are
+   the two that belong to the player rather than the match: `name`, and the
+   saved lineup in storage (their last deck, which the solo builder still
+   restores — see renderSharedBuildScreen for why the shared phase does not). */
+function resetMatch() {
+  clearTimers();
+  /* Invalidates any poll or countdown still in flight from the last match —
+     without this, the previous room's poll chain keeps running and can paint
+     into, or navigate away from, the new match's screens. */
+  readyGen++;
   ui.challenge = null;
-  ui.sentTeam = null;
+  ui.enemy = null;
+  ui.sentNow = 0;
+  ui.sentSeed = 0;
+  ui.replyCode = '';
+  ui.pendingFight = null;
+  ui.room = '';
+  ui.side = null;
+  ui.roomState = null;
+  ui.locked = false;
+  ui.eligiblePool = null;
+  ui.buildDeadline = null;
+  ui.gateDeadline = null;
   ui.preview = new Map();
+  ui.note = '';
+}
+
+function chooseMode(mode) {
+  resetMatch();
+  ui.mode = mode;
+  ui.stage = mode === 'challenge' ? 'choice' : null;
   note('');
   restoreLineup();
   if (mode === 'accept') return renderAcceptPaste();
   setPhase('build');
+}
+
+/* ── the send-a-challenge screen ───────────────────────────────────────────
+   A name and one button. It carried a second option until 2026-08-15 — brief
+   item 10's "cocky" path, where the challenger built five before sending —
+   and that option was removed rather than fixed: every other change in this
+   pass exists to put both sides in front of the same clock with the same
+   information, and a challenger who has already chosen is not doing the same
+   thing as the person opposite them, however editable their picks nominally
+   remain. See DECISIONS.md 2026-08-15 for the trade this makes with the
+   no-server fallback. */
+function renderChallengeChoice() {
+  bodyEl.replaceChildren();
+  const panel = section('Send a challenge',
+    'A challenge means "I want to battle you" — building your five is optional up front.');
+
+  const nameRow = document.createElement('div');
+  nameRow.className = 'ar-row';
+  const input = document.createElement('input');
+  input.className = 'field ar-name';
+  input.placeholder = 'Your name (optional — shown to them)';
+  input.maxLength = 24;
+  input.value = ui.name;
+  input.addEventListener('input', () => { ui.name = input.value; });
+  nameRow.append(input);
+  panel.append(nameRow);
+
+  const grid = document.createElement('div');
+  grid.className = 'ar-modes';
+  const optBtn = (title, blurb, onClick) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ar-mode-card';
+    b.innerHTML = `<b>${escapeHtml(title)}</b><span>${escapeHtml(blurb)}</span>`;
+    b.addEventListener('click', onClick);
+    return b;
+  };
+  /* ONE OPTION, BECAUSE THE OTHER ONE UNDID THE POINT. This screen used to
+     offer "Build my team first" alongside it — brief item 10's "cocky" path,
+     where the challenger picked five before sending. Every other change in
+     this pass exists to make the two sides face the same clock with the same
+     information, and a challenger who arrives at the shared builder having
+     already chosen is not doing the same thing as the person opposite them,
+     however editable their picks nominally are. Removed rather than kept as
+     a trap for the unwary. */
+  const bare = optBtn('Send the challenge',
+    'They accept, you both enter the same lobby, and you build your five side by side against the same clock. Neither of you sees the other\'s team until it is locked.',
+    () => sendBareChallenge());
+  grid.append(bare);
+  panel.append(grid, noteSlot());
+  bodyEl.append(panel);
+
+  /* SENDING A BARE CHALLENGE IS ONLY POSSIBLE WITH A LIVE ROOM, so do not offer
+     it when there is not one. A bare challenge carries no team, and the only
+     channel that could ever settle one is the shared build phase — with the
+     endpoint unreachable there is no second code exchange that could fill it in
+     (see engine/challenge.js's makeResult guard), so the player would be picking
+     an option that dead-ends a screen later.
+
+     Asked asynchronously and applied when it answers, never awaited before the
+     screen renders: both options are live immediately, and the only one that can
+     change is the one that was about to fail anyway. Only a SETTLED `off` closes
+     it — a single dropped request says nothing, and disabling a working option
+     because one probe timed out would be its own bug. */
+  presenceAvailable().then(state => {
+    /* `isConnected` rather than the usual readyGen guard: leaving this screen
+       for the ordinary builder does not bump readyGen (nothing async was
+       started), so the generation counter cannot tell whether this button is
+       still on screen. Asking the node directly can. */
+    if (!bare.isConnected || !presenceOff(state)) return;
+    bare.disabled = true;
+    bare.classList.add('is-unavailable');
+    bare.innerHTML = '<b>Send the challenge now</b><span>Unavailable — this needs the live lobby, '
+      + 'and it cannot be reached right now. Build a team first and send that instead.</span>';
+  });
 }
 
 /* Accept mode needs the enemy BEFORE the builder is worth showing, so it gets
@@ -341,16 +491,31 @@ function renderAcceptPaste() {
             return note('That is a result code, not a challenge. Paste the code they sent you FIRST.', true);
           }
           ui.challenge = decoded;
-          ui.enemy = decoded.teamA;
           ui.side = 'b';
-          ui.room = roomFor(fingerprint(decoded.teamA), decoded.seed);
-          /* FIRED BEFORE ANYTHING IS BUILT, and not awaited. This is the whole
-             point of the accept step: the challenger is sitting on a screen
-             waiting to learn somebody took the challenge, and making them wait
-             for the defender to finish drafting first would defeat it. If the
-             call fails there is nothing to handle — the challenger simply falls
-             back to the copy-paste flow, which is what they were doing anyway. */
-          acceptChallenge(ui.room);
+          ui.room = roomFor(fingerprint(decoded.teamA ?? []), decoded.seed);
+          /* AWAITED, unlike v1's fire-and-forget accept: the branch below
+             depends on whether a live room actually exists, not just on
+             hoping the request landed. A live room means both players enter
+             the SAME shared build phase (brief item 11) — no scouting, no
+             asymmetry. No live room falls back to the sequential flow this
+             app shipped with, which is the only path a BARE (team-less)
+             challenge has nothing to fall back to at all: see the note below. */
+          const state = await acceptChallenge(ui.room, myChannels().length);
+          if (state.enabled) {
+            ui.roomState = state;
+            adoptGateWindow(state);
+            note(decoded.name ? `Challenge from ${decoded.name} accepted.` : 'Challenge accepted.');
+            return enterSharedBuild('b');
+          }
+          if (!decoded.teamA) {
+            return note('This challenge was sent without a team, which needs the live lobby to settle — and the lobby cannot be reached right now, so there is nothing here to build against. Ask them to build a team first and resend.', true);
+          }
+          /* MANUAL FALLBACK, unchanged from v1: no live room, but the
+             challenger DID commit a team before sending, so the old
+             sequential scouting flow — build against their visible five,
+             hand back a reply code by hand — still works exactly as it
+             always did. */
+          ui.enemy = decoded.teamA;
           note(decoded.name ? `Challenge from ${decoded.name} — build against their five.` : '');
           setPhase('build');
         } catch (err) {
@@ -358,7 +523,7 @@ function renderAcceptPaste() {
         }
       },
     }),
-    button('Back', { className: 'btn ghost', onClick: () => setPhase('mode') }),
+    button('Back', { className: 'btn ghost', onClick: () => { resetMatch(); setPhase('mode'); } }),
   );
   panel.append(ta, row, noteSlot());
   bodyEl.append(panel);
@@ -405,9 +570,9 @@ function renderBuild() {
   buildRefs.go = go;
   row.append(
     go,
-    button('Auto-pick', { className: 'btn ghost', onClick: autoPick }),
+    button('Auto-pick', { className: 'btn ghost', onClick: () => autoPick() }),
     button('Clear', { className: 'btn ghost', onClick: () => { ui.lineup.fill(null); ui.selectedSlot = 0; persistLineup(); refreshTeam(); } }),
-    button('Back', { className: 'btn ghost', onClick: () => setPhase('mode') }),
+    button('Back', { className: 'btn ghost', onClick: () => { resetMatch(); setPhase('mode'); } }),
   );
   const power = document.createElement('span');
   power.className = 'ar-readout';
@@ -419,19 +584,6 @@ function renderBuild() {
   const formation = formationReadout(now);
   buildRefs.formation = formation;
   build.append(formation);
-
-  if (ui.mode === 'challenge') {
-    const nameRow = document.createElement('div');
-    nameRow.className = 'ar-row';
-    const input = document.createElement('input');
-    input.className = 'field ar-name';
-    input.placeholder = 'Your name (optional — shown to them)';
-    input.maxLength = 24;
-    input.value = ui.name;
-    input.addEventListener('input', () => { ui.name = input.value; });
-    nameRow.append(input);
-    build.append(nameRow);
-  }
 
   build.append(noteSlot());
   bodyEl.append(build);
@@ -457,8 +609,10 @@ function refreshTeam() {
   }
 }
 
+/* The solo builder is only ever reached by Quick battle and by the legacy
+   manual accept path now — a challenge is sent from its own screen without a
+   team, so "commit five and get a code" no longer exists as a route. */
 function fightLabel() {
-  if (ui.mode === 'challenge') return 'Commit & get code';
   return 'Fight';
 }
 
@@ -478,7 +632,24 @@ function powerReadout(now) {
    out while the team is still a choice. `powerOf` rates cards; the formation
    bonus is a property of the five together (engine/battle.js), which is
    precisely why "take the five highest-rated cards" stopped being the whole
-   game — and a bonus a player cannot see is a decision they cannot make. */
+   game — and a bonus a player cannot see is a decision they cannot make.
+
+   ── WHY IT NOW COMPARES AGAINST THE ENEMY ─────────────────────────────────
+   The ratings above this line can read "even" while the fight is anything but,
+   and that was measured rather than suspected: matched on rating, a player
+   fielding 3 classes against an AI fielding 5 wins about a quarter of the time.
+   Level on diversity, the same matchup is 47% — a fair fight.
+
+   The cause is not a matchmaking bug. `aimedBuild` corrects the AI's power for
+   the lift it earns and lands within ~1.5% of target. It is that the +2.5%/+5%
+   printed here is the STAT lift, and the stat lift is not what diversity is
+   worth: it buys class verbs too — an Aegis to hide behind, a Titan to soak, a
+   Backstab that reaches past both — and `powerOf` cannot see a verb.
+
+   So the honest thing is not to restate the percentage louder, it is to show
+   the player the comparison the number is hiding, whenever there is an enemy on
+   the board to compare against. Same argument as the element wheel: information
+   that points at the OPPONENT is what turns picking into deciding. */
 function formationReadout(now) {
   const team = filled();
   const { classes, lift } = formationBonus(team, now);
@@ -490,9 +661,21 @@ function formationReadout(now) {
   }
   const pctLift = Math.round((lift - 1) * 1000) / 10;
   const names = [...new Set(team.map(ch => classOf(ch, now)))].join(' · ');
-  el.innerHTML = lift > 1
+  const mine = lift > 1
     ? `<b>Formation +${pctLift}%</b> — ${classes} different classes: ${escapeHtml(names)}`
     : `<b>Formation</b> — ${classes} different class${classes === 1 ? '' : 'es'} (${escapeHtml(names)}). Field 4 for +2.5%, 5 for +5%.`;
+
+  /* Only once the team is full: told mid-build it is noise, because a team of
+     two is behind on classes by construction and there is nothing to act on. */
+  if (!ui.enemy || !isComplete()) { el.innerHTML = mine; return el; }
+  const theirs = formationBonus(ui.enemy, now).classes;
+  if (classes >= theirs) {
+    el.innerHTML = `${mine}<br><span class="ar-formation-vs is-good">They field ${theirs}. `
+      + `${classes > theirs ? 'The shape is yours.' : 'Evenly shaped.'}</span>`;
+  } else {
+    el.innerHTML = `${mine}<br><span class="ar-formation-vs is-warn">They field ${theirs}. `
+      + 'Ratings will read closer than the fight is — a spare class is worth more than it prints.</span>';
+  }
   return el;
 }
 
@@ -565,13 +748,13 @@ function slotRow(label, from, to, now) {
   return wrap;
 }
 
-function poolPanel(now) {
+function poolPanel(now, pool = myChannels()) {
   const panel = section('Your collection', 'Click a card to slot it. Click it again to take it out.');
   const grid = document.createElement('div');
   grid.className = 'ar-pool';
   const fieldedIds = new Set(filled().map(c => c.id));
 
-  for (const channel of myChannels()) {
+  for (const channel of pool) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ar-pick';
@@ -600,6 +783,11 @@ function wheel() {
 }
 
 function onSlot(slot) {
+  /* Once locked (the live shared build phase, after Ready), the team is
+     final and uploaded — editing after that would silently disagree with
+     what the server, and therefore the OTHER window, already has. `ui.locked`
+     is only ever true there; every other flow leaves it false. */
+  if (ui.locked) return;
   /* A filled slot empties; an empty one becomes the target for the next card
      clicked. Two gestures, no dragging — the same interaction has to work on a
      phone, and a drag that fails silently is worse than a click that does not. */
@@ -610,6 +798,7 @@ function onSlot(slot) {
 }
 
 function onPick(channel) {
+  if (ui.locked) return;
   const already = ui.lineup.findIndex(c => c && c.id === channel.id);
   if (already !== -1) { ui.lineup[already] = null; persistLineup(); return refreshTeam(); }
 
@@ -626,10 +815,27 @@ function onPick(channel) {
 /* Fills the line-up with the strongest legal team and arranges it, so a player
    can see a sensible baseline and then argue with it. Deliberately NOT
    matchup-aware: it is the "what would raw power do" button, and beating it by
-   countering elements is the point the whole element layer exists to make. */
-function autoPick() {
+   countering elements is the point the whole element layer exists to make.
+
+   NEVER WIRE THIS DIRECTLY AS AN EVENT HANDLER — `onClick: autoPick` hands the
+   MouseEvent straight into `pool`. That is exactly how this button broke the
+   day `pool` was added (it took no arguments before, so passing the function by
+   reference had been correct for its whole life). The failure is invisible from
+   the outside: `distinctById` calls `.filter` on the event, throws inside the
+   handler, and the button simply does nothing — no error on screen, no clue.
+   Normalised here as well as fixed at the call sites, because a silent
+   do-nothing button is worth one defensive line to make impossible twice. */
+function autoPick(poolArg) {
+  const pool = Array.isArray(poolArg) ? poolArg : myChannels();
   const now = fightNow();
-  ui.lineup = arrangeFormation(bestTeamFrom(myChannels(), { now }), now);
+  /* The scouted opponent, when there is one — accept-a-challenge mode's
+     MANUAL fallback is the one flow where the player can see who they are up
+     against before picking, and Auto Select uses that the same way a
+     thinking player would: as a tie-break among cards that are already close
+     on power, never as a reason to bench a clearly stronger one. See
+     opponent.js's bestTeamFrom. `ui.enemy` is always null in the live shared
+     build phase, since neither side scouts the other there. */
+  ui.lineup = arrangeFormation(bestTeamFrom(pool, { now, enemy: ui.enemy }), now);
   while (ui.lineup.length < TEAM_SIZE) ui.lineup.push(null);
   ui.selectedSlot = 0;
   persistLineup();
@@ -649,87 +855,77 @@ async function onCommit() {
   if (!isComplete()) return;
   note('');
   if (ui.mode === 'ai') return fightAI();
-  if (ui.mode === 'challenge') return createChallenge();
   if (ui.mode === 'accept') return fightAsDefender();
 }
 
+/* THE AI PLAYS BY THE PLAYER'S RULES NOW. It is handed a collection the same
+   size as yours, rolled from the same set on the same drop odds, and builds
+   its best five out of that — instead of the old `matchOpponent`, which aimed
+   a team at your exact rating using the whole 15,890-card set as its hand.
+
+   The difference is what a pull is FOR. Power-matching made every Quick battle
+   even by construction, which sounds fair and quietly meant your collection
+   did not matter: pulling a RUBY changed nothing, because the opponent was
+   rebuilt to your new rating either way. Rolling the AI a binder instead makes
+   the fight turn on the same two things a live 1v1 turns on — how your luck
+   went, and how well you build from it. See opponent.js's rollAiCollection. */
 function fightAI() {
   const now = Date.now();
   ui.sentNow = now;
   const mine = filled();
-  const pool = state.setsPool.length ? state.setsPool : [];
-  /* The AI draws from the SET, not from the player's collection — an opponent
-     mirroring cards you own reads as the game cheating even when it is
-     arithmetically fair, and opponent.js excludes your ids for the same reason.
-     Falls back to the collection only if no set is loaded at all, which is the
-     offline demo case. */
-  const source = (pool.length ? pool.map(card => card.channel) : myChannels());
-  const match = matchOpponent(mine, source, { now, rng: Math.random });
+  /* Cards, not channels — the roll is band-first weighted and needs each
+     card's rarity to pick a band. Falls back to the player's own collection
+     only when no set is loaded at all, which is the offline demo case. */
+  const source = state.setsPool.length
+    ? state.setsPool
+    : [...state.collection.values()].map(item => item.card);
+  const opponent = collectionOpponent(source, myChannels().length, { now, rng: Math.random });
 
-  if (match.channels.length < TEAM_SIZE) {
+  if (opponent.channels.length < TEAM_SIZE) {
     return note('The current set is too thin to field an opponent. Load a set with more cards.', true);
   }
-  ui.enemy = match.channels;
-  const quality = matchQuality(match);
-  ui.note = quality.close
-    ? ''
-    : `Closest available opponent is ${quality.drift > 0 ? '+' : ''}${Math.round(quality.drift * 100)}% off an even match — the pool is thin at your rating.`;
+  ui.enemy = opponent.channels;
+  /* Said plainly, because it is the premise of the fight rather than a
+     disclaimer: the opponent got the same number of cards and the same odds,
+     so whatever happens next is about the five each side picked. */
+  ui.note = `Your opponent rolled a collection of ${opponent.collection.length} on the same odds, and brought their best five.`;
   startFight({ teamA: mine, teamB: ui.enemy, seed: seedOf([...mine, ...ui.enemy]), now, youAre: 'a' });
 }
 
-async function createChallenge() {
+/* THE ONLY WAY A CHALLENGE IS SENT NOW: bare, with no team, decided together
+   the moment it is accepted. `createChallenge` — which committed five cards
+   and folded them into the code — was removed alongside the "Build my team
+   first" option it existed to serve, because a challenger who has already
+   chosen is not doing the same thing as the person opposite them.
+
+   Only reachable through the live shared build phase: a code with no team in
+   it has nothing for a manual reply to answer, which is why the sub-choice
+   screen probes for a lobby before offering the button at all, and why
+   engine/challenge.js's makeResult guards the same case from the other end. */
+async function sendBareChallenge() {
   const now = Date.now();
   const seed = newSeed();
-  const team = filled();
-  ui.sentTeam = team;
   ui.sentNow = now;
+  ui.sentSeed = seed;
   ui.side = 'a';
-  ui.room = roomFor(fingerprint(team), seed);
+  ui.room = roomFor(fingerprint([]), seed);
   try {
-    const code = await makeChallenge({ team, name: ui.name, seed, now });
+    const code = await makeChallenge({ team: null, name: ui.name, seed, now, collectionSize: myChannels().length });
     renderChallengeOut(code);
   } catch {
     note('Could not build a challenge code.', true);
   }
 }
 
-/* THE DEFENDER SENDS BEFORE THEY WATCH, so both sides can start together.
-
-   Half of the asymmetry here is not removable and it is worth being clear about
-   which half. A fight cannot be resolved until BOTH teams are known, and when
-   the challenger sends their code only the defender holds both — so the
-   challenger genuinely cannot watch anything yet. No amount of UI fixes that;
-   it is what "no backend" costs.
-
-   The other half was arbitrary and is now gone. The defender used to fight
-   immediately and be handed the reply code afterwards, next to the verdict,
-   which meant one player watched minutes before the other and the second one
-   already knew the result was sitting in their inbox. Building the reply first
-   and holding the replay behind a button costs the defender nothing — they
-   committed their five the moment they pressed Fight, and the outcome was
-   settled then — but it lets the two of them press play at the same time, which
-   is the thing that actually makes it feel like one match rather than two
-   reports.
-
-   Encoding is awaited rather than raced with the replay for the same reason it
-   always was: the hand-off panel is built FROM `ui.replyCode`, so a slow encode
-   would otherwise render a panel with nothing in it. */
-/* The defender commits their five and goes to the lobby. The reply code is
-   built and uploaded here, early and on purpose: it is what unlocks the
-   challenger's Ready button, and a lobby with no code to fight over could never
-   start.
-
-   What this must NOT do is ready them. It used to, and both screens then
-   reported a readiness nobody had chosen — the defender was told "you are
-   ready" while still looking at the button, and the challenger could start the
-   fight alone. Committing a team is a statement about cards; readiness is a
-   statement about the person, and only the button below makes it.
-
-   The upload is attempted; the copy-paste screen is the answer if it fails. */
+/* THE DEFENDER'S MANUAL FALLBACK, unchanged in spirit from v1 — reached only
+   when `renderAcceptPaste` has already confirmed the live room is
+   unreachable, so there is no point retrying it here. The defender builds
+   against the challenger's visible five (the old scouting flow), commits,
+   and hands back a code by hand. */
 async function fightAsDefender() {
   const mine = filled();
   try {
-    ui.replyCode = await makeResult({ challenge: ui.challenge, team: mine, name: ui.name });
+    ui.replyCode = await makeResult({ challenge: ui.challenge, team: mine, name: ui.name, collectionSize: myChannels().length });
   } catch {
     ui.replyCode = '';
     return note('Could not build the reply code for this fight.', true);
@@ -742,15 +938,7 @@ async function fightAsDefender() {
     youAre: 'b',
     them: ui.challenge.name,
   };
-
-  /* One retry before giving up on the lobby. A single dropped request here used
-     to dump the defender onto the copy-paste screen while their opponent sat in
-     a perfectly healthy lobby — and on a phone, one dropped request is normal. */
-  let state = await sendTeam(ui.room, ui.replyCode);
-  if (!state.enabled && !presenceOff(state)) state = await sendTeam(ui.room, ui.replyCode);
-  if (!state.enabled) return renderHandoff();   // no match rooms — hand them the code
-  ui.lobby = state;
-  renderLobby();
+  renderHandoff();
 }
 
 /* THE FALLBACK, and it is the flow this app shipped with rather than a
@@ -775,133 +963,363 @@ function renderHandoff() {
   bodyEl.append(panel);
 }
 
-/* ── THE LOBBY ─────────────────────────────────────────────────────────────
-   Where both players wait, see each other arrive, and ready up. One screen for
-   both sides, because they are looking at the same room from two seats — the
-   only differences are which five is "yours" and which button is locked.
+/* ── THE SHARED BUILD PHASE (2026-08-15) ───────────────────────────────────
+   Brief items 8-14, 32: once a challenge is accepted THROUGH A LIVE ROOM,
+   both players land on this same screen at the same time and build blind —
+   neither sees the other's picks, which is what removes v1's asymmetry (the
+   defender used to scout the challenger's committed five before building).
+   A 30-second countdown, server-anchored via `buildStartAt` the same way the
+   old lobby anchored its own countdown to `bothAt`, runs for both sides.
+   Locking is the whole of committing now: press Ready (or let the timer do
+   it for you) and your five are final and uploaded. Both locked -> straight
+   into a short face-off beat, then the fight.
 
-   THE CHALLENGER'S READY IS LOCKED UNTIL THE DEFENDER'S TEAM ARRIVES, and that
-   is a real constraint rather than an interface flourish: a fight cannot be
-   resolved without both teams, so a challenger who could ready early would be
-   readying for a battle their browser is unable to compute. The server enforces
-   the same rule, so it does not depend on this being the only client. */
-function renderLobby() {
+   THIS IS THE ONLY PATH THAT USES `enterSharedBuild`/`renderLobbyGate`/
+   `beginSharedBuild`/`renderSharedBuildScreen`/`renderLockedFaceoff` below.
+   Everything above this block (fightAsDefender, renderHandoff, and — further
+   down — renderReady/runCountdown for the manual finish) is the MANUAL
+   fallback, reached only when a live room could not be established, and is
+   deliberately untouched by this rewrite: two people passing a string by
+   hand have no live channel to build simultaneously over, so it keeps the
+   sequential shape this app shipped with. */
+
+/* ── THE LOBBY ─────────────────────────────────────────────────────────────
+   Entry point for BOTH sides once a live room confirms acceptance, and the
+   answer to the last asymmetry in this flow.
+
+   THE PROBLEM IT FIXES. Only one side ever faces the collection-fairness gate
+   — by construction, since only one collection can be the larger. Before this
+   existed, acceptance dropped both sides straight into the build phase, so
+   while the larger player read the CONTINUE/CHICKEN OUT screen and decided,
+   their opponent was already picking cards against a running 30-second clock.
+   The side with a decision to make was the side penalised for making it, which
+   is exactly the shape of unfairness the whole rework set out to remove.
+
+   WHAT REPLACES IT. Acceptance opens a fixed ten-second lobby that BOTH sides
+   sit in and neither can build during:
+
+     - the larger side sees COLLECTION SIZE with CONTINUE / CHICKEN OUT;
+     - the other side is told a decision is being made, and gets a button of
+       their own so both are doing the same thing;
+     - both watch the same countdown, anchored to the server's `lobbyAt`;
+     - anyone who has not pressed by zero is entered automatically, so an
+       absent player cannot stall the match.
+
+   The build clock then starts when BOTH sides have entered — the server
+   stamps `buildStartAt` on the second `enter`, not on `accept`. That is what
+   guarantees the 30 seconds begin at one instant for the two of them.
+
+   WHAT THE SMALLER SIDE IS TOLD, AND WHAT IT IS NOT. It learns that its
+   opponent has a decision to make; it is never told what the decision is
+   about. Brief item 21 asks that the smaller player not be made to think
+   about invisible balancing rules, and "they are deciding whether to proceed"
+   satisfies that while still explaining the wait — which the alternative, an
+   unexplained ten-second pause, does not. */
+function enterSharedBuild(side) {
+  ui.side = side;
+  ui.locked = false;
+  ui.eligiblePool = null;
+  ui.stage = null;
+  /* Emptied HERE as well as in renderSharedBuildScreen, and not redundantly:
+     `setPhase('build')` below paints the solo builder for a frame before the
+     lobby replaces it, so a lineup left loaded flashes the previous match's
+     five on screen on the way past. Clearing before the phase change is what
+     makes the tray look empty rather than look emptied. */
+  ui.lineup = new Array(TEAM_SIZE).fill(null);
+  ui.selectedSlot = 0;
+  setPhase('build');
+  renderLobbyGate();
+}
+
+/* My collection against theirs, and whether the gate applies to me. Returns
+   null when the other side's size is unknown (a pre-v2 challenge code, or a
+   room that has not reported one yet) — unknown must mean "no shedding",
+   never a guess, because shedding someone by mistake takes cards out of a
+   fight they were entitled to bring. */
+function fairnessFor(side) {
+  const mySize = myChannels().length;
+  const theirSize = side === 'a' ? (ui.roomState?.csB ?? null) : (ui.challenge?.collectionSize ?? null);
+  if (theirSize == null || !(mySize > theirSize) || !needsShedding(mySize, theirSize)) return null;
+  return { mySize, theirSize, cap: eligibleSizes(mySize, theirSize).a };
+}
+
+function renderLobbyGate() {
   bodyEl.replaceChildren();
   const gen = ++readyGen;
   const side = ui.side;
-  const isA = side === 'a';
-  const now = ui.pendingFight?.now ?? ui.challenge?.now ?? ui.sentNow ?? Date.now();
-  const myTeam = isA ? ui.sentTeam : filled();
+  const gate = fairnessFor(side);
+  let entered = false;
 
-  const panel = section('Lobby', 'Both of you ready up, then it starts on the same count.');
+  const panel = gate
+    ? section('Collection size', 'For this battle only — nothing you own is changed.')
+    : section('Challenge accepted', 'Both of you start building the moment this lobby closes.');
 
-  const face = document.createElement('div');
-  face.className = 'ar-faceoff';
-  panel.append(face);
+  const timerEl = document.createElement('div');
+  timerEl.className = 'ar-timer';
+  panel.append(timerEl);
 
-  const lamps = document.createElement('div');
-  lamps.className = 'ar-lamps';
-  panel.append(lamps);
+  if (gate) {
+    const info = document.createElement('div');
+    info.className = 'ar-fairness';
+    info.innerHTML = `
+      <p>Your collection: <b>${gate.mySize} cards</b><br>Opponent collection: <b>${gate.theirSize} cards</b></p>
+      <p>Your collection is more than ${MAX_COLLECTION_RATIO}x your opponent's.</p>
+      <p>For this battle, your eligible collection will be temporarily reduced to <b>${gate.cap} cards</b>.</p>
+      <p>Your full collection will NOT be affected.</p>`;
+    panel.append(info);
 
-  const count = document.createElement('div');
-  count.className = 'ar-countdown';
-  count.hidden = true;
-  panel.append(count);
+    const present = protectedRaritiesPresent(myChannels());
+    if (present.length) {
+      const guarantee = document.createElement('div');
+      guarantee.className = 'ar-fairness-guarantee';
+      guarantee.innerHTML = `<p>You will retain at least:</p><ul>${present.map(r => `<li>✓ 1 ${escapeHtml(r)}</li>`).join('')}</ul>`;
+      panel.append(guarantee);
+    }
+  } else {
+    /* The waiting side. Told there IS a decision, never told what it is
+       about — see the note on item 21 above. */
+    const info = document.createElement('div');
+    info.className = 'ar-fairness';
+    info.innerHTML = `
+      <p>Your opponent is confirming whether to go ahead.</p>
+      <p>Nobody is building yet — the moment you are both in, the same
+         thirty-second team-building clock starts for both of you.</p>`;
+    panel.append(info);
+  }
+
+  const status = document.createElement('p');
+  status.className = 'ar-lamp';
+  status.textContent = gate ? 'Decide before the lobby closes.' : 'Waiting for them…';
 
   const row = document.createElement('div');
   row.className = 'ar-row';
-  const go = button('Ready', { className: 'btn go', disabled: true });
-  row.append(go, button('Leave', {
-    className: 'btn ghost',
-    onClick: () => { readyGen++; clearTimers(); setPhase('mode'); },
-  }));
-  panel.append(row);
+  const goBtn = button(gate ? 'CONTINUE' : "I'M READY", {
+    className: 'btn go',
+    onClick: () => enterNow(false),
+  });
+  row.append(goBtn);
+  if (gate) {
+    /* "Do not use additional humorous alternatives... the only humorous option
+       should be CHICKEN OUT" — brief item 20, verbatim. It now REACHES THE
+       ROOM (`bail`), which it did not before: leaving quietly was tolerable
+       when nobody was watching for it, and indefensible now that the other
+       side is explicitly waiting on this decision. */
+    row.append(button('CHICKEN OUT', {
+      className: 'btn ghost',
+      onClick: () => {
+        bailOut(ui.room, side);
+        resetMatch();
+        setPhase('mode');
+        note('You backed out of that match.');
+      },
+    }));
+  }
+  panel.append(row, status);
   bodyEl.append(panel);
 
-  const view = { gen, go, anyway: { hidden: true }, lamp: lamps, count };
-  let pressed = false;
-
-  const paint = state => {
-    if (gen !== readyGen) return;
-    const theirTeam = isA ? ui.pendingFight?.teamB : ui.challenge?.teamA;
-    const theirName = isA ? '' : (ui.challenge?.name ?? '');
-
-    face.innerHTML =
-      `<span><b>Your five</b><i>rating ${teamPower(makeTeam(myTeam, now))}</i></span>` +
-      '<em>vs</em>' +
-      (theirTeam
-        ? `<span><b>${escapeHtml(theirName || 'Their five')}</b><i>rating ${teamPower(makeTeam(theirTeam, now))}</i></span>`
-        : '<span><b>Their five</b><i>still building…</i></span>');
-
-    const mineReady = isA ? state.a : state.b;
-    const theirsReady = isA ? state.b : state.a;
-    lamps.innerHTML =
-      `<span class="ar-lampdot ${mineReady ? 'on' : ''}">${mineReady ? '● you are ready' : '○ you are not ready'}</span>` +
-      `<span class="ar-lampdot ${theirsReady ? 'on' : ''}">${theirsReady ? '● they are ready' : (state.accepted || !isA ? '○ waiting on them' : '○ waiting for someone to accept')}</span>`;
-
-    /* The challenger can only ready once the defender's five have arrived; the
-       defender always can, because they cannot reach this screen without having
-       committed. */
-    const canReady = isA ? Boolean(ui.pendingFight) : true;
-    go.disabled = pressed || !canReady;
-    go.textContent = pressed ? 'Ready ✓' : (canReady ? 'Ready' : 'Waiting for their team…');
-    go.classList.toggle('is-hot', !pressed && canReady && theirsReady);
-  };
-
-  go.addEventListener('click', async () => {
-    pressed = true;
-    go.disabled = true;
-    go.classList.remove('is-hot');
-    go.textContent = 'Ready ✓';
-    const send = () => (isA ? readyChallenger(ui.room) : readyWithTeam(ui.room, ui.replyCode));
-    /* Retried once for a reason worth stating: an unreported Ready is worse
-       than a slow one. If this press never reaches the server, the other side
-       waits on a player who believes they already pressed, and the fight simply
-       never starts. */
-    let state = await send();
-    if (!state.enabled && !presenceOff(state)) state = await send();
-    if (gen !== readyGen) return;
-    if (!state.enabled) return runCountdown(view, COUNTDOWN_MS);   // room vanished mid-lobby
-    ui.lobby = state;
-    handle(state);
-  });
-
-  /* Adopting the defender's code the moment it appears is what unlocks the
-     challenger's button — and it is also the only place the challenger ever
-     learns what it is fighting, so a code that fails to decode has to be said
-     out loud rather than leaving the button mysteriously locked forever. */
-  async function adopt(state) {
-    if (!isA || ui.pendingFight || !state.code) return;
-    try {
-      const decoded = await decodeCode(state.code);
-      if (gen !== readyGen) return;
-      if (decoded.kind !== 'r' || !echoMatches(decoded, ui.sentTeam)) {
-        return note('The reply in this lobby does not match the challenge you sent.', true);
-      }
-      ui.enemy = decoded.teamB;
-      ui.pendingFight = {
-        teamA: decoded.teamA,
-        teamB: decoded.teamB,
-        seed: decoded.seed,
-        now: decoded.now,
-        youAre: 'a',
-        them: decoded.name,
-      };
-    } catch {
-      note('Could not read the team they sent.', true);
-    }
+  /* Pressing does not skip the lobby — it records that this side is through
+     it. The build starts when BOTH are, which is the whole point; letting one
+     press rush the other would rebuild the asymmetry in the other direction. */
+  function enterNow(auto) {
+    if (gen !== readyGen || entered) return;
+    entered = true;
+    goBtn.disabled = true;
+    goBtn.textContent = auto ? 'Entered' : (gate ? 'Continuing…' : 'Ready ✓');
+    for (const b of row.querySelectorAll('button')) b.disabled = true;
+    status.textContent = 'Waiting for them…';
+    enterBuild(ui.room, side);
   }
 
-  async function handle(state) {
+  const tick = () => {
     if (gen !== readyGen) return;
-    await adopt(state);
+    const remain = Math.max(0, gateDeadlineLocal() - Date.now());
+    timerEl.textContent = `LOBBY — ${clockOf(remain)}`;
+    timerEl.classList.toggle('is-low', remain <= 4000);
+    /* Zero enters this side automatically rather than cancelling. An absent
+       player must not be able to stall a match indefinitely (the same reason
+       the build phase auto-locks), and the fair default when someone does not
+       answer is the one that lets the fight happen. */
+    if (remain <= 0) return enterNow(true);
+    later(tick, 250);
+  };
+  tick();
+
+  function poll() {
     if (gen !== readyGen) return;
-    paint(state);
-    if (state.a && state.b && state.bothAt && ui.pendingFight) {
-      const elapsed = Math.max(0, (state.now || Date.now()) - state.bothAt);
-      return runCountdown(view, Math.max(0, (state.countdownMs ?? COUNTDOWN_MS) - elapsed));
+    checkRoom(ui.room).then(state => {
+      if (gen !== readyGen) return;
+      if (!state.enabled) {
+        if (presenceOff(state)) return;
+        return nextPoll(POLL_MS);
+      }
+      ui.roomState = state;
+      if (state.bailed && state.bailed !== side) {
+        resetMatch();
+        setPhase('mode');
+        return note('They chickened out — that match is off.');
+      }
+      /* The server stamps this on the SECOND `enter`, so its appearance is
+         the authoritative "both of you are through, start building now" for
+         both windows at once. */
+      if (state.buildStartAt) {
+        adoptBuildWindow(state);
+        return beginSharedBuild();
+      }
+      const theirs = side === 'a' ? state.enteredB : state.enteredA;
+      if (entered) status.textContent = theirs ? 'Both in — starting…' : 'Waiting for them…';
+      else if (theirs) status.textContent = 'They are ready and waiting on you.';
+      nextPoll(POLL_MS);
+    });
+  }
+  const nextPoll = pollChain(gen, poll);
+  poll();
+}
+
+/* Both sides are through the lobby. The shed runs HERE rather than at the
+   moment CONTINUE was pressed, so the eligible pool is decided once, right
+   before the builder that uses it — and never for a match somebody backed out
+   of. */
+function beginSharedBuild() {
+  const gate = fairnessFor(ui.side);
+  ui.eligiblePool = gate
+    ? shedCollection(myChannels(), gate.cap, { rng: Math.random })
+    : myChannels();
+  renderSharedBuildScreen();
+}
+
+/* The shared 30-second window, both sides, no scouting. Structurally close to
+   the old solo `renderBuild` — same slot rows, same pool grid, same formation
+   readout — because the only real differences are the pool (possibly shed)
+   and the fact that committing here means locking with the server rather
+   than moving to a local next screen. */
+function renderSharedBuildScreen() {
+  bodyEl.replaceChildren();
+  const gen = ++readyGen;
+  const now = fightNow();
+  const pool = ui.eligiblePool ?? myChannels();
+
+  /* AN EMPTY TRAY, EVERY TIME, ON BOTH SIDES — Ash's call, and it matches what
+     this phase is for. Both players are building blind against the same clock;
+     opening with cards already in the slots meant one side started with a team
+     and the other with nothing, which is the asymmetry the whole rework exists
+     to remove. It was also frequently the WRONG team: `restoreLineup` reads the
+     saved deck, so the tray came back holding the previous match's five, or
+     cards the fairness shed had just made ineligible.
+
+     Their saved deck is untouched — this only declines to LOAD it here. The
+     solo builder still restores it, and the moment a card is placed here the
+     usual `persistLineup` runs, so "the last deck from your previous match" is
+     still what a player finds waiting in Quick battle. */
+  ui.lineup = new Array(TEAM_SIZE).fill(null);
+  ui.selectedSlot = 0;
+
+  const intro = section('Team building — both of you, right now',
+    'Nobody scouts the other first this time. Lock in when you are ready, or the timer locks you in on whatever you have.');
+  const timerEl = document.createElement('div');
+  timerEl.className = 'ar-timer';
+  intro.append(timerEl);
+  bodyEl.append(intro);
+
+  if (ui.eligiblePool && ui.eligiblePool.length < myChannels().length) {
+    const shedNote = section('Your temporary battle pool',
+      `Trimmed to ${ui.eligiblePool.length} of your ${myChannels().length} cards for this battle only — the rest of your collection is untouched.`);
+    bodyEl.append(shedNote);
+  }
+
+  const build = section('Your five',
+    'Click a slot, then a card. <b>Front rank</b> takes every hit while it stands. <b>Back rank</b> is safe until it falls, and deals 15% less for the cover.');
+  const ranks = slotRows(now);
+  buildRefs.ranks = ranks;
+  build.append(ranks);
+
+  const row = document.createElement('div');
+  row.className = 'ar-row';
+  const go = button('Ready', { className: 'btn go', onClick: () => lockIn(gen) });
+  buildRefs.go = go;
+  row.append(
+    go,
+    button('Auto-pick', { className: 'btn ghost', onClick: () => { if (!ui.locked) autoPick(pool); } }),
+    button('Clear', { className: 'btn ghost', onClick: () => { if (ui.locked) return; ui.lineup.fill(null); ui.selectedSlot = 0; persistLineup(); refreshTeam(); } }),
+  );
+  const power = document.createElement('span');
+  power.className = 'ar-readout';
+  power.innerHTML = powerReadout(now);
+  buildRefs.readout = power;
+  row.append(power);
+  build.append(row);
+
+  const formation = formationReadout(now);
+  buildRefs.formation = formation;
+  build.append(formation);
+
+  const lockStatus = document.createElement('p');
+  lockStatus.className = 'ar-lamp';
+  lockStatus.id = 'ar-lockstatus';
+  lockStatus.textContent = 'Building…';
+  build.append(lockStatus);
+
+  build.append(noteSlot());
+  bodyEl.append(build);
+  bodyEl.append(poolPanel(now, pool));
+
+  /* THE COUNTDOWN. `buildDeadlineLocal()` is a fixed instant on THIS clock,
+     already converted from the server's (see adoptBuildWindow), so this is a
+     plain subtraction against a stationary target — which is precisely what
+     the first version was not. Reaching zero without a lock auto-locks on
+     whatever is currently placed (brief item 14).
+
+     Re-read every tick rather than cached in a local, so a tab that was frozen
+     and thawed picks up the real remaining time instead of resuming its old
+     count — and if it thawed past the deadline it auto-locks immediately. */
+  const tick = () => {
+    if (gen !== readyGen) return;
+    const remain = Math.max(0, buildDeadlineLocal() - Date.now());
+    if (!ui.locked) {
+      timerEl.textContent = `TEAM BUILDING — ${clockOf(remain)}`;
+      timerEl.classList.toggle('is-low', remain <= 10000);
     }
-    nextPoll(POLL_MS);
+    if (remain <= 0) {
+      if (!ui.locked) lockIn(gen, true);
+      return;
+    }
+    later(tick, 250);
+  };
+  tick();
+
+  const isA = ui.side === 'a';
+  function paintLockStatus(state) {
+    if (gen !== readyGen) return;
+    const theirsLocked = isA ? state?.lockedB : state?.lockedA;
+    lockStatus.textContent = ui.locked
+      ? (theirsLocked ? 'Both locked — starting…' : 'You are locked in. Waiting on them…')
+      : (theirsLocked ? 'They are locked in. Still time to finish yours.' : 'Building…');
+  }
+
+  /* RE-ASSERT A LOCK THE SERVER DOES NOT HAVE, and this is not paranoia — it
+     is the direct consequence of the countdown now working. The room is a KV
+     read-modify-write with no compare-and-set (see functions/api/ready/[room].js),
+     so two writes landing together can each omit the other's change. While the
+     timer was broken nobody was ever auto-locked and simultaneous writes were
+     a coin-flip nobody flipped; now BOTH sides hit zero at the same instant by
+     design, which makes that collision the expected case rather than the rare
+     one. Lose the race and one side is locked in its own browser, unlocked on
+     the server, and finished ticking — a lobby that waits forever.
+
+     So the poll that already runs every 1.2s becomes the repair: if this side
+     believes it is locked and the room disagrees, say it again. Idempotent —
+     `lock` sets a flag and stores a team, so a duplicate is a no-op — and
+     guarded by `relocking` so a slow round trip cannot stack requests. */
+  let relocking = false;
+  function reassertLock(state) {
+    const mineOnServer = isA ? state.lockedA : state.lockedB;
+    if (!ui.locked || mineOnServer || relocking) return;
+    relocking = true;
+    lockTeam(ui.room, ui.side, filled()).then(fresh => {
+      relocking = false;
+      if (gen !== readyGen || !fresh.enabled) return;
+      ui.roomState = fresh;
+      if (fresh.lockedA && fresh.lockedB) renderLockedFaceoff(fresh);
+    }).catch(() => { relocking = false; });
   }
 
   function poll() {
@@ -909,21 +1327,175 @@ function renderLobby() {
     checkRoom(ui.room).then(state => {
       if (gen !== readyGen) return;
       if (!state.enabled) {
-        /* Settled — presence is off, so the lobby stands as it is and the two
-           of them fall back to counting down together. */
-        if (presenceOff(state)) return;
-        /* Transient. Someone reading their phone mid-lobby is the common case,
-           and their opponent's Ready must still be able to reach them. */
+        if (presenceOff(state)) return;   // settled off mid-build: nothing to poll for
         return nextPoll(POLL_MS);
       }
-      ui.lobby = state;
-      handle(state);
+      ui.roomState = state;
+      paintLockStatus(state);
+      if (state.lockedA && state.lockedB) return renderLockedFaceoff(state);
+      reassertLock(state);
+      nextPoll(POLL_MS);
     });
   }
-
   const nextPoll = pollChain(gen, poll);
-  paint(ui.lobby ?? { accepted: false, a: false, b: false, bothAt: null, code: '' });
   poll();
+}
+
+/* Lock the current line-up in, auto-filling any empty slots first (`auto`
+   distinguishes a timer-forced lock for a note the player never asked to
+   see, though the mechanism is identical either way — brief item 14 says
+   this must not feel like a failure state). */
+async function lockIn(gen, auto = false) {
+  if (gen !== readyGen || ui.locked) return;
+  const now = fightNow();
+  const pool = ui.eligiblePool ?? myChannels();
+  if (!isComplete()) {
+    ui.lineup = arrangeFormation(bestTeamFrom(pool, { now }), now);
+    while (ui.lineup.length < TEAM_SIZE) ui.lineup.push(null);
+    persistLineup();
+  }
+  if (!isComplete()) {
+    return note('Not enough distinct cards to field a full team.', true);
+  }
+  ui.locked = true;
+  refreshTeam();
+  if (buildRefs.go) { buildRefs.go.disabled = true; buildRefs.go.textContent = 'Ready ✓'; }
+  if (auto) note('Time was up — locked in on your current picks.');
+
+  const team = filled();
+  let state = await lockTeam(ui.room, ui.side, team);
+  if (!state.enabled && !presenceOff(state)) state = await lockTeam(ui.room, ui.side, team);
+  if (gen !== readyGen) return;
+  if (!state.enabled) {
+    ui.locked = false;
+    if (buildRefs.go) { buildRefs.go.disabled = false; buildRefs.go.textContent = 'Ready'; }
+    return note('Could not reach the match room — try again.', true);
+  }
+  ui.roomState = state;
+  const status = $('ar-lockstatus');
+  const isA = ui.side === 'a';
+  const theirsLocked = isA ? state.lockedB : state.lockedA;
+  if (status) status.textContent = theirsLocked ? 'Both locked — starting…' : 'You are locked in. Waiting on them…';
+  if (state.lockedA && state.lockedB) renderLockedFaceoff(state);
+}
+
+/* Both sides have locked. A short face-off beat — same countdown mechanism
+   as the manual ready screen — then the fight, reading both teams straight
+   off the server's own record of them rather than local state, so there is
+   no way for the two windows to disagree about what was actually locked. */
+function renderLockedFaceoff(state) {
+  bodyEl.replaceChildren();
+  const gen = ++readyGen;
+  const isA = ui.side === 'a';
+  const now = ui.challenge?.now ?? ui.sentNow ?? Date.now();
+  const seed = isA ? ui.sentSeed : ui.challenge?.seed;
+  const mineTeam = isA ? state.teamA : state.teamB;
+  const theirTeam = isA ? state.teamB : state.teamA;
+  const theirName = isA ? '' : (ui.challenge?.name ?? '');
+
+  ui.pendingFight = { teamA: state.teamA, teamB: state.teamB, seed, now, youAre: ui.side, them: theirName };
+
+  const panel = section('Both locked in', 'Here we go — you are both watching the same fight.');
+  const face = document.createElement('div');
+  face.className = 'ar-faceoff';
+  face.innerHTML =
+    `<span><b>Your five</b><i>rating ${teamPower(makeTeam(mineTeam, now))}</i></span>` +
+    '<em>vs</em>' +
+    `<span><b>${escapeHtml(theirName || 'Their five')}</b><i>rating ${teamPower(makeTeam(theirTeam, now))}</i></span>`;
+  panel.append(face);
+
+  const lamp = document.createElement('p');
+  lamp.className = 'ar-lamp';
+  panel.append(lamp);
+
+  const count = document.createElement('div');
+  count.className = 'ar-countdown';
+  count.hidden = true;
+  panel.append(count);
+
+  const go = document.createElement('button');
+  go.hidden = true;   // never shown — runCountdown only mutates it
+  panel.append(go);
+
+  bodyEl.append(panel);
+
+  const view = { gen, go, anyway: { hidden: true }, lamp, count };
+  const elapsed = Math.max(0, (state.now || Date.now()) - state.bothAt);
+  runCountdown(view, Math.max(0, (state.countdownMs ?? COUNTDOWN_MS) - elapsed));
+}
+
+/* ── THE SHARED DEADLINE, AS ONE FIXED LOCAL TIMESTAMP ─────────────────────
+   The server owns the deadline in ITS clock: `buildStartAt + buildMs`. Each
+   browser converts that to its own clock exactly once, by measuring how far
+   its clock sits from the server's at the moment it reads a room:
+
+       skew    = Date.now() - state.now          (this clock minus server's)
+       deadline = buildStartAt + buildMs + skew   (…in THIS clock)
+
+   Both sides start from the same two server numbers and apply their own skew,
+   so both land on the same real instant however wrong either device's clock
+   is. That is the whole of the sync.
+
+   WHY IT IS RESOLVED ONCE AND THEN LEFT ALONE. The first version of this
+   recomputed the deadline on every tick as `Date.now() + remainingAtFetch`,
+   which looks equivalent and is not: `remainingAtFetch` is frozen at fetch
+   time while `Date.now()` advances, so the deadline advanced in lockstep with
+   the clock and the gap between them never closed. The countdown froze at
+   whatever it first rendered, `remain <= 0` never became true so nobody was
+   ever auto-locked, and because each side captured its snapshot at a
+   different moment (the defender the instant it accepted, the challenger
+   whenever its poll next noticed) the two screens froze on DIFFERENT numbers
+   — one bug wearing all three symptoms.
+
+   Set once rather than refreshed per poll on purpose: re-deriving skew every
+   time would fold that request's latency into the deadline and make it jitter
+   by a tenth of a second in both directions for no gain, since the server's
+   own numbers never move. */
+const BUILD_MS_FALLBACK = 30000;
+
+/* `mm:ss`, matching the brief's own `00:30` mockup. Written as real minutes
+   rather than hardcoding the `00:` because the window is a server constant
+   this client does not control — if it is ever raised past a minute, a
+   hardcoded prefix would quietly start printing 00:75. */
+function clockOf(ms) {
+  const total = Math.ceil(Math.max(0, ms) / 1000);
+  const mins = Math.floor(total / 60);
+  return `${String(mins).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function adoptBuildWindow(state) {
+  if (ui.buildDeadline) return;                       // already fixed for this match
+  if (!Number.isFinite(state?.buildStartAt)) return;  // room has not stamped one yet
+  const span = Number.isFinite(state.buildMs) ? state.buildMs : BUILD_MS_FALLBACK;
+  const skew = Number.isFinite(state.now) ? Date.now() - state.now : 0;
+  ui.buildDeadline = state.buildStartAt + span + skew;
+}
+
+/* The lobby's deadline, converted the same way off `lobbyAt` — the stamp the
+   server writes when the challenge is accepted. Two stamps rather than one
+   because the two phases genuinely begin at different moments: the lobby when
+   somebody accepts, the build only once both sides are through it. */
+const GATE_MS_FALLBACK = 10000;
+
+function adoptGateWindow(state) {
+  if (ui.gateDeadline) return;
+  if (!Number.isFinite(state?.lobbyAt)) return;
+  const span = Number.isFinite(state.gateMs) ? state.gateMs : GATE_MS_FALLBACK;
+  const skew = Number.isFinite(state.now) ? Date.now() - state.now : 0;
+  ui.gateDeadline = state.lobbyAt + span + skew;
+}
+
+function gateDeadlineLocal() {
+  if (!ui.gateDeadline) ui.gateDeadline = Date.now() + GATE_MS_FALLBACK;
+  return ui.gateDeadline;
+}
+
+function buildDeadlineLocal() {
+  /* A build phase that somehow began without a server stamp still has to end,
+     so it gets a full window measured from right now rather than an immediate
+     auto-lock. Latched so it cannot slide forward on the next call. */
+  if (!ui.buildDeadline) ui.buildDeadline = Date.now() + BUILD_MS_FALLBACK;
+  return ui.buildDeadline;
 }
 
 /* ── THE READY SCREEN ──────────────────────────────────────────────────────
@@ -1013,7 +1585,6 @@ function runCountdown(view, fromMs) {
   const { go, anyway, lamp, count } = view;
   go.disabled = true;
   go.classList.add('is-armed');
-  go.classList.remove('is-hot');
   go.textContent = 'Starting…';
   anyway.hidden = true;
   lamp.textContent = 'Here we go — you are both watching the same fight.';
@@ -1084,56 +1655,57 @@ async function copyText(text, ta) {
   }
 }
 
-/* The challenger's screen after committing: the code to send, and a watch on
+/* The challenger's screen after sending: the code to hand over, and a watch on
    the match room for somebody taking it up.
 
-   THE PASTE BOX IS STILL HERE, and stays here, because the room may be
-   unavailable — no binding, offline, blocked. It is shown as the manual route
-   rather than the main one, and the moment the room reports an acceptance the
-   whole screen gives way to the lobby. */
+   THERE IS NO MANUAL ROUTE OUT OF THIS SCREEN ANY MORE, and that is a real
+   trade rather than an oversight. A challenge now always travels without a
+   team, so there is nothing in the code for a defender to build against and
+   reply to by hand — the paste box that used to sit here served the pre-built
+   challenges this client no longer sends. If the lobby is unreachable the
+   honest answer is to say so and offer the way back, which is what the poll
+   loop below does. The sub-choice screen probes for a lobby before offering
+   the button at all, so reaching this state usually means the room died
+   mid-wait rather than never existing. */
 function renderChallengeOut(code) {
   bodyEl.replaceChildren();
   const gen = ++readyGen;
   const { panel } = codeBox(code, {
     label: 'Send them this code',
-    hint: 'Paste it into the other window (or send it to a friend). Your five are locked in — they build against you.',
+    hint: 'Paste it into the other window (or send it to a friend). You will both build your teams together the moment they accept.',
   });
 
   const waiting = document.createElement('p');
   waiting.className = 'ar-lamp';
   waiting.textContent = 'Waiting for someone to accept…';
   panel.append(waiting);
-
-  const reply = section('No live lobby? Paste their reply here instead',
-    'Only needed if the lobby cannot be reached — normally their acceptance shows up above on its own.');
-  const ta = document.createElement('textarea');
-  ta.className = 'ar-code-in';
-  ta.rows = 3;
-  ta.spellcheck = false;
-  ta.placeholder = 'CGB1.z…';
-  ta.setAttribute('aria-label', 'Result code');
-  const row = document.createElement('div');
-  row.className = 'ar-row';
-  row.append(
-    button('Load their reply', { className: 'btn ghost', onClick: () => onReply(ta.value) }),
-    button('Back to building', { className: 'btn ghost', onClick: () => { readyGen++; setPhase('build'); } }),
-  );
-  reply.append(ta, row, noteSlot());
-
-  bodyEl.append(panel, reply);
+  bodyEl.append(panel);
 
   /* Poll for the acceptance. The green flash is held for a beat before the
-     lobby replaces the screen — a signal that vanishes in the same frame it
-     appears is a signal nobody sees, and "someone accepted your challenge" is
-     the one moment in this flow worth landing. */
+     shared build phase replaces the screen — a signal that vanishes in the
+     same frame it appears is a signal nobody sees, and "someone accepted
+     your challenge" is the one moment in this flow worth landing. */
   const poll = () => {
     if (gen !== readyGen) return;
     checkRoom(ui.room).then(st => {
       if (gen !== readyGen) return;
       if (!st.enabled) {
-        /* Settled: no namespace, no lobby today. Say so and stop. */
+        /* Settled: no namespace, no lobby today. */
         if (presenceOff(st)) {
-          waiting.textContent = 'Live lobby unavailable — use the paste box below when they reply.';
+          /* Nothing to fall back TO. A challenge carries no team, so there is
+             nothing in this code for a defender to build against and answer
+             by hand — the paste-a-reply box that used to live here served the
+             pre-built challenges this client stopped sending. Say so and offer
+             the only honest way on: a Quick battle, which needs no server at
+             all. Reachable at all only since a 404 stopped being treated as a
+             retryable error (see data/presence.js) — before that this loop
+             retried forever and the player sat on "waiting for someone to
+             accept" with no way to learn the lobby was never coming. */
+          waiting.textContent = 'The live lobby cannot be reached, so this challenge cannot be picked up. Cross-device battles need it; Quick battle does not.';
+          panel.append(button('Back', {
+            className: 'btn ghost',
+            onClick: () => { resetMatch(); setPhase('mode'); },
+          }));
           return;
         }
         /* A dropped request — almost always this tab having been frozen while
@@ -1143,11 +1715,16 @@ function renderChallengeOut(code) {
            challenging from a phone impossible. */
         return nextPoll(POLL_MS);
       }
-      ui.lobby = st;
+      ui.roomState = st;
       if (st.accepted) {
+        /* `lobbyAt` can lag `accepted` by one write on KV's eventual
+           consistency — keep polling rather than opening the lobby with no
+           server-anchored deadline to count down from. */
+        if (!st.lobbyAt) return nextPoll(POLL_MS);
         waiting.className = 'ar-lamp is-ready';
         waiting.textContent = '✔ Challenge accepted — opening the lobby…';
-        return later(() => { if (gen === readyGen) renderLobby(); }, 1100);
+        adoptGateWindow(st);
+        return later(() => { if (gen === readyGen) enterSharedBuild('a'); }, 900);
       }
       nextPoll(POLL_MS);
     });
@@ -1156,33 +1733,11 @@ function renderChallengeOut(code) {
   poll();
 }
 
-async function onReply(text) {
-  note('');
-  try {
-    const decoded = await decodeCode(text);
-    if (decoded.kind !== 'r') {
-      return note('That is a challenge code, not a reply. You want the code they got AFTER fighting.', true);
-    }
-    if (!echoMatches(decoded, ui.sentTeam)) {
-      return note('That reply is to a different challenge — it does not describe the five you committed.', true);
-    }
-    ui.enemy = decoded.teamB;
-    /* Armed, not started — the challenger holds at the ready screen so the two
-       of them can press together. This is the point where both windows finally
-       hold both teams, which is the earliest moment a shared start is even
-       possible. */
-    armFight({
-      teamA: decoded.teamA,
-      teamB: decoded.teamB,
-      seed: decoded.seed,
-      now: decoded.now,
-      youAre: 'a',
-      them: decoded.name,
-    });
-  } catch (err) {
-    note(err instanceof ChallengeError ? err.message : 'That code could not be read.', true);
-  }
-}
+/* `onReply` — the challenger loading a defender's hand-pasted reply — lived
+   here until 2026-08-15. It could only ever answer a challenge that carried a
+   committed team, and this client no longer sends one, so it went with the
+   paste box that called it. `armFight`/`renderReady` survive because the
+   DEFENDER's manual path still uses them for a legacy team-carrying code. */
 
 /* ── phase 3: the fight ──────────────────────────────────────────────────── */
 
@@ -1380,9 +1935,21 @@ function finish(event, result) {
     bodyEl.append(panel);
   }
 
+  /* ONE WAY OUT OF A FINISHED FIGHT, and the removal is the fix rather than a
+     simplification for its own sake. "Rebuild and fight again" dropped the
+     player back into the BUILDER with the whole finished match still loaded —
+     same room id, same seed, same side, a lobby the server had already seen
+     both locks for. Committing from there re-entered a dead match: the other
+     player was never coming back to it, and the timing state it carried was
+     the very thing that opened the next countdown at 00:00. It was a shortcut
+     that skipped the only place a new match can legitimately begin.
+
+     New opponent goes through mode-select, which runs `resetMatch` on the way
+     in, so every fight after the first starts from the same clean state the
+     first one did. Rebuilding a team is a couple of clicks from there, and the
+     saved deck is still waiting — so nothing is actually lost. */
   row.append(
-    button('Rebuild and fight again', { className: 'btn primary', onClick: () => { clearTimers(); setPhase('build'); } }),
-    button('New opponent', { className: 'btn ghost', onClick: () => { clearTimers(); setPhase('mode'); } }),
+    button('New opponent', { className: 'btn primary', onClick: () => { resetMatch(); setPhase('mode'); } }),
   );
 }
 
@@ -1397,8 +1964,8 @@ function persistLineup() {
   saveLineup(ui.lineup.map(c => c?.id ?? ''));
 }
 
-function restoreLineup() {
-  const byId = new Map(myChannels().map(c => [c.id, c]));
+function restoreLineup(pool = myChannels()) {
+  const byId = new Map(pool.map(c => [c.id, c]));
   const saved = loadLineup();
   ui.lineup = new Array(TEAM_SIZE).fill(null);
   saved.slice(0, TEAM_SIZE).forEach((id, i) => {
@@ -1412,16 +1979,19 @@ function restoreLineup() {
 
 export function openArena() {
   lastTrigger = document.activeElement;
-  clearTimers();
+  /* The same reset every new match runs, rather than a second hand-maintained
+     copy of the field list. Keeping two was how `buildDeadline` came to be
+     cleared here and nowhere else — opening the arena worked, starting a
+     second match inside it did not. */
+  resetMatch();
   ui.mode = null;
-  ui.enemy = null;
-  ui.challenge = null;
-  ui.sentTeam = null;
-  ui.replyCode = '';
-  ui.preview = new Map();
-  ui.note = '';
+  ui.stage = null;
   restoreLineup();
   arenaEl.hidden = false;
+  /* Built on first open rather than at module load: it is a few hundred nodes
+     that a player who never presses Battle should not pay for. `mountCodex`
+     no-ops on every open after the first, so opened sections stay opened. */
+  mountCodex(codexEl);
   setPhase('mode');
   closeBtn.focus();
 }

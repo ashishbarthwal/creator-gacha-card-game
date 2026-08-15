@@ -58,7 +58,25 @@
 
 import { TEAM_SIZE } from './battle.js';
 
-export const CODE_VERSION = 1;
+/* CODE_VERSION 2 (2026-08-15): two additions, both from Ash's brief.
+
+   1. A CHALLENGE MAY NOW CARRY NO TEAM. Item 9: "A player should be able to
+      generate and send a challenge without building their team first." v1
+      required exactly TEAM_SIZE rows on every challenge, because the
+      challenger committing first was the whole design — see the header on
+      this file for why that ordering existed. It is still allowed (item 10's
+      "cocky" path, unchanged), just no longer required: `a` may now be either
+      TEAM_SIZE rows (pre-built) or zero (team TBD, decided together once the
+      other side accepts). A result code is unaffected — a reply always
+      carries a real, committed team on both sides, so `teamA`/`teamB` stay
+      exactly-TEAM_SIZE there, same as v1.
+
+   2. EVERY CODE NOW CARRIES A COLLECTION SIZE. Items 15-27's fairness check
+      needs each side to know how many DISTINCT cards the other owns, and
+      there is no server that could tell them — the same reason a team
+      travels in the code at all. One integer, never card data: it says "I
+      own 47 cards", not which 47. */
+export const CODE_VERSION = 2;
 const PREFIX = `CGB${CODE_VERSION}.`;
 
 export const KIND = { challenge: 'c', result: 'r' };
@@ -233,17 +251,24 @@ function inflate(bytes) {
 
 /* ── the payload ──────────────────────────────────────────────────────────
    Short keys, because every byte here becomes ~1.4 characters of paste. */
-function toPayload({ kind, now, seed, name, teamA, teamB, echo }) {
+function toPayload({ kind, now, seed, name, teamA, teamB, echo, collectionSize }) {
   const payload = {
     v: CODE_VERSION,
     k: kind,
     t: Math.floor(now),
     s: seed >>> 0,
     n: String(name ?? '').slice(0, 24),
+    /* Absent/empty on a BARE challenge (item 9) — never padded to look like a
+       real team, because a fake team of five would be indistinguishable from
+       a committed one on the other end. */
     a: (teamA ?? []).map(packChannel),
   };
   if (teamB) payload.b = teamB.map(packChannel);
   if (echo) payload.e = echo;
+  /* 0 is a legitimate value (a fresh install with an empty collection can
+     still send a challenge), so this is written whenever the field is a
+     number at all rather than gated on truthiness. */
+  if (Number.isFinite(collectionSize)) payload.cs = Math.max(0, Math.floor(collectionSize));
   return payload;
 }
 
@@ -274,8 +299,20 @@ function validate(payload) {
     return channels;
   };
 
+  /* A CHALLENGE'S TEAM MAY BE ABSENT (item 9) — a result's may never be. Zero
+     rows reads as "not built yet" and decodes to `null`, not an empty array,
+     so a caller can tell "no team" apart from "a team of zero" with a bare
+     truthiness check rather than a length comparison every time. Anything
+     other than 0 or TEAM_SIZE rows is damage, same as it always was. */
+  const challengeTeam = (rows) => {
+    if (Array.isArray(rows) && rows.length === 0) return null;
+    return team(rows, 'challenger');
+  };
+
   const now = Number(payload.t);
   if (!Number.isFinite(now) || now <= 0) throw new ChallengeError('That code is missing the timestamp its stats are pinned to.');
+
+  const cs = Number(payload.cs);
 
   const decoded = {
     version: payload.v,
@@ -283,9 +320,13 @@ function validate(payload) {
     now,
     seed: Number(payload.s) >>> 0,
     name: String(payload.n ?? '').slice(0, 24),
-    teamA: team(payload.a, 'challenger'),
+    teamA: kind === KIND.result ? team(payload.a, 'challenger') : challengeTeam(payload.a),
     teamB: kind === KIND.result ? team(payload.b, 'defender') : null,
     echo: typeof payload.e === 'string' ? payload.e : null,
+    /* null rather than 0 when absent — a code from before this field existed
+       must not be misread as "owns zero cards", which would trip the
+       fairness check for no reason. */
+    collectionSize: Number.isFinite(cs) && cs >= 0 ? cs : null,
   };
   return decoded;
 }
@@ -347,20 +388,53 @@ export function newSeed(rng = Math.random) {
   return (Math.floor(rng() * 0x100000000) >>> 0);
 }
 
-export function makeChallenge({ team, name, seed = newSeed(), now = Date.now() }) {
-  return encodeCode({ kind: KIND.challenge, now, seed, name, teamA: team });
+/* `team` is now OPTIONAL (item 9) — omit it (or pass an empty array) to send
+   a bare "I want to battle you" challenge with the team decided together once
+   they accept. Passing a full five is still the "cocky" path (item 10) and
+   works exactly as it always did. `collectionSize` should be the SENDER's
+   distinct-card count — `myChannels().length` in ui/battle.js — so the other
+   side can run the fairness check the moment they accept. */
+export function makeChallenge({ team = null, name, seed = newSeed(), now = Date.now(), collectionSize } = {}) {
+  return encodeCode({ kind: KIND.challenge, now, seed, name, teamA: team, collectionSize });
 }
 
-export function makeResult({ challenge, team, name }) {
+/* async, matching encodeCode/decodeCode, so the guard below rejects rather
+   than throws synchronously — every caller already awaits this inside a
+   try/catch (ui/battle.js), so the two behave identically there, but it keeps
+   this file's whole public surface uniform: every call that can fail here is
+   a call you await and catch, none is a call you have to wrap differently. */
+export async function makeResult({ challenge, team, name, collectionSize }) {
+  /* A REPLY CODE CANNOT DESCRIBE A CHALLENGER TEAM THAT DOES NOT EXIST YET.
+     If the challenge was sent bare (item 9), the challenger's five only ever
+     gets decided through the LIVE shared build phase — there is no second
+     code exchange that could carry it back here. So a bare challenge reaching
+     this function is a caller bug: the UI must have already required a live
+     room (and therefore a real teamA) before this ever runs, or fallen back
+     to asking the challenger to resend a pre-built challenge when no room was
+     available. Thrown rather than silently encoding a broken code, because a
+     five-slot team array with a hole in it is exactly the kind of "looks
+     fine, fights wrong" bug this file exists to make impossible. */
+  if (!Array.isArray(challenge?.teamA) || challenge.teamA.length !== TEAM_SIZE) {
+    throw new ChallengeError('This challenge has no committed team to reply to yet.');
+  }
   return encodeCode({
     kind: KIND.result,
     now: challenge.now,
     seed: challenge.seed,
     name,
+    /* A result always echoes the challenger's team even when the challenge
+       that arrived was bare — by the time a reply exists, the shared build
+       phase (or, offline, the manual hand-off) has already settled what the
+       challenger is fielding, and `startFight` on both sides needs that team
+       written down the same way a v1 code always carried it. */
     teamA: challenge.teamA,
     teamB: team,
-    /* What the challenger checks on the way back in. */
+    /* What the challenger checks on the way back in. Fingerprints the
+       DEFENDER'S understanding of the challenger's team, which only differs
+       from the sender's own if the round trip corrupted something — the
+       property under test is unchanged from v1. */
     echo: fingerprint(challenge.teamA),
+    collectionSize,
   });
 }
 

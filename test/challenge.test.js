@@ -106,6 +106,85 @@ describe('encode/decode round trip', () => {
   });
 });
 
+/* ── v2: A CHALLENGE MAY CARRY NO TEAM (item 9) ─────────────────────────────
+   The wire-format half of "send a challenge without building your team
+   first". What is pinned here is the decode contract only — the UI decides
+   WHEN to send one of these, this file only has to make sure it round-trips
+   honestly and that nothing downstream can mistake "no team yet" for "a team
+   of zero cards" or silently invent one. */
+describe('a bare challenge (no team yet)', () => {
+  it('encodes and decodes with teamA as null, not an empty array or a thrown error', async () => {
+    const code = await makeChallenge({ name: 'Ash', seed: 42, now: NOW });
+    const decoded = await decodeCode(code);
+    expect(decoded.kind).toBe(KIND.challenge);
+    expect(decoded.teamA).toBeNull();
+  });
+
+  it('an explicit empty array behaves the same as omitting the team entirely', async () => {
+    const code = await makeChallenge({ team: [], name: 'Ash', seed: 42, now: NOW });
+    const decoded = await decodeCode(code);
+    expect(decoded.teamA).toBeNull();
+  });
+
+  it('every other field still round-trips on a bare challenge', async () => {
+    const decoded = await decodeCode(await makeChallenge({ name: 'Ash', seed: 777, now: NOW }));
+    expect(decoded.now).toBe(NOW);
+    expect(decoded.seed).toBe(777);
+    expect(decoded.name).toBe('Ash');
+  });
+
+  it('a RESULT code still requires a full five — bareness is a challenge-only allowance', async () => {
+    await expect(encodeCode({ kind: KIND.result, now: NOW, seed: 1, name: '', teamA: [], teamB: teamOf() })
+      .then(decodeCode)).rejects.toBeInstanceOf(ChallengeError);
+  });
+
+  it('a team of the wrong non-zero length is still rejected on a challenge', async () => {
+    await expect(encodeCode({ kind: KIND.challenge, now: NOW, seed: 1, name: '', teamA: teamOf().slice(0, 3) })
+      .then(decodeCode)).rejects.toBeInstanceOf(ChallengeError);
+  });
+
+  it('makeResult refuses to reply to a challenge whose team was never committed', async () => {
+    const bare = await decodeCode(await makeChallenge({ name: 'Ash', seed: 1, now: NOW }));
+    await expect(makeResult({ challenge: bare, team: teamOf(20), name: 'B' })).rejects.toBeInstanceOf(ChallengeError);
+  });
+});
+
+/* ── v2: EVERY CODE CARRIES A COLLECTION SIZE (items 15-27's wire half) ───── */
+describe('collection size travels with the code', () => {
+  it('round-trips on a challenge', async () => {
+    const code = await makeChallenge({ team: teamOf(), name: 'Ash', seed: 1, now: NOW, collectionSize: 47 });
+    expect((await decodeCode(code)).collectionSize).toBe(47);
+  });
+
+  it('round-trips on a result', async () => {
+    const challenge = await decodeCode(await makeChallenge({ team: teamOf(0), seed: 1, now: NOW }));
+    const result = await makeResult({ challenge, team: teamOf(20), name: 'B', collectionSize: 12 });
+    expect((await decodeCode(result)).collectionSize).toBe(12);
+  });
+
+  it('zero is a real, distinct value from absent', async () => {
+    const withZero = await decodeCode(await makeChallenge({ team: teamOf(), seed: 1, now: NOW, collectionSize: 0 }));
+    expect(withZero.collectionSize).toBe(0);
+  });
+
+  it('is null, not 0, when the sender omitted it entirely', async () => {
+    const decoded = await decodeCode(await makeChallenge({ team: teamOf(), seed: 1, now: NOW }));
+    expect(decoded.collectionSize).toBeNull();
+  });
+
+  it('a non-numeric value is treated as absent rather than corrupting the decode', async () => {
+    for (const bad of [NaN, 'forty-seven', undefined]) {
+      const code = await encodeCode({ kind: KIND.challenge, now: NOW, seed: 1, name: '', teamA: teamOf(), collectionSize: bad });
+      expect((await decodeCode(code)).collectionSize).toBeNull();
+    }
+  });
+
+  it('a negative value clamps to 0 rather than encoding a nonsense count', async () => {
+    const code = await encodeCode({ kind: KIND.challenge, now: NOW, seed: 1, name: '', teamA: teamOf(), collectionSize: -5 });
+    expect((await decodeCode(code)).collectionSize).toBe(0);
+  });
+});
+
 describe('the fight replays identically on both sides', () => {
   it('two windows decoding the same result code resolve the same battle', async () => {
     /* THE LOAD-BEARING TEST. The defender's window resolves the fight from the
@@ -205,7 +284,12 @@ describe('a pasted code is a stranger’s input', () => {
     const code = await encodeCode({
       kind: KIND.challenge, now: NOW, seed: 1, name: '', teamA: teamOf(),
     });
-    const bumped = code.replace('CGB1.', 'CGB9.');
+    /* Built off the real prefix rather than a hardcoded 'CGB1.' — this test
+       broke silently (matched nothing, so the "bumped" code was identical to
+       the original and the assertion passed for the wrong reason) the moment
+       CODE_VERSION moved to 2, and a literal is exactly how that kind of
+       silent pass happens again at the next bump. */
+    const bumped = code.replace(`CGB${CODE_VERSION}.`, 'CGB9.');
     await expect(decodeCode(bumped)).rejects.toThrow(/battle code/i);
   });
 

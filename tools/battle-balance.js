@@ -9,7 +9,12 @@
 
    Run:  node tools/battle-balance.js                 (live set if built, else synthetic)
          node tools/battle-balance.js --synthetic     (fixture only, no set needed)
-         node tools/battle-balance.js --fights 400    (more matchmaking samples)
+         node tools/battle-balance.js --fights 3000   (more matchmaking samples)
+
+   `--fights` is a budget of BATTLES, spent as fights/6 distinct matchups with
+   six damage rolls each. Matchups are the sample size that matters — see the
+   note above the FIGHTS loop — so the default 360 buys 60 of them and a
+   trustworthy reading of the even-match rate wants 3000.
 
    ── THE AGE PROBLEM, STATED UP FRONT ──────────────────────────────────────
    Two of the five axes need `publishedAt`, and no set built before the battle
@@ -33,7 +38,9 @@ import { dirname, resolve } from 'node:path';
 import {
   axesFrom, battleStatsFrom, powerOf, BATTLE_AXES, BATTLE_CLASSES, STAT_TUNING,
 } from '../src/engine/battle-stats.js';
-import { battle, makeTeam, resolveBattle, TEAM_SIZE, BATTLE_TUNING } from '../src/engine/battle.js';
+import {
+  battle, makeTeam, resolveBattle, teamPower, distinctClasses, TEAM_SIZE, BATTLE_TUNING,
+} from '../src/engine/battle.js';
 import { matchOpponent, arrangeFormation } from '../src/engine/opponent.js';
 import { ELEMENTS, elementOf } from '../src/engine/element.js';
 
@@ -258,7 +265,17 @@ async function main() {
   console.log('\nSTATS (median)  ' + ['hp', 'atk', 'def', 'spd', 'mom']
     .map(k => `${k.toUpperCase()} ${quant(stats.map(s => s[k]), 0.5)}`).join('   '));
 
-  // ── size must not decide the fight ────────────────────────────────────────
+  /* ── SIZE, AND WHAT "MUST STAY" MEANS NOW (flipped 2026-08-15) ────────────
+     From 2026-08-09 to 2026-08-15 this block's job was to prove rarity did
+     NOT decide the fight — these four lines carried floor/ceiling checks in
+     that direction (attack flat near 1.0, power ratio under 1.4, a large
+     small-card overlap required). Ash's follow-up brief asks for the opposite
+     design goal: subscriber count should generally decide the fight, with
+     upsets surviving as a real but rare tactical possibility rather than a
+     free ~1-in-5 shot. The thresholds below were inverted to match — they are
+     now FLOORS on how size-dominant the deck is, not ceilings on how
+     compressed it stays. See CLAUDE.md's "Battle balance" section and
+     DECISIONS.md 2026-08-15 for the full record of why. */
   const small = deck.filter(c => Number(c.subscriberCount) < 100_000);
   const huge = deck.filter(c => Number(c.subscriberCount) >= 10_000_000);
   const statOf = (cards, key) => mean(cards.map(c => battleStatsFrom(c, NOW)[key]));
@@ -267,36 +284,98 @@ async function main() {
   const overlap = small.filter(c => powerOf(battleStatsFrom(c, NOW)) > medGiant).length / (small.length || 1);
 
   console.log(`\nSIZE  (${small.length} under 100K, ${huge.length} over 10M)`);
-  console.log(`  attack   giant/small  ${(statOf(huge, 'atk') / statOf(small, 'atk')).toFixed(2)}   (target ~1.0, must stay 0.74-1.35)`);
+  console.log(`  attack   giant/small  ${(statOf(huge, 'atk') / statOf(small, 'atk')).toFixed(2)}   (a bigger creator should hit noticeably harder — target > 1.3)`);
   console.log(`  health   giant/small  ${(statOf(huge, 'hp') / statOf(small, 'hp')).toFixed(2)}`);
-  console.log(`  power    median ratio ${(medGiant / powerMed(small)).toFixed(2)}   (must stay under 1.4)`);
-  console.log(`  small cards out-rating the median giant  ${pct(overlap)}   (must stay over 15%)`);
+  console.log(`  power    median ratio ${(medGiant / powerMed(small)).toFixed(2)}   (a UR/RUBY should feel substantially stronger than an N — target > 1.5)`);
+  console.log(`  small cards out-rating the median giant  ${pct(overlap)}   (should now be rare, not common — target < 10%)`);
 
   // ── the fight itself ──────────────────────────────────────────────────────
+  /* THE INDEPENDENT UNIT IS A MATCHUP, NOT A FIGHT, and getting that backwards
+     is what made this number untrustworthy for three weeks. The old loop ran
+     `fights / 40` player teams and re-fought each one 40 times under different
+     rng — so a reported "360 fights" was NINE teams wearing a big number. The
+     reps are near-duplicates: they re-roll the damage variance and nothing
+     else, so they tighten the estimate of how THAT matchup resolves while
+     saying nothing new about how matchmaking performs in general. Measured, the
+     nine per-matchup rates ran from 17.5% to 85% purely on which nine got
+     sampled.
+
+     So: many teams, few reps. Same total fights, an order of magnitude more
+     information, and the CI below is computed on TEAMS because that is the
+     sample size that actually exists.
+
+     Consecutive cards were the second half of the same mistake — `deck.slice`
+     off a deck sorted by channel id is not a random team, it is the same team
+     every run with a stride. Five drawn at random from a seeded rng keeps the
+     determinism that makes this file reproducible without the correlation. */
+  const REPS = 6;
+  const teamCount = Math.max(1, Math.round(fights / REPS));
+  const teamRng = mulberry32(0xC0FFEE);
   const rounds = [];
   let wins = 0, played = 0, wipes = 0;
-  const perTeam = 40;
-  for (let t = 0; t * perTeam < fights; t++) {
-    const start = (t * 137) % Math.max(1, deck.length - TEAM_SIZE);
+  /* Win rate bucketed by how much class diversity each side brought. This is
+     the row that explains the headline, and it is printed rather than derived
+     by hand because the headline on its own points at the wrong culprit — see
+     the note under FIGHTS. */
+  const byGap = new Map();
+  let pClassSum = 0, aClassSum = 0, driftSum = 0;
+
+  for (let t = 0; t < teamCount; t++) {
+    const idx = new Set();
+    while (idx.size < TEAM_SIZE) idx.add(Math.floor(teamRng() * deck.length));
     /* BOTH sides are arranged by the same rule. The matchmaker's fairness is
        the claim under test, and letting only the AI place its formation would
        measure the formation layer instead — which is a real advantage, and
        exactly the one a player is meant to earn by thinking. */
-    const player = arrangeFormation(deck.slice(start, start + TEAM_SIZE), NOW);
+    const player = arrangeFormation([...idx].map(i => deck[i]), NOW);
     if (player.length < TEAM_SIZE) continue;
-    const m = matchOpponent(player, deck, { difficulty: 'even', rng: mulberry32(start + 3), now: NOW });
-    for (let s = 1; s <= perTeam; s++) {
-      const r = battle(player, m.channels, { rng: mulberry32(s), now: NOW });
-      if (r.winner === 'a') wins++;
+    const m = matchOpponent(player, deck, { difficulty: 'even', rng: mulberry32(t * 7919 + 3), now: NOW });
+
+    const pTeam = makeTeam(player, NOW), aTeam = makeTeam(m.channels, NOW);
+    const pc = distinctClasses(pTeam), ac = distinctClasses(aTeam);
+    const pPow = teamPower(pTeam), aPow = teamPower(aTeam);
+    pClassSum += pc; aClassSum += ac;
+    driftSum += (aPow - pPow) / (pPow || 1);
+    const bucket = byGap.get(pc - ac) ?? { w: 0, n: 0, teams: 0 };
+    bucket.teams++;
+
+    for (let s = 1; s <= REPS; s++) {
+      const r = battle(player, m.channels, { rng: mulberry32(t * 131 + s), now: NOW });
+      if (r.winner === 'a') { wins++; bucket.w++; }
       if (r.survivors.a === 0 || r.survivors.b === 0) wipes++;
       rounds.push(r.rounds);
-      played++;
+      played++; bucket.n++;
     }
+    byGap.set(pc - ac, bucket);
   }
+
+  const rate = wins / played;
+  /* 95% CI on the proportion, over TEAMS. Printed because "37.2%" and
+     "37.2% +/- 14" are different claims and only one of them was ever true. */
+  const halfWidth = 1.96 * Math.sqrt((rate * (1 - rate)) / Math.max(1, teamCount)) * 100;
+
   console.log('\nFIGHTS');
-  console.log(`  even-match win rate   ${pct(wins / played)}   over ${played} fights   (must stay 30-70%)`);
+  console.log(`  even-match win rate   ${pct(rate)} +/- ${halfWidth.toFixed(1)} pts   `
+    + `over ${teamCount} matchups x ${REPS} rolls   (must stay 30-70%)`);
   console.log(`  length                median ${quant(rounds, 0.5)} rounds, p95 ${quant(rounds, 0.95)}   (aim 5-10; a replay has to be watchable)`);
   console.log(`  decided by elimination ${pct(wipes / played)}   (a fight going to the round cap is a stalemate the player watched)`);
+  console.log(`  AI power drift        ${pct(driftSum / Math.max(1, teamCount))}   (matchmaker aim; near 0 means aimedBuild is doing its job)`);
+
+  /* WHY THE HEADLINE IS LOW, AND IT IS NOT THE MATCHMAKER'S AIM.
+     `pickForSlot` scores class variety, so the AI reliably fields 4-5 distinct
+     classes while a random player team fields ~3. `aimedBuild` corrects the
+     POWER for that lift, and the drift above shows it succeeding — but powerOf
+     prices diversity at the stat lift (2.5-5%) and cannot see the class verbs
+     that make a mixed team actually win. Match the diversity and the fight is
+     even; every class of diversity the AI has spare is worth roughly ten points
+     of win rate. Read this table before touching the matchmaker. */
+  console.log(`  team diversity        player ${(pClassSum / Math.max(1, teamCount)).toFixed(2)} classes`
+    + `  vs  AI ${(aClassSum / Math.max(1, teamCount)).toFixed(2)}`);
+  console.log('  by diversity gap (player classes - AI classes):');
+  for (const [g, v] of [...byGap].sort((a, b) => a[0] - b[0])) {
+    if (v.teams < 5) continue;   // too thin to read as anything
+    console.log(`    ${String(g).padStart(2)}   ${String(v.teams).padStart(4)} matchups   player wins ${pct(v.w / v.n)}`);
+  }
 
   marginal(deck);
   strategies(deck);
@@ -383,10 +462,16 @@ function marginal(deck) {
    so there was nothing to decide and the optimal play was a button. Nothing in
    the tool could see it, which is why it is now in the tool.
 
-   READ THE LAST COLUMN. A healthy game has no strategy much above ~65%: the
-   thinking play should beat the naive one, and not by so much that the naive
-   one is pointless. A strategy at 90%+ is a solved game; one at ~0% is a trap
-   the player pays full price for. */
+   READ THE LAST COLUMN, BUT READ IT DIFFERENTLY SINCE 2026-08-15. Before the
+   subscriber rebalance, "no strategy above ~65%, biggest-subs should LOSE"
+   was the target — rarity was not supposed to decide anything. Now the brief
+   asks subscriber count to generally decide the fight, so "biggest subs" and
+   "highest rating" sitting well above that line is the design working, not a
+   regression. What still matters: no strategy should sit at 100% against
+   EVERY alternative (that is a solved game with no decision left in it at
+   all), and "diverse"/tactical picking should still meaningfully beat "best
+   punch" and "fastest growing" — those stay the traps a player should learn
+   to avoid, exactly as before. */
 function strategies(deck) {
   const rate = ch => powerOf(battleStatsFrom(ch, NOW));
   const num = v => Number(v) || 0;
@@ -460,8 +545,10 @@ function strategies(deck) {
     }
     console.log(line + pct(tot / (cnt || 1)).padStart(10));
   }
-  console.log('\n  No strategy should sit much above ~65% average — that is a solved game.');
-  console.log('  "biggest subs" losing is the design working: size buys a budget, not a win.');
+  console.log('\n  "biggest subs" / "highest rating" running well above the rest is expected now —');
+  console.log('  subscriber count is meant to generally decide the fight (2026-08-15 rebalance).');
+  console.log('  Still watch for: any strategy at 100% against every alternative (fully solved),');
+  console.log('  or "diverse" failing to beat "best punch"/"fastest growing" (tactics stopped paying).');
 }
 
 /* The knobs, printed LAST and read from the engine rather than copied. Last
