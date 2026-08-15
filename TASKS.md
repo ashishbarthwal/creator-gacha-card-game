@@ -5,11 +5,12 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,831 cards**
-(snapshot **2026-08-06** — that is what the CDN is serving). `sets/built/core.json` is stamped
-**2026-08-14, 15,890 cards**, but **that is a local file until `npm run deploy` uploads it.**
-**569 tests pass. Nothing from 2026-08-15 has been deployed** — the live site is running the
-2026-08-06 build and none of the work below.
+**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,890 cards**
+(snapshot **2026-08-14**), deployed **2026-08-16** — the live site and the repo match again.
+That deploy shipped the whole 2026-08-15 body of work: the arena lobby, the shared blind build
+phase, the AI collection model, the pack-opening summon, and the coffee-link removal. The live
+KV lobby is confirmed running the new four-op protocol (`accept`/`enter`/`bail`/`lock`).
+**569 tests pass.**
 
 **Run it locally with `npm run dev`** (`wrangler pages dev`, default `http://localhost:8788`).
 That is the only command that serves the site AND runs `functions/api/ready/[room].js` against a
@@ -61,15 +62,14 @@ below this paragraph that mentions the OLD invariant (19% N-above-median-UR) —
     path anywhere; locked decision 2 withdrawn.
 
 **NEXT — start here.**
-1. **Deploy.** Nothing above is live. `npm run deploy` ships the 15,890-card rebuild AND the
-   whole 2026-08-15 body of work, including the `functions/api/ready/[room].js` rewrite. No
-   migration concern: KV rooms expire in 10 minutes, so there are no in-flight rooms on the old
-   protocol to worry about.
-2. **Run the two-window checklist below** if it has not been run since the last change. The
+1. **Run the two-window checklist below against production**, or against `npm run dev`. The
    arena is untested DOM wiring by design; 569 tests cover the engine under it and none of them
-   touch `src/ui/battle.js`.
-3. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
+   touch `src/ui/battle.js`. The lobby has never been watched by two humans at once.
+2. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
    ~1s drags by the tenth pull. Nobody has seen it in motion yet.
+3. **The deck is due for a refresh on the 25-day cadence** — snapshot is 2026-08-14, so the
+   next rebuild is due around 2026-09-08 and the 30-day statistics cap bites on 2026-09-13.
+   `npm run deploy` re-hydrates (~318 quota units) and ships in one step.
 4. Everything below this point is the OLDER backlog, from before the 2026-08-15 brief. Still
    real, still open, lower priority.
 
