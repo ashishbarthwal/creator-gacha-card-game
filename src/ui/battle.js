@@ -1157,6 +1157,39 @@ function renderLobbyGate() {
   };
   tick();
 
+  /* RE-ASSERT AN `enter` THE SERVER DOES NOT HAVE — the same repair
+     `reassertLock` performs one phase later, for the identical reason. KV has
+     no compare-and-set (functions/api/ready/[room].js), and the auto-enter at
+     the bottom of `tick` means BOTH sides hit zero and POST `enter` at the
+     same instant BY DESIGN — that is the whole point of an auto-enter, so
+     neither player can stall the other. That makes the two writes landing
+     together the expected case, not a rare one: read-modify-write on a shared
+     key means the second write can silently omit the first side's flag, and
+     `buildStartAt` — stamped only once both flags are true on the SAME read —
+     then never gets set. Lose that race and this side is entered in its own
+     browser, unentered on the server, and finished ticking: the exact "both
+     players stuck on LOBBY — 00:00 forever" report this fixes.
+
+     So the poll that already runs every 1.2s becomes the repair: if this side
+     believes it has entered and the room disagrees, say it again. Idempotent —
+     `enter` just sets a flag, so a duplicate is a no-op — and guarded by
+     `reentering` so a slow round trip cannot stack requests. */
+  let reentering = false;
+  function reassertEnter(state) {
+    const mineOnServer = side === 'a' ? state.enteredA : state.enteredB;
+    if (!entered || mineOnServer || reentering) return;
+    reentering = true;
+    enterBuild(ui.room, side).then(fresh => {
+      reentering = false;
+      if (gen !== readyGen || !fresh.enabled) return;
+      ui.roomState = fresh;
+      if (fresh.buildStartAt) {
+        adoptBuildWindow(fresh);
+        beginSharedBuild();
+      }
+    }).catch(() => { reentering = false; });
+  }
+
   function poll() {
     if (gen !== readyGen) return;
     checkRoom(ui.room).then(state => {
@@ -1181,6 +1214,7 @@ function renderLobbyGate() {
       const theirs = side === 'a' ? state.enteredB : state.enteredA;
       if (entered) status.textContent = theirs ? 'Both in — starting…' : 'Waiting for them…';
       else if (theirs) status.textContent = 'They are ready and waiting on you.';
+      reassertEnter(state);
       nextPoll(POLL_MS);
     });
   }
