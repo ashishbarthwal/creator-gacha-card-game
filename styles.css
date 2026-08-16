@@ -694,12 +694,14 @@
   .po-stage.is-burst .po-card:nth-child(2) { transform: rotate(30deg) translate(150px, 26px) scale(0.9); }
   .po-stage.is-burst .po-card:nth-child(3) { animation: none; transform: scale(1.5); }
 
-  /* The ten flying cards came out 2026-08-16 with the rest of the pull's
-     flourish — they animated in exactly the frames the reveal behind them was
-     building its own ten cards, so the two most expensive moments in the app
-     were the same moment. `.po-streaks` keeps its layout rule alone: the
-     element is still in index.html and still cleared on teardown, it is simply
-     never filled now. */
+  /* The ten flying cards came out 2026-08-16: the SUMMON is the one thing Ash
+     asked to simplify, and they were its most expensive frames. `.po-streaks`
+     keeps its layout rule alone — the element is still in index.html and still
+     cleared on teardown, it is simply never filled now.
+
+     NOTHING ELSE IN THIS FILE WAS PART OF THAT ASK. The card FX below — stars,
+     sweep, ignition, bloom, aura — were stripped in the same pass by mistake and
+     restored the same day. The request was about the button, not the cards. */
   .po-streaks { position: absolute; inset: 0; pointer-events: none; }
 
   /* Shockwave. Two rings, the second late and wider, because one ring reads as
@@ -2299,26 +2301,12 @@
        a hole punched in the site rather than a card laid on it.
 
        Derived from --bg0 rather than restated as a literal, so the overlay
-       cannot drift away from the stage again if the palette moves.
-
-       THE BLUR CAME OUT 2026-08-16 and it was the single most expensive thing
-       in the pull. `backdrop-filter: blur(8px)` on a FULL-SCREEN, SCROLLING
-       overlay makes the compositor re-blur everything behind it every frame the
-       overlay moves or its contents animate — which, during a reveal, is every
-       frame there is. It is the one property here whose cost scales with screen
-       area rather than with content, so a phone pays the most for it while
-       having the least to spend.
-
-       Opacity 88% -> 96% in exchange. The blur was doing separation work, and
-       dropping it without compensating would leave the page legible through the
-       overlay and the cards competing with the banner behind them. A near-opaque
-       stage colour separates just as well for free, and keeps the point of the
-       original note: this reads as a card laid ON the site, not a hole punched
-       in it. */
-    background: color-mix(in srgb, var(--bg0) 96%, transparent);
+       cannot drift away from the stage again if the palette moves. */
+    background: color-mix(in srgb, var(--bg0) 88%, transparent);
+    backdrop-filter: blur(8px);
     overflow-y: auto;
-    /* Horizontal stays clipped: the seam glow spills sideways by design and
-       must never become a sideways scroll. */
+    /* Horizontal stays clipped: seam glow, bloom and the UR aura's motes all
+       spill sideways by design and must never become a sideways scroll. */
     overflow-x: hidden;
     overscroll-behavior: contain;  /* don't chain the scroll to the page behind */
     scrollbar-gutter: stable;
@@ -2649,22 +2637,49 @@
     50%      { opacity: 1;   transform: scale(1.08); }
   }
 
-  /* THE REVEAL FX CAME OUT HERE (2026-08-16). ~300 lines of beam, specular
-     sweep, ignition ring, discharge bloom, breathing aura and drifting motes,
-     with their nine keyframe sets — every one of them unreachable now that
-     ui/reveal.js stops building the elements they styled. Deleted rather than
-     left dark: dead CSS costs nothing at runtime and everything to the next
-     person reading this file to find out what a reveal does.
+  /* pre-flip beam — telegraphs rarity in its own colour before the card turns.
+     Only R+ light it (N never gets the .beaming class); colour per glow tier. */
+  .beam {
+    position: absolute;
+    /* Collapsed to the cell unless it is actually lit. The beam is half a card
+       taller than the card at each end, and now that the overlay scrolls, that
+       overhang below the LAST row would count as scrollable content — several
+       hundred pixels of empty space you could scroll into, on a screen whose
+       whole complaint was wasted vertical space. Invisible either way (opacity
+       0 until `.beaming`), so nothing about the effect changes. */
+    inset: 0 30%;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 50% / 42%;
+    background: linear-gradient(to top,
+      transparent, var(--beam, #fff) 42%, #fff 50%, var(--beam, #fff) 58%, transparent);
+    filter: blur(7px);
+    opacity: 0;
+    transform: scaleY(0.14);
+    transform-origin: 50% 50%;
+    mix-blend-mode: screen;
+  }
+  .glow-R    .beam { --beam: #cdd8ea; }
+  .glow-SR   .beam { --beam: #ffcf6b; }
+  .glow-SSR  .beam { --beam: #7fe7ff; }
+  .glow-UR   .beam { --beam: #b45bff; }
+  .glow-RUBY .beam { --beam: #c81030; }
+  /* Back-loaded curve: ease-out spent the beam in its first third and left the
+     rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
+     into the flip makes the long beams tension instead of waiting. */
+  .reveal-cell.beaming .beam { inset: -45% 30%; animation: beam-build var(--beam-ms, 500ms) cubic-bezier(0.5, 0, 0.85, 0.35) forwards; }
+  /* A revealed card never wears its own telegraph. The scheduler already refuses
+     to light a beam on a turned card (reveal.js), but that is a rule about
+     timing; this makes the state unrepresentable, so no future path can strand a
+     cone of light above a card that has already landed. Declared after the rule
+     above so it wins on equal specificity. */
+  .reveal-cell.flipped .beam { animation: none; opacity: 0; }
 
-     What replaced them is nothing. A card turns over and its seam lights in
-     its rarity colour (.reveal-cell.flipped above), and the pack charge is
-     tinted by the best card in the pull (.po-tier-* near the top of this
-     file) — that one is the piece Ash asked to keep. Both are one-shot; there
-     is no longer any looping animation anywhere in a pull.
-
-     Recorded in DECISIONS.md 2026-08-16 with the reason, so restoring any of
-     it is a decision rather than an archaeology exercise. */
-
+  @keyframes beam-build {
+    0%   { opacity: 0;   transform: scaleY(0.1); }
+    30%  { opacity: 0.6; }
+    100% { opacity: 1;   transform: scaleY(1); }
+  }
 
   /* Rarer cards flip slower — a beat of drama on the turn. Now a three-step
      ladder rather than two: SR used to share the common turn and only differed
@@ -2673,6 +2688,257 @@
   .glow-SSR  .flip-inner,
   .glow-UR   .flip-inner { transition-duration: 0.95s; }
   .glow-RUBY .flip-inner { transition-duration: 1.05s; }
+
+  /* reveal-moment specular sweep — a single slow light pass across the card
+     face as it lands (SR+ only), a faint tint per glow tier. Not a loop. */
+  .sweep {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border-radius: 15px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .sweep::before {
+    content: '';
+    position: absolute;
+    top: -25%;
+    left: 0;
+    width: 42%;
+    height: 150%;
+    background: linear-gradient(100deg,
+      transparent 22%, var(--sweep, rgba(255, 255, 255, 0.9)) 50%, transparent 78%);
+    transform: skewX(-16deg) translateX(-190%);
+    opacity: 0;
+    filter: blur(1.5px);
+  }
+  /* Delay is folded in per tier rather than set in a later rule: SR flips over
+     0.82s and SSR/UR over 0.95s, so their pass has to start later to cross a
+     card that's facing you. Rarer = slower and brighter. */
+  .glow-SR   .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.46s; }
+  .glow-SSR  .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
+  .glow-UR   .sweep { --sweep: rgba(240, 224, 255, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
+  .glow-UR   .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
+  .glow-RUBY .sweep { --sweep: rgba(255, 226, 220, 1);    --sweep-ms: 1.3s;  --sweep-delay: 0.72s; }
+  .glow-RUBY .sweep::before { width: 58%; filter: blur(2.6px); } /* broader still than UR's */
+  .reveal-cell.flipped .sweep::before { animation: sweep-pass var(--sweep-ms, 0.85s) ease-in-out var(--sweep-delay, 0.4s) 1; }
+
+  /* ---- UR only: the ignition ------------------------------------------------
+     A white-hot point races once around the frame's bevel as the card lands,
+     trailing amber into crimson, and the seam halo floods in behind it. UR's
+     exclusive: every other effect here is a wash of light shared with a lower
+     tier, so the top tier claims the one shape nothing else uses — a travelling
+     line. It also gives the card's ambient ember (ur-ember, below) an origin.
+
+     .fuse is a STATIC ring: the two-layer mask paints the padding band only
+     (content-box XOR border-box), punching the middle out. The <i> inside
+     carries the conic gradient and spins — rotating the child rather than the
+     ring is what keeps the band still while the head appears to travel. Rotate
+     the wrapper instead and you'd see the rounded rect itself tumble. */
+  .fuse {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    border-radius: 12px; /* the card's own outer radius at reveal size */
+    padding: 3px;        /* = ring thickness, sat on the metal bevel */
+    pointer-events: none;
+    opacity: 0;
+    -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+    -webkit-mask-clip: content-box, border-box;
+    -webkit-mask-composite: xor;
+            mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+            mask-clip: content-box, border-box;
+            mask-composite: exclude;
+  }
+
+  .fuse i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* Square, and wider than the cell's diagonal (1.72x its width at 5:7), so
+       the gradient still covers every corner at any rotation. */
+    width: 180%;
+    aspect-ratio: 1;
+    /* Colours mirror the .r-UR frame tokens — those live on .card, a sibling
+       subtree, so they can't be inherited here. */
+    background: conic-gradient(from 0deg,
+      transparent 0 52%,
+      rgba(93, 19, 166, 0.55) 68%,
+      #b45bff 83%,
+      #cf8fff 93%,
+      #efdcff 97.5%,
+      #fff 99.4%,
+      transparent 100%);
+  }
+
+  /* Red Diamond's ignition runs a hair longer than Ruby's — a near-black-red
+     head brightening to white, against UR's violet-into-white, so the top of
+     the ladder reads as denser and heavier rather than a recolor of the same
+     ring. */
+  .glow-RUBY .fuse i {
+    background: conic-gradient(from 0deg,
+      transparent 0 50%,
+      rgba(21, 0, 10, 0.65) 66%,
+      #8c0f24 82%,
+      #d61030 92%,
+      #ffb3bb 97%,
+      #fff 99.4%,
+      transparent 100%);
+  }
+
+  /* The ignition has to trace the shape it is igniting. RUBY's card is an
+     octagon (see the gem-cut block), so a 12px-radius rounded rectangle racing
+     around it would visibly miss the bevels at all four corners. Same polygon
+     as `.card.r-RUBY`, applied over the mask so the ring is cut to the gem. */
+  .glow-RUBY .fuse {
+    border-radius: 0;
+    clip-path: polygon(
+      7% 0%, 93% 0%, 100% 5%, 100% 95%,
+      93% 100%, 7% 100%, 0% 95%, 0% 5%);
+  }
+
+  .reveal-cell.flipped .fuse { animation: fuse-hold 1.15s linear 0.55s both; }
+  .reveal-cell.flipped .fuse i { animation: fuse-run 1.15s cubic-bezier(0.45, 0, 0.4, 1) 0.55s both; }
+  .glow-RUBY.reveal-cell.flipped .fuse { animation-duration: 1.35s; }
+  .glow-RUBY.reveal-cell.flipped .fuse i { animation-duration: 1.35s; }
+
+  @keyframes fuse-hold {
+    0%   { opacity: 0; }
+    9%   { opacity: 1; }
+    82%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  /* Starts a touch before 12 o'clock and runs a full turn past it, so the head
+     enters and leaves off the top edge rather than popping on mid-run. */
+  @keyframes fuse-run {
+    from { transform: translate(-50%, -50%) rotate(-22deg); }
+    to   { transform: translate(-50%, -50%) rotate(345deg); }
+  }
+
+  /* ---- UR only: the discharge -----------------------------------------------
+     A ghost of the card's silhouette pushes outward once and dissolves, timed
+     to the moment the fuse closes its loop. It sits BEHIND the card (z-index 0,
+     alongside .beam) so it's only ever visible in the margin — an emanation
+     rather than a red wash over a real creator's face. */
+  .bloom {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 12px;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(closest-side, rgba(178, 105, 255, 0.2), transparent 76%);
+    box-shadow: 0 0 0 2px rgba(214, 170, 255, 0.85), 0 0 40px 8px rgba(168, 85, 247, 0.5);
+  }
+  /* The discharge is a ghost of the card's own silhouette pushing outward, so
+     for RUBY it has to be the gem's silhouette, not a rounded rectangle. The
+     2px outline is dropped here rather than clipped: `clip-path` cuts a
+     box-shadow's outer ring away, so it would only ever draw on three of the
+     eight edges. The radial fill carries the shape on its own. */
+  .glow-RUBY .bloom {
+    border-radius: 0;
+    clip-path: polygon(
+      7% 0%, 93% 0%, 100% 5%, 100% 95%,
+      93% 100%, 7% 100%, 0% 95%, 0% 5%);
+    background: radial-gradient(closest-side, rgba(170, 18, 44, 0.42), rgba(90, 8, 22, 0.16) 62%, transparent 82%);
+    box-shadow: none;
+  }
+
+  .reveal-cell.flipped .bloom { animation: bloom-out 0.8s cubic-bezier(0.12, 0.7, 0.3, 1) 1.62s 1; }
+  .glow-RUBY.reveal-cell.flipped .bloom { animation-delay: 1.82s; }
+
+  @keyframes bloom-out {
+    from { opacity: 0.9; transform: scale(1);    filter: blur(0); }
+    to   { opacity: 0;   transform: scale(1.42); filter: blur(7px); }
+  }
+
+  /* ---- UR only: the aura ----------------------------------------------------
+     A wide, slowly breathing field of heat that settles in behind the card once
+     the discharge has passed, and keeps shedding small motes so a UR never fully
+     comes to rest. Sits at z-index 0 with .beam/.bloom — BEHIND the card — which
+     is the whole trick: the glow and every mote it emits are only visible in the
+     margin, so they can't crowd the stars on the card face or drift across the
+     avatar. The seam glow hugs the frame; this is the larger field outside it. */
+  .aura {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .reveal-cell.flipped .aura { animation: aura-in 1s ease-out 1.35s both; }
+  .glow-RUBY.reveal-cell.flipped .aura { animation-delay: 1.55s; }
+  @keyframes aura-in { to { opacity: 1; } }
+
+  /* -18% put this cloud 36px past a 200px card's edge and ~50px past top and
+     bottom, at full opacity, held forever by aura-in's `both`. The gutter is 30px.
+     So the single loudest thing in a UR reveal was a red wash lying across the
+     gap and onto the next card's frame — the "cutout" between cards was mostly
+     this. -6% keeps the breathing halo hugging the card, where it reads as the
+     card being lit rather than as the table being lit. */
+  .aura::before {
+    content: '';
+    position: absolute;
+    inset: -6%;
+    border-radius: 50% / 42%;
+    background: radial-gradient(closest-side,
+      rgba(170, 90, 250, 0.4) 0%,
+      rgba(120, 60, 220, 0.15) 58%,
+      transparent 78%);
+    filter: blur(10px);
+    animation: aura-breathe 3.8s ease-in-out infinite;
+  }
+
+  /* Red Diamond's aura runs deep blood-red fading to near-black rather than
+     Ruby's violet, and breathes a touch wider — the field behind the top
+     card in the game. */
+  .glow-RUBY .aura::before {
+    background: radial-gradient(closest-side,
+      rgba(180, 10, 30, 0.46) 0%,
+      rgba(60, 4, 12, 0.2) 58%,
+      transparent 78%);
+  }
+
+  @keyframes aura-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(0.97); }
+    50%      { opacity: 0.95; transform: scale(1.06); }
+  }
+
+  /* Motes spawn on the card's perimeter and drift outward along their own
+     angle, so they read as shed by the card rather than scattered around it.
+     Placement, drift vector, size and stagger all come from JS. */
+  .mote {
+    position: absolute;
+    width: var(--sz, 2px);
+    height: var(--sz, 2px);
+    margin: calc(var(--sz, 2px) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #f5ecff 0%, #c084ff 45%, transparent 74%);
+    box-shadow: 0 0 5px rgba(190, 130, 255, 0.8);
+    opacity: 0;
+  }
+
+  /* Red Diamond sheds white-hot-into-deep-red motes rather than Ruby's violet
+     ones — a hotter core than Ruby's, matching the crystal. */
+  .glow-RUBY .mote {
+    background: radial-gradient(circle, #fff0ee 0%, #c8102e 45%, transparent 74%);
+    box-shadow: 0 0 5px rgba(196, 16, 40, 0.85);
+  }
+
+  .reveal-cell.flipped .mote { animation: mote-drift var(--float, 3.6s) ease-out infinite; }
+
+  @keyframes mote-drift {
+    0%   { opacity: 0;   transform: translate3d(0, 0, 0) scale(0.4); }
+    22%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: translate3d(var(--tx, 0), var(--ty, -20px), 0) scale(1); }
+  }
+
+  @keyframes sweep-pass {
+    0%   { transform: skewX(-16deg) translateX(-190%); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: skewX(-16deg) translateX(330%);  opacity: 0; }
+  }
 
   footer {
     border-top: 1px solid var(--line);
@@ -2777,12 +3043,14 @@
     /* Still wear the rarity halo, just arrived-at rather than animated-to. */
     .reveal-cell.flipped { animation: none; box-shadow: 0 0 var(--seam-rest, 22px 3px) var(--seam, transparent); }
     .btn { transition: none; }
-    /* The beam, sweep, fuse, bloom, aura and mote overrides that sat here went
-       with the effects themselves (2026-08-16). Reduced motion now has less to
-       switch off in a pull than it used to, which is the whole idea: the
-       stripped reveal is close to what this block used to have to construct.
-       `.stars` stays — the INSPECTOR still builds them, on a card that is
-       standing still and being admired rather than one mid-flip. */
+    .beam { animation: none; opacity: 0; }
+    .sweep::before { animation: none; }
+    /* All three UR effects are opacity:0 at rest, so killing the animation is
+       enough to leave the card lit but still. */
+    .fuse, .fuse i { animation: none; }
+    .bloom { animation: none; }
+    /* .aura is opacity:0 at rest too, so the field and its motes stay dark. */
+    .aura, .aura::before, .mote { animation: none; }
     /* .stars is opacity:0 by default and faded in by stars-in — with that
        animation off, the layer has to be turned back on explicitly. */
     .stars { animation: none; opacity: 1; }

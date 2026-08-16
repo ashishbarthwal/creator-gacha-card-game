@@ -4396,51 +4396,38 @@ number that had never been true stopped being printed.
 Tuning against the broken figure would have concluded that a modest crit bump wrecked class
 balance, and the change would have been abandoned for a reason that did not exist.
 
-## The pull loses its flourish (2026-08-16)
+## The pull BUTTON gets simpler, and a scope mistake worth recording (2026-08-16)
 
 Ash: "the card pulling animation is laggy on mobile and a lil bit on pc as well. Strip it down,
 it's fine. Don't need it to be fancy. But keep the color showing the highest card pulled in
 this turn."
 
-What a pull used to build, and the total is the point rather than any one item:
+**What shipped is the summon only** — `ui/packopen.js`, the beat between pressing the pack and
+seeing the cards. Ten card-shaped streaks thrown outward on their own transforms are gone, and
+the charge holds are roughly halved (N 240 -> 140ms, RUBY 820 -> 420ms). The streaks were the
+most expensive thing in that beat, and they animated in exactly the frames the reveal behind
+them was building its own ten cards, so the two heaviest moments in a pull were the same moment.
+The curve is untouched: a RUBY still holds three times as long as an N.
 
-- a full-screen `backdrop-filter: blur(8px)` behind the reveal overlay;
-- a colour-coded beam telegraphing each rare, before its card turned;
-- a specular sweep across every SR-and-above face;
-- 18-26 twinkling stars per SR+ card — up to ~260 infinitely-animating nodes on a x10;
-- for UR and RUBY, a spinning conic-gradient ignition ring, a discharge bloom, and a breathing
-  aura shedding FIFTY looping motes, per card;
-- ten card-shaped streaks thrown outward by the summon, in the same frames the reveal behind
-  them was building its own ten cards;
-- pointer tilt bound to the reveal grid: a `getBoundingClientRect` and four custom-property
-  writes per `pointermove`, against ten cards already mid-flip.
+The colour Ash named is kept and is now the load-bearing part of that file — the charge takes
+the tint of the BEST card in the pull, while which of the ten it is stays hidden until the card
+turns.
 
-**The old reveal header claimed "all CSS, zero dependencies — no per-frame JS, so nothing to lag
-on", and that sentence is the whole mistake.** Compositing hundreds of simultaneously animating
-layers is per-frame work whoever schedules it. "It's CSS" says who WRITES the frames, not who
-PAYS for them, and a phone GPU is where the bill arrives. The `backdrop-filter` was worse than
-any of it: its cost scales with screen area rather than with content, on a scrolling overlay,
-which means every frame of every reveal — so the device with the least to spend paid the most.
+**THE FIRST ATTEMPT STRIPPED THE WRONG THING, and the correction is the reason this entry
+exists.** "The card pulling animation" was read as the whole pull, so the first pass also gutted
+`ui/reveal.js`: the per-card beams, the specular sweep, the twinkling stars on every SR+ card,
+and the ignition ring, bloom and aura on UR/RUBY — plus the reveal overlay's backdrop blur and
+its pointer tilt. It reached production before Ash saw it. Reverted the same day: `reveal.js`
+and every card effect in `styles.css` are byte-identical to what they were before the pass, and
+only the summon block differs.
 
-**What survived is the beat that carries the moment.** A card turns over, and the rarity colour
-lights the seam around it as it lands. One one-shot animation per card; there is no longer any
-looping animation anywhere in a pull. Rarest still flips last, because ordering is free — a sort
-and a `setTimeout` — and it is the whole of the drama worth keeping. Overlay opacity went 88% ->
-96% to do the separation work the blur was doing.
+**The lesson is about scope, not about performance.** The performance reasoning in that first
+pass was sound and is still true — hundreds of simultaneously animating layers cost a phone
+frames however cheap each one is, and a full-screen `backdrop-filter` on a scrolling overlay is
+charged per frame. None of that made it the right change. A request to simplify ONE animation is
+not a licence to audit every animation near it, and "strip it down, it's fine" was about the
+thing Ash named, not permission to redesign the reveal. The cards are the product; the button is
+a button.
 
-**The colour Ash named is `po-tier-*` in ui/packopen.js — the summon charge tinted by the BEST
-card in the pull — and it is now more load-bearing, not less.** The per-card beam that used to
-preview each rare individually is gone, so this is the only rarity tease left: the whole of
-"something good is in here". Which of the ten it is stays hidden until the card turns, as before.
-
-It also got faster, which was not a separate goal but follows from the same cut. A UR beam ran
-950ms BEFORE its card turned, so the most expensive part of the sequence was also its slowest; a
-x10 holding a couple of rares took the better part of six seconds to finish turning over. Beams
-gone, holds roughly halved, summon charges roughly halved (N 240 -> 140ms, RUBY 820 -> 420ms).
-
-Tilt stays in the collection grid and the inspector. There the card is STILL, the tilt is the
-only thing moving, and it is the finish doing its job rather than competing with a sequence.
-
-~280 lines of now-unreachable CSS were deleted rather than left dark. Dead CSS costs nothing at
-runtime and everything to the next person trying to find out what a reveal does — and none of
-this is covered by a test, so the file is the only documentation there is.
+If the card effects ever do need to come down for real, they are a separate decision made on
+measured evidence from a real phone — not a side effect of a fix to something else.

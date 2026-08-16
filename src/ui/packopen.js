@@ -3,8 +3,8 @@
    ── WHY THIS EXISTS ───────────────────────────────────────────────────────
    N3TWORK's card-reveal choreography breaks a pull into six stages, and this
    app already had five of them: the gesture (the pack IS the button), the
-   per-card preview, the reveal apex (the escalated flip), the
-   contemplation (click a card to inspect) and the return. The one it
+   per-card preview (the rarity beam), the reveal apex (the escalated flip),
+   the contemplation (click a card to inspect) and the return. The one it
    skipped was stage two, the SUMMON — the moment between pressing the pack
    and seeing the cards. Pressing the pack cut straight to a grid of card
    backs, which is the single mistake that article names first: the payment
@@ -23,12 +23,12 @@
    FGO and every pack opener worth copying makes on purpose, because the two
    secrets are not the same secret. Knowing "something good is in here" is
    what makes the flip sequence tense; knowing WHICH of the ten it is would be
-   what spoils it, and that is still withheld.
+   what spoils it, and that is still withheld. The per-card beam keeps doing
+   its job, now with a reason to care about it.
 
-   AFTER THE 2026-08-16 STRIP-DOWN THIS IS THE ONLY RARITY TEASE LEFT, which
-   makes it more load-bearing than it was, not less. The per-card beam that used
-   to preview each rare individually is gone; this charge colour is now the
-   whole of "something good is in here", and it is the piece Ash named to keep.
+   THIS COLOUR IS THE ONE THING THE 2026-08-16 SIMPLIFICATION WAS TOLD TO KEEP,
+   so treat it as the load-bearing part of this file. Everything else in the
+   summon is negotiable; this is the feature.
 
    Commons get a short, brisk charge for the same article's other warning:
    dressing up a bad pull as a big one is how you manufacture a letdown.
@@ -41,10 +41,9 @@
    that opens. Costs one getBoundingClientRect and no per-frame work.
 
    Everything animates on transform/opacity only, so it stays on the
-   compositor — same discipline as the ambient hero layer. (That discipline was
-   never the whole story, which is what the 2026-08-16 strip-down established:
-   compositor-only work is still work, and enough simultaneous layers will cost
-   a phone frames however cheaply each one animates.) */
+   compositor — same discipline as the ambient hero layer and the reveal FX.
+   (Compositor-only is not the same as free: enough simultaneous layers still
+   costs a phone frames, which is why the streaks below came out.) */
 
 import { RARITY_ORDER } from '../engine/core.js';
 
@@ -60,10 +59,10 @@ const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
    before it registers, and a RUBY is made to wait. These are the tension knob
    and the only numbers here worth tuning by feel.
 
-   Roughly halved 2026-08-16 (N 240 -> 140, RUBY 820 -> 420). The shape is
-   unchanged — a RUBY still holds three times as long as an N — but every value
-   was paying for a flourish that no longer runs underneath it, and the summon
-   is the first half of the sequence the "too laggy" report was about. */
+   Roughly halved 2026-08-16 (N 240 -> 140, RUBY 820 -> 420) when Ash asked for
+   the pull button to be much simpler. The shape is unchanged — a RUBY still
+   holds three times as long as an N — so the tease still escalates; it just
+   stops being the slow part of pressing a button. */
 const CHARGE_MS = { N: 140, R: 180, SR: 240, SSR: 300, UR: 360, RUBY: 420 };
 
 /* The FLIP travel from the banner pack to centre stage. Long enough to read as
@@ -97,12 +96,20 @@ let gen = 0;
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
 const at = (fn, ms) => timers.push(setTimeout(fn, ms));
 
-/* THE STREAKS ARE GONE (2026-08-16, the same strip-down pass as ui/reveal.js).
-   Ten card-shaped elements thrown outward on their own transforms, built per
-   pull and animating at exactly the moment the reveal overlay behind them was
-   building ten cards of its own — the two most expensive frames in the app were
-   the same frames. What the summon is FOR survives without them: a beat of
-   anticipation, coloured by the best card in the pull.
+/* THE STREAKS ARE GONE (2026-08-16). Ash asked for the PULL BUTTON's animation
+   — the beat between pressing the pack and seeing the cards — to be much
+   simpler, and ten card-shaped elements thrown outward on their own transforms
+   were the most expensive thing in it. They were also built in exactly the
+   frames the reveal overlay behind them was building its own ten cards, so the
+   two heaviest moments in a pull were the same moment.
+
+   What the summon is FOR survives without them: a beat of anticipation,
+   coloured by the best card in the pull.
+
+   SCOPE, BECAUSE IT WAS GOT WRONG ONCE: this is the summon only. The reveal's
+   card effects — stars, sweep, ignition, bloom, aura — were stripped in the
+   same pass by mistake and restored the same day. "The pull animation" meant
+   this file, not ui/reveal.js.
 
    `streaksEl` is still cleared on teardown rather than left to rot, because the
    element remains in index.html and an empty node is a cheaper thing to keep
