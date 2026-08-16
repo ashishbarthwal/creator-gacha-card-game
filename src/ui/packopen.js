@@ -3,8 +3,8 @@
    ── WHY THIS EXISTS ───────────────────────────────────────────────────────
    N3TWORK's card-reveal choreography breaks a pull into six stages, and this
    app already had five of them: the gesture (the pack IS the button), the
-   per-card preview (the rarity beam), the reveal apex (the escalated flip),
-   the contemplation (click a card to inspect) and the return. The one it
+   per-card preview, the reveal apex (the escalated flip), the
+   contemplation (click a card to inspect) and the return. The one it
    skipped was stage two, the SUMMON — the moment between pressing the pack
    and seeing the cards. Pressing the pack cut straight to a grid of card
    backs, which is the single mistake that article names first: the payment
@@ -23,8 +23,12 @@
    FGO and every pack opener worth copying makes on purpose, because the two
    secrets are not the same secret. Knowing "something good is in here" is
    what makes the flip sequence tense; knowing WHICH of the ten it is would be
-   what spoils it, and that is still withheld. The per-card beam keeps doing
-   its job, now with a reason to care about it.
+   what spoils it, and that is still withheld.
+
+   AFTER THE 2026-08-16 STRIP-DOWN THIS IS THE ONLY RARITY TEASE LEFT, which
+   makes it more load-bearing than it was, not less. The per-card beam that used
+   to preview each rare individually is gone; this charge colour is now the
+   whole of "something good is in here", and it is the piece Ash named to keep.
 
    Commons get a short, brisk charge for the same article's other warning:
    dressing up a bad pull as a big one is how you manufacture a letdown.
@@ -37,7 +41,10 @@
    that opens. Costs one getBoundingClientRect and no per-frame work.
 
    Everything animates on transform/opacity only, so it stays on the
-   compositor — same discipline as the ambient hero layer and the reveal FX. */
+   compositor — same discipline as the ambient hero layer. (That discipline was
+   never the whole story, which is what the 2026-08-16 strip-down established:
+   compositor-only work is still work, and enough simultaneous layers will cost
+   a phone frames however cheaply each one animates.) */
 
 import { RARITY_ORDER } from '../engine/core.js';
 
@@ -49,10 +56,15 @@ const streaksEl = document.getElementById('po-streaks');
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
 /* How long the charge holds before the burst, per best-in-pull rarity. The
-   curve is the point: a pull of commons is over almost before it registers,
-   and a RUBY is made to wait. These are the tension knob and the only numbers
-   here worth tuning by feel. */
-const CHARGE_MS = { N: 240, R: 300, SR: 420, SSR: 560, UR: 700, RUBY: 820 };
+   CURVE is the point, not the absolute values: a pull of commons is over almost
+   before it registers, and a RUBY is made to wait. These are the tension knob
+   and the only numbers here worth tuning by feel.
+
+   Roughly halved 2026-08-16 (N 240 -> 140, RUBY 820 -> 420). The shape is
+   unchanged — a RUBY still holds three times as long as an N — but every value
+   was paying for a flourish that no longer runs underneath it, and the summon
+   is the first half of the sequence the "too laggy" report was about. */
+const CHARGE_MS = { N: 140, R: 180, SR: 240, SSR: 300, UR: 360, RUBY: 420 };
 
 /* The FLIP travel from the banner pack to centre stage. Long enough to read as
    the same object moving, short enough not to be the slow part. */
@@ -85,25 +97,16 @@ let gen = 0;
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
 const at = (fn, ms) => timers.push(setTimeout(fn, ms));
 
-/* The cards leaving the pack. Card-shaped rather than generic sparks, because
-   the thing being disgorged is cards — a radial spray of glowing dots is the
-   same animation any app could have. Angles are spread evenly with a small
-   jitter so the fan looks thrown rather than compass-drawn. */
-function buildStreaks(count) {
-  streaksEl.replaceChildren();
-  const n = Math.max(3, Math.min(count, 10));
-  for (let i = 0; i < n; i++) {
-    const streak = document.createElement('i');
-    streak.className = 'po-streak';
-    const spread = (i / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-    const dist = 190 + Math.random() * 170;
-    streak.style.setProperty('--sx', `${(Math.cos(spread) * dist).toFixed(1)}px`);
-    streak.style.setProperty('--sy', `${(Math.sin(spread) * dist * 0.72).toFixed(1)}px`);
-    streak.style.setProperty('--sr', `${(Math.random() * 80 - 40).toFixed(1)}deg`);
-    streak.style.setProperty('--sd', `${(Math.random() * 90).toFixed(0)}ms`);
-    streaksEl.append(streak);
-  }
-}
+/* THE STREAKS ARE GONE (2026-08-16, the same strip-down pass as ui/reveal.js).
+   Ten card-shaped elements thrown outward on their own transforms, built per
+   pull and animating at exactly the moment the reveal overlay behind them was
+   building ten cards of its own — the two most expensive frames in the app were
+   the same frames. What the summon is FOR survives without them: a beat of
+   anticipation, coloured by the best card in the pull.
+
+   `streaksEl` is still cleared on teardown rather than left to rot, because the
+   element remains in index.html and an empty node is a cheaper thing to keep
+   than a markup change is to make. */
 
 /* Put the overlay's pack exactly where the real one is sitting, as a transform
    off its own centred resting place. Returns false when the banner pack is not
@@ -143,13 +146,19 @@ export function playPackOpen(results) {
   clearTimers();
   const mine = ++gen;
 
-  if (REDUCE_MOTION.matches || !el || !stage || !packEl || !streaksEl) {
+  /* `streaksEl` is no longer part of this test. It used to be required because
+     the summon could not run without something to throw; now it holds nothing,
+     and a missing node must not be a reason to skip an animation that does not
+     need it. */
+  if (REDUCE_MOTION.matches || !el || !stage || !packEl) {
     return Promise.resolve();
   }
 
   const rarity = bestRarity(results);
-  buildStreaks(results?.length ?? 1);
 
+  /* THE ONE THING ASH ASKED TO KEEP: the charge takes the colour of the best
+     card in the pull. Everything else in this overlay was negotiable and most
+     of it went; this line is the feature. */
   el.className = `po-tier-${rarity}`;
   el.hidden = false;
   stage.classList.remove('is-charging', 'is-burst');
@@ -240,7 +249,7 @@ function teardown(mine, skipped = false) {
     if (mine !== gen) return;
     el.hidden = true;
     stage.classList.remove('is-charging', 'is-burst');
-    streaksEl.replaceChildren();
+    streaksEl?.replaceChildren();
   };
   if (skipped) return hide();
   at(hide, TEARDOWN_MS);

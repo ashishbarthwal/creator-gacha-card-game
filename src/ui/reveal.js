@@ -1,21 +1,36 @@
-/* ui/reveal — the pull reveal overlay: a rarity-escalated flip sequence.
-   Common cards resolve fast; rarer cards come LAST, each preceded by a
-   colour-coded beam (the telegraph). As a rare card lands, a single slow
-   specular sweep passes across its face and a seam glow lights up AROUND it
-   (rarity hidden until the turn — suspense); SR+ also carry twinkling stars,
-   placed to avoid the avatar circle. UR alone gets a three-beat finish, each
-   with its own shape and its own slot so they don't blur together: the ignition
-   (a hot point racing once around the frame), the discharge (a silhouette
-   pushing outward as the loop closes) and the aura (a breathing field behind
-   the card, shedding motes, looping). All CSS, zero dependencies —
-   no per-frame JS, so nothing to lag on. Reduced motion collapses it to an
-   instant, calm reveal. Self-contained: owns its close wiring; main just calls
-   openReveal(results). */
+/* ui/reveal — the pull reveal overlay: cards turn over, rarest last.
+
+   ── STRIPPED 2026-08-16, AND WHAT SURVIVED ────────────────────────────────
+   Ash: "the card pulling animation is laggy on mobile and a lil bit on pc as
+   well. Strip it down... Don't need it to be fancy. But keep the color showing
+   the highest card pulled in this turn."
+
+   What this used to run, per pull, is worth writing down because the total is
+   the point rather than any one piece: a colour-coded beam per rare, a
+   specular sweep, 18-26 twinkling stars on EVERY SR-and-above card (up to ~260
+   infinitely-animating nodes on a x10), and for the top two tiers a spinning
+   conic-gradient ignition ring, a discharge bloom, and a breathing aura
+   shedding FIFTY looping motes. The old header's boast — "all CSS, zero
+   dependencies, no per-frame JS, so nothing to lag on" — was the error in one
+   line. Compositing hundreds of simultaneously animating layers is per-frame
+   work whoever schedules it, and a phone GPU is where that bill arrives.
+
+   What is left is the beat that carries the moment: the card turns over, and
+   the rarity colour lights the seam around it as it lands. One one-shot
+   animation per card, no looping layers, nothing that outlives its own reveal.
+   Rarest still flips last, because ordering is free — it is a sort and a
+   setTimeout, and it is the whole of the drama that survived.
+
+   THE COLOUR ASH ASKED TO KEEP is the pack tease in ui/packopen.js — the
+   charge takes the colour of the BEST card in the pull. That is deliberately
+   untouched. This file keeps its per-card seam colour too, which is the same
+   idea one card at a time.
+
+   Reduced motion still collapses to an instant, calm reveal. Self-contained:
+   owns its close wiring; main just calls openReveal(results). */
 
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
-import { enableCardTilt } from './holo.js';
-import { STARS, makeStars } from './stars.js';
 
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
@@ -39,10 +54,12 @@ export function initReveal({ onPullAgain = null, packSize = null } = {}) {
   if (revealAgain) revealAgain.hidden = !onPullAgain;
 }
 
-/* Pointer-tilt on a fine-pointer device (was previously only wired up in the
-   collection grid and the inspector — the reveal screen itself had none, on
-   any platform). Delegated on the persistent grid, like the others. */
-enableCardTilt(revealGrid);
+/* NO POINTER TILT HERE ANY MORE (stripped 2026-08-16). It is a pointermove
+   handler doing a getBoundingClientRect and four custom-property writes per
+   event, against ten cards that are already mid-flip — the "a lil bit on pc as
+   well" half of the report. The collection grid and the inspector keep it:
+   there the cards are STILL, the tilt is the only thing moving, and it is the
+   finish doing its job rather than competing with a sequence. */
 
 let revealTimers = [];
 
@@ -55,16 +72,24 @@ const cellResults = new WeakMap();
 const CARD_BACK_HTML =
   '<div class="back-rings"></div><div class="back-play"></div><div class="back-word">CREATOR GACHA</div>';
 
-/* Per-rarity theatre. rank orders the sequence (rarer flips later, for a
-   crescendo); beam is the pre-flip telegraph time (ms); hold is the pause after
-   this card lands. Sweep, seam glow and stars are gated per rarity downstream. */
+/* Per-rarity pacing. `rank` orders the sequence — rarer flips later, which is
+   the crescendo — and `hold` is the beat after a card lands before the next one
+   turns.
+
+   THE BEAM IS GONE and the holds are roughly halved (2026-08-16). The
+   telegraph was an animated cone of light per rare card, and its cost was not
+   only the layer: a UR beam ran 950ms BEFORE its card turned, so the expensive
+   part of the old sequence was also its slowest part. A x10 with a couple of
+   rares in it took the better part of six seconds to finish turning over. Rank
+   and hold are a sort and a setTimeout — free, and enough to keep the good card
+   for last. */
 const FX = {
-  N:    { rank: 0, beam: 0,    hold: 0   },
-  R:    { rank: 1, beam: 200,  hold: 60  },
-  SR:   { rank: 2, beam: 360,  hold: 240 },
-  SSR:  { rank: 3, beam: 600,  hold: 430 },
-  UR:   { rank: 4, beam: 950,  hold: 700 },
-  RUBY: { rank: 5, beam: 1200, hold: 900 },
+  N:    { rank: 0, hold: 0   },
+  R:    { rank: 1, hold: 40  },
+  SR:   { rank: 2, hold: 120 },
+  SSR:  { rank: 3, hold: 200 },
+  UR:   { rank: 4, hold: 320 },
+  RUBY: { rank: 5, hold: 400 },
 };
 
 /* Gap between consecutive commons — the cadence knob, and the one that decides
@@ -72,17 +97,9 @@ const FX = {
    latter: the flip animation itself runs far longer than the gap, so five cards
    were mid-turn at once and no single card had a beat of its own. Widened so a
    common still lands briskly but finishes most of its turn before the next
-   starts. The rarer tiers are spaced by their own beam + hold on top of this. */
-const BASE_GAP = 200;
-const OPENING_BEAT = 300;  // let the overlay settle before the first flip
-
-const SWEPT = new Set(['SR', 'SSR', 'UR', 'RUBY']);   // get the specular sweep
-
-/* The top-of-ladder finale — ignition, discharge and breathing aura — was
-   UR-exclusive when UR was the top tier. RUBY inherits the same mechanics
-   (WP-Ruby Tier); its own colours come from CSS (.glow-RUBY), keyed off the
-   same class this set gates. */
-const TOP_TIER = new Set(['UR', 'RUBY']);
+   starts. The rarer tiers add their own `hold` on top of this. */
+const BASE_GAP = 160;
+const OPENING_BEAT = 200;  // let the overlay settle before the first flip
 
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -184,72 +201,24 @@ export function openReveal(results) {
 
   let cursor = OPENING_BEAT;
   for (const { cell, rarity } of order) {
-    const fx = FX[rarity];
-    if (fx.beam) {
-      const at = cursor;
-      revealTimers.push(setTimeout(() => {
-        /* A card can be turned early by clicking it, and the beam is a separate
-           timer from the flip — so by the time this fires the card may already
-           be face-up. Lighting a telegraph for a card that has landed is not
-           just pointless: the beam animation is `forwards`, and nothing removes
-           `beaming` after the flip, so it would strand a cone of light above the
-           card for as long as the overlay is open. */
-        if (cell.classList.contains('flipped')) return;
-        cell.style.setProperty('--beam-ms', fx.beam + 'ms');
-        cell.classList.add('beaming');
-      }, at));
-    }
-    revealTimers.push(setTimeout(() => flip(cell), cursor + fx.beam));
-    cursor += fx.beam + BASE_GAP + fx.hold;
+    revealTimers.push(setTimeout(() => flip(cell), cursor));
+    cursor += BASE_GAP + FX[rarity].hold;
   }
 }
 
-/* UR aftermath — a breathing aura behind the card that sheds small motes.
-   The aura sits BEHIND the card, so both it and everything it emits are only
-   ever visible in the margin: the motes can't crowd the stars on the face (the
-   earlier rising-embers version did, which is what made the two dot-fields read
-   as noise) and nothing drifts across the avatar. Motes spawn on the card's
-   perimeter and drift outward along their own angle, so they look shed by the
-   card rather than sprinkled around it. */
-/* Per-tier, because the two top tiers are shedding different things. UR is a
-   charged gem throwing violet sparks, and a lot of them is what makes it read
-   as crackling. RUBY is a cut stone: what comes off it is the occasional
-   glint, so the same field at the same density would just look like UR again
-   with a recolor — the exact "recoloured UR" outcome the gem cut exists to
-   avoid. */
-const MOTE_COUNT = { UR: 50, RUBY: 14 };
+/* One cell: a card that turns over. The per-rarity class stays — it is what
+   colours the seam as the card lands, and that colour is the whole of what the
+   reveal still says about rarity.
 
-function makeAura(rarity) {
-  const wrap = document.createElement('div');
-  wrap.className = 'aura';
-  for (let i = 0; i < (MOTE_COUNT[rarity] ?? 50); i++) {
-    const mote = document.createElement('i');
-    mote.className = 'mote';
-    const angle = Math.random() * Math.PI * 2;
-    const spawn = 0.42 + Math.random() * 0.09; // out near the card's edge
-    mote.style.left = (50 + Math.cos(angle) * spawn * 100).toFixed(1) + '%';
-    mote.style.top = (50 + Math.sin(angle) * spawn * 100).toFixed(1) + '%';
-    const dist = 24 + Math.random() * 44;
-    mote.style.setProperty('--tx', (Math.cos(angle) * dist).toFixed(1) + 'px');
-    /* Drift is outward along the spawn angle, minus a constant lift, so the
-       field has some buoyancy instead of expanding like a perfect ring. */
-    mote.style.setProperty('--ty', (Math.sin(angle) * dist - 12).toFixed(1) + 'px');
-    mote.style.setProperty('--sz', (1.5 + Math.random() * 1.8).toFixed(1) + 'px');
-    mote.style.setProperty('--float', (2.8 + Math.random() * 2.4).toFixed(2) + 's');
-    mote.style.animationDelay = (1.5 + Math.random() * 4.5).toFixed(2) + 's';
-    wrap.appendChild(mote);
-  }
-  return wrap;
-}
-
+   THE SWEEP, THE STARS, THE IGNITION RING, THE BLOOM AND THE AURA ALL CAME OUT
+   HERE (2026-08-16). None of them was expensive on its own; a x10 that built
+   all of them at once was, and a phone is where that shows. The card face keeps
+   its own finish — that is ui/card.js's business, it renders in the collection
+   too, and it is not animated. */
 function buildCell(result) {
   const rarity = result.card.rarity;
   const cell = document.createElement('div');
   cell.className = `reveal-cell glow-${rarity}`;
-
-  const beam = document.createElement('div');
-  beam.className = 'beam';
-  cell.appendChild(beam);
 
   const flipEl = document.createElement('div');
   flipEl.className = 'flip';
@@ -261,32 +230,6 @@ function buildCell(result) {
   const front = document.createElement('div');
   front.className = 'face front';
   front.appendChild(renderCard(result.card, { isNew: result.isNew }));
-  if (SWEPT.has(rarity)) {
-    const sweep = document.createElement('div'); // one specular pass across the face
-    sweep.className = 'sweep';
-    front.appendChild(sweep);
-  }
-  if (STARS[rarity]) front.appendChild(makeStars(rarity));
-  if (TOP_TIER.has(rarity)) {
-    /* Top tier only — the ignition: a white-hot point races once around the
-       frame bevel as the card lands, and the seam halo floods in behind it.
-       This is the strike the card's ambient ember (`.card.r-UR`/`.r-RUBY`,
-       *-ember) is the aftermath of. The <i> carries the spinning gradient; the
-       wrapper is a static masked ring, so the ring itself never rotates — only
-       the head appears to travel. Border-only by construction, so it never
-       crosses the avatar. */
-    const fuse = document.createElement('div');
-    fuse.className = 'fuse';
-    fuse.appendChild(document.createElement('i'));
-    front.appendChild(fuse);
-    /* The discharge and the aura both go on the CELL rather than the face:
-       behind the card, so they read as the silhouette pushing outward and never
-       wash over the avatar the way a full-face tint would. The bloom fires as
-       the fuse closes its loop; the aura settles in behind it and stays. */
-    const bloom = document.createElement('div');
-    bloom.className = 'bloom';
-    cell.append(bloom, makeAura(rarity));
-  }
   inner.append(back, front);
   flipEl.appendChild(inner);
   cell.appendChild(flipEl);
@@ -296,9 +239,8 @@ function buildCell(result) {
   return { cell, rarity };
 }
 
-/* Turn one card. The sweep, seam glow and stars all live in the front face /
-   CSS on .flipped; here we only flip. The guard makes a later scheduled flip
-   (after an early click) a no-op.
+/* Turn one card. The seam glow is CSS on .flipped; here we only flip. The
+   guard makes a later scheduled flip (after an early click) a no-op.
 
    The turn is also what makes a cell an inspectable thing, so the button
    semantics are granted here rather than at build time: face-down, the card has
@@ -306,7 +248,6 @@ function buildCell(result) {
    rarity the flip exists to withhold. */
 function flip(cell) {
   if (cell.classList.contains('flipped')) return;
-  cell.classList.remove('beaming');
   cell.classList.add('flipped');
 
   const title = cellResults.get(cell)?.card.channel.title;
