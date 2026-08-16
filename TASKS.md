@@ -92,6 +92,13 @@ below this paragraph that mentions the OLD invariant (19% N-above-median-UR) —
       it should top up to five via Auto Select and lock, not stall.
 - [ ] **CHICKEN OUT reaches the other side.** The waiting player should be told the match is off,
       not left building alone.
+- [ ] **One defender per code** (the 2026-08-16 freeze). Paste the SAME challenge code into a
+      THIRD window: it must say the challenge has already been accepted, and windows A and B must
+      carry on to the build phase undisturbed. Before the seat was claimable this deadlocked
+      everyone on LOBBY — 00:00, because two browsers held seat B and nobody held seat A.
+- [ ] **A lobby nobody joins.** Accept a challenge, then close the challenger's window. About 12s
+      past 00:00 the survivor must say the opponent never came through and offer Back out —
+      and CHICKEN OUT must still be pressable after CONTINUE, not greyed out with it.
 - [ ] **A second match in the same session.** Finish a fight -> New opponent -> challenge again.
       The lobby and build clocks must start fresh, and BOTH trays must be empty.
 - [ ] **Empty tray, always.** Neither side opens the shared builder holding cards.

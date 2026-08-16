@@ -4,9 +4,10 @@
    Per room, for ten minutes: whether the challenge was accepted, when the
    shared build phase started (server-stamped, so both clocks agree on the
    countdown), the defender's collection size (so the challenger can run the
-   fairness check without a third code exchange), and — once each side locks
-   in — their final five and a locked flag. Nothing else, and nothing about a
-   person.
+   fairness check without a third code exchange), a random nonce marking which
+   browser took the defender's seat (see `clientB` below), and — once each side
+   locks in — their final five and a locked flag. Nothing else, and nothing
+   about a person.
 
    ── WHY THIS SHAPE, REWRITTEN 2026-08-15 ──────────────────────────────────
    v1 held `accepted` + two `ready` flags + one `code` (the defender's reply),
@@ -93,7 +94,26 @@ const EMPTY = {
   accepted: false, lobbyAt: null, buildStartAt: null, csB: null,
   enteredA: false, enteredB: false, bailed: null,
   lockedA: false, lockedB: false, teamA: null, teamB: null, bothAt: null,
+  clientB: null,
 };
+
+/* WHO HOLDS THE DEFENDER'S SEAT, and the one field here that is never sent
+   back out. A random per-match nonce the accepting browser makes up on the
+   spot: it identifies a SEAT for ten minutes, not a person, has nothing behind
+   it to look up, and is deliberately not in `view` so the other player never
+   receives it either.
+
+   It exists because a challenge code is a STRING, and a string can be pasted
+   twice. Seat A belongs to whoever generated the seed, so it cannot be
+   contested — but anybody holding the code can accept, and two acceptances
+   used to be indistinguishable from one. Both took seat B, `enteredA` was
+   therefore never set, `buildStartAt` is stamped only when both sides are
+   through, and the two of them sat on "LOBBY — 00:00 / Waiting for them…"
+   until the room expired. Worse, each side could see its OWN `enteredB` was
+   true, so the client's re-assert repair had nothing to repair and stayed
+   quiet. First accept wins; a second one is told the seat is taken. */
+const CLAIM = /^[a-z0-9]{4,64}$/;
+const cleanClaim = raw => (typeof raw === 'string' && CLAIM.test(raw) ? raw : null);
 
 async function read(env, room) {
   const raw = await env.READY.get(key(room));
@@ -113,6 +133,7 @@ async function read(env, room) {
       teamA: Array.isArray(p.teamA) ? p.teamA : null,
       teamB: Array.isArray(p.teamB) ? p.teamB : null,
       bothAt: Number.isFinite(p.bothAt) ? p.bothAt : null,
+      clientB: cleanClaim(p.clientB),
     };
   } catch {
     return { ...EMPTY };
@@ -198,6 +219,23 @@ export async function onRequest(context) {
   const state = await read(env, room);
 
   if (body?.op === 'accept') {
+    /* ONE DEFENDER PER CHALLENGE. Answered WITHOUT writing, so a second person
+       holding the same code cannot disturb the match already running in this
+       room — they get the state as it stands plus `seatTaken`, and their arena
+       says so instead of dropping them into a lobby that can never start.
+
+       A claimless accept is the client that shipped before this field existed
+       and is let through unchanged: it is the only defender in that flow, and
+       refusing it would break a live match to enforce a rule it cannot know
+       about. Same reason the check is claim-vs-claim rather than "has anyone
+       accepted" — one browser re-sending its own accept (a double-click, a
+       retry after a dropped request) carries the same nonce and is not a
+       second person. */
+    const claim = cleanClaim(body.claim);
+    if (claim && state.clientB && state.clientB !== claim) {
+      return json(view(state, { seatTaken: true }));
+    }
+    if (claim && !state.clientB) state.clientB = claim;
     state.accepted = true;
     /* Stamped once, by the server, the moment both sides are confirmed
        present — the challenger is already watching this room (that is what

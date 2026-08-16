@@ -127,7 +127,18 @@ const ui = {
   pendingFight: null,   // a resolved fight held behind a button, so both sides can start together
   room: '',             // match-room id, derived from the challenge by both sides
   side: null,           // 'a' challenger | 'b' defender — the seat, not the team
+  claim: '',            // random per-match nonce claiming the defender's seat (see presence.js)
   roomState: null,      // last state read from the match room
+  /* The fairness verdict for THIS match, decided once when the lobby opens and
+     read again by the builder — never recomputed. Same discipline as the two
+     deadlines below: `fairnessFor` reads the other side's collection size out
+     of `roomState`, and `roomState` is replaced by every poll, so recomputing
+     it later can answer differently from the screen the player just agreed to.
+     A room write built on a stale read drops `csB` (the room is a KV
+     read-modify-write with no compare-and-set), which is enough to turn the
+     shed the gate promised into no shed at all — or, in the other direction,
+     to shed a player who was never shown the screen. */
+  gate: null,
   locked: false,        // have I locked my team in the live shared build phase
   eligiblePool: null,   // this side's battle-eligible collection (fairness.js's shed, or the full collection)
   /* The shared build phase's end, already converted into THIS browser's clock.
@@ -150,6 +161,18 @@ let lastTrigger = null;
    — the same rule engine/opponent.js applies to the AI's own draw. */
 function myChannels() {
   return [...state.collection.values()].map(item => item.card.channel);
+}
+
+/* A throwaway nonce for the defender's seat in one match room — see
+   data/presence.js. Kept inside the room's own `[a-z0-9]{4,64}` alphabet, and
+   made from `randomUUID` where it exists, since the property that matters is
+   that two browsers never invent the same one. Math.random is a fine fallback
+   rather than a weakness: guessing this buys nothing on its own, because
+   reaching the room at all already requires the challenge code. */
+function newClaim() {
+  const raw = globalThis.crypto?.randomUUID?.()
+    ?? `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+  return raw.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 32);
 }
 
 /* mulberry32 — small, fast, and identical in every window, which is the only
@@ -371,7 +394,9 @@ function resetMatch() {
   ui.pendingFight = null;
   ui.room = '';
   ui.side = null;
+  ui.claim = '';
   ui.roomState = null;
+  ui.gate = null;
   ui.locked = false;
   ui.eligiblePool = null;
   ui.buildDeadline = null;
@@ -508,7 +533,19 @@ function renderAcceptPaste() {
              asymmetry. No live room falls back to the sequential flow this
              app shipped with, which is the only path a BARE (team-less)
              challenge has nothing to fall back to at all: see the note below. */
-          const state = await acceptChallenge(ui.room, myChannels().length);
+          ui.claim = newClaim();
+          const state = await acceptChallenge(ui.room, myChannels().length, ui.claim);
+          /* SOMEBODY ELSE GOT HERE FIRST, and being told so is the whole point.
+             A challenge code is a string — forwarded, screenshotted, pasted into
+             a group chat — so more than one person can hold the same one, and
+             before the seat was claimable the second acceptance quietly broke
+             the match for BOTH of them: two browsers took the defender's seat,
+             nobody was ever in the challenger's, and the lobby waited out its
+             ten minutes for a player who did not exist. */
+          if (state.seatTaken) {
+            resetMatch();
+            return note('Someone else has already accepted this challenge — a code is good for one battle, and they took it. Ask them for a fresh one.', true);
+          }
           if (state.enabled) {
             ui.roomState = state;
             adoptGateWindow(state);
@@ -1060,8 +1097,13 @@ function renderLobbyGate() {
   bodyEl.replaceChildren();
   const gen = ++readyGen;
   const side = ui.side;
-  const gate = fairnessFor(side);
+  /* Decided HERE and kept, not re-derived by the builder — the screen below is
+     a promise about what this battle will do, and `fairnessFor` can answer
+     differently a few seconds later (see `ui.gate`). */
+  const gate = ui.gate = fairnessFor(side);
   let entered = false;
+  let enteredAt = 0;
+  let stalled = false;
 
   const panel = gate
     ? section('Collection size', 'For this battle only — nothing you own is changed.')
@@ -1104,6 +1146,16 @@ function renderLobbyGate() {
   status.className = 'ar-lamp';
   status.textContent = gate ? 'Decide before the lobby closes.' : 'Waiting for them…';
 
+  /* Leaving has to reach the ROOM, not just this browser — the other side is
+     explicitly waiting on this decision, so a quiet retreat leaves them
+     waiting out a match that is already over. */
+  const backOut = message => {
+    bailOut(ui.room, side);
+    resetMatch();
+    setPhase('mode');
+    note(message);
+  };
+
   const row = document.createElement('div');
   row.className = 'ar-row';
   const goBtn = button(gate ? 'CONTINUE' : "I'M READY", {
@@ -1119,15 +1171,26 @@ function renderLobbyGate() {
        side is explicitly waiting on this decision. */
     row.append(button('CHICKEN OUT', {
       className: 'btn ghost',
-      onClick: () => {
-        bailOut(ui.room, side);
-        resetMatch();
-        setPhase('mode');
-        note('You backed out of that match.');
-      },
+      onClick: () => backOut('You backed out of that match.'),
     }));
   }
-  panel.append(row, status);
+
+  /* THE WAY OUT OF A LOBBY THAT CANNOT START. Hidden until the wait is clearly
+     no longer normal (see `checkStall`), because a leave button offered while
+     the other player is simply reading the screen invites quitting a match that
+     was about to begin. */
+  const stall = document.createElement('div');
+  stall.className = 'ar-fairness';
+  stall.hidden = true;
+  const stallRow = document.createElement('div');
+  stallRow.className = 'ar-row';
+  stallRow.hidden = true;
+  stallRow.append(button('Back out', {
+    className: 'btn ghost',
+    onClick: () => backOut('You left that match — it never got started.'),
+  }));
+
+  panel.append(row, status, stall, stallRow);
   bodyEl.append(panel);
 
   /* Pressing does not skip the lobby — it records that this side is through
@@ -1136,11 +1199,54 @@ function renderLobbyGate() {
   function enterNow(auto) {
     if (gen !== readyGen || entered) return;
     entered = true;
+    enteredAt = Date.now();
+    /* ONLY THE GO BUTTON. CHICKEN OUT used to be disabled here along with it —
+       `row.querySelectorAll('button')` took both — which turned every lobby
+       that could not start into a screen with no controls at all: entered,
+       counted down to 00:00, waiting on somebody who was never coming, and no
+       way off it but reloading the page. Committing to the fight is not the
+       same as forfeiting the right to leave it. */
     goBtn.disabled = true;
     goBtn.textContent = auto ? 'Entered' : (gate ? 'Continuing…' : 'Ready ✓');
-    for (const b of row.querySelectorAll('button')) b.disabled = true;
     status.textContent = 'Waiting for them…';
     enterBuild(ui.room, side);
+  }
+
+  /* A LOBBY MUST BE ABLE TO FAIL, AND SAY SO. Entering is only half of what
+     starts a build — the server stamps `buildStartAt` when BOTH sides are
+     through — so this side can be perfectly correct, perfectly entered, and
+     still waiting on a player who closed the tab, never came back to a
+     backgrounded window, or is holding a code for a different room. The
+     countdown has run out by then, the poll has nothing new to say, and what
+     the player sees is a frozen 00:00 that never explains itself.
+
+     Measured from the DEADLINE rather than from this side's own entry, because
+     entering early is normal and expected: press CONTINUE at two seconds and
+     the other side has eight more before their auto-enter fires. Only time
+     after the lobby has closed for both of them means anything. */
+  function checkStall(theirs) {
+    /* They turned up after all — a phone unfreezing its tab is the ordinary
+       case here, so the screen has to be able to go back to normal rather than
+       leave a "they never entered" sitting above a match that is starting. */
+    if (theirs && stalled) {
+      stalled = false;
+      stall.hidden = true;
+      stallRow.hidden = true;
+      status.textContent = 'Both in — starting…';
+      return;
+    }
+    if (stalled || !entered || theirs) return;
+    if (Date.now() < Math.max(enteredAt, gateDeadlineLocal()) + STALL_MS) return;
+    stalled = true;
+    status.textContent = 'They never entered the lobby.';
+    stall.innerHTML = `
+      <p>Your opponent has not come through — their window may be closed, or
+         still in the background on their phone.</p>
+      <p>Nothing is lost: this match never started, and your collection is
+         untouched. Back out to send a fresh challenge, or leave this open and
+         it will begin the moment they arrive.</p>`;
+    stall.hidden = false;
+    stallRow.hidden = false;
   }
 
   const tick = () => {
@@ -1195,7 +1301,19 @@ function renderLobbyGate() {
     checkRoom(ui.room).then(state => {
       if (gen !== readyGen) return;
       if (!state.enabled) {
-        if (presenceOff(state)) return;
+        /* Settled off mid-lobby — the endpoint is gone, so nothing this screen
+           is waiting for can ever arrive. Says so and offers the way out, for
+           the same reason the stall does: the alternative is a countdown at
+           00:00 that never explains itself. */
+        if (presenceOff(state)) {
+          stalled = true;
+          status.textContent = 'The live lobby went away.';
+          stall.innerHTML = '<p>The match room cannot be reached any more, so this battle cannot start.'
+            + ' Nothing you own is affected. Quick battle needs no connection at all.</p>';
+          stall.hidden = false;
+          stallRow.hidden = false;
+          return;
+        }
         return nextPoll(POLL_MS);
       }
       ui.roomState = state;
@@ -1212,9 +1330,10 @@ function renderLobbyGate() {
         return beginSharedBuild();
       }
       const theirs = side === 'a' ? state.enteredB : state.enteredA;
-      if (entered) status.textContent = theirs ? 'Both in — starting…' : 'Waiting for them…';
-      else if (theirs) status.textContent = 'They are ready and waiting on you.';
+      if (entered && !stalled) status.textContent = theirs ? 'Both in — starting…' : 'Waiting for them…';
+      else if (!entered && theirs) status.textContent = 'They are ready and waiting on you.';
       reassertEnter(state);
+      checkStall(theirs);
       nextPoll(POLL_MS);
     });
   }
@@ -1227,7 +1346,10 @@ function renderLobbyGate() {
    before the builder that uses it — and never for a match somebody backed out
    of. */
 function beginSharedBuild() {
-  const gate = fairnessFor(ui.side);
+  /* The verdict the lobby already showed and the player already agreed to —
+     see `ui.gate`. `fairnessFor` is only re-run for the paths that reach here
+     without a lobby screen having decided anything. */
+  const gate = ui.gate ?? fairnessFor(ui.side);
   ui.eligiblePool = gate
     ? shedCollection(myChannels(), gate.cap, { rng: Math.random })
     : myChannels();
@@ -1374,7 +1496,19 @@ function renderSharedBuildScreen() {
     checkRoom(ui.room).then(state => {
       if (gen !== readyGen) return;
       if (!state.enabled) {
-        if (presenceOff(state)) return;   // settled off mid-build: nothing to poll for
+        /* Settled off mid-build. Nothing left to poll for — the other side's
+           lock can never arrive — so this says so and offers the way back,
+           rather than leaving a locked player on "waiting on them" forever.
+           The lobby's stall screen exists for the same reason one phase
+           earlier: every screen that waits has to be able to stop waiting. */
+        if (presenceOff(state)) {
+          lockStatus.textContent = 'The match room cannot be reached any more, so this battle cannot finish.';
+          build.append(button('Back', {
+            className: 'btn ghost',
+            onClick: () => { resetMatch(); setPhase('mode'); },
+          }));
+          return;
+        }
         return nextPoll(POLL_MS);
       }
       ui.roomState = state;
@@ -1562,6 +1696,13 @@ function buildDeadlineLocal() {
    the timing is instead of implying the game is watching. */
 const COUNTDOWN_MS = 3000;
 const POLL_MS = 1200;
+
+/* How long past the lobby's own deadline a side waits before the screen admits
+   the other player is not coming (`checkStall`). Comfortably longer than the
+   worst honest lag — a poll interval, a round trip, and a phone taking its time
+   to thaw a backgrounded tab — because crying stall on a match that is about to
+   start is worse than a few extra seconds of "waiting for them". */
+const STALL_MS = 12000;
 
 /* Bumped every time the ready screen is built or torn down. Presence work is
    asynchronous, so a reply that arrives after the player has navigated away

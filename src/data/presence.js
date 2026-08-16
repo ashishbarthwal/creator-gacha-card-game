@@ -6,7 +6,8 @@
 
    ── WHAT CROSSES THE WIRE ─────────────────────────────────────────────────
    A room id, which side you are, your collection SIZE (never your
-   collection), and — once you lock in — your five cards. Nothing else: no
+   collection), a random nonce claiming the defender's seat for the length of
+   one match, and — once you lock in — your five cards. Nothing else: no
    names, no account, nothing that identifies a person. The room id is a hash
    both browsers derive independently from the challenge code, so joining a
    match costs no round trip and cannot be done by anyone who was not sent
@@ -50,7 +51,7 @@ const BLANK = {
   accepted: false, lobbyAt: null, buildStartAt: null, csB: null,
   enteredA: false, enteredB: false, bailed: null,
   lockedA: false, lockedB: false, teamA: null, teamB: null, bothAt: null,
-  now: 0, gateMs: null, buildMs: null, countdownMs: null,
+  now: 0, gateMs: null, buildMs: null, countdownMs: null, seatTaken: false,
 };
 
 /* TWO WAYS TO HAVE NO LOBBY, AND THEY ARE NOT THE SAME ANSWER.
@@ -130,6 +131,9 @@ async function call(path, init) {
       gateMs: Number.isFinite(body.gateMs) ? body.gateMs : null,
       buildMs: Number.isFinite(body.buildMs) ? body.buildMs : null,
       countdownMs: Number.isFinite(body.countdownMs) ? body.countdownMs : null,
+      /* Only ever true on an `accept` that lost the race for the defender's
+         seat — somebody else is already in this room with the same code. */
+      seatTaken: body.seatTaken === true,
     };
   } catch {
     /* Aborted by our own timeout, offline, DNS, connection reset, a frozen tab
@@ -160,8 +164,18 @@ const post = (room, body) => call(`${BASE}/${encodeURIComponent(room)}`, {
 /* The defender, the moment they paste a challenge — before they have built
    anything. This is what turns the challenger's screen green AND what tells
    the challenger the defender's collection size, since the defender has
-   nothing else to send yet. */
-export const acceptChallenge = (room, collectionSize) => post(room, { op: 'accept', cs: collectionSize });
+   nothing else to send yet.
+
+   `claim` CLAIMS THE DEFENDER'S SEAT, and it is why a challenge code sent to a
+   group chat no longer breaks the match for everyone who reads it. A code is a
+   string, anyone holding it can accept, and two acceptances used to be
+   indistinguishable from one: both took seat B, nobody was in seat A, and the
+   lobby waited on a player who did not exist. The nonce is generated per match
+   in the browser, means nothing anywhere else, and is never sent back out to
+   the other side; a room that already belongs to a DIFFERENT nonce answers
+   `seatTaken` and is left untouched. */
+export const acceptChallenge = (room, collectionSize, claim) =>
+  post(room, { op: 'accept', cs: collectionSize, claim });
 
 /* Either side, locking in their final five. This is the whole of committing
    now — there is no longer a separate "here is my team" op that happens

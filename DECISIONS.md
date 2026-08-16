@@ -4278,3 +4278,58 @@ twelve-card pool; 0.27ms per opponent.
 `matchOpponent`, `matchQuality` and the difficulty dial remain in `opponent.js`, tested and
 unused by the UI — they are a real capability (a power-matched opponent at even/uphill/favoured)
 and the obvious raw material for a difficulty setting later.
+
+## One defender per challenge, and a lobby that can fail (2026-08-16)
+
+Reported live, twice: both windows sat on `LOBBY — 00:00 / Waiting for them…` until the room
+expired. The first pass read it as the KV write race and shipped the `enter` re-assert that
+repairs it (5889d0e). That race is real and the repair works — verified against the live endpoint,
+two clients writing at the same instant, recovered in one poll — but it was not this.
+
+**The seat was taken twice.** A challenge code is a STRING. Anyone holding it can accept, and two
+acceptances were indistinguishable from one: both browsers took seat B, `enteredA` was therefore
+never set, and `buildStartAt` is stamped only once BOTH sides are through the lobby. The two of
+them then waited on a challenger who did not exist. What made it unrecoverable rather than merely
+slow is that each side could see its OWN `enteredB` was true, so the re-assert repair had nothing
+to repair and stayed silent — the exact repair added for the previous diagnosis could not fire.
+
+The screenshots proved it before the code did. In a real A↔B pairing one side's "Your collection"
+is the other's "Opponent collection", so the two windows cannot print the same pair of numbers.
+Both printed `Your 40 / Opponent 10` — both were reading the same challenge code's
+`collectionSize` as their opponent, which only happens if both are seat B.
+
+So `accept` now carries a **random per-match nonce** and the room records which browser holds the
+defender's seat. First accept wins; a second one is answered `seatTaken` WITHOUT a write, so the
+match already running in that room is not disturbed, and the person who pasted a used code is told
+that rather than dropped into a lobby that can never start. Re-sending your own accept (a
+double-click, a retry after a dropped request) carries the same nonce and is not a second person.
+A claimless accept — the client that shipped before this field existed — is let through unchanged.
+
+**This touches what the endpoint may receive, so it is stated plainly:** the nonce identifies a
+SEAT for ten minutes, not a person. Nothing is behind it to look up, it is generated and discarded
+in the browser, and it is deliberately absent from the view the room sends back, so the other
+player never receives it either. That is inside the promise in locked decision 3 — no account, no
+identity, no collection beyond the five cards someone chose to field.
+
+**The second half is the one that matters more, because it is not specific to this cause.** A
+lobby had no way to fail. Entering is only half of what starts a build, so a side can be perfectly
+correct, perfectly entered, and still waiting on someone who closed the tab, never came back to a
+backgrounded window, or is holding a code for another room — and the screen it gets is a frozen
+00:00 that never explains itself. Worse, `enterNow` disabled every button in its row, CHICKEN OUT
+included, so pressing CONTINUE removed the only way off the screen short of reloading the page.
+Committing to a fight is not forfeiting the right to leave it.
+
+Now: CHICKEN OUT stays live once entered, and about twelve seconds past the lobby's own deadline
+(measured from the DEADLINE, not from this side's entry — entering early is normal) the screen
+says the opponent never came through and offers the way out, while still polling, so a phone that
+thaws its tab late still starts the match. The same dead end one phase later — presence going
+settled-off mid-build, which used to `return` out of the poll in silence — now says so too.
+
+**The general rule this leaves behind: every screen that waits has to be able to stop waiting.**
+Three of them in this flow were written as if the other player always arrives.
+
+**One more, found while reading and fixed here:** the fairness verdict was computed at the lobby
+and computed AGAIN in `beginSharedBuild`, from `ui.roomState.csB` — a field a room write built on
+a stale read can drop. The second answer could differ from the screen the player just agreed to,
+in either direction: a promised shed that never happened, or a shed nobody was shown. It is
+latched once now, in `ui.gate`, the same discipline the two deadlines already follow.

@@ -210,11 +210,23 @@ send challenge (never carries a team)
    came to be cleared on open and nowhere else, which broke every fight after the first.
 
 **The protocol, in `functions/api/ready/[room].js`** — four ops, and v1's `team`/`ready` are gone:
-`accept` (carries the defender's collection size, stamps `lobbyAt`), `enter` (through the lobby;
-the second one stamps `buildStartAt`), `bail` (CHICKEN OUT, so the other side is told the match
-is off rather than waiting alone), and `lock` (a side's final five as plain channel objects, not
-the packed copy-paste codec — this is a fetch body, not something a human re-types). `lock`
-self-heals a missed `accept`/`enter`. Both locked stamps `bothAt`.
+`accept` (carries the defender's collection size AND a random nonce claiming the defender's seat,
+stamps `lobbyAt`), `enter` (through the lobby; the second one stamps `buildStartAt`), `bail`
+(CHICKEN OUT, so the other side is told the match is off rather than waiting alone), and `lock`
+(a side's final five as plain channel objects, not the packed copy-paste codec — this is a fetch
+body, not something a human re-types). `lock` self-heals a missed `accept`/`enter`. Both locked
+stamps `bothAt`.
+
+**ONE DEFENDER PER CHALLENGE, AND A LOBBY THAT CAN FAIL (2026-08-16).** A challenge code is a
+string, so two people can hold it — and two acceptances used to be indistinguishable from one.
+Both took seat B, `enteredA` was never set, `buildStartAt` is stamped only when both sides are
+through, and both players sat on `LOBBY — 00:00` until the room expired. The `enter` re-assert
+could not save it: each side could see its OWN flag was true, so there was nothing to re-assert.
+First accept now wins the seat (the nonce above); a second is answered `seatTaken` with NO write,
+so the running match is untouched. Beyond that, **every screen that waits must be able to stop
+waiting** — the lobby keeps CHICKEN OUT live after CONTINUE (disabling it left no way off the
+screen), says so ~12s past its own deadline when the other side never arrives, and keeps polling
+in case they turn up late. Full record: DECISIONS.md 2026-08-16.
 
 **The poll loop re-asserts a lock the server does not have.** KV has no compare-and-set, and both
 sides now auto-lock at the same instant by design, which makes a lost write the expected case
@@ -289,7 +301,10 @@ underneath it. Run TASKS.md's two-window checklist before trusting a change here
 
    **Live since 2026-08-09.** KV namespace `creator-gacha-ready` is bound as `READY` on the
    Pages project, and a real cross-device 1v1 has been played on it. **Four ops write a room as
-   of 2026-08-15** — `accept`, `enter`, `bail`, `lock`; v1's `team`/`ready` are gone. See "The
+   of 2026-08-15** — `accept`, `enter`, `bail`, `lock`; v1's `team`/`ready` are gone. `accept`
+   also carries a random per-match nonce claiming the defender's seat (2026-08-16) — it names a
+   SEAT for ten minutes, not a person, and is never sent back out, so the "no account, no
+   identity" promise below is intact. See "The
    lobby" section above for what each does and why. Three things to know before debugging a
    lobby that looks dead: **KV caches MISSES** for up to 60s and `cacheTtl` cannot go lower, so
    a room polled before it exists can read empty for a minute; a failed request is NOT the same
