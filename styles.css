@@ -4132,6 +4132,10 @@
     position: relative;
     aspect-ratio: 5 / 7.4;
     min-height: max-content;
+    /* Declared once and read in two places — the bar's own height, and the room
+       the card reserves for it (`.bcard.has-hp`). Two hardcoded copies of this
+       number is exactly how the bar came to sit on top of MOM. */
+    --hp-h: clamp(11px, 5.5cqw, 17px);
     border-radius: clamp(9px, 5cqw, 16px);
     padding: clamp(2px, 1.4cqw, 4px);
     background: conic-gradient(from 210deg,
@@ -4337,12 +4341,29 @@
   .matchup.m-flat { color: var(--muted); }
 
   /* ── health, only while fighting ────────────────────────────────────────── */
+  /* THE BAR IS ABSOLUTE, SO THE CARD HAS TO MAKE ROOM FOR IT — it does not take
+     part in the flex column and cannot push anything, which meant it landed
+     squarely on top of the last stat row for the whole fight. MOM was not
+     "hidden behind an overlay" in any way a player could tell; the card simply
+     showed four stats while claiming to show five, during the one screen where
+     the five numbers are the entire reason to look at a card.
+
+     The room comes from ABOVE the block, not out of it. `.bstats` is pushed
+     down by `margin-top: auto`, so there is already dead space between the
+     class chip and the first bar; padding the inner's bottom slides the whole
+     stat block up into it. Nothing shrinks, nothing is dropped, and a card that
+     is not in a fight is untouched — `armHealthBar` adds `has-hp`, so the
+     reservation exists exactly when the bar does. */
+  .bcard.has-hp .bcard-inner {
+    padding-bottom: calc(var(--hp-h) + clamp(3px, 1.6cqw, 6px));
+  }
+
   .hpbar {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
-    height: clamp(11px, 5.5cqw, 17px);
+    height: var(--hp-h);
     background: rgba(0, 0, 0, 0.7);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     display: flex;

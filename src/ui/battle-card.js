@@ -134,6 +134,11 @@ export function armHealthBar(cardEl, maxHp) {
   const bar = cardEl.querySelector('.hpbar');
   bar.hidden = false;
   bar.dataset.max = String(maxHp);
+  /* The bar is positioned absolutely, so it cannot push the stat block out of
+     its way — the card has to reserve the strip instead, and this class is what
+     asks for it (see `.bcard.has-hp` in styles.css). Without it the bar covered
+     MOM for the length of the fight. */
+  cardEl.classList.add('has-hp');
   setHealth(cardEl, maxHp);
 }
 

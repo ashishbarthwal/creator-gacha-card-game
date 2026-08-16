@@ -216,9 +216,14 @@ export function renderCollection() {
     collGrid.appendChild(el);
   }
 
-  /* "Saved in this browser" stays. It is not a statistic — it is the promise the
-     Clear button next to it makes good on, and the only place the player is told
-     where their collection actually lives. */
+  /* "Saved in this browser" came OUT of this line on 2026-08-16 (Ash's call).
+     It used to be defended here as "the only place the player is told where
+     their collection lives", and that was simply not true: the footer says it
+     in prose, on every page, and the privacy policy says it at length. So it
+     was not the promise, it was a third copy of the promise — sitting inside a
+     counter, where the player is reading numbers about their own collection and
+     not asking where files go. The promise is unchanged and still stated where
+     someone would look for it. */
   /* Own numbers only — no set-size denominator (2026-08-03, same day as the
      denominator was added and then narrowed). "10 of 24,251 unique" answered
      the question honestly and revealed something else in the process: the size
@@ -234,7 +239,7 @@ export function renderCollection() {
   const pulled = items.reduce((n, it) => n + (Number(it.count) || 0), 0);
 
   const parts = [];
-  if (items.length) parts.push(`${unique.toLocaleString()} unique`, `${pulled.toLocaleString()} total`, 'saved in this browser');
+  if (items.length) parts.push(`${unique.toLocaleString()} unique`, `${pulled.toLocaleString()} total`);
   collSummary.textContent = parts.join(' · ');
   /* The two empty states answer two different questions, and which one is true
      is decided by the COLLECTION, not by the grid. An empty binder says "pull to
