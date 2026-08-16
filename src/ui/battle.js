@@ -1238,13 +1238,14 @@ function renderLobbyGate() {
     if (stalled || !entered || theirs) return;
     if (Date.now() < Math.max(enteredAt, gateDeadlineLocal()) + STALL_MS) return;
     stalled = true;
-    status.textContent = 'They never entered the lobby.';
+    status.textContent = 'Still waiting on them.';
     stall.innerHTML = `
-      <p>Your opponent has not come through — their window may be closed, or
-         still in the background on their phone.</p>
-      <p>Nothing is lost: this match never started, and your collection is
-         untouched. Back out to send a fresh challenge, or leave this open and
-         it will begin the moment they arrive.</p>`;
+      <p>This is taking longer than it should. Their window may be closed — or
+         you may simply be on different networks, which can hold a match up for
+         about a minute before it comes through.</p>
+      <p><b>Leave this open and it will start on its own the moment they
+         arrive.</b> Nothing is lost either way: this match has not begun and
+         your collection is untouched.</p>`;
     stall.hidden = false;
     stallRow.hidden = false;
   }
@@ -1658,12 +1659,22 @@ function adoptBuildWindow(state) {
    somebody accepts, the build only once both sides are through it. */
 const GATE_MS_FALLBACK = 10000;
 
+/* A FLOOR UNDER THE LOBBY, for the side that arrives late (2026-08-16).
+   `lobbyAt` is a shared clock, and sharing it is the whole point — but a side
+   can now legitimately reach this screen well after the stamp, because a
+   cross-network room read can be up to a minute stale (see CROSS_NETWORK_MS).
+   Without a floor that side opens the lobby already at 00:00, is auto-entered
+   on the spot, and never gets to read the COLLECTION SIZE gate it was the one
+   being asked about. Six seconds is not the fair ten, but it is a decision
+   rather than a flash. */
+const MIN_GATE_MS = 6000;
+
 function adoptGateWindow(state) {
   if (ui.gateDeadline) return;
   if (!Number.isFinite(state?.lobbyAt)) return;
   const span = Number.isFinite(state.gateMs) ? state.gateMs : GATE_MS_FALLBACK;
   const skew = Number.isFinite(state.now) ? Date.now() - state.now : 0;
-  ui.gateDeadline = state.lobbyAt + span + skew;
+  ui.gateDeadline = Math.max(state.lobbyAt + span + skew, Date.now() + MIN_GATE_MS);
 }
 
 function gateDeadlineLocal() {
@@ -1697,12 +1708,27 @@ function buildDeadlineLocal() {
 const COUNTDOWN_MS = 3000;
 const POLL_MS = 1200;
 
-/* How long past the lobby's own deadline a side waits before the screen admits
-   the other player is not coming (`checkStall`). Comfortably longer than the
-   worst honest lag — a poll interval, a round trip, and a phone taking its time
-   to thaw a backgrounded tab — because crying stall on a match that is about to
-   start is worse than a few extra seconds of "waiting for them". */
-const STALL_MS = 12000;
+/* How long past the lobby's own deadline a side waits before the screen says
+   something is wrong (`checkStall`).
+
+   RAISED 12s -> 75s ON 2026-08-16, and the number is not a guess: it is longer
+   than the worst honest lag the room can produce. Workers KV serves each
+   Cloudflare edge location its own cached view of a key, with a MINIMUM TTL of
+   60 seconds that cannot be lowered — so two players on different networks
+   (a phone on mobile data, a PC on WiFi) hit different locations and one of
+   them can read a minute-old room. Measured as a real failure: the challenger's
+   waiting screen kept reading "nobody has accepted" long after the defender had.
+
+   At 12s this screen called that a dead match and offered the way out, ~48
+   seconds before the match would have started ON ITS OWN. Telling a player to
+   quit something that is merely slow is worse than making them wait, so the
+   patience now outlasts the staleness. Two windows on one machine share an edge
+   location and never see any of this, which is exactly why it survived testing. */
+const STALL_MS = 75000;
+
+/* How long a cross-network room can lag, for copy that has to explain a wait
+   without lying about it. Same 60s KV figure, rounded up for the round trip. */
+const CROSS_NETWORK_MS = 65000;
 
 /* Bumped every time the ready screen is built or torn down. Presence work is
    asynchronous, so a reply that arrives after the player has navigated away
@@ -1867,6 +1893,26 @@ function renderChallengeOut(code) {
   waiting.className = 'ar-lamp';
   waiting.textContent = 'Waiting for someone to accept…';
   panel.append(waiting);
+
+  /* THE SLOW-NETWORK NOTE, and it exists because this screen was the one that
+     looked broken. The challenger reads the match room to learn it was
+     accepted, and across two networks that read can be up to a minute stale
+     (see CROSS_NETWORK_MS) — so the defender can be sitting in the lobby while
+     this screen still says nobody has taken it up. Nothing is wrong and there
+     is nothing to press; the only thing missing was anybody saying so.
+
+     Held back until the wait is already unusual, so a challenge accepted in
+     three seconds never shows it. */
+  const patience = document.createElement('p');
+  patience.className = 'ar-fairness';
+  patience.hidden = true;
+  patience.innerHTML = `
+    <p>If they have already accepted on a different network — their phone on
+       mobile data, say — it can take up to a minute to reach this screen.
+       Leave it open; it moves on by itself.</p>`;
+  panel.append(patience);
+  later(() => { if (gen === readyGen) patience.hidden = false; }, 15000);
+
   bodyEl.append(panel);
 
   /* Poll for the acceptance. The green flash is held for a beat before the

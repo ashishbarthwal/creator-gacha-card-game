@@ -319,6 +319,25 @@ underneath it. Run TASKS.md's two-window checklist before trusting a change here
    two-player lobby holding ONE match under a hashed room id for ten minutes — accepted, two
    ready flags, and the defender's reply code.
 
+   **THE LOBBY IS FASTER THAN ITS SUBSTRATE, MEASURED 2026-08-16 — read this before touching
+   any timing in the arena.** Workers KV gives each Cloudflare edge location its own cached view
+   of a key, with a **minimum TTL of 60 seconds that cannot be lowered**. Two players on
+   DIFFERENT networks (a phone on mobile data, a PC on WiFi) reach different locations, so one
+   can read a room that is up to a minute out of date. A 10-second lobby cannot be made
+   reliable on top of that, and no amount of client polling fixes it — the staleness is on the
+   read path. Symptom, reported live: the challenger's waiting screen kept saying "waiting for
+   someone to accept" long after the defender had accepted and was sitting in the lobby.
+
+   **Two windows on one machine share an edge location and never see any of this**, which is
+   why every local test passed. Test cross-device on two networks or you are not testing it.
+
+   What shipped is patience, not a cure: `STALL_MS` is 75s (longer than the staleness), the
+   lobby starts the match by itself whenever the late side arrives, `MIN_GATE_MS` gives a
+   late-joining player 6s to actually read the fairness gate, and both screens now say a
+   cross-network wait is normal instead of implying the match is dead. **The real fix is a
+   Durable Object** — strongly consistent, one instance per room — and that is a fresh decision
+   under this clause, not something to slip in.
+
    **Live since 2026-08-09.** KV namespace `creator-gacha-ready` is bound as `READY` on the
    Pages project, and a real cross-device 1v1 has been played on it. **Four ops write a room as
    of 2026-08-15** — `accept`, `enter`, `bail`, `lock`; v1's `team`/`ready` are gone. `accept`

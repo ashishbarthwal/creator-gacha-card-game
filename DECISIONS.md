@@ -4431,3 +4431,41 @@ a button.
 
 If the card effects ever do need to come down for real, they are a separate decision made on
 measured evidence from a real phone — not a side effect of a fix to something else.
+
+## The lobby is faster than KV can be (2026-08-16)
+
+Reported: 1v1 between two windows on one PC works every time; PC against a phone freezes before
+the team-building screen, with the challenger stuck on "Waiting for someone to accept…" while
+the defender sat in the lobby.
+
+**It is not the lobby logic. It is the store.** Workers KV gives each Cloudflare edge location
+its own cached view of a key, and the cache TTL has a floor of 60 seconds that cannot be
+lowered. A phone on mobile data and a PC on WiFi reach different locations, so one of them can
+read a room up to a minute out of date — and the whole handshake this arena runs on (accept ->
+both enter -> build clock starts) is supposed to complete in ten. **The lobby is faster than the
+thing it is built on.** Two windows on one machine share an edge location, which is why every
+local test passed and why the failure looked device-specific rather than network-specific.
+
+No client change fixes this. The staleness is on the READ path, so polling harder reads the same
+cached answer, and writing from a stale read is worse than useless — it would erase the other
+side's move.
+
+**What shipped is patience and honesty, not a cure:**
+
+- `STALL_MS` 12s -> 75s. At twelve seconds the lobby was declaring a dead match and offering the
+  way out roughly 48 seconds before it would have started ON ITS OWN. Telling a player to quit
+  something that is merely slow is worse than making them wait.
+- The stall copy stops saying "they never entered the lobby" and says the match will start by
+  itself when they arrive, naming different networks as the likely reason.
+- The challenger's waiting screen grows a note after 15s explaining that an acceptance on
+  another network can take a minute to reach it. That screen was the one that looked broken,
+  because nothing on it ever changed.
+- `MIN_GATE_MS` (6s) floors the lobby window for a side that arrives late. Without it, a player
+  joining 50 seconds after `lobbyAt` opens the lobby already at 00:00 and is auto-entered on the
+  spot — which, if they are the one being asked about collection size, means the gate flashes
+  past unread.
+
+**The real fix is a Durable Object** — strongly consistent, one instance per room, no edge cache
+between the two players. That reopens locked decision 3's "one piece of server-side code" clause
+and is Ash's call, not something to slip in under a bug fix. Recorded here so the choice is
+visible rather than discovered later by whoever next wonders why a lobby is slow.
