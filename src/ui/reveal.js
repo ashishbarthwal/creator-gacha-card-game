@@ -7,10 +7,17 @@
    with its own shape and its own slot so they don't blur together: the ignition
    (a hot point racing once around the frame), the discharge (a silhouette
    pushing outward as the loop closes) and the aura (a breathing field behind
-   the card, shedding motes, looping). All CSS, zero dependencies —
-   no per-frame JS, so nothing to lag on. Reduced motion collapses it to an
-   instant, calm reveal. Self-contained: owns its close wiring; main just calls
-   openReveal(results). */
+   the card, shedding motes, looping).
+
+   ALL OF THAT IS THE DESKTOP REVEAL. A phone gets the flip, the seam colour and
+   the beam and skips the rest — see LOW_FX below for what and why. The old
+   header's boast here was "all CSS, zero dependencies, no per-frame JS, so
+   nothing to lag on", and that was the mistake this file was measured against:
+   compositing several hundred simultaneously animating layers is per-frame work
+   whoever schedules it, and a phone is where the bill lands.
+
+   Reduced motion collapses it to an instant, calm reveal on any device.
+   Self-contained: owns its close wiring; main just calls openReveal(results). */
 
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
@@ -85,6 +92,31 @@ const SWEPT = new Set(['SR', 'SSR', 'UR', 'RUBY']);   // get the specular sweep
 const TOP_TIER = new Set(['UR', 'RUBY']);
 
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ── PHONES GET THE PLAIN REVEAL (2026-08-16) ──────────────────────────────
+   Ash, after the first attempt at this stripped the desktop reveal too: "no
+   it's still laggy, atleast simplify on mobile for now." So the cut is by
+   DEVICE, not by taste — a desktop pull is exactly what it was, and a phone
+   skips the layers that cost it frames.
+
+   WHAT A PHONE SKIPS, and it is the count that matters rather than any one of
+   them: the specular sweep, the twinkling stars (18-26 nodes on EVERY SR+
+   card — up to ~260 on a x10), and the top-tier trio of ignition ring, bloom
+   and aura, that last one shedding fifty motes on its own, per card, looping
+   for as long as the overlay is open. A phone GPU compositing several hundred
+   simultaneously animating layers is the whole of the report.
+
+   WHAT A PHONE KEEPS, because it is what a reveal is FOR: the flip, the rarity
+   colour lighting the seam as each card lands, the beam telegraphing a rare
+   before it turns, rarest-last ordering, and the card face itself — frame,
+   finish, avatar, every bit of ui/card.js. A rare still looks rare.
+
+   Matched per pull rather than once at module load, so rotating a phone or
+   dragging a desktop window narrow is picked up on the next pull instead of
+   being decided at page load and stuck. `pointer: coarse` catches a tablet or a
+   phone in landscape, which the width test alone would miss. */
+const LOW_FX = matchMedia('(max-width: 640px), (pointer: coarse)');
+const lowFx = () => LOW_FX.matches;
 
 /* ── A tick in the hand when a row lands ───────────────────────────────────
    The scroll snap already announces that a row arrived, but it announces it to
@@ -261,13 +293,18 @@ function buildCell(result) {
   const front = document.createElement('div');
   front.className = 'face front';
   front.appendChild(renderCard(result.card, { isNew: result.isNew }));
-  if (SWEPT.has(rarity)) {
+  /* Everything from here to the end of the block is skipped on a phone — see
+     LOW_FX above. Skipped rather than hidden in CSS on purpose: an element that
+     is never built costs no DOM, no style resolution and no compositor layer,
+     where `display: none` on fifty motes still means fifty motes were made. */
+  const rich = !lowFx();
+  if (rich && SWEPT.has(rarity)) {
     const sweep = document.createElement('div'); // one specular pass across the face
     sweep.className = 'sweep';
     front.appendChild(sweep);
   }
-  if (STARS[rarity]) front.appendChild(makeStars(rarity));
-  if (TOP_TIER.has(rarity)) {
+  if (rich && STARS[rarity]) front.appendChild(makeStars(rarity));
+  if (rich && TOP_TIER.has(rarity)) {
     /* Top tier only — the ignition: a white-hot point races once around the
        frame bevel as the card lands, and the seam halo floods in behind it.
        This is the strike the card's ambient ember (`.card.r-UR`/`.r-RUBY`,

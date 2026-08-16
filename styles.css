@@ -4392,6 +4392,25 @@
     .cls-chip { font-size: 7px; padding: 1px 4px; }
   }
 
+  /* ── THE PHONE REVEAL (2026-08-16) ──────────────────────────────────────
+     ui/reveal.js already declines to BUILD the sweep, stars, ignition, bloom and
+     aura on a phone (see LOW_FX there) — building nothing is what saves the
+     frames, and this block is the half that CSS owns.
+
+     `backdrop-filter` is the one property in the overlay whose cost scales with
+     screen AREA rather than with content: it re-blurs everything behind a
+     full-screen, SCROLLING surface, every frame that surface or its contents
+     move, which during a reveal is every frame there is. Desktop keeps it — it
+     has the GPU to spare and the effect is doing real separation work. A phone
+     buys the same separation with opacity, for free. */
+  @media (max-width: 640px), (pointer: coarse) {
+    #reveal {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: color-mix(in srgb, var(--bg0) 97%, transparent);
+    }
+  }
+
   @media (max-width: 640px) {
     .arena-head h2 { font-size: 18px; }
     .ar-pool { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
