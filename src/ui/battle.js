@@ -222,16 +222,59 @@ const later = (fn, ms) => ui.timers.push(setTimeout(fn, ms));
    Clearing the pending timer inside `next` is what stops a wake-up from
    starting a SECOND chain running alongside the first: at most one timer is
    ever outstanding, whoever asked for it. */
-function pollChain(gen, run) {
+/* ── AND A POLL LOOP THAT KNOWS WHEN TO STOP (2026-08-16) ──────────────────
+   Every read here is a Workers KV read, and the free tier allows 100,000 a
+   day. Two sides polling at 1.2s is ~1.7 reads a second while a match is being
+   set up, which is nothing — for the length of a match. The problem was that
+   nothing here had an end: a tab left open on the waiting screen or a lobby
+   nobody came to went on polling FOREVER, at roughly 3,000 reads an hour. Two
+   forgotten tabs could spend the whole day's budget between them, and the
+   symptom would be the lobby failing for real players with no explanation.
+
+   Three limits, and each closes a different leak:
+
+   1. A LIFETIME. The room is written with a ten-minute TTL
+      (functions/api/ready/[room].js, TTL_SECONDS), so polling past that is
+      asking about something that no longer exists. The chain stops and tells
+      its caller, which turns "this screen is quietly dead" into a sentence the
+      player can act on.
+
+   2. HIDDEN TABS DO NOT POLL. A backgrounded tab is not being read by anybody,
+      and the browser is already throttling these timers to roughly once a
+      minute — so this mostly formalises what the platform does anyway, and
+      `onReturn` below resumes on the frame the tab comes back. Nothing is
+      missed: the next read after returning has the current state.
+
+   3. THE CALLER PICKS THE INTERVAL. Not every screen deserves 1.2s — see
+      `waitInterval` on the challenger's screen, where the room is cross-network
+      and cannot answer faster than KV's own 60s cache no matter how often it
+      is asked.
+
+   The lifetime is deliberately a client-side constant rather than something the
+   room reports: it is a spending limit, not a fact about the room, and a server
+   that forgot to send it should not buy an unbounded poll loop. */
+const ROOM_LIFETIME_MS = 600000;   // == TTL_SECONDS in functions/api/ready/[room].js
+
+function pollChain(gen, run, { onExpire = null } = {}) {
+  const startedAt = Date.now();
   let timer = null;
+  let expired = false;
   const next = ms => {
-    if (gen !== readyGen) return;
+    if (gen !== readyGen || expired) return;
+    if (Date.now() - startedAt > ROOM_LIFETIME_MS) {
+      expired = true;
+      clearTimeout(timer);
+      onExpire?.();
+      return;
+    }
     clearTimeout(timer);
+    /* Resumed by `onReturn`, so this is a pause and not a stop. */
+    if (document.hidden) return;
     timer = setTimeout(run, ms);
     ui.timers.push(timer);
   };
   const onReturn = () => {
-    if (gen !== readyGen) return document.removeEventListener('visibilitychange', onReturn);
+    if (gen !== readyGen || expired) return document.removeEventListener('visibilitychange', onReturn);
     if (!document.hidden) next(0);
   };
   document.addEventListener('visibilitychange', onReturn);
@@ -1338,7 +1381,16 @@ function renderLobbyGate() {
       nextPoll(POLL_MS);
     });
   }
-  const nextPoll = pollChain(gen, poll);
+  const nextPoll = pollChain(gen, poll, {
+    onExpire: () => {
+      stalled = true;
+      status.textContent = 'This match expired.';
+      stall.innerHTML = '<p>The match room only lives ten minutes and this one is past it,'
+        + ' so it can no longer start. Nothing you own is affected — send a fresh challenge.</p>';
+      stall.hidden = false;
+      stallRow.hidden = false;
+    },
+  });
   poll();
 }
 
@@ -1519,7 +1571,15 @@ function renderSharedBuildScreen() {
       nextPoll(POLL_MS);
     });
   }
-  const nextPoll = pollChain(gen, poll);
+  const nextPoll = pollChain(gen, poll, {
+    onExpire: () => {
+      lockStatus.textContent = 'This match expired before both sides locked in — the room only lives ten minutes.';
+      build.append(button('Back', {
+        className: 'btn ghost',
+        onClick: () => { resetMatch(); setPhase('mode'); },
+      }));
+    },
+  });
   poll();
 }
 
@@ -1960,10 +2020,42 @@ function renderChallengeOut(code) {
         adoptGateWindow(st);
         return later(() => { if (gen === readyGen) enterSharedBuild('a'); }, 900);
       }
-      nextPoll(POLL_MS);
+      nextPoll(waitInterval());
     });
   };
-  const nextPoll = pollChain(gen, poll);
+
+  /* HOW OFTEN TO ASK A QUESTION THAT CANNOT BE ANSWERED FASTER. An acceptance
+     from another network can take up to a minute to become visible here — that
+     is KV's edge cache, not the network (see CROSS_NETWORK_MS) — so polling
+     this screen every 1.2s for ten minutes buys nothing and spends ~500 reads
+     of a 100,000/day budget per abandoned tab.
+
+     Brisk while it might genuinely be quick (two windows on one machine see an
+     accept in well under a second), then backing off to the rate the substrate
+     can actually deliver. A ten-minute wait costs ~140 reads instead of ~500,
+     and nobody waits a millisecond longer for it. */
+  const openedAt = Date.now();
+  function waitInterval() {
+    const waited = Date.now() - openedAt;
+    if (waited < 20000) return POLL_MS;
+    if (waited < 60000) return 3000;
+    return 5000;
+  }
+
+  /* Ten minutes on, the room has expired underneath this screen — the code in
+     the box can no longer be accepted by anyone. Saying so beats a lamp that
+     reads "waiting" forever about a match that can no longer happen. */
+  const nextPoll = pollChain(gen, poll, {
+    onExpire: () => {
+      waiting.className = 'ar-lamp';
+      waiting.textContent = 'This challenge expired — a code is only good for ten minutes.';
+      patience.hidden = true;
+      panel.append(button('Back', {
+        className: 'btn ghost',
+        onClick: () => { resetMatch(); setPhase('mode'); },
+      }));
+    },
+  });
   poll();
 }
 

@@ -1,0 +1,198 @@
+<!doctype html>
+<!--
+  og.html — THE SOURCE OF THE SOCIAL PREVIEW IMAGE. Not part of the site.
+
+  ── WHAT THIS IS FOR ──────────────────────────────────────────────────────
+  index.html points og:image and twitter:image at /og.png, and this page is
+  where that PNG comes from. Open it, screenshot the frame, save the result as
+  og.png in the repo root, and tools/build-site.js ships it.
+
+      1. npm run dev  (or any static server) and open /og.html
+      2. DevTools -> right-click the <div class="og"> node -> "Capture node
+         screenshot". That yields exactly 1200x630 with no window chrome, no
+         scrollbar and no guesswork about device pixel ratio.
+      3. Save as og.png in the repo root. Re-run the deploy.
+
+  A screenshot rather than a generated file because this project has no build
+  step and no image toolchain, and adding a headless browser to raster one
+  static asset would be a dependency that outlives its reason. Once a year is
+  not a pipeline.
+
+  ── WHY IT IMPORTS THE REAL CARD RENDERER ─────────────────────────────────
+  The preview has to look like the product, and the only way to keep that true
+  without a person noticing it drifted is to render the actual component. This
+  imports renderCard from src/ui/card.js against the real stylesheet, so a
+  change to the card face shows up here the next time anyone opens it. A
+  hand-drawn mock of the card would be a second design to maintain, and it
+  would start lying the first time the real one changed.
+
+  ── WHY THE FACES ARE EMBLEMS AND NOT PHOTOS ──────────────────────────────
+  Deliberate, and the one place it is not a close call. The og image is the
+  single most widely COPIED asset this project has: it is reposted by anyone
+  who shares a link, cached by every platform that renders it, and it appears
+  in places nobody chose. Putting a real creator's face in it maximises exposure
+  of the exact thing DECISIONS.md flags as the project's biggest likeness risk,
+  in the one artifact that cannot be recalled by redeploying.
+
+  Emblems are generated, deterministic and carry no likeness (engine/emblem.js).
+  They also show the card FRAME, which is what the picture is selling. So the
+  cards below are built with the emblem avatar mode — the same switch a visitor
+  gets with ?avatars=emblem, exercised here rather than only documented.
+
+  ── THE CHANNELS ARE INVENTED ─────────────────────────────────────────────
+  Synthetic titles and subscriber counts, chosen to sit at the top of three
+  bands so the frames read as three different tiers. Real numbers would be a
+  live claim about a real person on an image nobody can update, and the picture
+  needs a RUBY, a UR and an SR next to each other rather than whatever today's
+  pull happens to hold.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>og.png source — Creator Gacha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<!-- FORCES THE EMBLEM BUILD, and it has to happen here rather than in the module
+     below. src/config.js reads `?avatars=` once at module-evaluation time, and
+     ES imports are evaluated before any statement in the importing script — so a
+     redirect written next to the import would run after config.js had already
+     decided. A plain script in the head runs first, which is the only place this
+     can work. See the note at the top of this file for WHY emblems. -->
+<script>
+  if (new URLSearchParams(location.search).get('avatars') !== 'emblem') {
+    location.replace(`${location.pathname}?avatars=emblem`);
+  }
+</script>
+<style>
+  /* Everything here is FRAMING for the screenshot — the cards themselves take
+     their look from styles.css, untouched. */
+  html, body { margin: 0; padding: 0; background: #0b0714; }
+  body { display: grid; place-items: center; min-height: 100vh; }
+
+  .og {
+    width: 1200px;
+    height: 630px;
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 54px;
+    padding: 0 70px;
+    box-sizing: border-box;
+    background:
+      radial-gradient(1100px 520px at 78% 48%, rgba(255, 59, 87, 0.16) 0%, transparent 62%),
+      radial-gradient(700px 420px at 12% 8%, rgba(120, 70, 200, 0.20) 0%, transparent 66%),
+      linear-gradient(160deg, #170f24 0%, #0d0917 60%, #120b1d 100%);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  .og-word {
+    font-family: Anton, Impact, sans-serif;
+    font-size: 96px;
+    line-height: 0.94;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-transform: uppercase;
+    margin: 0 0 22px;
+  }
+  .og-word span { color: #ff3b57; display: block; }
+
+  .og-sub {
+    font-size: 27px;
+    line-height: 1.42;
+    color: #cdc6dd;
+    margin: 0 0 30px;
+    max-width: 30ch;
+  }
+  .og-sub b { color: #fff; font-weight: 700; }
+
+  .og-tags { display: flex; gap: 12px; flex-wrap: wrap; }
+  .og-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #b9b1cc;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 8px 16px;
+  }
+
+  /* A fan of three, rarest in front. Rotations are static so the screenshot is
+     reproducible — nothing here animates, because a frame grabbed mid-transition
+     is the one way this could come out subtly wrong twice in a row. */
+  .og-fan { display: flex; align-items: center; position: relative; width: 470px; height: 480px; }
+  .og-fan .card { position: absolute; width: 236px; box-shadow: 0 26px 60px rgba(0, 0, 0, 0.6); }
+  .og-fan .card:nth-child(1) { left: 0;     top: 78px;  transform: rotate(-11deg) scale(0.9); }
+  .og-fan .card:nth-child(2) { left: 118px; top: 8px;   transform: rotate(4deg); z-index: 2; }
+  .og-fan .card:nth-child(3) { left: 250px; top: 96px;  transform: rotate(13deg) scale(0.88); }
+
+  /* The screenshot target must not inherit a page hover state or a caret. */
+  .og * { cursor: default !important; }
+
+  .hint {
+    color: #8b8399;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    padding: 18px;
+    text-align: center;
+    max-width: 1100px;
+  }
+</style>
+</head>
+<body>
+
+<div class="og">
+  <div>
+    <h1 class="og-word">Creator<span>Gacha</span></h1>
+    <p class="og-sub">Real YouTube channels as collectible cards.
+      <b>Subscribers set the rarity. Views per video set the attack.</b></p>
+    <div class="og-tags">
+      <span class="og-tag">Pull</span>
+      <span class="og-tag">Collect</span>
+      <span class="og-tag">Battle 5v5</span>
+      <span class="og-tag">Free · no signup</span>
+    </div>
+  </div>
+  <div class="og-fan" id="fan"></div>
+</div>
+
+<p class="hint">
+  Screenshot the frame above at exactly 1200×630 — DevTools → right-click the
+  <code>div.og</code> node → “Capture node screenshot” — and save it as
+  <code>og.png</code> in the repo root. This page is not shipped.
+</p>
+
+<script type="module">
+  /* The real renderer, against the real stylesheet. See the note at the top of
+     this file for why this is not a hand-drawn mock. */
+  import { renderCard } from './src/ui/card.js';
+
+  /* Invented channels at the top of three bands. `publishedAt` is a fixed date
+     rather than a relative one so the cards do not depend on when this page is
+     opened for their identity — though note the derived stats DO still move a
+     little year over year, because three of the five battle axes are computed
+     from channel age against today. Fixed enough to be reproducible within a
+     release; not frozen, and not claimed to be. */
+  const CARDS = [
+    { title: 'Neon Circuit',   subscriberCount: '4200000',   viewCount: '1900000000',  videoCount: '820',  publishedAt: '2015-04-02T00:00:00Z' },
+    { title: 'Vale & Ash',     subscriberCount: '128000000', viewCount: '41000000000', videoCount: '1130', publishedAt: '2012-09-18T00:00:00Z' },
+    { title: 'Harbour Lights', subscriberCount: '61000000',  viewCount: '18400000000', videoCount: '960',  publishedAt: '2013-06-11T00:00:00Z' },
+  ];
+
+  const fan = document.getElementById('fan');
+  for (const [i, ch] of CARDS.entries()) {
+    const channel = { id: `UCog${i}`, hiddenSubscriberCount: false, ...ch };
+    /* rarityFromSubs would give the same answer; asking for it keeps this page
+       honest if the bands are ever re-cut. */
+    const { rarityFromSubs } = await import('./src/engine/core.js');
+    const rarity = rarityFromSubs(channel.subscriberCount, false);
+    fan.append(renderCard({ channel, rarity }));
+  }
+</script>
+
+</body>
+</html>

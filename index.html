@@ -9,7 +9,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Creator Gacha</title>
+<title>Creator Gacha — YouTube channels as collectible cards</title>
+
+<!-- ── HOW THIS LOOKS WHEN SOMEBODY SHARES IT ────────────────────────────────
+     Added 2026-08-16, pre-launch. Until now the page carried a <title> and
+     nothing else, so every link posted to Reddit, Discord, WhatsApp or Twitter
+     rendered as a naked URL: no image, no description, nothing to click for. On
+     a game whose whole appeal is what the cards look like, the preview card IS
+     the pitch, and its absence was the single cheapest thing standing between
+     this and an audience.
+
+     ABSOLUTE URLs, not relative. Every scraper resolves og:image against its own
+     idea of the base, and a relative path is the classic way to ship a preview
+     that works in a local test and shows nothing in production. If the domain
+     ever moves, these four lines move with it — which is also why the canonical
+     is here, so shares of a preview deployment still point people at the real
+     site rather than a hash nobody can find twice.
+
+     The image itself is generated from og.html — open it, screenshot the frame
+     at 1200x630, save as og.png. See the note at the top of that file. -->
+<meta name="description" content="A browser gacha game where real YouTube channels become collectible trading cards. Stats are derived from live channel data — subscribers set the rarity, views per video set the attack. Pull, collect, and battle 5v5. No signup, no API key, free.">
+<link rel="canonical" href="https://creator-gacha.pages.dev/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Creator Gacha">
+<meta property="og:url" content="https://creator-gacha.pages.dev/">
+<meta property="og:title" content="Creator Gacha — YouTube channels as collectible cards">
+<meta property="og:description" content="Real channels, real numbers. Subscribers set the rarity, views per video set the attack. Pull a x10, build a team of five, and battle. No signup, no API key, free.">
+<meta property="og:image" content="https://creator-gacha.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Creator Gacha trading cards — a rare card in a metal frame beside its five battle stats.">
+
+<!-- summary_large_image is the one that gives a full-width picture rather than a
+     thumbnail beside the text. Twitter/X falls back to the og: tags above for
+     everything else, so nothing here is repeated for its own sake. -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Creator Gacha — YouTube channels as collectible cards">
+<meta name="twitter:description" content="Real channels, real numbers. Pull a x10, build a team of five, and battle. No signup, no API key, free.">
+<meta name="twitter:image" content="https://creator-gacha.pages.dev/og.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">

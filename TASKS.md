@@ -61,6 +61,46 @@ below this paragraph that mentions the OLD invariant (19% N-above-median-UR) —
 13. **The Buy Me a Coffee link is gone** from the site and every doc (Ash's call). No donation
     path anywhere; locked decision 2 withdrawn.
 
+**LAUNCH BLOCKERS — the three found 2026-08-16 when Ash asked how to launch properly.**
+
+1. [x] **Shareable links.** `index.html` had a `<title>` and nothing else, so every link posted
+   to Reddit, Discord, WhatsApp or Twitter rendered as a naked URL — no image, no description,
+   on a game whose whole appeal is what the cards look like. Now carries og: + twitter: tags, a
+   description and a canonical, all absolute.
+   - [ ] **ONE MANUAL STEP LEFT, and the tags are pointing at a 404 until it is done:** open
+         `og.html`, DevTools → right-click the `div.og` node → "Capture node screenshot", save as
+         `og.png` in the repo root, redeploy. `build-site.js` ships it when present and prints a
+         loud warning when it is not. Faces in it are EMBLEMS, not photos — see the note at the
+         top of og.html for why that one is not a close call.
+
+2. [x] **Knowing whether anyone came — NEEDS NO CODE, and deliberately none.** Cloudflare Pages
+   already collects requests, bandwidth and top paths server-side for this project: dash →
+   Workers & Pages → creator-gacha → **Analytics**. Nothing is deployed, nothing touches a
+   visitor, and it is already recording — so it just needs looking at.
+   **Do NOT switch on Cloudflare "Web Analytics".** That is a different product: it injects a
+   client-side beacon that phones home on every pageview. Cookieless, but the footer promises
+   "No accounts, no tracking", and a script reporting each visit is the thing that sentence
+   tells people is not happening. The free server-side numbers answer "did anyone play" without
+   spending the promise.
+
+3. [x] **KV quota leaks.** Free tier is 100,000 reads and 1,000 writes a day; the arena is the
+   only thing spending either. A tab left on the waiting screen or an empty lobby polled
+   FOREVER at ~3,000 reads/hour, so two forgotten tabs could have taken the day's budget and the
+   symptom would have been the lobby failing for real players. Fixed three ways: poll chains stop
+   at the room's own ten-minute TTL and say so on screen, hidden tabs do not poll at all, and the
+   challenger's screen backs off 1.2s → 3s → 5s because a cross-network accept cannot show up
+   faster than KV's 60s cache anyway. A ten-minute wait costs ~140 reads instead of ~500.
+   - [ ] Still true and worth watching after launch: **~150 cross-device matches/day** is the
+         WRITE ceiling (5-10 writes each against 1,000/day). Quick battle costs nothing, so the
+         main game is immune. If the lobby starts failing, check writes before anything else.
+
+**BEFORE POSTING ANYWHERE — Ash's own call, not a technical item.** DECISIONS.md's plan was an
+Indian lawyer consult pre-real-launch, with real profile pictures flagged as the biggest likeness
+exposure and `AVATAR_SOURCE` built as the reversible escape hatch. A live site and a site being
+actively promoted are different exposure levels. Three honest options: launch on emblems
+(`AVATAR_SOURCE = 'emblem'`), launch on photos with the opt-out link and a same-day takedown
+commitment, or take the consult first. Decide it rather than letting launch day decide it.
+
 **NEXT — start here.**
 1. **Run the two-window checklist below against production**, or against `npm run dev`. The
    arena is untested DOM wiring by design; 569 tests cover the engine under it and none of them
