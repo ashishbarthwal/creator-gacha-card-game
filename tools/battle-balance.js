@@ -319,6 +319,25 @@ async function main() {
      the note under FIGHTS. */
   const byGap = new Map();
   let pClassSum = 0, aClassSum = 0, driftSum = 0;
+  /* CHAOS, MEASURED — added 2026-08-16 when Ash asked for "a lil more
+     non-deterministic". The rest of this tool measures whether the right team
+     wins; none of it could see how much the DICE are worth, so a request to
+     turn the dice up had nothing to be checked against and would have been
+     tuned by feel. Two numbers, because chaos has two halves a player feels
+     separately:
+
+       flip rate — of matchups whose six rolls did NOT all agree on the winner.
+         This is non-determinism where it counts: the same five against the same
+         five, decided differently by luck alone. It is the number to raise.
+
+       hit spread / crit share — how varied ONE swing looks. This is the half a
+         player actually sees, hit by hit, and it can move a long way without
+         the flip rate moving at all: ~25 attacks per fight average independent
+         noise out (see battle.js's header — variance 0.12 -> 0.50 changed
+         nothing). Watching both is what tells the two apart. */
+  let flippable = 0;
+  const hits = [];
+  let crits = 0, swings = 0;
 
   for (let t = 0; t < teamCount; t++) {
     const idx = new Set();
@@ -339,13 +358,27 @@ async function main() {
     const bucket = byGap.get(pc - ac) ?? { w: 0, n: 0, teams: 0 };
     bucket.teams++;
 
+    let hereWins = 0;
     for (let s = 1; s <= REPS; s++) {
       const r = battle(player, m.channels, { rng: mulberry32(t * 131 + s), now: NOW });
-      if (r.winner === 'a') { wins++; bucket.w++; }
+      if (r.winner === 'a') { wins++; bucket.w++; hereWins++; }
       if (r.survivors.a === 0 || r.survivors.b === 0) wipes++;
       rounds.push(r.rounds);
       played++; bucket.n++;
+      /* One matchup's worth of swings is plenty — this is a distribution over
+         millions of attacks, and keeping every one of them costs memory for no
+         extra precision. */
+      if (t % 10 === 0) {
+        for (const e of r.log) {
+          if (e.type !== 'attack') continue;
+          swings++;
+          if (e.crit) crits++;
+          hits.push(e.damage);
+        }
+      }
     }
+    /* Neither 0 nor 6: the teams did not settle it, the rolls did. */
+    if (hereWins > 0 && hereWins < REPS) flippable++;
     byGap.set(pc - ac, bucket);
   }
 
@@ -360,6 +393,16 @@ async function main() {
   console.log(`  length                median ${quant(rounds, 0.5)} rounds, p95 ${quant(rounds, 0.95)}   (aim 5-10; a replay has to be watchable)`);
   console.log(`  decided by elimination ${pct(wipes / played)}   (a fight going to the round cap is a stalemate the player watched)`);
   console.log(`  AI power drift        ${pct(driftSum / Math.max(1, teamCount))}   (matchmaker aim; near 0 means aimedBuild is doing its job)`);
+
+  /* CHAOS. Read the two lines together: the first is how often luck DECIDES,
+     the second is how loud luck LOOKS. A change that moves only the second is
+     texture; a change that moves the first is a change to the game. */
+  console.log('\nCHAOS  (how much is left to the dice)');
+  console.log(`  roll-flip rate        ${pct(flippable / Math.max(1, teamCount))}   `
+    + `of matchups where ${REPS} damage rolls disagreed on the winner`);
+  console.log(`  crit share            ${pct(crits / Math.max(1, swings))} of ${swings.toLocaleString()} swings`);
+  console.log(`  hit spread            p05 ${quant(hits, 0.05)} · median ${quant(hits, 0.5)} · p95 ${quant(hits, 0.95)}`
+    + `   (p95/median ${(quant(hits, 0.95) / Math.max(1, quant(hits, 0.5))).toFixed(2)}x — what one swing looks like)`);
 
   /* WHY THE HEADLINE IS LOW, AND IT IS NOT THE MATCHMAKER'S AIM.
      `pickForSlot` scores class variety, so the AI reliably fields 4-5 distinct
@@ -421,7 +464,17 @@ function marginal(deck) {
   const target = quant(rated.map(x => x.r), 0.5);
   const wins = Object.fromEntries(BATTLE_CLASSES.map(c => [c, { w: 0, n: 0 }]));
 
-  for (let trial = 0; trial < 26; trial++) {
+  /* MANY COMPOSITIONS, FEW ROLLS — the same correction the FIGHTS loop already
+     carries, applied here 2026-08-16 because this figure was quietly making the
+     identical mistake it was written to avoid. 26 trials x 12 re-rolls is 26
+     distinct team shapes wearing a 312-battle number: the rolls are
+     near-duplicates that tighten one shape's estimate and say nothing about the
+     class. Caught while tuning crit — the "worst class" changed IDENTITY
+     between two adjacent multiplier settings (Titan 51.9% at 1.9, Assassin
+     50.3% at 1.75), which is not how a real effect behaves. 120 shapes x 4
+     rolls costs about the same and is a reading rather than an anecdote. */
+  const TRIALS = 120, ROLLS = 4;
+  for (let trial = 0; trial < TRIALS; trial++) {
     const pick = k => rated[(trial * 7919 + k * 104729) % rated.length].ch;
     const mates = [pick(1), pick(2), pick(3), pick(4)];
     /* Arranged by the same rule the player's side gets, for the reason stated
@@ -434,7 +487,7 @@ function marginal(deck) {
       const fifth = near(c, target);
       if (!fifth || mates.some(m => m.id === fifth.id) || foe.some(m => m.id === fifth.id)) continue;
       const team = arrangeFormation([...mates, fifth], NOW);
-      for (let s = 1; s <= 12; s++) {
+      for (let s = 1; s <= ROLLS; s++) {
         if (battle(team, foe, { rng: mulberry32(trial * 1000 + s), now: NOW }).winner === 'a') wins[c].w++;
         wins[c].n++;
       }

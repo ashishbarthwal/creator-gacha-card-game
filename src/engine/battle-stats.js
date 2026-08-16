@@ -326,7 +326,12 @@ const AXIS_FLOOR = 12;
    a chunk out of something four times its size often enough to be feared, which
    is the whole appeal of fielding one. The cost is variance, and that is the
    intended cost: this is the one term in the game that is allowed to be unfair. */
-const CRIT_BASE = 0.05;
+/* CRIT_BASE 0.05 -> 0.09 on 2026-08-16 (the "more chaotic" pass). The FLAT
+   term is the safe one to raise: it lifts every card by the same amount, so it
+   cannot widen the gap between a 22%-crit Assassin and a 37%-crit Carry the way
+   the MULTIPLIER does. Crit share across a fight went 27.3% -> 31.1% measured on
+   the live deck, and the class marginal values TIGHTENED rather than spread. */
+const CRIT_BASE = 0.09;
 const CRIT_FROM_PUNCH = 0.95;
 const CRIT_FROM_SPD = 0.20;
 const CRIT_CAP = 0.45;
@@ -564,7 +569,26 @@ export function classFrom(shape) {
    geometric mean keeps the two in balance — a glass cannon and an unarmed
    wall both rate low, and neither can be traded for the other at par. */
 export const MITIGATION_K = 110;
-export const CRIT_MULTIPLIER = 1.6;
+
+/* 1.6 -> 1.75 on 2026-08-16 (the "more chaotic" pass), and this one is NOT a
+   free knob — it is inside `ratingOf`, so it prices every card as well as
+   resolving every hit.
+
+   THE MULTIPLIER AMPLIFIES THE CRIT SPREAD BETWEEN CLASSES, which is why it
+   stops well short of what the brief could have justified. Crit chance already
+   runs 22% (Assassin) to 37% (Carry), so raising the multiplier raises a
+   Carry's rating faster than a Titan's — and a rating-matched Carry then has to
+   be a SMALLER card to sit level, which quietly makes the low-crit classes the
+   bargain. Measured at 1.9 that showed up immediately as one class becoming the
+   obvious fifth slot; at 1.75 the class marginal values sit tighter than they
+   did at 1.6 (spread 14.6 -> 11.0 points). The size ladder is untouched either
+   way: power ratio 1.77, small-cards-out-rating-a-giant 0.0%.
+
+   The measurement itself had to be fixed first, and that is worth knowing
+   before trusting any number here: the marginal figure used to run 26 team
+   shapes x 12 re-rolls, and at that sample the "worst class" changed IDENTITY
+   between two adjacent multiplier settings. See tools/battle-balance.js. */
+export const CRIT_MULTIPLIER = 1.75;
 
 /* ── WHAT SPEED BUYS ───────────────────────────────────────────────────────
    A chance to act twice in a round, and it had to buy SOMETHING because for a

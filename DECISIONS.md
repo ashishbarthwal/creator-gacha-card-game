@@ -4333,3 +4333,65 @@ and computed AGAIN in `beginSharedBuild`, from `ui.roomState.csB` — a field a 
 a stale read can drop. The second answer could differ from the screen the player just agreed to,
 in either direction: a promised shed that never happened, or a shed nobody was shown. It is
 latched once now, in `ui.gate`, the same discipline the two deadlines already follow.
+
+## More chaos, measured rather than argued (2026-08-16)
+
+Ash, after watching a rating-even fight end as a wipe: make it "a lil bit more chaotic — crit
+damage and all boosted a bit... Not punishing, just fun and little more non-deterministic."
+
+The engine has a rule attached to it — retune only against `tools/battle-balance.js`, never by
+argument — and the first thing that rule produced was an obstacle: **the tool could not see the
+thing being asked for.** Every figure it printed measured whether the RIGHT TEAM wins. None of
+them measured how much the dice are worth, so "turn the dice up" had nothing to check itself
+against. So a CHAOS block went in first, and it prints two numbers because chaos has two halves
+a player feels separately:
+
+- **roll-flip rate** — the share of matchups whose six damage rolls did not all agree on the
+  winner. Non-determinism where it counts: the same five against the same five, decided
+  differently by luck alone.
+- **hit spread / crit share** — what ONE swing looks like. This half can move a long way while
+  the first does not move at all, which is exactly what `battle.js`'s header already recorded:
+  a 5v5 runs ~25 attacks and independent noise averages out, so widening per-hit variance from
+  0.12 to 0.50 once changed outcomes not at all.
+
+**What shipped:** `VARIANCE` 0.25 -> 0.35, `CRIT_BASE` 0.05 -> 0.09, `CRIT_MULTIPLIER` 1.6 ->
+1.75. Measured on the live 20,739-card deck at 3,000 fights:
+
+| | before | after |
+|---|---|---|
+| roll-flip rate | 44.0% | **49.8%** |
+| crit share | 27.3% | **31.2%** |
+| one swing, p95/median | 2.94x | **3.11x** |
+| power ratio (RUBY vs N) | 1.77 | 1.77 |
+| small cards out-rating a giant | 0.0% | 0.0% |
+| even-match win rate | 39.3% | 38.1% |
+| fight length | 6 rounds (p95 9) | 6 rounds (p95 8) |
+| class marginal spread | 14.6 pts | 10.8 pts |
+
+The SIZE block came out byte-identical and every picking strategy moved under half a point, so
+the 2026-08-15 philosophy is untouched: subscriber count still generally decides, upsets are
+still tactical rather than free. "Not punishing" is the same claim read from the other side —
+the favourite still wins as often as it did; it just wins less predictably.
+
+**THE KNOBS ARE NOT INTERCHANGEABLE, and that is the finding worth keeping.** `VARIANCE` is
+free: it is not in `ratingOf` at all, the noise is symmetric, and the averaging that makes it
+safe to widen is the same property that stops it ever overturning a well-built team.
+`CRIT_MULTIPLIER` is not free — it prices every card as well as resolving every hit, and it
+AMPLIFIES the crit spread that already exists between classes (Assassin 22%, Carry 37%). Raise
+it and a rating-matched Carry must be a smaller card to sit level, which quietly makes low-crit
+classes the bargain. 1.9 was tried and backed away from. `CRIT_BASE` sits in between: it feeds
+the rating too, but as a flat term it lifts every card equally, which is why the frequency half
+of "more crits" was bought there rather than with the multiplier.
+
+**A measurement was wrong and is now fixed, which is the more valuable half of this entry.**
+MARGINAL VALUE — the class figure CLAUDE.md tells you to trust — ran 26 team shapes x 12
+re-rolls and reported a 4.2-point spread. That is this tool's OWN headline mistake, repeated one
+section below where it was diagnosed: re-rolls are near-duplicates, so 312 battles carried 26
+shapes' worth of information. It was caught by the only symptom that cannot be talked away —
+the worst class changed IDENTITY between two adjacent settings of the same knob (Titan 51.9% at
+1.9, Assassin 50.3% at 1.75). A real effect does not do that. At 120 shapes x 4 rolls, for about
+the same cost, the shipped engine's spread was **14.6 points all along**. Nothing regressed; a
+number that had never been true stopped being printed.
+
+Tuning against the broken figure would have concluded that a modest crit bump wrecked class
+balance, and the change would have been abandoned for a reason that did not exist.

@@ -103,8 +103,28 @@ the trap is about a mechanism producing an effect nobody chose, and that lesson 
 **Measure the decision a player makes, not the tidiest number.** Two figures say Assassin is
 broken — a 1.86x rating spread, and 6.3% in an all-one-class round robin — and *both are
 misleading*: `powerOf` cannot see class verbs, and nobody fields five of one class. The honest
-test holds four slots and swaps a rating-matched fifth; measured that way every class sits at
-**47-60%**. `battle-balance.js` prints this as MARGINAL VALUE. Trust that row.
+test holds four slots and swaps a rating-matched fifth. `battle-balance.js` prints this as
+MARGINAL VALUE. Trust that row — **but note what the row is worth, corrected 2026-08-16.**
+
+It used to run 26 team shapes x 12 re-rolls and report a 4-point spread. That was the tool's own
+headline mistake ("nine teams wearing a big number") repeated one section further down: the
+re-rolls are near-duplicates, so 312 battles carried 26 shapes' worth of information. Caught
+while tuning crit, by the one symptom that cannot be argued with — the WORST class changed
+identity between two adjacent multiplier settings. At 120 shapes x 4 rolls the shipped engine's
+real spread was **14.6 points**, never 4.2, and the honest reading is that classes are close
+enough to all be worth a slot but were never as level as the old number implied.
+
+**A "more chaotic" pass shipped 2026-08-16 (Ash's brief: fun, not punishing).** `VARIANCE`
+0.25 -> 0.35, `CRIT_BASE` 0.05 -> 0.09, `CRIT_MULTIPLIER` 1.6 -> 1.75. What moved is what a
+player watches: one swing's p95/median 2.94x -> 3.11x, crit share 27.3% -> 31.2%, and the share
+of matchups where six damage rolls disagree on the winner **44.0% -> 49.8%**. What did NOT move
+is the settled philosophy — the SIZE block came out byte-identical, power ratio 1.77,
+small-cards-out-rating-a-giant 0.0%, every picking strategy within half a point, fights still a
+watchable 6 rounds. Class marginals TIGHTENED (14.6 -> 10.8). `VARIANCE` is the free knob (~25
+attacks a fight average independent noise out, which is why it is safe AND why it can never be
+the thing that overturns a team); `CRIT_MULTIPLIER` is not, because it sits inside `ratingOf`
+and amplifies the existing 22%-to-37% crit spread between classes — 1.9 was measured and backed
+away from for exactly that.
 
 *Genuinely still open:* Bulwark 5.2% / Riser 4.7% of the deck, picking strategies ~78% against
 a ~65% healthy ceiling, a momentum-built team winning ~0%, and Music at 47.6% of the element

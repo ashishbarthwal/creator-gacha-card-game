@@ -79,10 +79,22 @@ export const MAX_ROUNDS = 30;
    becoming immortal, and K sits near the middle of the observed DEF range so a
    typical card roughly halves incoming damage. */
 
-/* A little noise so identical matchups do not always play out identically.
-   Deliberately narrow — this is texture, not a coin flip that overturns a
-   well-built team. Widening it was tried and measured; see the header. */
-const VARIANCE = 0.25;
+/* Noise so identical matchups do not always play out identically.
+
+   0.25 -> 0.35 on 2026-08-16, Ash's brief: "a lil more chaotic... not
+   punishing, just fun". This is the knob that can be turned freely, and the
+   reason is the finding in the header — a 5v5 runs ~25 attacks, and
+   independent noise averages out over that many trials however wide each roll
+   is. Measured on the live 20,739-card deck: the size ladder came out
+   BYTE-IDENTICAL, every picking strategy moved under half a point, and the
+   rarity power ratio stayed at 1.77. What moved is what a player watches — one
+   swing's p95/median went 2.94x -> 3.11x, and the share of matchups where six
+   damage rolls disagree on the winner went 44.0% -> 49.8%.
+
+   It is still not a coin flip that overturns a well-built team: it cannot be,
+   for the same averaging reason that makes it safe to widen. Anything that
+   DOES overturn one has to come from the tactical layers above. */
+const VARIANCE = 0.35;
 
 /* The cost of cover. A back-rank attacker is hitting past its own front line,
    and pays for the protection it is enjoying. Small enough that stacking your
