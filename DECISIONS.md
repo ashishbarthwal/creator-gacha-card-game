@@ -4469,3 +4469,51 @@ side's move.
 between the two players. That reopens locked decision 3's "one piece of server-side code" clause
 and is Ash's call, not something to slip in under a bug fix. Recorded here so the choice is
 visible rather than discovered later by whoever next wonders why a lobby is slow.
+
+## The Live API mode and the demo set are removed (2026-08-16)
+
+Ash, pre-launch: "remove Live API option. Don't need it. Get rid of the demo set as well, only
+core set lives so don't need that dropdown as well."
+
+**LIVE MODE** was this app's original premise — bring your own YouTube API key, pull any channel
+— and sets made it vestigial. It asked a player for a Google Cloud API key to reach a thinner
+version of what the front page already does with 20,739 cards and no setup: a wall in front of
+the game rather than a feature. It went dev-only on 2026-08-03 behind `?dev=1`; that was a
+demotion, and the note attached to it argued that "removing a working feature to tidy a screen
+is the wrong trade". This is not that trade. The feature was not tidied away, it was
+outgrown — and a dev-only mode nobody exercises is a claim about working code that nothing
+checks.
+
+**THE IN-PAGE MAGIC SEARCH went with it**, because it lived inside the Live controls and needs
+the key field. Nothing is lost: `tools/magic-search.js` is the same search from the command
+line, and the Wikidata sweep has been the default sourcing route for far longer. A browser is a
+worse place to spend quota than a terminal is.
+
+**THE SET PICKER** offered one real set. Core Set IS the deck, and with the demo gone the
+dropdown could only ever be set to what it already was.
+
+**THE DEMO SET is the one removal with a real cost, and it is stated rather than glossed.** It
+was eight bundled fictional channels that loaded from memory — which made the first paint
+instant and, more importantly, meant the app could be pulled from **with no network at all**.
+That property is gone. A cold load with no connection now shows an error and a Retry instead of
+eight fake creators. The trade is deliberate: pulling invented channels into a permanent
+collection was never what a visitor came for, so "works offline" was buying a fiction rather
+than the game. The data survives as `test/fixtures/demo-set.js`, which is what it had already
+quietly become — the fixture `sets.test.js` parses end to end and `emblem.test.js` walks for
+avatar coverage.
+
+**WHAT DELIBERATELY DID NOT CHANGE: `src/data/youtube.js`.** The live ADAPTER is still shipped
+and still exported from the seam, because `tools/add-candidates.js` imports it — it is pipeline
+code, not UI. The seam went from three sources to two; the UI went from offering one to
+offering none, which is the distinction CLAUDE.md's architecture section has always drawn and
+the reason this removal is small rather than structural.
+
+Also removed: `state.mode`, `state.apiKey`, `state.livePool` (`currentPool()` returns the one
+pool), the banner chips that enumerated a hand-built live pool, and ~120 lines of CSS for
+controls that no longer exist. `banner.js` went from 433 lines to ~230 and now does one thing:
+load the set, then own the pack.
+
+**The new failure path is worth knowing before it is hit.** With no bundled fallback, the set
+fetch is the only way the game gets cards. `loadTheSet` therefore ends in a real error, a
+disabled pack and a Retry button rather than an empty stage — the one screen where silence
+would read as "this site is broken" and be right.

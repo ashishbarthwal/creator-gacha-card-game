@@ -13,24 +13,32 @@ import { toCard } from './engine/core.js';
 import { reconcileCollection } from './engine/collection.js';
 import { loadCollection, saveCollection, clearCollection } from './storage.js';
 
+/* `mode`, `apiKey` and `livePool` were removed on 2026-08-16 with the Live API
+   mode they existed for (see ui/banner.js). The app has ONE pool now, so a
+   function that chose between two was a branch with one arm.
+
+   The key promise the header above describes is now kept by there being no key:
+   nothing in the shipped UI asks for one, and no field exists to hold it. The
+   live adapter still takes a key as a parameter, because tools/ passes one. */
 export const state = {
-  mode: 'sets',                                // Sets is the default; Live is opt-in
-  apiKey: '',                                  // memory only, by design
-  livePool: [],
-  setsPool: [],                                // filled with the demo set on init
+  setsPool: [],                                // filled once the set loads
   currentSet: null,                            // { slug, title, snapshotDate } once loaded
   /* channel id -> { card, count }. Restored from localStorage at module load,
      which is early enough that the first renderCollection() already has it. */
   collection: loadCollection(),
 };
 
+/* Kept as a function rather than collapsed into `state.setsPool` at every call
+   site: the pool is read in five places, and a named accessor is the seam that
+   let the two-pool version become a one-pool version without touching any of
+   them. */
 export function currentPool() {
-  return state.mode === 'live' ? state.livePool : state.setsPool;
+  return state.setsPool;
 }
 
-/* Load a parsed set (from data/sets.parseSet) as the active sets pool. Channels
-   become cards through the same pure bridge as live, so nothing downstream can
-   tell the bundled demo set, a fetched set, and live apart. */
+/* Load a parsed set (from data/sets.parseSet) as the active pool. Channels
+   become cards through the same pure bridge the live adapter feeds, so nothing
+   downstream can tell a fetched set from a live fetch. */
 export function setSetsPool(set) {
   state.setsPool = set.channels.map(toCard);
   state.currentSet = { slug: set.slug, title: set.title, snapshotDate: set.snapshotDate };

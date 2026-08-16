@@ -1,28 +1,28 @@
-/* data/demo — the bundled demo set: nine fictional channels with generated
-   avatars and zero network. It is the built-in sampler, the app's default pool,
-   and the offline fallback — always available even if the fetchable set
-   manifest (sets/index.json) cannot be loaded.
+/* test/fixtures/demo-set — nine fictional channels with generated emblem art.
 
-   Authored as a full set envelope so it flows through the same parseSet →
-   toCard path as any fetched set; nothing downstream can tell it apart. It
-   ships inside the JS bundle rather than as a fetched file precisely so the
-   default view paints instantly with no network round-trip. One channel hides
-   its subscriber count on purpose, keeping that branch exercised by real use.
+   ── THIS USED TO SHIP. IT NOW ONLY TESTS. ─────────────────────────────────
+   Until 2026-08-16 this was src/data/demo.js: the bundled demo set, the third
+   source behind the data seam, and the pool the app loaded instantly at boot so
+   the first paint needed no network. Ash removed it — Core Set is the deck, and
+   a picker offering eight fictional creators above 20,739 real ones was a choice
+   nobody wanted to make twice.
 
-   Named "Starter Set" from WP4 until 2026-08-01, when it went back to "Demo" —
-   "starter" reads as the beginner deck of a real game, which oversells eight
-   invented channels sitting next to a 1,200-card Series 1. The WP4 fold that
-   produced it is unchanged; only the label is. The `UCstarter-…` channel ids are
-   deliberately NOT renamed: a saved collection keys on channel id, so changing
-   them would orphan any demo cards already in someone's binder to rename a
-   string no user ever sees. */
+   It moved here rather than being deleted because it had quietly become a
+   FIXTURE anyway: test/sets.test.js parses it to check the set parser end to
+   end, and test/emblem.test.js walks its channels for avatar coverage. Both
+   want a small, hand-authored, offline set with known values — which is exactly
+   what this is, and exactly what a real set is too awkward to be.
+
+   The numbers below were authored against the battle engine (see the note
+   further down) and are still worth keeping honest for that reason: they are
+   what the parser and the emblem generator are checked against.
 
 /* The generated-avatar artwork moved to engine/emblem.js when the avatar-source
    flag landed (WP8): the emblem build needs exactly this picture for real
    channels, and one proven visual beats two. The hue is derived from the
    channel id there rather than passed in, so these fictional channels are
    authored with ids chosen to spread across the wheel. */
-import { emblemFor } from '../engine/emblem.js';
+import { emblemFor } from '../../src/engine/emblem.js';
 
 const avatar = (initial, hue) => emblemFor({}, { initial, hue });
 

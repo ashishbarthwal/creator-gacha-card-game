@@ -87,52 +87,29 @@
 
     <h2 id="banner-h" class="sr-only">Banner</h2>
 
-    <!-- The only two controls a player needs before opening: which set, and
-         (for the few who want it) their own API key. Both sit quietly at the
-         top edge so the pack owns the middle of the stage. -->
-    <div class="stage-top">
-      <div id="sets-controls">
-        <div class="select-wrap set-pick">
-          <select id="set-select" class="field" aria-label="Card set"></select>
-        </div>
-      </div>
-      <!-- Dev-only since 2026-08-03, so a player never sees a mode toggle at
-           all — just the set picker. Live mode asks for a Google Cloud API key
-           to reach a thinner version of what the front page already does, which
-           is a wall in front of the game rather than a feature. Gated by
-           src/config.js (WP8), not deleted: Magic Search and the key field live
-           inside the Live controls and are how sourcing is driven from the
-           browser. `?dev=1` brings it all back. -->
-      <div class="mode-toggle" role="group" aria-label="Data source">
-        <button id="mode-sets" class="mode-btn active" type="button">Sets</button>
-        <button id="mode-live" class="mode-btn" type="button">Live API</button>
-      </div>
-    </div>
+    <!-- NO CONTROLS HERE ANY MORE (2026-08-16, Ash's call). This strip used to
+         hold a set picker and a Live-API mode toggle, and both were answering
+         questions the game no longer has:
 
-    <div id="live-controls" hidden>
-      <input id="api-key" class="field" type="password" placeholder="YouTube Data API v3 key" autocomplete="off" spellcheck="false">
-      <div class="add-row">
-        <input id="add-input" class="field" placeholder="@handle, channel URL, or UC id" spellcheck="false">
-        <button id="add-btn" class="btn ghost" type="button">Add</button>
-      </div>
-      <!-- Magic Search is a dev sourcing tool, not a game feature: it spends the
-           visitor's own API quota. Hidden outside dev by src/config.js (WP8). -->
-      <div id="ms-input-row" class="add-row">
-        <input id="ms-input" class="field" placeholder="keyword, e.g. cooking — Magic Search (dev)" spellcheck="false">
-      </div>
-      <div id="ms-row" class="ms-row">
-        <span class="ms-label">Magic Search</span>
-        <button id="ms-legends" class="btn dev" type="button" title="Dev: 5M+ subs. Searches all-time most-viewed, where the big channels are.">Legends</button>
-        <button id="ms-majority" class="btn dev" type="button" title="Dev: 100K–5M subs. Jittered order and window — the broad middle.">Majority</button>
-        <button id="ms-wildcards" class="btn dev" type="button" title="Dev: 1K–100K subs. Searches recent uploads, where small active creators are.">Small</button>
-      </div>
-      <p class="hint">Your key stays in this page's memory — never stored, never sent anywhere except googleapis.com. Get one free in Google Cloud Console → YouTube Data API v3.</p>
-    </div>
+         THE SET PICKER offered exactly one real set. Core Set is the deck —
+         the demo set that used to sit above it in the list is gone entirely
+         (see the note in src/ui/banner.js), so a dropdown with one entry was a
+         control that could only ever be set to what it already was.
 
-    <!-- Live mode only: the hand-built banner has to be manageable, so its
-         channels stay enumerated. Sets mode renders nothing here — a player
-         does not need an inventory of the box they are pulling from. -->
-    <div id="pool-chips" class="chips"></div>
+         LIVE API was the app's original premise — bring your own key, pull any
+         channel — and sets made it vestigial: it asked a player for a Google
+         Cloud API key to reach a thinner version of what the front page already
+         does with 20,739 cards and no setup. It went dev-only on 2026-08-03 and
+         is now removed from the page outright.
+
+         The Magic Search buttons went with it, because they lived inside the
+         Live controls. Nothing is lost: `tools/magic-search.js` is the same
+         search from the command line, and the Wikidata sweep has been the
+         default sourcing route since well before this.
+
+         `data/youtube.js` — the live ADAPTER — is untouched and still shipped:
+         it is pipeline code that tools/add-candidates.js imports, and the data
+         seam still has it. Only the UI stopped offering it. -->
 
     <!-- The pack IS the button. Everything above was a form with a submit
          control at the bottom; a gacha is one object you open. -->

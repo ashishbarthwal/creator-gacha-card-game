@@ -473,21 +473,30 @@ the channel initial as a **faint monogram** behind it.
 
 Two things matter structurally:
 
-**The data seam.** The bundled **demo set**, fetched **sets** (curated snapshot JSON),
-and **live** sources produce an identical channel object shape, so nothing downstream can
-tell them apart. This is why the app works offline (the demo set is bundled, not
-fetched), why the tests never need an API key, why the demo set is a real set behind the
-seam rather than a hack, and why versioned card sets ship as plain static files. The old
-standalone "Demo" mode was folded into this bundled set in WP4 and carried the name
-"Starter Set" until 2026-08-01, when it took the "Demo" label back — the fold is unchanged,
-only the label (see DECISIONS.md).
+**The data seam.** Fetched **sets** (curated snapshot JSON) and **live** sources produce an
+identical channel object shape, so nothing downstream can tell them apart. This is why the
+tests never need an API key and why versioned card sets ship as plain static files.
 
-**There is one user-facing mode: Sets.** **Live** (bring-your-own-key) went dev-only on
-2026-08-03 — it still exists behind `?dev=1`, because the in-page Magic Search and the key
-field live in its controls, but a player never sees a mode toggle. Note what this does NOT
-change: locked decision 3 is about hosting, and the live adapter (`data/youtube.js`) is
-still live pipeline code — `tools/add-candidates.js` imports it. The seam still has three
-sources; only the UI stopped offering one of them.
+**THE SEAM HAD A THIRD SOURCE AND NOW HAS TWO (2026-08-16, Ash's call).** The bundled demo
+set — eight fictional channels loaded from memory — is gone. It was what made the app
+pullable with **no network at all**, and nothing replaces that: a cold load with no
+connection is now an error and a Retry rather than a fictional game. That trade was made
+knowingly, on the grounds that pulling invented creators into a permanent collection was
+never what a visitor came for. Its data lives on as `test/fixtures/demo-set.js`, which is
+what it had already become — the fixture `sets.test.js` parses and `emblem.test.js` walks.
+
+**THERE IS NO MODE, AND NO PICKER (2026-08-16).** Live mode went dev-only on 2026-08-03 and
+is now removed from the page outright — it asked a player for a Google Cloud API key to reach
+a thinner version of what the front page already does with 20,739 cards and no setup. The set
+picker went with it: Core Set is the deck, the demo set is gone, and a dropdown with one
+entry is a control that can only be set to what it already is. The in-page Magic Search went
+too, because it lived inside the Live controls — `tools/magic-search.js` is the same search
+from a terminal, which is a better place to spend quota.
+
+`state.mode`, `state.apiKey` and `state.livePool` went with them; `currentPool()` returns the
+one pool. **What did NOT change: `data/youtube.js` is still shipped and still exported from
+the seam**, because `tools/add-candidates.js` imports it — it is pipeline code, not UI. Only
+the UI stopped offering it, which is the distinction this section has always drawn.
 
 **The pure core.** `rarityFromSubs` (core.js) and `battleStatsFrom` (battle-stats.js) are
 pure and deterministic — no I/O, no randomness, no DOM. They sit between the seam and
@@ -510,12 +519,12 @@ input (@handle | URL | UC id)
         |
    resolve to channelId
         |
-   +------------+------------+---------+      <- the seam
-   |            |            |
- demo set     sets (JSON)  live (YouTube Data API v3)
- (bundled)    (fetched)    (user key)
-   |            |            |
-   +------------+------------+---------+
+   +---------------------+---------+           <- the seam
+   |                     |
+ sets (JSON)          live (YouTube Data API v3)
+ (fetched)            (tools/ only — no UI offers it)
+   |                     |
+   +---------------------+---------+
         |
   band          (PURE)  <- rarityFromSubs          core.js  | src/engine/
         |                                                   |

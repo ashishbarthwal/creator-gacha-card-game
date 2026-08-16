@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { emblemFor, emblemAccent, initialFor } from '../src/engine/emblem.js';
-import { DEMO_SET } from '../src/data/demo.js';
+import { DEMO_SET } from './fixtures/demo-set.js';
 
 const channel = (over = {}) => ({ id: 'UC_abc123', title: 'A Channel', ...over });
 const decode = uri => decodeURIComponent(uri.replace('data:image/svg+xml;utf8,', ''));

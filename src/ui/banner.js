@@ -1,51 +1,47 @@
-/* ui/banner — the banner section: set picker, mode toggle, live channel
-   add/remove, the pack (which IS the pull control), the ×1/×10 size choice and
-   status messages.
+/* ui/banner — the banner section: the pack (which IS the pull control), the
+   x1/x10 size choice, and status messages.
    Owns its own DOM refs and events. initBanner({ onPull }) wires it up;
-   the pack calls onPull(count) so main stays the composition root. */
+   the pack calls onPull(count) so main stays the composition root.
 
-import { toCard } from '../engine/core.js';
-import { selectChannels, SEARCH_TIERS } from '../engine/discover.js';
+   ── WHAT LEFT THIS FILE ON 2026-08-16, AND WHY IT WAS NOT A LOSS ──────────
+   Ash: "remove Live API option. Don't need it. Get rid of the demo set as
+   well, only core set lives so don't need that dropdown as well."
+
+   THE SET PICKER offered one real set. Core Set IS the deck, and the demo set
+   was the only other entry — so the control could only ever be set to what it
+   already was. It now loads the set and says nothing.
+
+   THE DEMO SET is gone rather than hidden, and this is the one removal with a
+   real cost, stated plainly: it was eight bundled fictional channels that
+   loaded from memory, which made the first paint instant and meant the app
+   could be pulled from with no network at all. Nothing replaces that. A cold
+   load with no connection now shows an error and a retry instead of eight fake
+   creators — which is the honest outcome, because pulling fictional cards into
+   a permanent collection was never what a visitor came for, and the "works
+   offline" property was buying a fiction rather than the game.
+
+   LIVE MODE was the app's original premise — bring your own key, pull any
+   channel — and sets made it vestigial: it asked a player for a Google Cloud
+   API key to reach a thinner version of what the front page already does with
+   20,739 cards and no setup. Dev-only since 2026-08-03, gone now.
+
+   MAGIC SEARCH went with it, because it lived inside the Live controls. It is
+   not lost: tools/magic-search.js is the same search from the command line,
+   and the Wikidata sweep (tools/wikidata-sweep.js) has been the default
+   sourcing route for a long time. A browser is a worse place to spend quota
+   than a terminal is.
+
+   WHAT DID NOT CHANGE: data/youtube.js, the live ADAPTER. It is pipeline code
+   — tools/add-candidates.js imports it — and the data seam still has it. Only
+   the UI stopped offering it, which is exactly the distinction CLAUDE.md's
+   architecture section has always drawn. */
+
 import { state, currentPool, setSetsPool } from '../state.js';
-import { IS_DEV, gateDevElement } from '../config.js';
-import { resolveChannelInput, fetchLiveChannel, loadSet, parseSet, DEMO_SET, discoverChannels } from '../data/index.js';
-import { escapeHtml } from './util.js';
+import { gateDevElement } from '../config.js';
+import { loadSet } from '../data/index.js';
 
-/* The bundled demo set is offered as the first, always-present option. Its
-   picker value is this sentinel (real sets use their file path), so selecting
-   it skips the fetch and loads from memory. */
-const DEMO_VALUE = '@demo';
-
-/* Magic Search (dev affordance): bulk-discover channels by keyword through the
-   live API and drop them into the Live pool so they can be pulled. Like Dev Pull,
-   this must be gated or stripped before a real-users build — it needs a key and
-   is the parked player-side search (see DECISIONS.md / magic-search notes).
-
-   One button per sourcing tier. The tiers themselves — search bias and band —
-   are pure config and live in engine/discover.js as SEARCH_TIERS; this module
-   only renders a button per entry and reports the result. */
-const MS_CAP = 5;
-
-const modeSetsBtn = document.getElementById('mode-sets');
-const modeLiveBtn = document.getElementById('mode-live');
-const modeToggle = document.querySelector('.mode-toggle');
-const setsControls = document.getElementById('sets-controls');
-const setSelect = document.getElementById('set-select');
 const setMeta = document.getElementById('set-meta');
 const setCount = document.getElementById('set-count');
-const liveControls = document.getElementById('live-controls');
-const apiKeyInput = document.getElementById('api-key');
-const addInput = document.getElementById('add-input');
-const addBtn = document.getElementById('add-btn');
-const msInput = document.getElementById('ms-input');
-const msRow = document.getElementById('ms-row');
-const msInputRow = document.getElementById('ms-input-row');
-const msButtons = {
-  legends: document.getElementById('ms-legends'),
-  majority: document.getElementById('ms-majority'),
-  wildcards: document.getElementById('ms-wildcards'),
-};
-const chipsEl = document.getElementById('pool-chips');
 const statusEl = document.getElementById('status');
 const packBtn = document.getElementById('pack-open');
 const countBtn1 = document.getElementById('pull-1');
@@ -86,12 +82,6 @@ function showStatus(message, isError = false) {
    is a punishing download for a 22px circle, repeated on every set switch. */
 function renderPool() {
   const pool = currentPool();
-  if (state.mode === 'live') {
-    if (pool.length) renderChips(pool);
-    else chipsEl.innerHTML = '<p class="empty">Banner is empty — add a channel above to start pulling.</p>';
-  } else {
-    chipsEl.innerHTML = '';
-  }
   const ready = pool.length > 0;
   packBtn.disabled = pullBtnDev.disabled = !ready;
   packBtn.classList.toggle('is-ready', ready);
@@ -101,267 +91,98 @@ function renderPool() {
 /* Dev-only deck size. Reads the pool that is actually loaded rather than the
    manifest, so it reports what the app can pull right now — which is the number
    worth seeing while sourcing, and the one that catches a stale built set still
-   sitting in _site. Gated in init(); hidden elements keep updating harmlessly. */
+   sitting in _site. Gated in init(); hidden elements keep updating harmlessly.
+
+   It reads `state.currentSet` for its label now that there is no picker to read
+   the selected option's text from — same fact, from the thing that actually
+   knows it rather than from a control that happened to be displaying it. */
 function renderSetCount(pool) {
   if (!setCount) return;
-  const label = state.mode === 'live'
-    ? 'Banner'
-    : (setSelect.options[setSelect.selectedIndex]?.textContent ?? 'Set');
+  const label = state.currentSet?.title ?? 'Set';
   setCount.textContent = pool.length
     ? `${label} — ${pool.length.toLocaleString()} cards`
     : `${label} — empty`;
 }
 
-function renderChips(pool) {
-  chipsEl.innerHTML = '';
-  for (const card of pool) {
-    const title = escapeHtml(card.channel.title);
-    const initial = [...card.channel.title][0]?.toUpperCase() ?? '?';
-    const chip = document.createElement('span');
-    chip.className = `chip r-${card.rarity}`;
-    /* The name is truncated in CSS, so carry the full title as a tooltip. The
-       pfp slot always renders the initial; a usable avatar is layered over it. */
-    chip.innerHTML =
-      `<span class="chip-pfp" aria-hidden="true">${escapeHtml(initial)}</span>` +
-      `<span class="chip-name" title="${title}">${title}</span>` +
-      `<b class="dot" title="${card.rarity}"></b>` +
-      `<button class="chip-x" type="button" data-id="${escapeHtml(card.channel.id)}" aria-label="Remove ${title}">×</button>`;
-    /* Same discipline the card avatar has had since the hotlink fix, which the
-       chip never got: a channel with no picture at all yields avatarUrl '', and
-       an <img src=""> makes the browser fetch this very page, fail to decode the
-       HTML, and paint a broken-image glyph. So the element is only created when
-       there's a URL, and removed if that URL fails — either way the initial
-       behind it is what shows. Small/new channels are where this bites: they're
-       the ones most likely never to have set a picture. */
-    if (card.channel.avatarUrl) {
-      const img = document.createElement('img');
-      img.alt = '';
-      img.referrerPolicy = 'no-referrer';
-      img.addEventListener('error', () => img.remove(), { once: true });
-      img.src = card.channel.avatarUrl;
-      chip.querySelector('.chip-pfp').appendChild(img);
-    }
-    chipsEl.appendChild(chip);
+/* Set by initBanner, so the binder repaints when the pool arrives: loading a
+   set changes the total a collection is counted against, and `setSetsPool`
+   silently REFRESHES every owned card that is still in print from the new
+   data. */
+let notifySetLoaded = () => {};
+
+/* THE ONE SET, LOADED ONCE. There is no picker and no fallback pool, so this
+   is the only path by which the game gets any cards at all — which is why it
+   ends in a real error and a retry rather than a silent empty stage.
+
+   Two manifests are tried in order and the FIRST set offered wins. Both exist
+   for the same reason they always did: `sets/index.json` is the committed
+   manifest (currently empty), and `sets/built/index.json` is what
+   tools/build-set.js mints at deploy time and is never committed, because a set
+   file in git is permanent — which would break both the 30-day statistics cap
+   and the promise that a removal is performable. Production is the built one. */
+async function loadTheSet() {
+  showStatus('Loading cards…');
+  const offered = [
+    ...await setsFrom('sets/index.json'),
+    ...await setsFrom('sets/built/index.json'),
+  ];
+  const first = offered[0];
+  if (!first) return failed('No card set could be loaded.');
+  try {
+    const set = await loadSet(first);
+    setSetsPool(set);
+    setMeta.textContent = set.snapshotDate ? `Stats as of ${set.snapshotDate}` : '';
+    showStatus('');
+    renderPool();
+    notifySetLoaded();
+  } catch (err) {
+    failed(err.message);
   }
 }
 
-function setMode(mode) {
-  state.mode = mode;
-  modeSetsBtn.classList.toggle('active', mode === 'sets');
-  modeLiveBtn.classList.toggle('active', mode === 'live');
-  liveControls.hidden = mode !== 'live';
-  setsControls.hidden = mode !== 'sets';
-  showStatus('');
-  if (mode === 'sets') ensureSets();
-  renderPool();
-}
-
-/* The picker is seeded once: the bundled demo set goes in first and loads
-   synchronously (no fetch, so the default view paints instantly and still works
-   offline), then the fetchable-set manifest is appended when it arrives. If
-   that fetch fails, the demo set is untouched and remains pullable. */
-let setsSeeded = false;
-
-/* Seeding demo FIRST is what makes the first paint instant and offline-safe, and
-   it also used to decide what a visitor played: whatever is selected when the
-   manifest arrives stays selected, so a deployed build opened on eight fictional
-   channels standing in front of a real Series.
-
-   So the demo keeps its job as the thing that loads first, and loses its job as
-   the thing that stays. The moment a real set is offered, it takes over — unless
-   the visitor already chose for themselves, which always outranks this. */
-let userPickedSet = false;
-
-function ensureSets() {
-  if (setsSeeded) return;
-  setsSeeded = true;
-  const opt = document.createElement('option');
-  opt.value = DEMO_VALUE;
-  opt.textContent = DEMO_SET.title;
-  setSelect.appendChild(opt);
-  selectDemo();             // synchronous: setsPool is ready before renderPool runs
-  appendManifestSets();     // async: offer the fetchable sets once loaded
-}
-
-/* Set by initBanner. Every path that swaps the pool calls it, because loading a
-   set does two things the binder must repaint for: it changes the total a
-   collection is counted against, and `setSetsPool` silently REFRESHES every
-   owned card that is still in print from the new data. Without this the binder
-   kept showing the previous set's numbers until the next pull happened to
-   re-render it. */
-let notifySetLoaded = () => {};
-
-/* Load the bundled demo set from memory, through the same parseSet → toCard
-   path a fetched set uses. No snapshot label — the demo set isn't dated. */
-function selectDemo() {
-  setSetsPool(parseSet(DEMO_SET));
-  setMeta.textContent = '';
-  renderPool();
-  notifySetLoaded();
-}
-
-async function appendManifestSets() {
-  const offered = [];
-  offered.push(...await appendSetsFrom('sets/index.json', { warnOnFail: true }));
-  /* Sets minted by tools/build-set.js. Never committed (a set file in git is
-     permanent, which would break both the 30-day statistics cap and the promise
-     that a removal is performable), so CI builds them at deploy and they arrive
-     through their own manifest rather than the committed one. Probed on every
-     host, unlike the dev manifest below — this is the production path. Silent on
-     failure, since a checkout with nothing built yet is the normal local state. */
-  offered.push(...await appendSetsFrom('sets/built/index.json', { warnOnFail: false }));
-  /* Dev-only: a gitignored sets/index.local.json lets local build tools (e.g.
-     tools/magic-search.js) surface their generated draft sets in the picker
-     without touching the committed manifest. Probed only in dev, so a deployed
-     build never makes the doomed request — same spirit as the config.local.js
-     pre-fill above. */
-  if (IS_DEV) await appendSetsFrom('sets/index.local.json', { warnOnFail: false });
-
-  /* Promote the first real set over the demo. Deliberately NOT the last one: the
-     dev manifest is appended after the production one, so "last" would mean a
-     local Magic Search draft outranks Series 1 on the one machine that builds
-     both. First offered is first published, which is the ordering that means
-     something. */
-  if (offered.length && !userPickedSet) selectSet(offered[0]);
-}
-
-async function appendSetsFrom(url, { warnOnFail }) {
-  const added = [];
+/* A manifest that is missing or malformed contributes nothing and says nothing
+   — between the two of them one is expected to be absent on any given host, so
+   a warning here would fire on every correct deployment. The CALLER reports the
+   failure, once, when neither produced a set. */
+async function setsFrom(url) {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error();
     const { sets } = await res.json();
-    for (const s of sets ?? []) {
-      const opt = document.createElement('option');
-      opt.value = s.file;
-      opt.textContent = s.title;
-      setSelect.appendChild(opt);
-      added.push(s.file);
-    }
+    return (sets ?? []).map(entry => entry.file).filter(Boolean);
   } catch {
-    // The demo set still works; the extra sets just aren't offered.
-    if (warnOnFail) showStatus('Could not load the additional set list.', true);
-  }
-  return added;
-}
-
-/* Point the picker at a set and load it. Split out of the change handler so the
-   auto-promotion above goes through the identical path a click does, including
-   its failure handling — a promotion that loaded sets by a second route would be
-   a second route to get wrong. */
-function selectSet(file) {
-  setSelect.value = file;
-  return loadSelectedSet();
-}
-
-async function loadSelectedSet() {
-  const value = setSelect.value;
-  if (value === DEMO_VALUE) return selectDemo();
-  showStatus('Loading set…');
-  try {
-    const set = await loadSet(value);
-    setSetsPool(set);
-    setMeta.textContent = set.snapshotDate ? `Stats as of ${set.snapshotDate}` : '';
-    showStatus('');
-    notifySetLoaded();
-  } catch (err) {
-    setMeta.textContent = '';
-    showStatus(err.message, true);
-    /* Fall back to the set that cannot fail. A failed load leaves the pool on
-       whatever was there before, so without this the picker would name a set the
-       player is not pulling from — and after the auto-promotion above, "before"
-       is the demo set anyway. Saying so is better than showing Series 1 over a
-       demo pool. */
-    setSelect.value = DEMO_VALUE;
-    selectDemo();
-    return;
-  }
-  renderPool();
-}
-
-async function onAddChannel() {
-  const resolved = resolveChannelInput(addInput.value);
-  if (resolved.error) return showStatus(resolved.error, true);
-  if (!state.apiKey) return showStatus('Paste your YouTube Data API key first.', true);
-
-  addBtn.disabled = true;
-  addBtn.textContent = 'Adding…';
-  try {
-    const channel = await fetchLiveChannel(resolved, state.apiKey);
-    if (state.livePool.some(card => card.channel.id === channel.id)) {
-      showStatus(`${channel.title} is already in the banner.`, true);
-    } else {
-      state.livePool.push(toCard(channel));
-      addInput.value = '';
-      showStatus(`Added ${channel.title}.`);
-      renderPool();
-    }
-  } catch (err) {
-    showStatus(err.message, true);
-  } finally {
-    addBtn.disabled = false;
-    addBtn.textContent = 'Add';
+    return [];
   }
 }
 
-/* Dev: run one keyword through the live discovery path and add the top few
-   channels to the Live pool. Reuses the exact search/floor/pool code the CLI
-   tool uses — data/search.js is fetch-only, so it runs unchanged in the browser.
-   Accumulates like the tool: repeat searches grow the pool, dupes are skipped. */
-/* Every tier button locks while one search is in flight — they share the pool
-   and the key's quota, so letting two run at once just races them. */
-function msSetBusy(busy) {
-  for (const button of Object.values(msButtons)) button.disabled = busy;
-}
-
-async function onMagicSearch(tierKey) {
-  const tier = SEARCH_TIERS[tierKey];
-  const keyword = msInput.value.trim() || 'cooking';
-  if (!state.apiKey) {
-    return showStatus('Magic Search needs a key — paste your YouTube Data API key above.', true);
-  }
-  msSetBusy(true);
-  msButtons[tierKey].textContent = 'Searching…';
-  showStatus(`Magic Search — ${tier.label}: "${keyword}"…`);
-  try {
-    const found = await discoverChannels(keyword, state.apiKey, tier.opts);
-    const kept = selectChannels(found, { floor: tier.floor, cap: MS_CAP });
-    let added = 0;
-    for (const channel of kept) {
-      if (state.livePool.some(card => card.channel.id === channel.id)) continue;
-      state.livePool.push(toCard(channel));
-      added += 1;
-    }
-    /* The keyword deliberately survives a search now: with a band per button,
-       the obvious next move is the same word through a different tier. */
-    showStatus(added
-      ? `${tier.label} added ${added} channel${added === 1 ? '' : 's'} for "${keyword}". Pull to reveal them.`
-      : `No ${tier.label} channels for "${keyword}" — searched ${found.length} uploader${found.length === 1 ? '' : 's'}, none in that band (or already in the banner). Try another tier, or search again to re-roll.`);
-    renderPool();
-  } catch (err) {
-    showStatus(err.message, true);
-  } finally {
-    msSetBusy(false);
-    msButtons[tierKey].textContent = tier.label;
-  }
+/* THE STAGE IS EMPTY AND THE PLAYER HAS TO BE TOLD. With the bundled demo set
+   gone there is nothing to fall back to, so a failed load is a dead front page
+   unless it explains itself. The pack is disabled rather than left inviting a
+   press that cannot deal cards, and Retry is offered because the overwhelmingly
+   likely cause is a connection that was not there a moment ago. */
+function failed(message) {
+  packBtn.disabled = true;
+  showStatus(`${message} Check your connection and try again.`, true);
+  if (document.getElementById('set-retry')) return;
+  const retry = document.createElement('button');
+  retry.id = 'set-retry';
+  retry.type = 'button';
+  retry.className = 'btn ghost';
+  retry.textContent = 'Retry';
+  retry.addEventListener('click', () => {
+    retry.remove();
+    packBtn.disabled = false;
+    loadTheSet();
+  });
+  statusEl.after(retry);
 }
 
 export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
   /* Announced rather than imported: banner.js has no business reaching into the
      collection view, and the callback shape is already how this module talks to
-     the app. Held in a module-local so loadSelectedSet can reach it. */
+     the app. Held in a module-local so loadTheSet can reach it. */
   notifySetLoaded = onSetLoaded;
-  modeSetsBtn.addEventListener('click', () => setMode('sets'));
-  modeLiveBtn.addEventListener('click', () => setMode('live'));
-  setSelect.addEventListener('change', () => { userPickedSet = true; loadSelectedSet(); });
-  apiKeyInput.addEventListener('input', () => { state.apiKey = apiKeyInput.value.trim(); });
-  addBtn.addEventListener('click', onAddChannel);
-  addInput.addEventListener('keydown', e => { if (e.key === 'Enter') onAddChannel(); });
-  for (const [tierKey, button] of Object.entries(msButtons)) {
-    button.addEventListener('click', () => onMagicSearch(tierKey));
-  }
-  // Enter takes the broad middle — the tier you want most of the time.
-  msInput.addEventListener('keydown', e => { if (e.key === 'Enter') onMagicSearch('majority'); });
+
   /* The pack is the pull. The count buttons only choose its size — the old
      layout had two buttons that both pulled, which made neither of them the
      thing you were looking at. */
@@ -378,56 +199,19 @@ export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
   }
   pullBtnDev.addEventListener('click', () => onDevPull());
 
-  chipsEl.addEventListener('click', e => {
-    const btn = e.target.closest('.chip-x');
-    if (!btn) return;
-    state.livePool = state.livePool.filter(card => card.channel.id !== btn.dataset.id);
-    renderPool();
-  });
+  /* Nothing to pull from until the set lands, and the pack must not invite a
+     press it cannot answer. `loadTheSet` re-enables it, or explains why not. */
+  packBtn.disabled = pullBtnDev.disabled = true;
+  loadTheSet();
 
-  setMode('sets');
+  /* WP8: dev affordances are hidden outside dev. Dev Pull forces one card of
+     every rarity, which is not what the weights would do — a control that
+     quietly ignores the odds is not something to hand a player. The deck-size
+     readout is the operator's, for the reason DECISIONS.md gives ("the player
+     is not shown the machine"). Both stay in the DOM so `?dev=1` reveals them.
 
-  /* WP8: dev affordances are hidden outside dev. Magic Search spends the
-     visitor's own quota and is a sourcing tool, not a game feature; Dev Pull
-     forces one card of every rarity, which is not what the weights would do.
-     (It used to be said that this "misrepresents the drop rates printed beneath
-     it" — those are no longer printed, but a control that quietly ignores the
-     odds is still not something to hand a player.) Both stay in the DOM, so
-     `?dev=1` can reveal them and the refs above stay valid. */
-  gateDevElement(msRow);
-  gateDevElement(msInputRow);
+     The Magic Search and Live-mode gating that used to sit here went with the
+     controls themselves on 2026-08-16 — see this file's header. */
   gateDevElement(pullBtnDev);
   gateDevElement(setCount);
-
-  /* LIVE MODE IS DEV-ONLY (2026-08-03). Hiding the toggle hides the whole mode:
-     Live's controls are already shown by setMode, which never runs for a mode
-     the player cannot select.
-
-     It was the app's original premise — bring your own key, pull any channel —
-     and sets made it vestigial. A player is asked for a Google Cloud API key to
-     reach a worse version of what the front page already does with 19,874 cards
-     and no setup. That is a wall in front of the game, not a feature.
-
-     GATED, NOT DELETED, and the reason is not sentiment: the in-page Magic
-     Search and the key field live inside these controls, and they are how
-     sourcing runs get driven from the browser. `?dev=1` keeps all of it. The
-     live adapter (data/youtube.js) is untouched either way — tools/add-candidates
-     imports it, so it is pipeline code, not UI. */
-  gateDevElement(modeToggle);
-
-  /* Local dev convenience: if a gitignored src/config.local.js exists and
-     exports a YOUTUBE_API_KEY, pre-fill the Live API field so testing live
-     mode needs no re-paste. The file never ships (see .gitignore), so the
-     dynamic import simply rejects — and is ignored — everywhere else. Skipped
-     outside dev: there is no such file to find, and a deployed build should
-     never even reach for a key it does not have. */
-  if (!IS_DEV) return;
-  import('../config.local.js')
-    .then(({ YOUTUBE_API_KEY }) => {
-      const key = String(YOUTUBE_API_KEY ?? '').trim();
-      if (!key) return;
-      apiKeyInput.value = key;
-      state.apiKey = key;
-    })
-    .catch(() => { /* no local config — the normal case */ });
 }

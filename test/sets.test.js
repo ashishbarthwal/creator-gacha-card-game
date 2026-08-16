@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSet, unpackAvatar } from '../src/data/sets.js';
 import { packAvatar } from '../src/engine/setbuild.js';
-import { DEMO_SET } from '../src/data/demo.js';
+import { DEMO_SET } from './fixtures/demo-set.js';
 import { RARITY_ORDER, toCard } from '../src/engine/core.js';
 import { battleStatsFrom, BATTLE_CLASSES } from '../src/engine/battle-stats.js';
 

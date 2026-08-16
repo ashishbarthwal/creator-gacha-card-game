@@ -210,35 +210,12 @@
   .linkish:hover,
   .linkish:focus-visible { color: var(--red); opacity: 1; }
 
-  /* Mode toggle. Demoted: "Live API" is a power-user route that needs a Google
-     Cloud key, and for the player this build is aimed at it is noise. It stays
-     reachable — removing a working feature to tidy a screen is the wrong trade —
-     but it no longer wears the accent colour the pull controls own. */
-  .mode-toggle {
-    display: flex;
-    background: rgba(0, 0, 0, 0.24);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 2px;
-    opacity: 0.75;
-    transition: opacity 0.2s ease;
-  }
-
-  .mode-toggle:hover, .mode-toggle:focus-within { opacity: 1; }
-
-  .mode-btn {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 12px;
-    padding: 6px 13px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-
-  .mode-btn.active { background: rgba(255, 255, 255, 0.11); color: var(--ink); }
+  /* The mode toggle's styles were deleted 2026-08-16 along with Live API mode
+     itself. The comment they carried said the feature "stays reachable —
+     removing a working feature to tidy a screen is the wrong trade", and that
+     was the right call for a demotion; this is not a tidy-up. Sets made Live
+     vestigial (a key for a thinner version of the front page), and Ash removed
+     the mode rather than the clutter around it. */
 
   /* ---- the stage -----------------------------------------------------------
      One object, centred, with one instruction under it. The two-column layout
@@ -254,25 +231,10 @@
   }
 
   /* The two controls that must stay reachable, pushed to the top edge and kept
-     quiet. A player picks a set once and then never looks at this row again. */
-  .stage-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 6px;
-  }
-
-  .set-pick { max-width: 260px; }
-
-  .set-pick .field {
-    background: rgba(0, 0, 0, 0.22);
-    border-color: rgba(255, 255, 255, 0.1);
-    font-size: 13.5px;
-    padding: 9px 34px 9px 13px;
-  }
-
+  /* `.stage-top` and `.set-pick` styled the row that held the set picker and the
+     mode toggle. Both controls were removed on 2026-08-16 — one set means no
+     picker, and Live mode is gone — so the row they lived in went with them and
+     the pack now starts at the top of the stage. */
   /* Visually hidden but present for screen readers and the aria-labelledby on
      the section — the heading is redundant to anyone who can see the pack. */
   .sr-only {
@@ -867,28 +829,9 @@
     color: var(--muted);
   }
 
-  #live-controls { display: grid; gap: 10px; }
-  #live-controls[hidden] { display: none; }
-  .add-row { display: flex; gap: 10px; }
-  .add-row .field { flex: 1; }
-
-  /* Magic Search tier row (dev) — one button per sourcing pool. */
-  .ms-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-  .ms-row .btn { padding: 8px 14px; font-size: 13px; }
-  .ms-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-right: 2px;
-  }
-
-  /* Block, not grid: as a grid item the snapshot stamp stretched to the full
-     column width and read as an empty input rather than a small tag. Spacing is
-     owned by the children instead. */
-  #sets-controls { display: block; }
-  #sets-controls[hidden] { display: none; }
+  /* #live-controls, .add-row, .ms-row and .ms-label went with the Live API mode
+     on 2026-08-16 (see ui/banner.js). #sets-controls went with the set picker
+     the same day: one set, no choice, no wrapper. */
   #set-select { cursor: pointer; }
   #set-meta { font-family: var(--font-mono); }
 
@@ -953,65 +896,12 @@
   .stage .btn.debug { margin-top: 14px; }
   .stage .stamp { margin-top: 16px; opacity: 0.65; }
 
-  /* banner chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chips:empty { display: none; }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px 6px 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    font-size: 13px;
-  }
-
-  /* The pfp slot is a rarity-tinted initial; a usable avatar covers it. That
-     makes "no picture" a designed state rather than a broken image — the same
-     monogram idea the card uses, sized down. */
-  .chip-pfp {
-    position: relative;
-    flex: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-    font-family: var(--font-display);
-    font-size: 11px;
-    line-height: 1;
-    color: var(--t-ink, #0d1120);
-    background: var(--rc, var(--muted));
-  }
-
-  .chip-pfp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .chip .dot,
-  .filter-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
-
-  /* Real channel names run long (and CJK titles longer still), and one of them
-     blowing the row onto a second line is not the chip's call to make. The full
-     title stays available as a tooltip. */
-  .chip-name {
-    max-width: 18ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .chip-x {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 0 2px;
-  }
-
-  .chip-x:hover { color: var(--ink); }
+  /* The banner chips (.chips/.chip/.chip-pfp/.chip-name/.chip-x) came out
+     2026-08-16 with Live mode. They enumerated a hand-built live pool so it
+     stayed manageable — a set never had them, because a player does not need an
+     inventory of the box they are pulling from. Nothing renders them now.
+     `.filter-chip` in the collection and `.el-chip`/`.cls-chip` on the battle
+     card are unrelated classes that merely read alike. */
 
   /* The empty collection is the first thing most visitors will see in this
      panel, and it was a large blank box with one grey sentence in the corner.
