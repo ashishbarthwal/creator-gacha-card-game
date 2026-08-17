@@ -1,0 +1,31 @@
+{
+  // The Worker that hosts the match-room Durable Object class. It is NOT the
+  // public endpoint — functions/api/ready/[room].js on the Pages project is,
+  // and it reaches this object through a binding rather than over HTTP. This
+  // Worker exists at all only because a Pages project cannot define a Durable
+  // Object class; see the header of src/index.js.
+  "name": "creator-gacha-room",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-15",
+
+  // No public route. Deployed with workers.dev disabled so the only way to
+  // reach the object is the Pages binding, which keeps one door instead of two.
+  "workers_dev": false,
+
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "MatchRoom" }]
+  },
+
+  // SQLite backend, and it is not a preference: new namespaces may only be
+  // created with `new_sqlite_classes`, and the Workers Free plan supports only
+  // SQLite-backed Durable Objects. `new_classes` (the old KV-backed form) would
+  // be rejected on both counts.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["MatchRoom"] }
+  ],
+
+  // The room holds nothing worth keeping and deletes itself after ten minutes
+  // (see the alarm in src/index.js), so there is nothing here to observe in
+  // production and no logs worth paying to retain.
+  "observability": { "enabled": false }
+}

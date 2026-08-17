@@ -1,4 +1,32 @@
-/* functions/api/ready/[room] — the match room, and the whole of the backend.
+/* functions/api/ready/[room] — the public door to the match room.
+
+   ── IT IS A PROXY NOW (2026-08-17) ────────────────────────────────────────
+   This file used to BE the backend, holding the room in Workers KV. It no
+   longer does. KV gives each edge location its own cached view of a key with a
+   60-second minimum TTL, and a room is a read-modify-write on one shared key —
+   so two players on different networks would erase each other's `enter` and
+   sit on "LOBBY — 00:00" until a cache expired. Reported from real play as
+   "phone vs PC hangs, phone vs phone and PC vs PC are fine", which is the
+   signature of an edge split rather than a device problem. The full mechanism,
+   and why no amount of client polling could fix it, is in the header of
+   workers/match-room/src/index.js.
+
+   The room is now a Durable Object: one instance per room id, strongly
+   consistent, so the clobber cannot happen. This file validates the room id
+   and hands the request to it.
+
+   THE OBJECT LIVES IN A SEPARATE WORKER because a Pages project cannot define
+   a Durable Object class — Cloudflare's own constraint, not a preference. That
+   second deployable is what CLAUDE.md's "one file in functions/, and it is the
+   only one" traded away, knowingly, on Ash's call.
+
+   Everything below the DO branch in `onRequest` is the old KV implementation,
+   kept only so this file can be deployed before the binding exists. See the
+   note there for when to delete it. The comments in the rest of this file
+   describe THAT path and are left intact for as long as it is.
+
+   ── the original header follows ───────────────────────────────────────────
+   functions/api/ready/[room] — the match room, and the whole of the backend.
 
    ── WHAT IT HOLDS ────────────────────────────────────────────────────────
    Per room, for ten minutes: whether the challenge was accepted, when the
@@ -192,14 +220,40 @@ function validTeam(team) {
 export async function onRequest(context) {
   const { request, env, params } = context;
 
-  /* No binding means the namespace has not been attached yet. A 200 saying
+  /* No binding of EITHER kind means no match rooms today. A 200 saying
      `enabled:false` rather than a 500 is deliberate: the client reads it as
-     "no match rooms today" and uses the sequential fallback, needing no
-     error path. */
-  if (!env?.READY) return json({ enabled: false }, 200);
+     settled and uses the fallback, needing no error path. */
+  if (!env?.ROOM && !env?.READY) return json({ enabled: false }, 200);
 
   const room = cleanRoom(params?.room);
   if (!room) return json({ error: 'bad room' }, 400);
+
+  /* ── THE DURABLE OBJECT PATH, PREFERRED WHENEVER IT IS BOUND ──────────────
+     `idFromName(room)` maps a room id to exactly ONE object instance,
+     globally, so every request for a given match lands on the same actor no
+     matter which edge it arrived at. That is the whole fix: the read, the
+     mutation and the write happen inside one single-threaded instance with
+     strongly consistent storage, so the cross-edge clobber that put a
+     60-second floor under a 10-second lobby cannot occur. See
+     workers/match-room/src/index.js for the mechanism and the measurement.
+
+     The request is forwarded UNREAD — the body is parsed inside the object, so
+     this proxy never consumes the stream it is passing on. */
+  if (env.ROOM) {
+    return env.ROOM.get(env.ROOM.idFromName(room)).fetch(request);
+  }
+
+  /* ── EVERYTHING BELOW IS THE KV PATH, AND IT IS TRANSITIONAL ──────────────
+     Kept so that deploying this file BEFORE the Durable Object binding exists
+     changes nothing for players: with only `READY` bound the endpoint behaves
+     exactly as it always has, and it upgrades itself the moment `ROOM` is
+     attached — no flag day, no window where a live 1v1 is impossible.
+
+     Delete it once the DO binding is confirmed in production and a real
+     cross-network match has been played on it. Until then it is the reason
+     this deploy is safe rather than a cutover. It carries the bug described in
+     the DO's header; that is why it is being replaced, not why it is being
+     kept. */
 
   if (request.method === 'GET') return json(view(await read(env, room)));
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);

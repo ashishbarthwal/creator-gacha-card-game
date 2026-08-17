@@ -115,4 +115,65 @@ describe('the match room', () => {
     expect(res.status).toBe(200);
     expect((await res.json()).enabled).toBe(false);
   });
+
+  /* ── ROUTING, AFTER THE DURABLE OBJECT LANDED (2026-08-17) ────────────────
+     This file is now a proxy in front of workers/match-room, and the KV code
+     below it is transitional — kept only so the Pages side could be deployed
+     before the DO binding existed. Which of the two answers a request is
+     therefore a RULE, and the deploy order is exactly when getting it wrong
+     would be invisible: with both bound, KV winning would look completely
+     healthy while quietly keeping the bug the DO was built to remove. */
+  describe('routing', () => {
+    function withDo(extra = {}) {
+      const seen = {};
+      const env = {
+        ROOM: {
+          idFromName: name => { seen.name = name; return { name }; },
+          get: id => ({
+            fetch: async () => {
+              seen.reached = id.name;
+              return new Response(JSON.stringify({ enabled: true, viaDurableObject: true }), {
+                headers: { 'content-type': 'application/json' },
+              });
+            },
+          }),
+        },
+        ...extra,
+      };
+      return { env, seen };
+    }
+
+    it('prefers the Durable Object when both bindings are present', async () => {
+      const { env, seen } = withDo({ READY: { get: () => null, put: () => {} } });
+      const request = new Request(`https://example.test/api/ready/${ROOM}`);
+      const res = await onRequest({ request, env, params: { room: ROOM } });
+      expect(seen.reached).toBe(ROOM);
+      expect((await res.json()).viaDurableObject).toBe(true);
+    });
+
+    /* One object per room id, derived from the id and nothing else — that is
+       what puts both players on the same instance however far apart they are,
+       and it is the whole of why the cross-edge clobber cannot recur. */
+    it('routes to the object named by the room id', async () => {
+      const { env, seen } = withDo();
+      const id = 'someotherroom99';
+      await onRequest({
+        request: new Request(`https://example.test/api/ready/${id}`),
+        env,
+        params: { room: id },
+      });
+      expect(seen.name).toBe(id);
+    });
+
+    it('validates the room id BEFORE reaching the object', async () => {
+      const { env, seen } = withDo();
+      const res = await onRequest({
+        request: new Request('https://example.test/api/ready/no'),
+        env,
+        params: { room: 'no' },
+      });
+      expect(res.status).toBe(400);
+      expect(seen.reached).toBeUndefined();
+    });
+  });
 });

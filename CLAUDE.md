@@ -339,12 +339,31 @@ underneath it. Run TASKS.md's two-window checklist before trusting a change here
    **Two windows on one machine share an edge location and never see any of this**, which is
    why every local test passed. Test cross-device on two networks or you are not testing it.
 
-   What shipped is patience, not a cure: `STALL_MS` is 75s (longer than the staleness), the
-   lobby starts the match by itself whenever the late side arrives, `MIN_GATE_MS` gives a
-   late-joining player 6s to actually read the fairness gate, and both screens now say a
-   cross-network wait is normal instead of implying the match is dead. **The real fix is a
-   Durable Object** — strongly consistent, one instance per room — and that is a fresh decision
-   under this clause, not something to slip in.
+   What shipped on 2026-08-16 was patience, not a cure: `STALL_MS` at 75s, the lobby starting
+   itself when the late side arrives, `MIN_GATE_MS`, and copy saying a cross-network wait is
+   normal. **It was not enough, and the reason is worth keeping.**
+
+   **THE DECISION WAS TAKEN 2026-08-17 (Ash's call): THE ROOM IS A DURABLE OBJECT.** Real play
+   reported the lobby hanging on `LOBBY — 00:00` for phone-vs-PC while **phone-vs-phone and
+   PC-vs-PC were both fine** — the signature of an edge split, not a device bug. The mechanism
+   underneath is worse than staleness, and it is the thing patience could not fix: a room is a
+   **read-modify-write on one shared key**, so the second side to `enter` reads a room from
+   before the first side's write and puts it back with **the first side's flag cleared**. Both
+   sides then poll their own edge, each sees its own flag set, and the client's `reassertEnter`
+   repair is gated on YOUR OWN flag being missing — so neither side reasserts. `buildStartAt`
+   needs one read that sees both flags, and no edge can produce one until its cache expires.
+   That is a **60-second floor under a 10-second lobby**, and `STALL_MS` at 75s was showing the
+   "this is broken, Back out" panel while recovery was still pending.
+
+   **One instance per room id, strongly consistent, so the clobber cannot happen.** The mechanism,
+   the measurement and the trade are in `workers/match-room/src/index.js`'s header — read it
+   before touching the lobby protocol, because that file is now where the protocol lives.
+
+   **IT COST A SECOND DEPLOYABLE, AND THAT IS NOT A STYLE CHOICE.** A Pages project *cannot*
+   define a Durable Object class — Cloudflare's own constraint — so the class lives in its own
+   Worker (`workers/match-room/`, deployed by `npm run deploy:room`) and is bound into Pages by
+   `script_name`. `functions/api/ready/[room].js` is now a **proxy**: it validates the room id
+   and hands the request to the object. See "runs on the SERVER" under Conventions.
 
    **Live since 2026-08-09.** KV namespace `creator-gacha-ready` is bound as `READY` on the
    Pages project, and a real cross-device 1v1 has been played on it. **Four ops write a room as
@@ -560,9 +579,14 @@ input (@handle | URL | UC id)
     answers.
   - touches the DOM → `src/ui/`.
   - `state.js` (mutable app state) and `main.js` (wiring) are neither, and stay at the root.
-  - runs on the SERVER → `functions/`. One file, and it is the only one — a Cloudflare Pages
-    Function compiled into the upload by `tools/build-site.js`. Anything added here reopens
-    decision 3, so nothing should be.
+  - runs on the SERVER → `functions/` and, since 2026-08-17, `workers/`. The split is not
+    taste: **a Pages project cannot define a Durable Object class**, so the match room's class
+    has to be its own Worker. `functions/api/ready/[room].js` is the public door (a Pages
+    Function, compiled into the upload by `tools/build-site.js`) and is now a thin proxy;
+    `workers/match-room/` holds the object and the protocol, and is deployed separately by
+    `npm run deploy:room` — `tools/build-site.js` copies an allowlist, so it is never uploaded
+    with the site. Two server files where there was one, on Ash's explicit call; see decision 3.
+    Anything FURTHER added here reopens decision 3 again, so nothing should be.
   - explains the game to a human → `Battle Layout/`. Reference documents about how the game
     works, not code and not shipped with the site. `battle-system.html` is the combat
     reference: derivation, the five stats, six classes with real cards, the element ring, the
