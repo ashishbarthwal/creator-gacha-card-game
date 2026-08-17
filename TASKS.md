@@ -117,6 +117,48 @@ commitment, or take the consult first. Decide it rather than letting launch day 
 
 **NEXT — start here.**
 
+0a. **⚠ MINORS ARE IN THE SHIPPED DECK — 46 cards, and 2 of the 9 RUBYs.** Found 2026-08-17 by
+   `node tools/minors-audit.js --names`, which screens the BUILT set against Wikidata's recorded
+   birth dates (P569) — a claim, not a guess, so there is no false-positive mode. 10,089 of
+   22,772 cards carry a birth date at all; of those, **46 are under 18 today**.
+
+   The two rarest cards in the game are children:
+   - **Kids Diana Show** — 138.0M subs, RUBY, age 12
+   - **Like Nastya** — 133.0M subs, RUBY, age 11 (plus **10 more Like Nastya channels**, most SSR)
+   - **Ryan's World** — 40.3M subs, SSR, age 14
+   - youngest in the deck: **Angelica Nero, age 5** (289K subs)
+
+   By band: RUBY 2/9 · UR 0/22 · SSR 10/322 · SR 3/2391 · R 8 · N 23.
+
+   **Why this is not the same question as the institution rule.** That rule is about a
+   trademark-holder's asymmetric downside. This is about a child's face and name on a collectible
+   with combat stats, on a public site, with the chase cards being the children. An opt-out link
+   does not fix it after the fact, because a minor is not the person who would send the email.
+
+   - [ ] **Decide before launch.** Removal is `catalog/denylist.json` (permanent, re-enforced on
+         every future sourcing run) rather than `excluded.txt` (editorial, revisable) — an age
+         decision must not be quietly undone by a later curation pass. Then rebuild and redeploy.
+   - [ ] Consider whether the screen should run **inside the pipeline**, not beside it: a P569
+         check in `tools/wikidata-sweep.js` would stop minors entering the roster at all, the way
+         P31 stops institutions. Cheap (WDQS is free) and it makes the answer durable.
+   - [ ] **171 more channels flagged by the advisory name pass** (`--names`) — family/kids/toy
+         channels, which are the screen's biggest blind spot because they are registered to a
+         parent and carry no birth date. That list is for reading, never filtering.
+
+0b. **PRE-LAUNCH ANALYTICS BASELINE, recorded 2026-08-17** so "did launch do anything" is
+   answerable rather than a vibe.
+   - **Pages Functions invocations, last 30 days: 3,333** (Cloudflare GraphQL,
+     `pagesFunctionsInvocationsAdaptiveGroups`). This is the lobby endpoint only. Essentially
+     ALL of it is development: 797 on 08-08 (KV bring-up), 2,222 on 08-16 and 227 on 08-17
+     (the Durable Object migration). **Real-player lobby traffic is ~0.**
+   - **Page views: not exposed at account level** — the account-scoped GraphQL datasets cover
+     Workers/Pages Functions, not static asset requests. Read them at dash → Workers & Pages →
+     creator-gacha → **Analytics** (server-side, already collecting, no beacon — do NOT enable
+     "Web Analytics", which injects a client-side script and would break the footer's
+     "no tracking" promise).
+   - [ ] Write down requests + unique visitors from that page before posting anywhere.
+
+
 0. **THE DURABLE OBJECT LOBBY IS LIVE — verified in production 2026-08-17.** The cross-network
    hang is fixed at the mechanism, not mitigated. `curl -s
    https://creator-gacha.pages.dev/api/ready/presenceprobe0` answers `"backend":"do"`, and the
