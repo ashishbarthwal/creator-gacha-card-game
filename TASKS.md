@@ -5,7 +5,7 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 22,772 cards**
+**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 22,720 cards**
 (snapshot **2026-08-17**), deployed **2026-08-17** at `b4e873a` — the live site and the repo
 match, verified by fetching the deployed `styles.css`, `src/ui/reveal.js` and
 `src/ui/collection.js` and confirming each carries the change it should. Production now holds
