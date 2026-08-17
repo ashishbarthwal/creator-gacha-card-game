@@ -12,8 +12,8 @@ match, verified by fetching the deployed `styles.css`, `src/ui/reveal.js` and
 the 2026-08-15 body of work (the arena lobby, the shared blind build phase, the AI collection
 model, the pack-opening summon, the coffee-link removal), the 2026-08-16 run (chaos pass, card
 finish, mobile pull path, shareable links, One Deck), and the 2026-08-17 twinkle pass. The live
-KV lobby is confirmed running the four-op protocol (`accept`/`enter`/`bail`/`lock`).
-**595 tests pass.**
+lobby now runs on a Durable Object (`workers/match-room`) and is confirmed running the four-op protocol (`accept`/`enter`/`bail`/`lock`).
+**597 tests pass.**
 
 **This was a CODE-ONLY deploy** — `build:site` + `wrangler pages deploy`, deliberately not
 `npm run deploy`. The full script starts with `build-set.js`, which would have rebuilt the deck
@@ -117,36 +117,39 @@ commitment, or take the consult first. Decide it rather than letting launch day 
 
 **NEXT — start here.**
 
-0. **FINISH THE DURABLE OBJECT LOBBY — three steps, all of them Ash's, none of them code.**
-   The rewrite is written, tested (595) and committed at `154205c`, and the Pages half is
-   already deployed and behaving exactly as before. What is left cannot be done from here.
+0. **THE DURABLE OBJECT LOBBY IS LIVE — verified in production 2026-08-17.** The cross-network
+   hang is fixed at the mechanism, not mitigated. `curl -s
+   https://creator-gacha.pages.dev/api/ready/presenceprobe0` answers `"backend":"do"`, and the
+   whole protocol was driven against production: `enter b` then `enter a` leaves BOTH flags set
+   and stamps `buildStartAt` immediately, a fresh GET sees it with no staleness, and a second
+   accept on the same code is still refused with `seatTaken` and no write.
 
-   *Why it is blocked:* the API token in `.env` can deploy Pages but not Workers —
-   `npx wrangler deploy` returns `Authentication error [code: 10000]`. And a Durable Object
-   binding on a Pages project is set in the dashboard, not by the deploy command.
+   **Two cleanups remain, and both are deliberately NOT done yet.**
+   - [ ] **Delete the KV fallback** — everything under "EVERYTHING BELOW IS THE KV PATH" in
+         `functions/api/ready/[room].js`, the `backend` marker in both that file and
+         `workers/match-room/src/index.js`, and `--kv READY` in `npm run dev`. Held back until a
+         real **phone-on-mobile-data vs PC-on-WiFi** match has been played, because that is the
+         pairing that was broken and no synthetic check replaces it. The marker is how you tell
+         which backend answered; delete the two together, since with one backend there is nothing
+         left to distinguish.
+   - [ ] **Tidy the binding name in the dashboard.** It is currently `"ROOM "` — one trailing
+         space, typed into a text field, invisible in every screen that shows it. The code now
+         trims and finds it anyway (that was a real half-hour: Worker deployed, namespace
+         registered, binding present in the deployment record, and `env.ROOM` still undefined
+         while everything reported healthy). Fixing the name is tidiness, not a fault — the
+         tolerant lookup stays either way, because a silent fallback must not hinge on an
+         unprintable character.
 
-   1. **Give the token Workers permission.** Cloudflare dashboard → My Profile → API Tokens →
-      edit the token in `.env` → add **Account · Workers Scripts · Edit**. Then
-      `npm run deploy:room` deploys `workers/match-room` (it dry-runs clean already:
-      5.36 KiB, `env.ROOM (MatchRoom)` bound).
-   2. **Bind the object to Pages.** Dashboard → Workers & Pages → `creator-gacha` → Settings →
-      Bindings → Add → **Durable Object**. Variable name **`ROOM`**, class **`MatchRoom`** from
-      the **`creator-gacha-room`** Worker. The variable name matters: `functions/api/ready/
-      [room].js` reads `env.ROOM` and silently keeps using KV if it is absent, which is the
-      whole reason deploying early was safe.
-   3. **Redeploy Pages so the binding is picked up** — `npm run build:site` then the wrangler
-      line `build:site` prints. Confirm with
-      `curl -s https://creator-gacha.pages.dev/api/ready/presenceprobe0` (still
-      `"enabled":true`), then **test phone-on-mobile-data vs PC-on-WiFi** — the exact pairing
-      that was hanging. It should reach the shared build screen in about a second.
-
-   **Then delete the KV fallback** — everything under "EVERYTHING BELOW IS THE KV PATH" in
-   `functions/api/ready/[room].js`, plus the `--kv READY` in `npm run dev`. It exists only so
-   the Pages side could ship before the binding did, and it still carries the bug. Leaving it is
-   how a "transitional" path becomes permanent.
+   *For reference, what it took:* a token permission (**Account · Workers Scripts · Edit**),
+   `npm run deploy:room`, a dashboard **Durable Object** binding on Production, and a Pages
+   redeploy. The Pages REST API accepts a PATCH adding `durable_object_bindings`, returns
+   `success: true` and silently drops it — twice, in both documented shapes — so the dashboard is
+   the only route. `wrangler pages deploy --config <path>` is likewise refused ("Pages does not
+   support custom paths for the Wrangler configuration file"), so the binding cannot be held in
+   the repo without moving the whole dev loop onto `_site`.
 
 1. **Run the two-window checklist below against production**, or against `npm run dev`. The
-   arena is untested DOM wiring by design; 595 tests cover the engine under it and none of them
+   arena is untested DOM wiring by design; 597 tests cover the engine under it and none of them
    touch `src/ui/battle.js`. The lobby has never been watched by two humans at once.
 2. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
    ~1s drags by the tenth pull. Nobody has seen it in motion yet.
