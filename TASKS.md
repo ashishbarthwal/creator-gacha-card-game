@@ -13,7 +13,7 @@ the 2026-08-15 body of work (the arena lobby, the shared blind build phase, the 
 model, the pack-opening summon, the coffee-link removal), the 2026-08-16 run (chaos pass, card
 finish, mobile pull path, shareable links, One Deck), and the 2026-08-17 twinkle pass. The live
 KV lobby is confirmed running the four-op protocol (`accept`/`enter`/`bail`/`lock`).
-**578 tests pass.**
+**595 tests pass.**
 
 **This was a CODE-ONLY deploy** — `build:site` + `wrangler pages deploy`, deliberately not
 `npm run deploy`. The full script starts with `build-set.js`, which would have rebuilt the deck
@@ -116,8 +116,37 @@ actively promoted are different exposure levels. Three honest options: launch on
 commitment, or take the consult first. Decide it rather than letting launch day decide it.
 
 **NEXT — start here.**
+
+0. **FINISH THE DURABLE OBJECT LOBBY — three steps, all of them Ash's, none of them code.**
+   The rewrite is written, tested (595) and committed at `154205c`, and the Pages half is
+   already deployed and behaving exactly as before. What is left cannot be done from here.
+
+   *Why it is blocked:* the API token in `.env` can deploy Pages but not Workers —
+   `npx wrangler deploy` returns `Authentication error [code: 10000]`. And a Durable Object
+   binding on a Pages project is set in the dashboard, not by the deploy command.
+
+   1. **Give the token Workers permission.** Cloudflare dashboard → My Profile → API Tokens →
+      edit the token in `.env` → add **Account · Workers Scripts · Edit**. Then
+      `npm run deploy:room` deploys `workers/match-room` (it dry-runs clean already:
+      5.36 KiB, `env.ROOM (MatchRoom)` bound).
+   2. **Bind the object to Pages.** Dashboard → Workers & Pages → `creator-gacha` → Settings →
+      Bindings → Add → **Durable Object**. Variable name **`ROOM`**, class **`MatchRoom`** from
+      the **`creator-gacha-room`** Worker. The variable name matters: `functions/api/ready/
+      [room].js` reads `env.ROOM` and silently keeps using KV if it is absent, which is the
+      whole reason deploying early was safe.
+   3. **Redeploy Pages so the binding is picked up** — `npm run build:site` then the wrangler
+      line `build:site` prints. Confirm with
+      `curl -s https://creator-gacha.pages.dev/api/ready/presenceprobe0` (still
+      `"enabled":true`), then **test phone-on-mobile-data vs PC-on-WiFi** — the exact pairing
+      that was hanging. It should reach the shared build screen in about a second.
+
+   **Then delete the KV fallback** — everything under "EVERYTHING BELOW IS THE KV PATH" in
+   `functions/api/ready/[room].js`, plus the `--kv READY` in `npm run dev`. It exists only so
+   the Pages side could ship before the binding did, and it still carries the bug. Leaving it is
+   how a "transitional" path becomes permanent.
+
 1. **Run the two-window checklist below against production**, or against `npm run dev`. The
-   arena is untested DOM wiring by design; 578 tests cover the engine under it and none of them
+   arena is untested DOM wiring by design; 595 tests cover the engine under it and none of them
    touch `src/ui/battle.js`. The lobby has never been watched by two humans at once.
 2. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
    ~1s drags by the tenth pull. Nobody has seen it in motion yet.
