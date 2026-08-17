@@ -173,6 +173,11 @@ const save = (env, room, state) =>
 
 const view = (state, extra = {}) => ({
   enabled: true,
+  /* The other half of the marker described in workers/match-room/src/index.js:
+     while both backends are wired they are otherwise indistinguishable from
+     outside, so a DO binding that failed to attach would look identical to one
+     that worked. Deleted with the rest of this path. */
+  backend: 'kv',
   now: Date.now(),
   gateMs: GATE_MS,
   buildMs: BUILD_MS,

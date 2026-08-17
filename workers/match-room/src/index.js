@@ -109,6 +109,19 @@ function validTeam(team) {
 
 const view = (state, extra = {}) => ({
   enabled: true,
+  /* WHICH BACKEND ANSWERED, and it exists because the migration made that
+     question unanswerable from outside. While both paths are wired, a request
+     served by the OLD KV code and a request served by this object produce
+     byte-identical JSON — so a binding that silently failed to attach would
+     look exactly like a successful migration, which is the same trap
+     test/room.test.js pins the routing rule against.
+
+     TRANSITIONAL, and it is deleted together with the KV path in
+     functions/api/ready/[room].js — once there is only one backend there is
+     nothing to distinguish. The client never reads it: `data/presence.js`
+     rebuilds its own object from named fields, so an extra one costs nothing
+     and changes no behaviour. */
+  backend: 'do',
   now: Date.now(),
   gateMs: GATE_MS,
   buildMs: BUILD_MS,
