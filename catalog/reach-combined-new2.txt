@@ -1,0 +1,289 @@
+# Combined new-only roster from today's second wikidata-sweep pass.
+
+UCLiqdP0UvZdL5yMD8niyP6A  # Andy Murray
+UC3ToK5VMJ5fVZi9j9LCg-fw  # Asya Branch
+UCKXmCTiLFaCc7zRYafxC9Wg  # Amouranth
+UC1SYjjZDZRvjedNnaFBn1aA  # QTCinderella
+UCI-uBkZBpePY6pTAyn75GUw  # Jreg
+UCL1Y1BWyoDCA-YXoZbi8Vhg  # Jreg
+UC7-g4aFzA_s4a4Rl0D0hjwQ  # Adin Ross
+UCwHtJQjUxZpCMoMfAWx6P3A  # Adin Ross
+UC-iR-hgVg0qhIf3sGflaj0w  # Remy Shand
+UCgzCFHN4TEQLmAId5CHMFgQ  # Saleka
+UCru70Xx0SECucd1UloeWbZg  # Emiru
+UCm85sRFcnpeWcTfPUChXYyQ  # M. Remi Yergeau
+UCXosomgerG2PtzN326Qn44A  # Emiru
+UC88Qzl8DnaiR0Pxadh56iQw  # Makenna Kelly
+UCUhfLKBbnSaO2RcrDNwkTaQ  # Mark Boals
+UCSb5Oa-441qvbyLknCcuLKg  # Joshua Moon
+UCqAIjfjlGRmS0n-rXF0Gjuw  # Sanu Sharma
+UC1-uBB5MG-iBRsHDmk_5OlQ  # Denise Nolan
+UCrzD7LwC_ru9Sc3CQfoANjQ  # Johnny Somali
+UCzgHSIGYOAoeCsX0GDifpQw  # Emma Obanye
+UCQ3FRaHOIwXLOQNeUwVpBUA  # Ruby Franke
+UCv4VkfbX8YfqodF-4coEEfQ  # James Somerton
+UCKQdUVBoMrGahzg-fuz8e1Q  # Rican Da Menace
+UCaHvLMzqaL9cIgKkoofdCMg  # Michelle K. Johnston
+UC9cVoKbNbxOW3vOsnoJ2kkg  # Dweezil Zappa
+UCpD6v7qBt8XFSKpKjCAK2sw  # Nick Pickard
+UCraQ_E1ffrxpDwUg-9KQgjA  # Q131411648
+UCyoWB9nW5kc_It7j5wRZE6g  # Xasthur
+UC-Lh6IK_HoWrQJ-tyB-RSBg  # Alpine
+UCPO_jimQczp7CXIfyAHvDrA  # Jonathan McDowell
+UCeYxxWbMLBNj9IHow_Ud-dg  # Zack Evans
+UCRDBUzrDvtb5pIYJUW9cdig  # Push Baby
+UC1612vnhy-ZdFmODtpYhuyw  # Glassjaw
+UCKgoiAencEQ8JephT1EJIpA  # Museum of Devotion
+UCp8v5KixDUzI8z8crVCXj-g  # Jonita Gandhi
+UCenjnD3ZZLde9jQl_YLTZ5Q  # Shlohmo
+UCTMM5_VfkJ_CdhL9iRMEnuQ  # Lil Bibby
+UCnH9-BvgMRHMk4c5wctYp-g  # Jordan Banjo
+UCAafwxsMOkrpJ1S7t2jnJSw  # Geena Rocero
+UCal1b2nRHFVCzmxTElTbEbA  # Tiny Ruins
+UCMxmNms803A7fz6l3ncJ3QA  # Giarnni Regini-Moran
+UC7ZujKO4WDplOaj4wpYDyVQ  # Counting Crows
+UCOgFGTR_VBmQiMddgJ91N3g  # Felissa Rose
+UCSBIAvX7NRT09Wqi_VpvLTA  # Sidney Dekker
+UCAQ8mwjGaqyZYjpVOcQ9HCg  # Bars and Melody
+UCdbL6JNiGDK7WvCE3Ac7yvw  # Camila Cabello
+UCtUr5XnS5kB9errjtd6T0Kg  # Jack Martin
+UC2W146UnMW80X0vDcCDVLwQ  # Zahrah Khan
+UC8yLMK2kjjYL87ZPpmRzvzQ  # Payton Gendron
+UCJDuzub10Rd9uGiJtChA-uw  # Davi Santos
+UCevVH-AyrGnTDMalq2x5fQQ  # Toto
+UCbmhkxzY_ruj9vilkokLS6A  # Nyle DiMarco
+UC2aCPkvjN_12B1Dn8Xf98eg  # Peter Kostis
+UC_bIva0dgaJZwbV-cavwxOA  # Rick Yancey
+UCZzTqfKqvqdjCL0oQ_Nf7gg  # Wild Palms
+UCTRkLLlYQZiDOfOlXk4QpMA  # Victoria Scott
+UCmOycOdHXa2fjDw7atsPTHw  # Banditos
+UCz8qWACXBctVjJXLLZibWxg  # Janet Evanovich
+UCN7mfSJKI_8RBQYMZ7-yGKA  # Qween Amor
+UCaPHwUkhm3lH6Utbz7cEvsw  # Elliot James
+UCwOnFN8Dd_BbNKvqZ8GqGIQ  # Breathe
+UCGQBbxICyKRNb31gQmbNPZQ  # Dean Blunt
+UCAMsKHneQJAQJpZSrEMpRDw  # Maya Le Clark
+UC_z5SYvb1c1fDToQSB55nuw  # Magic Car
+UCbUlC-5QdZ1B5ABwXLJKOnw  # Franchesca Ramsey
+UCWnLlFhTS2PtJC7t40u4UOw  # Anthony Quintal
+UCsu6h1s02KJP8EvHwzORMfA  # Bella Ramsey
+UC36iCaFC7QmEMWjOPUTDJmA  # Erykah Badu
+UC_c7EFVXxmQMjj5E2CchGXg  # Shirley Setia
+UC7dzDJsjCNjWxdlhHZ7urwQ  # Jeremy Burge
+UC5FO20gk3EghpeOzxD3Q2cA  # King Vada
+UCIiLBh53qLhReYcppOCxxbg  # Drake Bell
+UCXI_e1Kt84Z3B2njCpM-SjA  # Shannon Purser
+UC0oZgd9LLjCKijXCOcWNj0A  # Alicia Minshew
+UCjXV5hl3AVWRj6RVB95nuQg  # Emme Rylan
+UC1Fx656bU6UyEMBmr0g6Rzw  # Sarah Levy
+UC6FaiaGdKLwSDFthlZkXU4w  # Valerie Plame
+UCHh2UdbCyDICEKRyC-xtEEw  # Crystal Reed
+UCfj4uFo9vI8fmM8MgP9Ze6g  # Rosie O'Donnell
+UC9Gbx5T5fyik4Byx92qwy4g  # Coco Ho
+UCquYnQRdy7MFyP924xYHv1w  # Marina Orlova
+UC5SXH1c-7RpyF8fXGeGSn-Q  # The Vines
+UC8TCsnF6Hncbr7sd3sdDJFA  # Aubrey Huff
+UCpsC_dbu0N1JjPluycTDaCg  # Honor Society
+UC4kbf4hAFs5r4nPTl3xYIdQ  # Lou Sanders
+UCtSEOoBUg1kOIzfehRRzHQg  # Homeboy Sandman
+UC5534VxAWRu7OltePqv7oXQ  # Isa Guha
+UCJ1JQm3T5zCSTEzysyagzbA  # Firass Dirani
+UC-YbJ9qjtLxVSqGNnyxvyDw  # Joy Williams
+UC7cTU3c8eoymL5hi35FyQVw  # Paul Young
+UCejvAdvNEvs8_w2XS0Wjntg  # Birdman
+UCjpau6pB9NV_rmvMWu-aD0g  # Neal Schon
+UCAgBUlIpzlJaE0693J3s97w  # Baked Alaska
+UClWqvRtYaSlSFrunIpC72EA  # Eddy Grant
+UCvrvD4Vzg5K1D3L0SwjwNFw  # Nicole Marie Lenz
+UCR-bBMs_AUXIsTS6rWAVDng  # Maddie Rice
+UCSF447tDz8ZBizTFbSxHKWw  # Jill Latiano
+UC_jNTbtqGyjBlOQgw5HjG9w  # YBN Nahmir
+UCAroxaqHsB6M93I6bg3LgpQ  # Aisleyne Horgan-Wallace
+UCYDQPBIsUpNtlnVWPNRN1Gw  # Alex Polizzi
+UC8iJjhq3c1K1Mc-jpl51EKg  # Alia Bhatt
+UCOKhxt_LLodhss0I_p3ZbbA  # Matthew E. White
+UCUzGUcCAuOReOBgi7da98nw  # Jake Shears
+UCoVmUGAlI5V3J7AWWZc7Atw  # Q461830
+UCkNvtCJoRSYHRXfsPxq-j4Q  # Madison Hubbell
+UCsrwOCv9nKVhj_1JDhwmJzQ  # Burning Airlines
+UCKV8QLdXyUz7Lqw8SZqgjrA  # Anusha Dandekar
+UCwhNB8dhVhAp5kmLDWWeW7g  # Jeremy Soule
+UCYW9ir-lO56a9dpwf_ivS8w  # Aron Kader
+UC9TLywDrNUFxbCpfKnL5yjg  # Nicholas Hooper
+UCzR7l86GT__h6YPpd0sxF7g  # Dark Flower
+UCpLdANOO9oNhR86bsYRNqCw  # Don Hany
+UCTTReIVTUjWIper6KTy65_g  # David Goggins
+UCYep_MrCFbejYCQCBZbzl4A  # Craig Sawyer
+UCZRdNleCgW-BGUJf-bbjzQg  # Diljit Dosanjh
+UCqx8axYJOduerya_chK-8Ag  # Thievery Corporation
+UCBNbi8lzANN651dfzMUQMbQ  # fiN
+UCbCWrjZQcNlDzw11rLYnaPw  # Cristina Ferrare
+UCt_kWPTfhPjMAIFPtxLFghw  # Céline Gounder
+UClbD5Qleq70X2otN1fyENAw  # Eden Wood
+UCzgJXR6IRfJXXechraj3F-Q  # D. L. Hughley
+UCeNK93UFhDcuc6wcgGFIqdg  # Gia Gunn
+UCt1_ldBAIvJAUHaTwLNTDdw  # Q5525801
+UCsJ86N5n7fcEC_Ds8dYJKzA  # Q51120751
+UCRJA3GfEw-40McsoBnyd0Aw  # Eric André
+UCowcNKm1w2GGw5U_XQeduhg  # Jean-François Gariépy
+UCksiOvOsvX4481JZlFzAckQ  # Matthew Castle
+UCD_Feh0BkNAmPHX4AayJNKA  # Yoshi Sudarso
+UC7lTm7-EoAtXQqX_K5NIymA  # Graham Crabb
+UCpcmjxzCi4qcWT-bjvO8YTQ  # Lirik
+UC9MnGWpb8oks0ic8UcooyPg  # Kirsty-Leigh Porter
+UCPGxwlhPEJE89bT4gB6rzhg  # Gavin McInnes
+UC5WM0SJouLaIamhpH8r15oA  # Gregory Finnegan
+UCcRAvVt3fW3-TN5vy9iQuPA  # Hayley Marie Norman
+UC-B7tZLrYJKJ4e7-4aHqYZQ  # David Jack
+UC-B7tZLYrJKJ4e7-4aHqYZQ  # David Jack
+UC6MlhqRTM0qg8-eM31_9_vQ  # Poe
+UCxIfElfQhJzf6pxub2ISGLw  # Slayyyter
+UCZS5izgKepYPhTHx726xMNw  # Slayyyter
+UC5kqlwevOby-vPW0UUQowvg  # Luke Plunkett
+UCEOqT6mpFRyIBRtQzvMR11A  # Jessica Seinfeld
+UCCLvL0CwRB1MnRPhWrwLwmQ  # Jamal Harrison Bryant
+UCJBmfqVnZd67mKvEoq4eBwA  # Kirsty McGee
+UCdumAdj-8vPDfQP0hrQoxXA  # John Bishop
+UChMjrHbYZTqD1M8kS9G5U9g  # Offline TV
+UCtX8cgOoRkJvSDbtxCvvKOw  # Kara Edwards
+UCfY_nebRr1I7KKiTbnffv-Q  # Lucia Evans
+UCkin59aR57-RgqvN04jHSIg  # Joana Ceddia
+UCxS0ihNsDc1l-8zY_GET1mg  # Mahalia Barnes
+UCHe3umHewIlf5Xotv_kgcXg  # Greg O'Shea
+UCKwpJb8i4HujUYCcHO29pAQ  # Shane Koyczan
+UCnKTNBwnAZ6-6JvLDLLKS_A  # Vibha Saraf
+UCOGeU-1Fig3rrDjhm9Zs_wg  # Vi Hart
+UClLxQg9kaOwIYksfYaTtqbA  # Levitation
+UCsxqEPhkrcnFIgVbyPnXVKw  # Michael Lewis
+UCyBTKXBFJOiq6CDP5fj4HNA  # Greater Than One
+UCmFlin2pA6Ok7njw-I_hr3w  # Varien
+UC7p8lecWLYMI__2olSd5qgA  # Scott Ritter
+UCzLtocR5F5B_vLDDT5YdCYA  # Scott Ritter
+UCzVISCG0rLHUddY9_eDHa9w  # Alice Chater
+UCyQsQSKayfcZoHaCjqxxSlg  # Owen Benjamin
+UC7sH-V_DDiHXAdFqvp9UgEw  # P-Star
+UC1iNAaWfV5a1L204y9AFGPg  # Ray Chew
+UCvtTGZEcS8mbWdB7prg4QNw  # Michel Evgenij Chossudovsky
+UCsPIaQUgtvP-KK2qu47H6wg  # Richard Todd
+UCW9SnLqvf6iLMSTGcnblAfQ  # Stephen Nolan
+UCwNaYo8u1UCM5QQFnPwuLWg  # Seven Storey Mountain
+UC16j6EppP0K85CzYMduNCqw  # Roosh V
+UCzeFdzBmLbhQNIhkKDWdjDQ  # The Impossible Dreamers
+UCm2caR74u7zW-4vSHQI6p-g  # Sonequa Martin-Green
+UCjgEFdu6AawhyfEY5ZxV6ww  # The World's Famous Supreme Team
+UCLUrVTVTA3PnUFpYvpfMcpg  # Lauren Chen
+UCtfXgNnA-QcxjHJjk5wXLFg  # Karl Rock
+UCK_ungzYZjsoeuCvzv8RTog  # Lisa Mishra
+UC5I5OJ6RH0YJluoYxdVNQLQ  # Liam Corcoran
+UCx1LcrObRG_VEu4cgrxTB0Q  # Easy Life
+UCxbivya1KFFpIihdoowTlxg  # British Columbia Regiment Band
+UCQy1jfq005fxM9n4vBBnohg  # James Harkin
+UCNmi7OHP8rHSa_ZxtA68tHg  # Neekolul
+UCtzJWWq-lOuFKxjZz-yP7fA  # Neekolul
+UCf9S-fU-YvLzF17z85B_w8A  # Mike Winkelmann
+UCLH3vzGcugAaTJTaMovPMkA  # Vico C
+UCPGdzpQP_n7LUN2K-gUrAfA  # Jascha Washington
+UCC3L8QaxqEGUiBC252GHy3w  # Stefan Molyneux
+UCXP-eafBoP3WTUHo8n8Hh4g  # Justin Hayward
+UCu1iIeJGq9yvQBz0HMSCk-w  # Ivo Watts-Russell
+UCw6R1JNPQQ0rcTTKompt_Lg  # Tyrus
+UCmY0wmY2qxvLscaix720OYA  # LeafyIsHere
+UCxJf49T4iTO_jtzWX3rW_jg  # LeafyIsHere
+UCl4jxe5kkP8DMGQe0b1AFqQ  # Carver Alan Ames
+UCh-FpGqlTJBRz7UDun4OAyg  # Radiator
+UC9o7G6G0zZl8sS9g7wQn7VQ  # JLayne
+UC7ajKeCvnk7hX3GJnQgQ2pw  # Ivan Bertolla
+UCJyyGDIavVlnGs30uHVFtPg  # HeadShy
+UCJjz7i74DKHXAAzPL4GWjLQ  # Islah Abdur-Rahman
+UCvycQq5EA5NdF5gv0xcjqwQ  # Q102132158
+UCzH-NYNApbUNBk3K5oepxug  # Kaye Lynne Booth
+UCj8YcC_hUEhSZivS0co1r4w  # Brooke Houts
+UCoUejlZmOM5OjaMZHn4CTDw  # Brooke Houts
+UC1WLZ7NIAnU_Vgp0lQTXrCQ  # Andréa Saunier
+UC1reRKEEnC41iRwHyKZI39g  # Christine Tassan
+UCM-e_n6gf7OD2OK3Fd9g4vQ  # Dr. P
+UCGsv1Q7sw7Lbeff3TqL2osw  # Q106800896
+UCj2VWHnNNY4ZkOPLBblzQNg  # Jules Marcoux
+UC-qa_X-N1_-6FUNqpc7NV6g  # 600Breezy
+UC6GapDfQRXzJfL_RDMMZ0Gg  # Q108488433
+UCDDC9DRu6ReoLHCdvfUXuyw  # WMG KD
+UCIiczHsDSBpqMuNT4W9cclw  # Len Kabasinski
+UCmeNL9Nc2H1Mezu3gcb1hlA  # Papa Jake
+UCdDaVSRgSQMfAE-XKfackUQ  # Andrew Magdy Kamal
+UC1QLW3I7Y6XJJ7wGm3dCyLQ  # cyr
+UCK_lpUoYKbzDWNxB7ocSCZQ  # Brittney Moses
+UCdpB2VCoBEEV236g4v6EmGA  # Julio Domenech
+UC-eoe3fuqDk9_QtQzkaEtwQ  # Eli Karls
+UCsRlREM-_M7SukwSryUxEFQ  # Paul Massaro
+UCdjR7PgE35mdyBsFzd3QwHQ  # Aeswa
+UCiKgYLANRC9UkTQ4N9Q-Gog  # Meisha Lowe
+UC0jrIJDNuA9uPQubFeaT-jQ  # The Katie
+UCELRjS3u5C-Xoh9eMGxvv8w  # Kristen Lanae
+UCuRRtia2rvTCB0Q8fPIAg0g  # Bill Mefford
+UCJr4pT4CXeIJkaKHTYV2oIg  # Kristy Sellars
+UC5039fsEpY2b8-TFcdl2mnA  # Stratus Chamber Orchestra
+UCRiIraJNWPkYzDQX79JbX5Q  # Anna D. Smith
+UCfoii7sshY_ORCUUOsDheWw  # Q115264352
+UCTmFvNOQBF-0eL9rjG6m2gg  # Q115479506
+UCyYlVFMU-vzss5N1s9y02Bg  # White Horse Guitar Club
+UC163mS2HFlhSs2OLkE8jYUQ  # Syga Thomas
+UC5enaBf2S6wOuJQHJddXpGw  # Rebekah Roth
+UCYz_zPMkEBTtzNp-x-aWqGw  # Rebekah Roth
+UCqAm0UnJfN9L5dYVMIFu6fg  # Joe SD
+UChmWJzpFZ37qJzEjA1BOxGg  # Sarina Singh
+UCYYD1nf_XQ7WpfuGoCchvsw  # Jeremy Seth Abramson
+UCCPebj9xqGuCyZfscYFG1uw  # Trevor Bell
+UCm0KpMRDxrD8F4qGey2v8mg  # Tatyana Plaksina
+UCraenXEn9j_hR4oCscVILmA  # Brandy Gordon
+UC4CU4JYXOBuajkR-McMjJtg  # Ānandajoti
+UCJIIMmCfJxBv5-jGTK3iIMw  # Chad A. Haag
+UC9-YJqdff5eKM4P7ah2XoMg  # Kyle James Wright
+UCZp2sJVmG21W_6zRN5Pvu1Q  # Erica Stevenson
+UCzL5dfO5ba9T7BIsN5QTLVg  # Joshua Ashcraft
+UC4iSNPoO-xNZM_5dusygAnQ  # Estee Williams
+UCfsaCWuKcnKXmXDm8jrUmuA  # Hannah von Wiehler
+UCkYUPJjICHGA__dVlF8oKJw  # Emily Black
+UCC_iXORmKEDScHohJnug8jQ  # Dan Diamond
+UCA6m62Bac75sfhkoqCFQmgw  # Brian Telestai
+UCwghuwD_XiN3JmL4PIQnaNA  # Silver Acid
+UCz8EQhD7DbHpKYIVTTZxB6w  # Eric Remy
+UCJRBxQw0U3QSZ7rA3w3nxLQ  # Cormac
+UCcG-lQlXWo5EWC-f0568nCw  # Christine Malvasio
+UCx1Zr8zUKUHUtHEVq09b5vg  # Haifaa Younis
+UCqrsHib5e10HO8xxhB1f6nQ  # Treacherous Horse
+UC8MM2jjd16FvTBHL-JNVmRw  # Bella Cuomo
+UCCOwZs76150iiX54Vzp1Nvg  # Bill Philipps
+UC2xoJKRSPMLOGQZL1eHafPA  # University
+UC39E60F_liStZjvAoob4elA  # Lake Fama
+UCvGDQnolL9-loYbWpLWBPbQ  # Geoffrey Riccio
+UC8oddXq1RgZricaCy5lcZzA  # Amelia Scarlett
+UC-v54uS7N-FwYj6-2xM3g8w  # xMDx
+UC7d4sM6x9gT2r8bHhYB3m2A  # Nancy Almodovar
+UCuXifuL0H0gs6rMlji1EyQw  # Amos Le Blanc
+UCPhGRyQaf0dB4UnbZiItq1Q  # Ben Aratame
+UCC1dQJf-8gMjLjIkTfWRjlw  # Ellie Holzman
+UCl81fRZpFhvFJB_-aCl13VQ  # Jeff Kaulbars
+UCUv7pA9YmU7M6vFfI_N8v8g  # XLiTSosaa
+UCmF-r8x4-3u9jrIjNL7SuNQ  # Oisin McAuley
+UCQ5rTdrLZfs_oDLOXylpg1A  # Zach Lemmon
+UCHN_Htdg51LsVDcFgoK88fQ  # Preston Corbell
+UCEBHSpJHkqhDLmV1gPcEI6w  # Hosoi Bros
+UC74H2_tcUlJVEt9NWlpudKg  # Lulu Hugues
+UCqabcL_L_6Otee-ta2nc_jA  # Aminah Fountain
+UCLkvjNhNhWFGJtDFujsGhzA  # Kady OBrien
+UCOWkjPWGeDJqSUSkMY6GL0Q  # ChinaSweets
+UCsUr2XKjfPm7_4-ovZVfprg  # KailandKay'
+UCjW1kWdftMbA7-_jTZ7nb-Q  # Michael Zomick
+UCatjpTLtya-Vgqp8MsVIw1g  # Q57580709
+UCGp7U1RxT_bWp0wz_r2gW0Q  # MC Shadow
+UClvkob1UIOH3Ufeu9tfEL9A  # Q6968537
+UCexS-W4ak_TwpFsB-lUbQjg  # Stephen Totilo
+UCjjJGs_T02ajPCbH9IU_Bbw  # Fiona Broome
+UCUw3z6TJwQzu1YWUyIkd2iA  # Celine Farach
+UCVc-BMOusdbJfzY9tKE29UA  # Q63609649
+UCrCOFbNJ_kUeli3NQaJUD4A  # The Intangible
+UC5rLrM6q2wScB8YD0y49Kiw  # Kalyssa Alynn
+UCYEjg_WYt8lg8AqghTXB9IQ  # Q72366928
+UCyDE3nQUdlo1KoIdYFNpjIA  # Tatev Amiryan
+UC4yvPHU1eGSa5rWrGDvFT5Q  # Ramakanth Pata
+UCHCrBqLfxodrwJWOJ83HKkg  # Amy Lee Summers
