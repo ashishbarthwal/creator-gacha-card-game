@@ -1,0 +1,25 @@
+{
+  "note": "Traffic snapshots, appended by tools/record-analytics.js. Pages FUNCTIONS invocations only — the match lobby. Static page views are not available on any account-scoped API and must be read from the Pages Analytics tab by hand. Server-side figures Cloudflare already collects for billing: nothing here is a beacon, a cookie or an identifier, and the footer's \"no tracking\" stays true.",
+  "entries": [
+    {
+      "at": "2026-08-17T16:47:10.335Z",
+      "window": {
+        "from": "2026-07-18",
+        "to": "2026-08-17",
+        "days": 30
+      },
+      "functionsInvocations": {
+        "total": 3333,
+        "byDay": {
+          "2026-08-08": 797,
+          "2026-08-09": 4,
+          "2026-08-14": 24,
+          "2026-08-15": 59,
+          "2026-08-16": 2222,
+          "2026-08-17": 227
+        }
+      },
+      "note": "pre-launch baseline: site is live but unannounced; all traffic to date is development"
+    }
+  ]
+}

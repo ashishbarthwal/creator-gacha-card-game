@@ -14,6 +14,8 @@
     "test:report": "node tools/test-report.js",
     "build:site": "node tools/build-site.js",
     "status": "node tools/status.js",
+    "analytics": "node tools/record-analytics.js",
+    "minors": "node tools/minors-audit.js --names",
     "runs": "node tools/refresh-runs.js",
     "deploy": "node tools/build-set.js && node tools/build-site.js && npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js",
     "deploy:filtered": "node tools/build-set.js --apply-staged && node tools/build-site.js && npx wrangler pages deploy _site --project-name=creator-gacha --branch=main && node tools/record-deploy.js"
