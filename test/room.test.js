@@ -165,6 +165,36 @@ describe('the match room', () => {
       expect(seen.name).toBe(id);
     });
 
+    /* A REAL FAILURE, NOT A HYPOTHETICAL ONE. The binding was created through
+       the dashboard as `"ROOM "` — one trailing space, invisible in every
+       screen that displays it and faithfully recorded that way in the Pages
+       deployment record. `env.ROOM` was undefined, every request fell through
+       to the KV path, and nothing anywhere reported a problem. */
+    it('finds the object binding even when its name carries stray whitespace', async () => {
+      const { env, seen } = withDo();
+      const spaced = { 'ROOM ': env.ROOM, READY: { get: () => null, put: () => {} } };
+      const res = await onRequest({
+        request: new Request(`https://example.test/api/ready/${ROOM}`),
+        env: spaced,
+        params: { room: ROOM },
+      });
+      expect(seen.reached).toBe(ROOM);
+      expect((await res.json()).viaDurableObject).toBe(true);
+    });
+
+    /* What the lookup needs is not "something called ROOM" but "something that
+       can route to a Durable Object" — otherwise a KV namespace that happened
+       to be named ROOM would be picked up and then crash on first use. */
+    it('ignores a same-named binding that is not a Durable Object', async () => {
+      const env = { ROOM: { get: () => null, put: () => {} }, READY: { get: () => null, put: () => {} } };
+      const res = await onRequest({
+        request: new Request(`https://example.test/api/ready/${ROOM}`),
+        env,
+        params: { room: ROOM },
+      });
+      expect((await res.json()).backend).toBe('kv');
+    });
+
     it('validates the room id BEFORE reaching the object', async () => {
       const { env, seen } = withDo();
       const res = await onRequest({

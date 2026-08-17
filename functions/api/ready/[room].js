@@ -222,13 +222,44 @@ function validTeam(team) {
   return new Set(ids).size === ids.length;
 }
 
+/* FIND THE DURABLE OBJECT BINDING WITHOUT TRUSTING ITS NAME TO BE CLEAN.
+
+   A Pages binding name is typed into a dashboard text field, and a trailing
+   space in one is INVISIBLE everywhere it is displayed. This cost a real
+   debugging session on 2026-08-17: the binding was attached, pointed at the
+   right namespace, and appeared correctly in the deployment record as
+
+       "ROOM ": { "namespace_id": "6b05…" }
+
+   — so every check passed while `env.ROOM` stayed undefined and every request
+   fell through to the KV path this file exists to retire. Nothing failed; it
+   just quietly kept serving the bug.
+
+   So the lookup trims. `idFromName` is checked as well as the name, because
+   what this needs is not "something called ROOM" but "something that can route
+   me to a Durable Object" — a KV namespace or a plain string variable that
+   happened to be named ROOM must not be mistaken for one and then crash on
+   first use. Exact match is tried first so a correctly-named binding costs
+   nothing.
+
+   This is not a licence to leave the name untidy: it is a refusal to let an
+   unprintable character decide which backend serves the game. */
+function roomBinding(env) {
+  if (typeof env?.ROOM?.idFromName === 'function') return env.ROOM;
+  for (const [name, value] of Object.entries(env ?? {})) {
+    if (name.trim() === 'ROOM' && typeof value?.idFromName === 'function') return value;
+  }
+  return null;
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
+  const ROOM = roomBinding(env);
 
   /* No binding of EITHER kind means no match rooms today. A 200 saying
      `enabled:false` rather than a 500 is deliberate: the client reads it as
      settled and uses the fallback, needing no error path. */
-  if (!env?.ROOM && !env?.READY) return json({ enabled: false }, 200);
+  if (!ROOM && !env?.READY) return json({ enabled: false }, 200);
 
   const room = cleanRoom(params?.room);
   if (!room) return json({ error: 'bad room' }, 400);
@@ -244,8 +275,8 @@ export async function onRequest(context) {
 
      The request is forwarded UNREAD — the body is parsed inside the object, so
      this proxy never consumes the stream it is passing on. */
-  if (env.ROOM) {
-    return env.ROOM.get(env.ROOM.idFromName(room)).fetch(request);
+  if (ROOM) {
+    return ROOM.get(ROOM.idFromName(room)).fetch(request);
   }
 
   /* ── EVERYTHING BELOW IS THE KV PATH, AND IT IS TRANSITIONAL ──────────────
