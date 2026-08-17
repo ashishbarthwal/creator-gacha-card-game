@@ -47,6 +47,14 @@ under Architecture, and DECISIONS.md 2026-08-09 for the full record.
 unless a NEW measurement says otherwise**, and retune only against
 `node tools/battle-balance.js`, never by argument.
 
+**A MEASUREMENT CITES THE DECK IT RAN ON, AND THAT IS NOT A STALE NUMBER TO FIX.** Figures
+below say "the live 15,890-card deck" or "the live 20,739-card deck" because that is the
+population they were measured against — the deck grew on 2026-08-15, and rewriting an old
+figure's deck size to today's would turn a receipt into a claim nobody ever verified. The
+CURRENT deck size lives in one place, TASKS.md's "Now" block, and `npm run status` prints the
+truth. If a figure here needs to describe today's deck, re-run the tool and add a new line
+with a new date; do not edit the old one.
+
 **THE INVARIANT BELOW THIS LINE IS RETIRED, ON PURPOSE, BY ASH'S OWN INSTRUCTION — read this
 paragraph before touching `BUDGET_GAIN` or any threshold in `tools/battle-balance.js`'s SIZE
 block.** From 2026-08-09 to 2026-08-15 the design goal was "rarity must not decide the fight":
@@ -290,7 +298,7 @@ left (weighted sampling WITHOUT replacement, not a uniform mop-up that would fla
 unused by the UI — real capability, and the obvious raw material for a difficulty setting.
 
 **None of the arena flow is covered by automated tests** — `src/ui/battle.js` is untested DOM
-wiring by design (see "Prefer manual visual testing" in memory). 569 tests cover the engine
+wiring by design (see "Prefer manual visual testing" in memory). 578 tests cover the engine
 underneath it. Run TASKS.md's two-window checklist before trusting a change here.
 
 ## Locked decisions — do not reopen

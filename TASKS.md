@@ -5,12 +5,19 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,890 cards**
-(snapshot **2026-08-14**), deployed **2026-08-16** — the live site and the repo match again.
-That deploy shipped the whole 2026-08-15 body of work: the arena lobby, the shared blind build
-phase, the AI collection model, the pack-opening summon, and the coffee-link removal. The live
-KV lobby is confirmed running the new four-op protocol (`accept`/`enter`/`bail`/`lock`).
-**569 tests pass.**
+**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 20,739 cards**
+(snapshot **2026-08-15**), deployed **2026-08-16** — the live site and the repo match at
+`814e4c7`, verified 2026-08-17 by checking that the served page no longer carries the set
+picker or the Sets/Live API toggle. That deploy shipped the 2026-08-15 body of work (the arena
+lobby, the shared blind build phase, the AI collection model, the pack-opening summon, the
+coffee-link removal) plus the 2026-08-16 run: the chaos pass, the card finish, the mobile pull
+path, shareable links, and One Deck. The live KV lobby is confirmed running the four-op
+protocol (`accept`/`enter`/`bail`/`lock`). **578 tests pass.**
+
+⚠ **`catalog/refresh-log.json` has no entry for the 2026-08-16 deploy** — its last line is the
+2026-08-15 20:35 UTC one. The upload happened (verified above); `node tools/record-deploy.js`
+did not run after it, so `npm run status` reports the deploy a day earlier than it was. Deck
+figures are unaffected: the 2026-08-16 deploy shipped code, not a rebuilt set.
 
 **Run it locally with `npm run dev`** (`wrangler pages dev`, default `http://localhost:8788`).
 That is the only command that serves the site AND runs `functions/api/ready/[room].js` against a
@@ -25,7 +32,8 @@ runs", and "Quick battle — the AI has a collection, not a rating". They supers
 below this paragraph that mentions the OLD invariant (19% N-above-median-UR) — that was
 **deliberately reversed** on Ash's instruction, not regressed. Do not "fix" it back.
 
-**DONE 2026-08-15, do not redo.** All of it is uncommitted-to-live; see NEXT item 1.
+**DONE 2026-08-15, do not redo.** All of it shipped to production on 2026-08-16 and is live.
+What is still outstanding is *watching* it run with two humans — see NEXT item 1.
 
 *The 40-item brief:*
 1. **Subscriber count dominates raw power** (items 1-3). `BUDGET_GAIN` 25 -> 170 plus a
@@ -103,14 +111,24 @@ commitment, or take the consult first. Decide it rather than letting launch day 
 
 **NEXT — start here.**
 1. **Run the two-window checklist below against production**, or against `npm run dev`. The
-   arena is untested DOM wiring by design; 569 tests cover the engine under it and none of them
+   arena is untested DOM wiring by design; 578 tests cover the engine under it and none of them
    touch `src/ui/battle.js`. The lobby has never been watched by two humans at once.
 2. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
    ~1s drags by the tenth pull. Nobody has seen it in motion yet.
-3. **The deck is due for a refresh on the 25-day cadence** — snapshot is 2026-08-14, so the
-   next rebuild is due around 2026-09-08 and the 30-day statistics cap bites on 2026-09-13.
-   `npm run deploy` re-hydrates (~318 quota units) and ships in one step.
-4. Everything below this point is the OLDER backlog, from before the 2026-08-15 brief. Still
+3. **A sourcing run is staged and not yet built.** `catalog/candidates.json` is +10,181 lines
+   uncommitted, with untracked `catalog/reach-11*.txt` / `reach-12*.txt` alongside it.
+   `npm run status` reports **31,305 candidate ids, 22,781 shipping** against the 20,739 in the
+   live deck, and flags "roster changed since the last build". Decide whether that batch is
+   reviewed and wanted, then commit it and `npm run deploy`; leaving it uncommitted means the
+   next session cannot tell a staged roster from a stray edit.
+4. **The deck's own refresh is NOT yet due** — snapshot is 2026-08-15, so the 25-day cadence
+   puts the next rebuild around **2026-09-09** and the 30-day statistics cap bites on
+   **2026-09-14**. `npm run deploy` re-hydrates (~318 quota units) and ships in one step. If
+   item 3 goes ahead it resets both dates, since it rebuilds the set on the way through.
+5. **The scheduled refresh job has failed twice in a row** (runs #2 and #3, 2026-08-09 and
+   2026-08-16 — `node tools/refresh-runs.js`). The deck is fresh because it has been deployed
+   by hand, which is exactly the condition that hides a broken alarm until the day it is needed.
+6. Everything below this point is the OLDER backlog, from before the 2026-08-15 brief. Still
    real, still open, lower priority.
 
 **Manual test checklist — two windows (or two devices), against `npm run dev`.**
