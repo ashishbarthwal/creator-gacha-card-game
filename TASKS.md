@@ -6,18 +6,24 @@ a new guarantee, a new capability. Recurring work goes under Miscellaneous and i
 individually.
 
 **Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 20,739 cards**
-(snapshot **2026-08-15**), deployed **2026-08-16** — the live site and the repo match at
-`814e4c7`, verified 2026-08-17 by checking that the served page no longer carries the set
-picker or the Sets/Live API toggle. That deploy shipped the 2026-08-15 body of work (the arena
-lobby, the shared blind build phase, the AI collection model, the pack-opening summon, the
-coffee-link removal) plus the 2026-08-16 run: the chaos pass, the card finish, the mobile pull
-path, shareable links, and One Deck. The live KV lobby is confirmed running the four-op
-protocol (`accept`/`enter`/`bail`/`lock`). **578 tests pass.**
+(snapshot **2026-08-15**), deployed **2026-08-17** at `b4e873a` — the live site and the repo
+match, verified by fetching the deployed `styles.css`, `src/ui/reveal.js` and
+`src/ui/collection.js` and confirming each carries the change it should. Production now holds
+the 2026-08-15 body of work (the arena lobby, the shared blind build phase, the AI collection
+model, the pack-opening summon, the coffee-link removal), the 2026-08-16 run (chaos pass, card
+finish, mobile pull path, shareable links, One Deck), and the 2026-08-17 twinkle pass. The live
+KV lobby is confirmed running the four-op protocol (`accept`/`enter`/`bail`/`lock`).
+**578 tests pass.**
 
-⚠ **`catalog/refresh-log.json` has no entry for the 2026-08-16 deploy** — its last line is the
-2026-08-15 20:35 UTC one. The upload happened (verified above); `node tools/record-deploy.js`
-did not run after it, so `npm run status` reports the deploy a day earlier than it was. Deck
-figures are unaffected: the 2026-08-16 deploy shipped code, not a rebuilt set.
+**This was a CODE-ONLY deploy** — `build:site` + `wrangler pages deploy`, deliberately not
+`npm run deploy`. The full script starts with `build-set.js`, which would have rebuilt the deck
+from the **staged, unreviewed** candidate batch described in NEXT item 3 and published ~2,000
+cards nobody has read. Use the code-only path for any change that does not touch the deck; see
+the deck-refresh note in NEXT item 4 for when the full script is the right one.
+
+*(The 2026-08-16 deploy was never recorded — `record-deploy.js` did not run after it — so the
+refresh log skips from 2026-08-15 to today. Nothing is wrong with the deck; the receipt just has
+a gap, and it is noted here rather than back-filled with a timestamp nobody measured.)*
 
 **Run it locally with `npm run dev`** (`wrangler pages dev`, default `http://localhost:8788`).
 That is the only command that serves the site AND runs `functions/api/ready/[room].js` against a
