@@ -9,6 +9,7 @@ import { state, resetCollection } from '../state.js';
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
 import { openInspect } from './inspect.js';
+import { makeStars } from './stars.js';
 
 const collGrid = document.getElementById('collection-grid');
 const collSummary = document.getElementById('coll-summary');
@@ -195,6 +196,65 @@ function renderFilters() {
     ).join('');
 }
 
+/* ── THE BINDER TWINKLES TOO (2026-08-17) ──────────────────────────────────
+   Ash: "the twinkling effects and stars should be in mobile as well... in the
+   collection tray as well. it's cheap and pretty so lets keep it."
+
+   The UR/RUBY point twinkles were already here — `renderCard` appends those on
+   every surface and has never gated them by device. What was missing is the
+   SCATTER field (`makeStars`, SR and up), which only the pull reveal and the
+   admire screen ever built. This adds it to the binder.
+
+   ── WHY AN OBSERVER, WHEN NOTHING ELSE THAT USES makeStars NEEDS ONE ───────
+   Because the binder is the one surface with no bound on how many cards are on
+   it. A reveal is ten cards and the inspector is exactly one; `renderCollection`
+   below renders EVERY matching card at once, with no virtualisation. A star
+   field is ~20 infinitely-animating nodes, so a thousand-card binder filtered to
+   SR would put ~18,000 of them on one page — and "filtered to SR" is not a
+   corner case, it is what the rarity chips are for.
+
+   So a field is attached when its card comes near the viewport and detached
+   when it leaves. Detached rather than hidden, deliberately: `display: none`
+   still means the nodes exist and were built, which is the exact distinction
+   reveal.js's LOW_FX comment draws about the aura's motes. Animations do not
+   run on a detached node, so the active count tracks what is on screen instead
+   of what is owned.
+
+   FIELDS ARE CACHED BY CHANNEL ID, and that is not a micro-optimisation — it is
+   what keeps a card's own constellation STABLE. `makeStars` randomises every
+   position, so rebuilding on each scroll-in would give one card a different
+   star pattern every time it passed the viewport, which reads as flicker rather
+   than as sparkle. Cached, a card keeps the sky it was born with for the life
+   of the page. A detached wrapper of twenty <i>s costs nothing to keep.
+
+   `null` is cached too (N and R have no field), so a common card is never asked
+   about twice. */
+const starFields = new Map();       // channel id -> the field, or null for N/R
+const fieldForCard = new WeakMap(); // card element -> its field, for the observer
+
+function starFieldFor(card) {
+  const id = card.channel.id;
+  if (!starFields.has(id)) starFields.set(id, makeStars(card.rarity));
+  return starFields.get(id);
+}
+
+/* Built once and disconnected on every re-render, rather than made fresh each
+   time: an IntersectionObserver holds a STRONG reference to what it observes,
+   so leaving the previous render's (now discarded) card elements observed would
+   pin every card the player has ever scrolled past. */
+const starWatcher = typeof IntersectionObserver === 'function'
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const field = fieldForCard.get(entry.target);
+        if (!field) continue;
+        if (entry.isIntersecting) entry.target.appendChild(field);
+        else field.remove();
+      }
+      /* A card is attached slightly before it scrolls in and released well
+         after it leaves, so a slow scroll never thrashes at the boundary. */
+    }, { rootMargin: '250px' })
+  : null;
+
 export function renderCollection() {
   const items = [...state.collection.values()];
 
@@ -206,6 +266,11 @@ export function renderCollection() {
      which is the one thing this change exists to allow. */
   const shown = items.filter(matches).sort(SORTS[view.sort] ?? byRarity);
 
+  /* Every card element from the previous render is about to be discarded, so
+     the observer's whole watch list is stale. Cleared here rather than
+     unobserved one by one — the list and the grid are rebuilt together. */
+  starWatcher?.disconnect();
+
   collGrid.innerHTML = '';
   for (const item of shown) {
     const el = renderCard(item.card, { count: item.count, isNew: newThisSession.has(item.card.channel.id) });
@@ -214,6 +279,15 @@ export function renderCollection() {
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `View ${item.card.channel.title} up close`);
     collGrid.appendChild(el);
+
+    /* SR and up. Without an observer (no IntersectionObserver at all) the field
+       simply goes on and stays on — the effect is the point, and the bound is
+       the optimisation. */
+    const field = starFieldFor(item.card);
+    if (field) {
+      if (starWatcher) { fieldForCard.set(el, field); starWatcher.observe(el); }
+      else el.appendChild(field);
+    }
   }
 
   /* "Saved in this browser" came OUT of this line on 2026-08-16 (Ash's call).

@@ -99,17 +99,29 @@ const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
    DEVICE, not by taste — a desktop pull is exactly what it was, and a phone
    skips the layers that cost it frames.
 
-   WHAT A PHONE SKIPS, and it is the count that matters rather than any one of
-   them: the specular sweep, the twinkling stars (18-26 nodes on EVERY SR+
-   card — up to ~260 on a x10), and the top-tier trio of ignition ring, bloom
-   and aura, that last one shedding fifty motes on its own, per card, looping
-   for as long as the overlay is open. A phone GPU compositing several hundred
-   simultaneously animating layers is the whole of the report.
+   ── THE STARS CAME BACK (2026-08-17) ──────────────────────────────────────
+   Ash: "the twinkling effects and stars should be in mobile as well... it's
+   cheap and pretty so lets keep it." So `makeStars` is no longer gated here,
+   and this comment is left standing rather than rewritten, because the star
+   field WAS named in the original lag report and pretending otherwise would
+   lose the one fact worth keeping: if a phone reveal goes slow again, this is
+   a known-suspect layer and the measurement above is the baseline to re-run.
 
-   WHAT A PHONE KEEPS, because it is what a reveal is FOR: the flip, the rarity
-   colour lighting the seam as each card lands, the beam telegraphing a rare
-   before it turns, rarest-last ordering, and the card face itself — frame,
-   finish, avatar, every bit of ui/card.js. A rare still looks rare.
+   The distinction that survived the change is COST PER CARD. A star field is
+   18-26 absolutely-positioned dots animating `opacity` and `transform` only —
+   compositor work, no repaint (see `@keyframes twinkle`). The aura is fifty
+   motes PLUS a blurred, masked field that forces rasterisation, per card, for
+   as long as the overlay is open. Those are not the same order of expense, so
+   restoring the cheap one does not reopen the expensive ones.
+
+   WHAT A PHONE STILL SKIPS: the specular sweep, and the top-tier trio of
+   ignition ring, bloom and aura.
+
+   WHAT A PHONE KEEPS: the flip, the rarity colour lighting the seam as each
+   card lands, the beam telegraphing a rare before it turns, rarest-last
+   ordering, the twinkling stars, and the card face itself — frame, finish,
+   avatar, every bit of ui/card.js, including the UR/RUBY point twinkles that
+   were never gated by device at all.
 
    Matched per pull rather than once at module load, so rotating a phone or
    dragging a desktop window narrow is picked up on the next pull instead of
@@ -303,7 +315,10 @@ function buildCell(result) {
     sweep.className = 'sweep';
     front.appendChild(sweep);
   }
-  if (rich && STARS[rarity]) front.appendChild(makeStars(rarity));
+  /* NOT gated by `rich` — every device gets the star field (2026-08-17, Ash's
+     call; see the LOW_FX note above for the cost argument that let this one
+     back while the aura stayed out). */
+  if (STARS[rarity]) front.appendChild(makeStars(rarity));
   if (rich && TOP_TIER.has(rarity)) {
     /* Top tier only — the ignition: a white-hot point races once around the
        frame bevel as the card lands, and the seam halo floods in behind it.

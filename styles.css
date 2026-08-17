@@ -2485,6 +2485,32 @@
   @media (hover: none) {
     #inspect .card .stars { animation: stars-in 0.5s ease-out both; }
   }
+
+  /* THE BINDER, 2026-08-17 — Ash: "in the collection tray as well. it's cheap
+     and pretty so lets keep it."
+
+     Needs its own rule for the same reason the admire screen does: `.stars` is
+     `opacity: 0` at rest and is faded in by whichever surface owns it, so a
+     field appended to a binder card would otherwise be built, animated and
+     completely invisible. On EVERY pointer type here, not behind `(hover: none)`
+     like the inspector above — the inspector withholds them from a mouse because
+     a fine pointer already gets the tilt + tracked shine on the card it is
+     pointing AT, and the binder is a grid where all but one card are unpointed
+     at any moment.
+
+     ui/collection.js attaches a field only while its card is near the viewport,
+     so this rule can never apply to more than a screenful at a time however
+     large the binder gets. */
+  #collection-grid .card .stars { animation: stars-in 0.5s ease-out both; }
+
+  /* The field clips its dots with `overflow: hidden`, so its corners have to be
+     the CARD's corners — and `.card`'s radius is container-query based
+     (`clamp(11px, 6cqw, 22px)`), so it differs between a binder thumbnail and
+     the inspector's hero. Inherited rather than the flat 15px above, which was
+     written for the reveal's fixed-size flip face and is left alone there. Only
+     applies where the field is a direct child of the card, which is exactly the
+     two surfaces that append it that way (inspect.js, collection.js). */
+  .card > .stars { border-radius: inherit; }
   .star {
     position: absolute;
     width: var(--sz, 3px);
@@ -2949,8 +2975,11 @@
        which out-specifies the plain `.stars` two lines up — without this a
        phone with reduced motion on would still get the fade-in. Same
        specificity, same override, just repeated at the selector that needs
-       to lose. */
-    #inspect .card .stars { animation: none; opacity: 1; }
+       to lose. The binder rule added 2026-08-17 out-specifies it the same way
+       and needs the same treatment; both leave the field visible but still,
+       which is what every other effect in this block does. */
+    #inspect .card .stars,
+    #collection-grid .card .stars { animation: none; opacity: 1; }
   }
 
 /* ===========================================================================
@@ -4283,9 +4312,12 @@
   }
 
   /* ── THE PHONE REVEAL (2026-08-16) ──────────────────────────────────────
-     ui/reveal.js already declines to BUILD the sweep, stars, ignition, bloom and
-     aura on a phone (see LOW_FX there) — building nothing is what saves the
-     frames, and this block is the half that CSS owns.
+     ui/reveal.js already declines to BUILD the sweep, ignition, bloom and aura
+     on a phone (see LOW_FX there) — building nothing is what saves the frames,
+     and this block is the half that CSS owns. (The twinkling STARS were on that
+     list until 2026-08-17 and are not any more: Ash asked for them back on
+     every device, and their cost is compositor-only where the aura's is a
+     blurred, masked field. See the LOW_FX note for that distinction.)
 
      `backdrop-filter` is the one property in the overlay whose cost scales with
      screen AREA rather than with content: it re-blurs everything behind a
