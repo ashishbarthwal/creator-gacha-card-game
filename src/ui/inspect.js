@@ -99,7 +99,6 @@ export function openInspect(card, meta = {}) {
     });
   }
   inspectHolder.appendChild(cardEl);
-  inspectHolder.appendChild(optOutLink(card.channel));
   /* Gates the museum-display spotlight (styles.css, `.ruby-entrance`), which
      lives on `.inspect-box` rather than the card itself — that element is
      shared across every rarity, so it needs an explicit flag rather than a
@@ -113,57 +112,30 @@ export function openInspect(card, meta = {}) {
   inspectClose.focus();
 }
 
-/* ── THE OPT-OUT, ON THE CARD ITSELF (2026-08-17) ──────────────────────────
-   The footer has carried this since WP7a and still does. This is the same
-   promise moved to where it is actually actionable, and the difference is not
-   cosmetic: the footer link asks a creator to find a page, scroll to the
-   bottom, and then describe which of 22,772 cards is theirs. This one already
-   knows.
-
-   SO IT NAMES THE CHANNEL AND FILLS IN THE MESSAGE. A removal request that
-   arrives with the exact title and UC id is one `tools/` invocation away from
-   being honoured, where a request saying "the card with my face on it" needs a
-   round trip that costs days against a promise measured in days.
-
-   WHY IT MATTERS MORE AT LAUNCH THAN IT DID BEFORE. A creator who is annoyed
-   and cannot immediately see a way out posts about it; a creator who is annoyed
-   and finds "Is this you? Ask to be removed" under their own card generally
-   just uses it. The cheapest possible version of this project's worst day is a
+/* ── THE OPT-OUT CAME OFF THIS SCREEN (2026-08-22, Ash's call) ─────────────
+   It shipped here on 2026-08-17, one line under the card, pre-addressed with
+   the channel title and UC id so a creator who found their own card could ask
+   to be removed without describing which of 22,720 it was. The reasoning was
+   sound and is unchanged: the cheapest version of this project's worst day is a
    working button in the place the objection actually forms.
 
-   Rebuilt per open rather than parked in index.html, because it is about THIS
-   card — and because `inspectHolder.innerHTML = ''` on close would throw away a
-   static one anyway. No identity check, matching the footer and DECISIONS.md:
-   an unfounded removal costs one card, a verification gauntlet costs the good
-   faith the line exists to demonstrate. */
-const OPTOUT_TO = 'ashish.barthwal.cs@gmail.com';
+   What that reasoning did not price is WHO ELSE finds it. Every visitor opens
+   this screen — it is the admire screen, the thing you click a card to do — so
+   a one-tap, pre-filled removal request sat in front of the whole audience,
+   not in front of the creator. Ash's concern is the obvious one and it is
+   correct: that is a prank button. A takedown honoured with no identity check
+   is defensible when the cost of abuse is a person having to go looking for the
+   link; it is not defensible when the cost of abuse is a click on the most-used
+   screen in the game.
 
-function optOutLink(channel) {
-  const title = String(channel?.title ?? '').trim() || 'this channel';
-  const id = String(channel?.id ?? '');
-  const subject = `Creator Gacha — card removal request: ${title}`;
-  /* The id is what actually performs the removal (catalog/denylist.json is keyed
-     by it), so it travels in the body rather than relying on a title match. */
-  const body = [
-    'Please remove this channel from Creator Gacha.',
-    '',
-    `Channel: ${title}`,
-    `Channel ID: ${id}`,
-    '',
-    'No identity check is performed — this will be honoured, and the channel',
-    'is re-excluded on every future sourcing run so it cannot come back.',
-  ].join('\n');
+   THE PROMISE IS NOT WEAKENED, ONLY THE PLACEMENT. The footer link has carried
+   it since WP7a, index.html still says "Ask to be removed — no questions asked,
+   and you'll be out of every set within 7 days", and terms.html and
+   privacy.html both still document it. A creator who wants out still gets out
+   within seven days; they just have to reach the footer, which is the friction
+   that makes the no-identity-check policy affordable in the first place.
 
-  const link = document.createElement('a');
-  link.className = 'inspect-optout';
-  link.href = `mailto:${OPTOUT_TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  link.textContent = 'Is this you? Ask to be removed';
-  /* A mailto in public markup gets harvested — accepted knowingly for the
-     footer copy, and the same trade applies here for the same reason: an
-     address that is actually read beats a form that might not be. */
-  link.rel = 'nofollow';
-  return link;
-}
+   `.inspect-optout` came out of styles.css with it. */
 
 /* The reveal overlay can sit underneath this one, and both answer Escape — so
    it needs to be able to ask whether it is the top overlay before acting. */

@@ -17,6 +17,27 @@
     --font-display: 'Anton', 'Arial Narrow', Impact, sans-serif;
     --font-body: 'Space Grotesk', system-ui, sans-serif;
     --font-mono: 'Space Mono', ui-monospace, monospace;
+    /* THE CHANNEL NAME HAS ITS OWN FACE (2026-08-22, Ash's call, measured on a
+       15.6" 1080p panel at 100% scaling — about 141 PPI, which is where this
+       breaks and where a phone does not).
+
+       Space Grotesk is a good body face and the wrong one for this job. Its
+       letterforms are narrow and quirky by design — the single-storey 'a', the
+       tight apertures on 'c'/'e'/'s', the short 'r' — and at the 12px the card
+       actually rendered at, bold, that quirk stops reading as character and
+       starts reading as mush. Bold made it worse rather than better: weight
+       closes apertures, and a closed aperture at 12px is the whole failure.
+
+       Inter is the opposite trade and is here for exactly one reason: it was
+       drawn for small sizes on screens, with open apertures and a tall x-height,
+       so it stays decipherable where Grotesk stops. It carries 600 rather than
+       700 for the same reason the size went UP — legibility at this scale comes
+       from letterform and size, not from ink.
+
+       It is a NAME font, not a body font. Nothing else on the site moves: the
+       display face, the stat numerals and the body copy are all unchanged, so
+       this is one job getting the tool for it rather than a re-skin. */
+    --font-name: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,6 +106,109 @@
   }
 
   .panel-banner { padding: 24px 26px 26px; }
+
+  /* ── THE "IN DEVELOPMENT" ROADMAP ─────────────────────────
+     Footer only, as of 2026-08-22. It ran in the header as well for a few hours
+     and came out again (Ash: "bottom is good enough"). The two copies said the
+     same four things, and the header one had to drop the sentence and the
+     "already live" line for space - so it was strictly the weaker of the two AND
+     the one competing with the pack for the first second of attention.
+     `.soon--foot` stays a modifier rather than folding into `.soon` because the
+     tag and the chips are reusable; only the LAYOUT was placement-specific.
+
+     IT IS QUIETER THAN EVERYTHING AROUND IT, DELIBERATELY. A promise about the
+     future competing visually with the thing that works today is how a page ends
+     up advertising what it cannot do yet. */
+  .soon-tag {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #ffd166;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 209, 102, 0.34);
+    background: rgba(255, 209, 102, 0.08);
+    white-space: nowrap;
+  }
+
+  .soon-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    min-width: 0;
+  }
+
+  .soon-list li {
+    font-family: var(--font-name);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
+  }
+
+  /* ── the footer copy: the fuller one ──────────────────────────────────── */
+  .soon--foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .soon-lead { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+
+  /* The one line here that is a fact rather than a plan, so it gets the live
+     colour and the only bit of motion on the block. */
+  .soon-live {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-name);
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .soon-live b { color: rgba(255, 255, 255, 0.92); font-weight: 600; }
+
+  .soon-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #6ee7a0;
+    box-shadow: 0 0 0 0 rgba(110, 231, 160, 0.55);
+    animation: soon-pulse 2.4s ease-out infinite;
+  }
+
+  @keyframes soon-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(110, 231, 160, 0.5); }
+    70%  { box-shadow: 0 0 0 7px rgba(110, 231, 160, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(110, 231, 160, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .soon-dot { animation: none; }
+  }
+
+  /* Narrow: the footer copy stacks so its live line stays a sentence rather
+     than a fragment wedged beside four chips. */
+  @media (max-width: 640px) {
+    .soon--foot { gap: 7px; }
+    .soon-lead,
+    .soon--foot .soon-live { width: 100%; }
+    .soon-list li { font-size: 12px; padding: 3px 9px; }
+  }
 
   /* The banner is where the page is used; the collection is where it is read
      back. Giving the two the same weight left the visitor no cue about which to
@@ -1149,11 +1273,16 @@
   .title-wrap { min-width: 0; flex: 1; text-align: right; }
 
   .card-name {
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: clamp(12px, 5cqw, 19px);
-    line-height: 1.1;
-    letter-spacing: 0.2px;
+    /* Was Space Grotesk 700 at clamp(12px, 5cqw, 19px). At the ~200px the
+       collection grid actually gives a card, 5cqw is 10px — so every desktop
+       card was pinned to the 12px FLOOR and the middle term never did anything.
+       Raising the coefficient with the floor is what makes a bigger card
+       actually print a bigger name instead of sitting on the minimum. */
+    font-family: var(--font-name);
+    font-weight: 600;
+    font-size: clamp(14px, 6.2cqw, 22px);
+    line-height: 1.15;
+    letter-spacing: 0;
     /* A long single-word channel name ("TheBackgroundNPC") has no break
        opportunity, so it ran past this box and overflow:hidden sheared it
        mid-word with no ellipsis. `anywhere` also lets the box shrink to
@@ -3397,37 +3526,6 @@
      block for the geometry. */
   .inspect-holder .card { width: 100%; cursor: default; --tilt-lift: 1.085; }
 
-  /* ── THE PER-CARD OPT-OUT (2026-08-17) ────────────────────────────────────
-     Deliberately QUIET. This is a safety valve, not a call to action: it has to
-     be unmistakably findable by the one person looking for it and invisible to
-     everyone else admiring a card. Sized and dimmed so it reads as a footnote
-     under the hero, and it only reaches full contrast on hover/focus — the
-     state a person who is looking for it will produce and nobody else will.
-     See the note above `optOutLink` in ui/inspect.js for why it lives here at
-     all when the footer already carries the same promise. */
-  .inspect-optout {
-    display: block;
-    margin: 0.75rem auto 0;
-    text-align: center;
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.01em;
-    color: rgba(255, 255, 255, 0.42);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-    padding-bottom: 1px;
-    width: fit-content;
-    transition: color 0.18s ease, border-color 0.18s ease;
-  }
-  .inspect-optout:hover,
-  .inspect-optout:focus-visible {
-    color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(255, 255, 255, 0.5);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .inspect-optout { transition: none; }
-  }
-
   /* Collection cards advertise that they open. */
   .cards-grid .card { cursor: zoom-in; }
 
@@ -4174,9 +4272,13 @@
 
   .bcard-id { min-width: 0; flex: 1; }
   .bcard-id h3 {
-    font-size: clamp(9px, 4.4cqw, 14px);
-    font-weight: 700;
-    line-height: 1.15;
+    /* Same change as `.card-name`, and this is the screen it was reported on:
+       a battle card in the arena line is clamp(92px, 14vw, 140px) wide, so
+       4.4cqw landed at 6px and every one of them sat on the 9px floor. */
+    font-family: var(--font-name);
+    font-size: clamp(11px, 5.4cqw, 16px);
+    font-weight: 600;
+    line-height: 1.2;
     overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-line-clamp: 2;
