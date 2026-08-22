@@ -77,7 +77,23 @@ const FAILED = { enabled: false, reason: 'error', ...BLANK };
    trying?" is the actual question at every call site. */
 export const presenceOff = state => state?.reason === 'off';
 
-async function call(path, init) {
+/* ── THE TRANSPORT, SHARED BY BOTH ENDPOINTS ───────────────────────────────
+   Split out of `call` when the queue arrived, because the two endpoints answer
+   in DIFFERENT SHAPES but fail in exactly the same ways. Everything below about
+   404-is-settled and timeout-is-transient is reasoning that was paid for once
+   (see the notes inside) and must not be re-derived per endpoint — while the
+   shape of a successful body is genuinely per-endpoint and must not be shared.
+
+   So this returns either a `fault` (one of the two sentinels every caller
+   already understands) or the raw parsed `body`, and each caller decides what a
+   good answer looks like. That split is exactly the bug it was extracted to
+   fix: the queue reused `call` wholesale, and `call` ends by testing the ROOM's
+   `enabled` field and rebuilding the ROOM's fields — so a perfectly good
+   `{"status":"waiting"}` was read as "there is no queue", and the room id and
+   seed in a `matched` answer would have been dropped on the floor even if it
+   had not been. The endpoint was never wrong; its client was reading it as if
+   it were a different endpoint. */
+async function transport(path, init) {
   /* AbortSignal.timeout is not everywhere yet, and this file must never be the
      reason a browser fails to run the game — so the controller is built by hand
      rather than reached for. */
@@ -104,16 +120,31 @@ async function call(path, init) {
        if a real deployment ever 404s transiently (mid-deploy propagation), the
        arena falls back to copy-paste, which still works. Sitting forever on a
        screen that cannot progress does not. */
-    if (res.status === 404) return OFF;
+    if (res.status === 404) return { fault: OFF };
     /* Everything else that failed is one request that did not complete. A 400
        or a 5xx means the server IS up and answering, so the room may well be
        fine a moment later — retryable, not settled. */
-    if (!res.ok) return FAILED;
-    const body = await res.json();
-    /* A 200 saying `enabled:false` is the one genuinely settled answer: no
-       namespace is bound, and asking again will not change that. */
-    if (!body?.enabled) return OFF;
-    return {
+    if (!res.ok) return { fault: FAILED };
+    return { body: await res.json() };
+  } catch {
+    /* Aborted by our own timeout, offline, DNS, connection reset, a frozen tab
+       tearing down its fetches — all transient, all worth another try. */
+    return { fault: FAILED };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* The MATCH ROOM's client. Rebuilds the room's own fields by name rather than
+   spreading the body, so a field the server grows later cannot reach the app
+   without somebody deciding it should. */
+async function call(path, init) {
+  const { fault, body } = await transport(path, init);
+  if (fault) return fault;
+  /* A 200 saying `enabled:false` is the one genuinely settled answer: no
+     namespace is bound, and asking again will not change that. */
+  if (!body?.enabled) return OFF;
+  return {
       enabled: true,
       accepted: Boolean(body.accepted),
       lobbyAt: Number.isFinite(body.lobbyAt) ? body.lobbyAt : null,
@@ -135,13 +166,6 @@ async function call(path, init) {
          seat — somebody else is already in this room with the same code. */
       seatTaken: body.seatTaken === true,
     };
-  } catch {
-    /* Aborted by our own timeout, offline, DNS, connection reset, a frozen tab
-       tearing down its fetches — all transient, all worth another try. */
-    return FAILED;
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 /* The room id BOTH windows derive independently: the challenger's five (when
@@ -214,3 +238,86 @@ export const checkRoom = room => call(`${BASE}/${encodeURIComponent(room)}`, { m
    server's `[a-z0-9]{4,40}` room-id alphabet so it is a well-formed request
    rather than a 400. */
 export const presenceAvailable = () => checkRoom('presenceprobe0');
+
+/* ── THE RANDOM-OPPONENT QUEUE ─────────────────────────────────────────────
+   A second endpoint, and it is the smallest thing that can possibly work: the
+   queue's entire job is to let two strangers agree on a room id, a seed, a
+   pinned clock and who sits in which seat. Everything after that is the flow a
+   friend match already runs — which is why nothing else in this file, and
+   nothing at all in the room protocol, changes to support it.
+
+   Read workers/match-room/src/queue.js for what the object holds and, more
+   importantly, what it must never hold. What crosses the wire from here is a
+   nonce the browser made up and one integer: how many distinct cards you own,
+   which is the number `engine/fairness.js` needs and the same number the
+   challenge code has carried since CODE_VERSION 2.
+
+   THE TICKET IS A QUEUE SLOT, NOT A PERSON — same promise, same shape and the
+   same reasoning as the room's seat claim: generated per search, meaningless
+   anywhere else, nothing behind it to look up, and never sent to the other
+   player. It exists so a retry can be told apart from a second person, which is
+   the bug the seat claim was added to fix one layer down. */
+const QUEUE = '/api/queue';
+
+/* THE QUEUE'S OWN READER, and it exists because reusing the room's was a real
+   bug rather than a tidiness question — see the note above `transport`. The
+   fault handling is identical and shared; only the shape of a good answer
+   differs, and that difference is the whole point.
+
+   Fields are validated by name here for the same reason the room's are: what
+   comes back decides which room two strangers walk into, so a malformed seed
+   reaching `battle()` would produce two different fights rather than an error.
+   `enabled: true` is added by THIS function rather than sent by the server —
+   the queue object answers with a status, not a health flag, and the arena's
+   "should I stop asking" question is a client-side concept the room happens to
+   share a field name with. */
+async function queueCall(payload) {
+  const { fault, body: parsed } = await transport(QUEUE, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (fault) return fault;
+  /* The proxy says this when the Durable Object binding is missing. Settled,
+     exactly as it is for the room: no binding, no queue, stop asking. */
+  if (parsed?.enabled === false) return OFF;
+  return {
+    enabled: true,
+    status: typeof parsed?.status === 'string' ? parsed.status : '',
+    room: typeof parsed?.room === 'string' ? parsed.room : '',
+    side: parsed?.side === 'a' || parsed?.side === 'b' ? parsed.side : null,
+    seed: Number.isFinite(parsed?.seed) ? parsed.seed >>> 0 : 0,
+    now: Number.isFinite(parsed?.now) ? parsed.now : 0,
+    theirCs: Number.isFinite(parsed?.theirCs) && parsed.theirCs >= 0 ? parsed.theirCs : null,
+  };
+}
+
+const queuePost = queueCall;
+
+/* Join the queue, or be paired immediately if somebody was already waiting.
+   Answers `{ status: 'waiting' }` or `{ status: 'matched', room, side, seed,
+   now, theirCs }`. Safe to re-send: the object answers a ticket it has already
+   paired with that pairing rather than parking it again, so a retry after a
+   dropped response cannot strand the other player. */
+export const joinQueue = (ticket, collectionSize) =>
+  queuePost({ op: 'join', ticket, cs: collectionSize });
+
+/* Ask again — and check in. A poll IS the heartbeat, so there is no separate
+   keep-alive to forget: a searcher that stops polling is swept and stops being
+   pairable, which is what keeps anyone from being matched with a closed tab.
+   `expired` means the slot went away and the answer is to join again. */
+export const pollQueue = ticket => queuePost({ op: 'poll', ticket });
+
+/* Leave deliberately — Cancel, or backing out of the arena. Not required for
+   correctness (the sweep would evict this slot within ~25s anyway) but it is
+   the difference between the next player waiting one request and waiting half a
+   minute for a ghost to time out. */
+export const leaveQueue = ticket => queuePost({ op: 'leave', ticket });
+
+/* "Is there a queue at all right now?" — the same question `presenceAvailable`
+   answers for the room, and it has to be asked separately because the two are
+   different bindings and can fail independently. A `leave` on a ticket that was
+   never in the queue is the cheapest possible probe: it is a valid request, it
+   writes nothing, and it distinguishes a missing binding (`enabled:false`) from
+   a working one without parking anybody in a queue they did not ask to be in. */
+export const queueAvailable = () => leaveQueue('probe0000');

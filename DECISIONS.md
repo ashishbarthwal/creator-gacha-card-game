@@ -4517,3 +4517,140 @@ load the set, then own the pack.
 fetch is the only way the game gets cards. `loadTheSet` therefore ends in a real error, a
 disabled pack and a Retry button rather than an empty stage — the one screen where silence
 would read as "this site is broken" and be right.
+
+---
+
+## Battle a stranger: a queue, and the third amendment to decision 3 (2026-08-22)
+
+Ash: *"currently we have a battle vs AI and a battle against a friend with a code but not a
+battle a random player... lets implement that before launch."*
+
+**THIS REOPENS LOCKED DECISION 3 FOR THE THIRD TIME, ON ASH'S CALL, AND THE ENTRY IS HERE
+RATHER THAN IN A COMMENT BECAUSE CLAUDE.md SAYS IT SHOULD NOT HAPPEN.** That file's own words
+are "Anything FURTHER added here reopens decision 3 again, so nothing should be." A random
+matchmaking queue is a second server-side capability on a project whose defining constraint is
+that it has approximately none, and pretending otherwise by filing it as an implementation
+detail of the existing lobby would be exactly the kind of quiet scope drift the locked-decisions
+list exists to prevent.
+
+What makes it payable is that it is genuinely the same amendment rather than a new one. The
+endpoint holds no account, no identity and no collection; it holds a nonce, an integer and two
+timestamps, for under half a minute. It is optional in the same way the room is — a missing
+binding disables the button and the arena says so. And Quick battle still needs no server at
+all, which is the promise decision 3 actually protects.
+
+**IT COST NO NEW DEPLOYABLE, AND THAT IS THE POINT.** The second Worker this project gave up on
+2026-08-17 was the price of a Pages project being unable to declare a Durable Object class *at
+all* — it was never a price per class. `MatchQueue` is a second class in the Worker that already
+exists: one binding, one migration tag, no new deploy step, no new route to remember. The
+directory count did not move.
+
+### What the feature actually needed, which was less than expected
+
+Two browsers running a friend match agree on four things before either of them talks to a
+server, and they agree by both reading the same code string:
+
+| | friend match | random match |
+|---|---|---|
+| room id | `roomFor(fingerprint, seed)`, derived by both | nobody can derive it |
+| seed | minted by the challenger in `makeChallenge` | there is no challenger |
+| pinned clock | `now`, carried inside the code | there is no code |
+| seats | seed-minter is 'a', paster is 'b' | nobody pasted anything |
+
+**That is the whole problem.** Supply those four and both players stand exactly where a friend
+match stands the instant a code is pasted — so the lobby, the collection-fairness gate, the
+shared blind build, the independent locks and the face-off beat are all reached unmodified. The
+queue is therefore not a matchmaker in the game sense and deliberately never becomes one: it
+does not rate players, balance teams or sort by skill. `engine/fairness.js` already handles the
+only imbalance this game has a rule about, after pairing, on both sides.
+
+**The seat mapping is what kept the diff small.** The waiter takes seat 'a' and the joiner takes
+seat 'b'. Seat 'b' is the DEFENDER's seat — the one that sends `accept` — and the joiner is the
+side that is present and acting right now, exactly like somebody pasting a code. So the joiner
+does what a defender already does and the waiter does what a challenger already does, and
+**the room protocol needed no new op and no new field.** `workers/match-room/src/index.js` is
+untouched.
+
+### The one hole, and why the queue is the right place to plug it
+
+The room carries `csB` and nothing else. A challenger's collection size reaches the defender
+*inside the code* (`collectionSize`, CODE_VERSION 2), so with no code there is no channel for
+it — and `fairnessFor` reads `ui.roomState.csB` for side 'a' but `ui.challenge.collectionSize`
+for side 'b'. Adding `csA` to the room was the obvious fix and is the worse one: it puts a field
+on the match protocol to serve one entry path into it.
+
+The queue knows both sizes at the moment it pairs, so it hands each side the other's. Side 'b'
+parks it on a challenge-shaped object and is then in literally the position a decoded challenge
+leaves it in. Neither `fairnessFor` nor `renderLockedFaceoff` grew a branch.
+
+### The server mints the seed and the clock — for agreement, not fairness
+
+`engine/battle.js` is pure and seed-deterministic, `battleStatsFrom` takes its clock as a
+parameter, and neither path ever carries a result. Both browsers resolve the same fight from the
+same inputs. A seed either side minted locally would be a seed the other has to be told about
+and could disagree about, and disagreement here means two players watching one battle and being
+shown different winners — which `ui/battle.js`'s own header calls "the worst failure available
+here". One authority, one value, handed to both in the same response, is the only shape that
+cannot drift. It also preserves the friend flow's fairness ordering for free: the seed is fixed
+before either side can see the other's team.
+
+### One instance, not shards — the inversion worth writing down
+
+Every request routes to `idFromName('lobby-v1')`. That looks like the thing you are supposed to
+shard and it is the exact opposite: a queue's entire job is to be the one place two people can
+find each other, and a sharded queue holding one player per shard matches nobody. Serialization
+is the feature. If this ever needs to scale, the fix is a shard KEY people can agree on — a
+region, a mode — never a random spread.
+
+**And there is no KV fallback here, deliberately, where the room still has one.** A queue is the
+one thing on this project that cannot be built on a cached store: pairing is a read-modify-write
+on a single shared key, so two players joining at once against two edge caches would each read
+an empty queue, each park themselves, and never learn about each other. That is not a rare race
+— with two players in the world it is the ordinary case. The room's KV path survives only
+because it predates the Durable Object.
+
+### An empty queue is the real risk, and the honest answer shipped
+
+Measured before launch, real player traffic on this site is approximately zero (TASKS.md item
+0b: 3,333 Pages Function invocations in thirty days, essentially all of it development). So the
+overwhelmingly likely outcome of any given search is that nobody else is searching, and a
+matchmaking button that spins forever reads as broken rather than as quiet.
+
+Ash's call, chosen over an AI backfill: **search honestly, and after 30 seconds say so and offer
+a Quick battle** — while continuing to search, because quietly cancelling on somebody who is
+still watching is the same lie in the other direction. The backfill option was to pair an
+unmatched searcher with an AI; it was set aside rather than ruled out, and if it is ever built
+the constraint is absolute: **a bot must be labelled as a bot on the face-off screen.** A silent
+one would make every real win unverifiable, which is a worse thing to own than an empty queue.
+
+### Names: derived, never typed
+
+The friend flow carries a display name because somebody typed it about themselves. Asking a
+stranger to type one renders their free text on your screen, which is a moderation surface this
+project has no way to police and no appetite for.
+
+So the handle is FNV-1a over the room id and the seat — `Duelist 4F2A`. Both browsers already
+know both values, so the two sides compute the same two handles with nothing extra crossing the
+wire, and it is safe by construction rather than by policy. It cannot become an identity: it is
+a function of a room id that is deleted after ten minutes, so the same person searching twice is
+a different handle both times. Side 'a' now sees a name for its opponent for the first time in
+this game's history — a sent challenge carries the challenger's name outward, so a challenger
+has never learned anything about who took it up.
+
+### What was built
+
+`workers/match-room/src/queue.js` (the object), `functions/api/queue.js` (the public door),
+the `QUEUE` binding and migration tag `v2` in `wrangler.jsonc`, `joinQueue`/`pollQueue`/
+`leaveQueue`/`queueAvailable` in `src/data/presence.js`, and `renderFindOpponent` plus a fourth
+mode card in `src/ui/battle.js`. 22 tests in `test/queue.test.js`, including a handoff suite
+that drives a whole random match through the queue AND the room with no client in between —
+because the claim that ties the two objects together (the seat the queue assigns is the seat the
+room expects) is invisible in either file alone, and getting it wrong throws nothing. It just
+means the lobby never opens, which is the exact failure this project has now shipped twice.
+
+**A real bug the tests caught before it ran once.** `EMPTY = { waiting: null, pairs: {} }` shared
+one `pairs` object across every instance, because a spread is shallow — so a queue that had
+never been joined answered `matched` and handed out a stranger's collection size. The room next
+door survives the identical pattern only because every field on its `EMPTY` is a primitive. In
+production it would have been quieter and worse: pairings accumulating in the template,
+outliving both the sweep and the object. It is a factory now.

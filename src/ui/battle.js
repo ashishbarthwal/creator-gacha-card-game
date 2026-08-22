@@ -88,7 +88,7 @@ import {
 } from '../engine/challenge.js';
 import {
   roomFor, acceptChallenge, lockTeam, enterBuild, bailOut, checkRoom, presenceOff,
-  presenceAvailable,
+  presenceAvailable, joinQueue, pollQueue, leaveQueue,
 } from '../data/presence.js';
 import {
   MAX_COLLECTION_RATIO, needsShedding, eligibleSizes, shedCollection, protectedRaritiesPresent,
@@ -150,6 +150,16 @@ const ui = {
      stamps: the lobby to `lobbyAt` (set on accept), the build to
      `buildStartAt` (set when the second side enters). */
   gateDeadline: null,
+  /* The random-opponent search. `ticket` names a QUEUE SLOT the same way
+     `claim` names a seat — a nonce, per search, never sent to the other side.
+     Held so the search can be cancelled properly: a searcher who walks away
+     without saying so is a slot the next player waits ~25s on. */
+  ticket: '',
+  /* What to call the other player when there is no name to use. The friend
+     flow has one because somebody typed it; a stranger does not, and asking a
+     stranger to type one renders their free text on your screen. Derived from
+     the room instead — see `handleFor`. */
+  themName: '',
 };
 
 let lastTrigger = null;
@@ -383,6 +393,8 @@ function renderMode() {
   grid.append(
     modeCard('Quick battle', 'ai',
       'An opponent matched to your team out of the current set. Always available.'),
+    modeCard('Find an opponent', 'random',
+      'Queue up against whoever else is playing right now. No code to send — same shared blind build as a friend match.'),
     modeCard('Challenge someone', 'challenge',
       'Send a code — build your five now, or send it bare and build together the moment they accept. Nobody scouts anybody.'),
     modeCard('Accept a challenge', 'accept',
@@ -425,6 +437,18 @@ function modeCard(title, mode, blurb) {
    restores — see renderSharedBuildScreen for why the shared phase does not). */
 function resetMatch() {
   clearTimers();
+  /* SAY GOODBYE BEFORE FORGETTING. A searcher who closes the screen without
+     telling the queue stays pairable until the sweep evicts them ~25s later,
+     and the whole cost of that lands on the NEXT player — who gets paired with
+     a slot nobody is behind and finds out by watching a lobby that never
+     moves. Fire-and-forget on purpose: this is courtesy to a stranger, not
+     correctness for us, and it must never be able to hold up leaving a screen
+     or throw on the way out. */
+  if (ui.ticket) {
+    leaveQueue(ui.ticket).catch(() => {});
+    ui.ticket = '';
+  }
+  ui.themName = '';
   /* Invalidates any poll or countdown still in flight from the last match —
      without this, the previous room's poll chain keeps running and can paint
      into, or navigate away from, the new match's screens. */
@@ -455,7 +479,335 @@ function chooseMode(mode) {
   note('');
   restoreLineup();
   if (mode === 'accept') return renderAcceptPaste();
+  if (mode === 'random') return renderFindOpponent();
   setPhase('build');
+}
+
+/* ── FIND AN OPPONENT: the random-queue search ─────────────────────────────
+   The third way to start a live 1v1, and it reuses the second one entirely.
+   Everything after "you are paired" is the flow a friend match already runs —
+   the lobby, the fairness gate, the shared blind build, the independent locks,
+   the face-off beat. This screen exists to supply the four things two strangers
+   cannot agree on without a code (the room id, the seed, the pinned clock and
+   who sits in which seat), and it gets all four from one request. See
+   workers/match-room/src/queue.js for why the server has to mint them.
+
+   WHICH SEAT YOU GET DECIDES WHICH EXISTING PATH YOU REJOIN, and that mapping
+   is the whole trick:
+
+     side 'b' (you joined a queue somebody was already waiting in)
+        does exactly what a defender pasting a code does — `acceptChallenge`,
+        which stamps `lobbyAt` and reports your collection size — then enters
+        the lobby. One request, no waiting.
+
+     side 'a' (you were the one waiting)
+        does exactly what a challenger watching their sent code does — polls
+        the room until it reports accepted, then enters the lobby. Normally one
+        poll, because 'b' accepts the instant it is paired.
+
+   THE QUEUE IS NOT THE MATCH ROOM AND THEIR CLOCKS ARE UNRELATED. A queue slot
+   dies after ~25s of silence, so nobody is ever paired with a closed tab; the
+   room lives ten minutes. Polling here is therefore a HEARTBEAT as well as a
+   question, which is why an expired answer is met by re-joining rather than by
+   giving up — a tab that was backgrounded past the sweep has done nothing
+   wrong and its owner is still watching. */
+
+/* Brisk, and it can afford to be: the queue is a single strongly-consistent
+   object, so unlike the challenger's screen there is no 60-second edge cache
+   putting a floor under how fast an answer can arrive. Backed off anyway once a
+   search is clearly not going to be instant, because a search left open in a
+   tab should not spend requests forever. */
+const QUEUE_POLL_MS = 2000;
+const QUEUE_POLL_SLOW_MS = 4000;
+const QUEUE_BACKOFF_AFTER_MS = 30000;
+
+/* When to admit nobody is here. THIS IS THE HONEST HALF OF THE FEATURE and it
+   matters more than the matchmaking does: measured before launch, real player
+   traffic on this site is approximately zero, so the overwhelmingly likely
+   outcome of any given search is that nobody else is searching. A screen that
+   spins forever without saying so is a screen that reads as broken.
+
+   The search does NOT stop when this fires — somebody could still arrive, and
+   quietly cancelling on a player who is still watching would be the same lie in
+   the other direction. It keeps looking and offers a way out. */
+const QUEUE_LONELY_MS = 30000;
+
+/* How long side 'a' waits for its partner to reach the room before saying the
+   pairing failed. Short by construction: the other side is paired and accepting
+   right now, so this is not the open-ended wait the sent-challenge screen runs.
+   If it does not resolve, the pairing is broken rather than slow. */
+const PAIR_STALL_MS = 20000;
+
+/* A name for somebody who never typed one.
+
+   Derived from the ROOM ID and the seat, which both browsers already know, so
+   the two sides compute the same two handles with nothing extra crossing the
+   wire. That is the entire reason it is done this way rather than by putting a
+   name field in the queue: a stranger's typed text rendered on your screen is a
+   moderation surface this project has no way to police, and there is no version
+   of free text from an anonymous queue that is safe by construction. A derived
+   handle is safe by construction.
+
+   It is not an identity and cannot become one — it is a function of a room id
+   that is deleted after ten minutes, so the same person searching twice is a
+   different handle both times. FNV-1a, the same digest `fingerprint` uses. */
+function handleFor(room, side) {
+  let h = 2166136261;
+  for (const c of `${room}:${side}`) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return `Duelist ${(h >>> 0).toString(36).toUpperCase().slice(0, 4).padStart(4, '0')}`;
+}
+
+/* A throwaway nonce for one queue slot. Same generator and the same alphabet as
+   `newClaim`, and the same reasoning: what matters is only that two browsers
+   never invent the same one. */
+const newTicket = newClaim;
+
+function renderFindOpponent() {
+  bodyEl.replaceChildren();
+  const gen = ++readyGen;
+  const startedAt = Date.now();
+
+  ui.ticket = newTicket();
+
+  /* Assigned when the poll loop is built at the bottom of this function, and
+     called by `dead`/`onMatched` above it. A forward hook rather than reordering
+     the function, because the loop has to be constructed after the two handlers
+     it calls — and a no-op default means an exit taken before the loop exists
+     is simply nothing to stop. */
+  let stopSearch = () => {};
+
+  const panel = section('Find an opponent',
+    'Looking for someone else playing right now. You will both build blind, on the same clock.');
+
+  const lamp = document.createElement('p');
+  lamp.className = 'ar-lamp';
+  lamp.textContent = 'Searching…';
+  panel.append(lamp);
+
+  const elapsed = document.createElement('p');
+  elapsed.className = 'ar-fairness';
+  panel.append(elapsed);
+
+  /* THE TICK HAS TO BE STOPPABLE, and this was visible in the first real test:
+     `dead` cleared the elapsed line, the tick refilled it a second later, and
+     the screen ended up saying "matchmaking is not available" directly above
+     "Searching for 13s". Two statements, one screen, flatly contradicting each
+     other — which reads as the page being broken even when the message above it
+     is the correct one. A generation check is not enough here: the screen is
+     still the current one, it has just stopped searching. */
+  let searching = true;
+  const tick = () => {
+    if (gen !== readyGen || !searching) return;
+    const secs = Math.floor((Date.now() - startedAt) / 1000);
+    elapsed.textContent = `Searching for ${secs}s — how many cards you own is shared so the fairness cap can apply. Nothing else is.`;
+    later(tick, 1000);
+  };
+  tick();
+
+  panel.append(button('Cancel', {
+    className: 'btn ghost',
+    onClick: () => { resetMatch(); setPhase('mode'); },
+  }));
+
+  bodyEl.append(panel);
+
+  /* Ends the screen with a reason and the one thing that always works. Clears
+     the ticket first: whatever went wrong, this browser is no longer searching,
+     and a slot left behind is the next player's problem rather than ours. */
+  const dead = message => {
+    if (gen !== readyGen) return;
+    searching = false;
+    stopSearch();
+    if (ui.ticket) { leaveQueue(ui.ticket).catch(() => {}); ui.ticket = ''; }
+    lamp.className = 'ar-lamp';
+    lamp.textContent = message;
+    elapsed.textContent = '';
+    panel.append(button('Quick battle instead', {
+      className: 'btn primary',
+      onClick: () => chooseMode('ai'),
+    }));
+  };
+
+  /* Shown once the wait is unusual, and the search keeps running underneath.
+     The button is the point: on a quiet day this is the difference between the
+     mode being a dead end and the mode being a route to a fight. */
+  let lonelyShown = false;
+  const admitLonely = () => {
+    if (lonelyShown || gen !== readyGen || !ui.ticket) return;
+    lonelyShown = true;
+    lamp.textContent = 'Nobody else is searching right now — still looking.';
+    const out = document.createElement('p');
+    out.className = 'ar-fairness';
+    out.innerHTML = `
+      <p>This is a small game and the queue is often empty. Leave this open and
+         it pairs you the moment somebody arrives — or take a Quick battle,
+         which needs nobody else at all.</p>`;
+    panel.append(out, button('Quick battle instead', {
+      className: 'btn primary',
+      onClick: () => chooseMode('ai'),
+    }));
+  };
+  later(admitLonely, QUEUE_LONELY_MS);
+
+  /* Side 'a': nothing to send. 'b' stamps `lobbyAt` when it accepts, and this
+     waits for that exactly as a sent challenge does. */
+  function waitForAccept() {
+    const poll = () => {
+      if (gen !== readyGen) return;
+      checkRoom(ui.room).then(st => {
+        if (gen !== readyGen) return;
+        if (!st.enabled) {
+          if (presenceOff(st)) return dead('The match room could not be reached, so this pairing cannot start.');
+          return acceptPoll(POLL_MS);
+        }
+        ui.roomState = st;
+        if (st.accepted && st.lobbyAt) {
+          adoptGateWindow(st);
+          return later(() => { if (gen === readyGen) enterSharedBuild('a'); }, 700);
+        }
+        acceptPoll(POLL_MS);
+      }).catch(() => acceptPoll(POLL_MS));
+    };
+    const acceptPoll = pollChain(gen, poll);
+    later(() => {
+      if (gen !== readyGen || ui.roomState?.accepted) return;
+      lamp.className = 'ar-lamp';
+      lamp.textContent = 'Your opponent never made it into the room. Nothing is stuck — search again.';
+      panel.append(button('Search again', {
+        className: 'btn primary',
+        onClick: () => { resetMatch(); ui.mode = 'random'; renderFindOpponent(); },
+      }));
+    }, PAIR_STALL_MS);
+    poll();
+  }
+
+  /* Paired. Everything the two sides must agree on arrived in this one answer
+     and neither browser chose any of it — see the queue object's header for why
+     that is the only shape that cannot drift. */
+  const onMatched = res => {
+    if (gen !== readyGen) return;
+    searching = false;
+    stopSearch();
+    ui.ticket = '';                       // paired, so there is no slot to leave
+    ui.room = res.room;
+    ui.side = res.side;
+    ui.themName = handleFor(res.room, res.side === 'a' ? 'b' : 'a');
+
+    lamp.className = 'ar-lamp is-ready';
+    lamp.textContent = `✔ Matched with ${ui.themName} — opening the lobby…`;
+    elapsed.textContent = '';
+
+    if (res.side === 'b') {
+      /* THE DEFENDER'S SEAT, and this is the defender's request. `theirCs` is
+         what a decoded challenge would have carried in `collectionSize`, so
+         parking it on a challenge-shaped object puts `fairnessFor` and
+         `renderLockedFaceoff` in exactly the position the friend flow leaves
+         them in — neither needs a new branch. */
+      ui.challenge = { seed: res.seed, now: res.now, collectionSize: res.theirCs, name: ui.themName };
+      ui.claim = newClaim();
+      acceptChallenge(ui.room, myChannels().length, ui.claim).then(st => {
+        if (gen !== readyGen) return;
+        if (!st.enabled) return dead('The match room could not be reached, so this pairing cannot start.');
+        ui.roomState = st;
+        adoptGateWindow(st);
+        later(() => { if (gen === readyGen) enterSharedBuild('b'); }, 700);
+      }).catch(() => dead('The match room could not be reached, so this pairing cannot start.'));
+      return;
+    }
+
+    /* THE CHALLENGER'S SEAT. The seed and clock are kept where side 'a' already
+       reads them from — `fightNow` and `renderLockedFaceoff` both fall through
+       to these when there is no decoded challenge. */
+    ui.sentSeed = res.seed;
+    ui.sentNow = res.now;
+    waitForAccept();
+  };
+
+  const interval = () =>
+    (Date.now() - startedAt < QUEUE_BACKOFF_AFTER_MS ? QUEUE_POLL_MS : QUEUE_POLL_SLOW_MS);
+
+  /* ── THIS SCREEN DOES NOT USE `pollChain`, AND THE REASON IS A REAL BUG ────
+     `pollChain` pauses a hidden tab, which is right for every screen that uses
+     it: those are all WATCHING a room whose state only their own opponent can
+     change, so a backgrounded tab misses nothing and the next read after
+     returning has the truth.
+
+     A queue is the opposite. Polling here is a HEARTBEAT — it is the thing that
+     keeps you IN the queue at all — so a paused tab does not merely stop
+     listening, it silently drops out after `WAIT_TTL_MS` while its screen still
+     says "Searching". Measured, that made the two-window test impossible in the
+     obvious setup: two MAXIMIZED windows means the one behind is fully occluded,
+     Chrome reports `document.hidden`, and it stops polling — so the two
+     searchers were never parked in the queue at the same moment however long
+     anybody waited. Each was, from the other's side, a tab that had gone quiet.
+
+     It is not a test-rig problem either. A real player who alt-tabs for half a
+     minute would come back to a screen claiming to be searching when it had not
+     been for most of that time, which is the same lie in a place nobody would
+     ever debug.
+
+     So this loop keeps its heartbeat while hidden. The cost is bounded and
+     known: at the slow interval a ten-minute search is ~150 requests, against a
+     free tier the arena's other screens were tuned down to protect. The thing
+     that made pausing worth it there — a room read tells you nothing new — is
+     exactly what is not true here.
+
+     PAIRING A BACKGROUNDED TAB IS SURVIVABLE, which is what makes this safe:
+     the pairing stays readable for `PAIR_TTL_MS`, and the lobby on the other
+     side of it already handles an opponent who never arrives (see `STALL_MS`
+     and the "never came through" panel). A short wait for someone who tabbed
+     away beats never matching anybody. */
+  let stopped = false;
+  let mustRejoin = false;
+  let timer = null;
+
+  const nextPoll = ms => {
+    if (stopped || gen !== readyGen) return;
+    if (Date.now() - startedAt > ROOM_LIFETIME_MS) {
+      return dead('Search stopped after ten minutes. Nothing was found, and nothing is stuck.');
+    }
+    clearTimeout(timer);
+    timer = setTimeout(() => ask(mustRejoin), ms);
+    ui.timers.push(timer);
+  };
+
+  const ask = joining => {
+    if (stopped || gen !== readyGen) return;
+    /* A ticketless poll is a 400, and left unguarded it was a real leak: `dead`
+       clears the ticket but used not to stop this loop, so a screen that had
+       already given up went on asking `poll` with an empty string every couple
+       of seconds for the rest of the tab's life. Twenty-one of them showed up
+       in one dev-server log. Belt and braces — `stopped` is the fix, this is
+       the assertion that it worked. */
+    if (!ui.ticket) return;
+
+    const request = joining
+      ? joinQueue(ui.ticket, myChannels().length)
+      : pollQueue(ui.ticket);
+
+    request.then(res => {
+      if (stopped || gen !== readyGen) return;
+      /* Settled: no binding, no queue. Distinguished from a failed request by
+         data/presence.js for the same reason the room distinguishes them — one
+         means stop asking, the other means ask again. */
+      if (res?.enabled === false && presenceOff(res)) {
+        return dead('Online matchmaking is not available right now. Quick battle needs no server at all.');
+      }
+      if (res?.status === 'matched') return onMatched(res);
+      /* Swept for going quiet. Re-join rather than give up: nothing went wrong,
+         the slot just lapsed, and the player is still watching. */
+      if (res?.status === 'expired') { mustRejoin = true; return nextPoll(0); }
+      mustRejoin = false;
+      nextPoll(interval());
+    }).catch(() => nextPoll(interval()));
+  };
+
+  /* Every exit from this screen goes through one of these two, so there is one
+     place that says "stop asking" rather than a flag each caller must remember.
+     `dead` and `onMatched` both set it — see their definitions above. */
+  stopSearch = () => { stopped = true; clearTimeout(timer); };
+
+  ask(true);
 }
 
 /* ── the send-a-challenge screen ───────────────────────────────────────────
@@ -1633,7 +1985,14 @@ function renderLockedFaceoff(state) {
   const seed = isA ? ui.sentSeed : ui.challenge?.seed;
   const mineTeam = isA ? state.teamA : state.teamB;
   const theirTeam = isA ? state.teamB : state.teamA;
-  const theirName = isA ? '' : (ui.challenge?.name ?? '');
+  /* `ui.themName` wins when it is set, which is only ever the random flow.
+     It is checked ahead of the challenge's name rather than folded into it
+     because the two answer different questions: the challenge name is
+     something a person typed about themselves, and this is something both
+     browsers computed about a room. Side 'a' had no name to show at all before
+     this — a friend challenge carries the CHALLENGER's name outward, so the
+     challenger has never learned anything about who took it up. */
+  const theirName = ui.themName || (isA ? '' : (ui.challenge?.name ?? ''));
 
   ui.pendingFight = { teamA: state.teamA, teamB: state.teamB, seed, now, youAre: ui.side, them: theirName };
 

@@ -117,6 +117,49 @@ commitment, or take the consult first. Decide it rather than letting launch day 
 
 **NEXT — start here.**
 
+0z. **"FIND AN OPPONENT" IS LIVE — random matchmaking shipped 2026-08-22, and cross-device is
+   confirmed working by Ash on two real devices.** The third way to start a fight, after Quick
+   battle and a friend code. `workers/match-room/src/queue.js`, `functions/api/queue.js`,
+   `renderFindOpponent` in `src/ui/battle.js`, 31 tests across `test/queue.test.js` and
+   `test/presence.test.js`, DECISIONS.md 2026-08-22. **628 tests pass.**
+
+   The whole design in one line: the queue's only job is to let two strangers agree on a room
+   id, a seed, a pinned clock and who sits in which seat - after which they are exactly where a
+   friend match is the instant a code is pasted, and the existing lobby carries them. **The room
+   protocol was NOT changed**, and the `MatchQueue` class rides in the Worker that already
+   existed, so this cost no new deployable.
+
+   *Three bugs were found by testing it, and all three were in the CLIENT while the server was
+   answering correctly the whole time. Worth keeping, because that is where the next one will be
+   too:*
+   - **The queue reused `call`, the room's client**, which ends by testing the ROOM's `enabled`
+     field and rebuilding the ROOM's fields by name. A perfectly good `{"status":"waiting"}` was
+     read as "there is no queue", and a `matched` answer would have had its room id and seed
+     dropped even if it had not been. `transport` is now split out so the fault handling is
+     shared and the success shapes are not. `test/presence.test.js` exists because of this.
+   - **`pollChain` pauses a hidden tab**, which is right for every screen that WATCHES a room and
+     fatal for one that polls a queue - there, the poll IS the heartbeat that keeps you in it. Two
+     maximised windows means the one behind is occluded, so the two searchers were never parked
+     at the same moment. The search loop now keeps its heartbeat while hidden.
+   - **A screen that gave up kept polling** with an emptied ticket, ~21 × `400 bad ticket` in one
+     dev-server log.
+
+   - [x] `npm run deploy:room` - migration `v2`, `MatchQueue` namespace `e68288c1…`.
+   - [x] Durable Object binding `QUEUE` on the Pages project, Production, via the dashboard.
+   - [x] Pages redeployed; `{"op":"leave","ticket":"probe0000"}` answers `{"status":"left"}`.
+   - [x] Two-window test, then **cross-device on two networks — Ash, 2026-08-22**.
+   - [x] The temporary `?debug=bindings` route is REMOVED. It existed because a missing DO
+         binding is invisible from outside: the endpoint answers "off", which is also what a
+         correctly-working endpoint says on a host with no binding, and the Pages REST API does
+         not report `durable_object_bindings` at all (it reads `{}` even for the `ROOM` binding
+         that demonstrably works). Asking the running Function was the only way to tell "absent"
+         from "named wrong" from "bound to Preview". If a binding ever goes missing again, that
+         six-line branch is the fastest way back to an answer.
+
+   - [ ] **The roadmap strip is footer-only** as of the same day (Ash: "bottom is good enough").
+         It ran in the header too for a few hours; nothing to do here, noted so the removal is
+         not read as an accident.
+
 0a. **⚠ MINORS ARE IN THE SHIPPED DECK — 46 cards, and 2 of the 9 RUBYs.** Found 2026-08-17 by
    `node tools/minors-audit.js --names`, which screens the BUILT set against Wikidata's recorded
    birth dates (P569) — a claim, not a guess, so there is no false-positive mode. 10,089 of

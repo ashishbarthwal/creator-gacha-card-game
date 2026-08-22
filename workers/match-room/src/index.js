@@ -288,3 +288,15 @@ export default {
     return json({ error: 'not a public endpoint' }, 404);
   },
 };
+
+/* THE RANDOM-OPPONENT QUEUE RIDES IN THIS SAME WORKER, and that is the point
+   rather than a shortcut. The second deployable this project gave up (see the
+   header above) was the price of a Pages project being unable to declare a
+   Durable Object class AT ALL — it was never a price per class. A second class
+   in the Worker that already exists costs one binding and one migration tag,
+   and adds no deploy step, no route and nothing new to remember.
+
+   Re-exported here rather than pointed at directly because `main` in
+   wrangler.jsonc names ONE entry file, and every class the Worker declares has
+   to be reachable from it. */
+export { MatchQueue } from './queue.js';

@@ -7,7 +7,7 @@
     "dev": "npx wrangler pages dev . --kv READY --compatibility-date=2026-08-15",
     "dev:static": "npx serve",
     "dev:room": "npx wrangler dev --config workers/match-room/wrangler.jsonc",
-    "dev:lobby": "npx wrangler pages dev . --do ROOM=MatchRoom@creator-gacha-room --compatibility-date=2026-08-15",
+    "dev:lobby": "npx wrangler pages dev . --do ROOM=MatchRoom@creator-gacha-room --do QUEUE=MatchQueue@creator-gacha-room --compatibility-date=2026-08-15",
     "deploy:room": "npx wrangler deploy --config workers/match-room/wrangler.jsonc",
     "test": "vitest run",
     "test:watch": "vitest",
