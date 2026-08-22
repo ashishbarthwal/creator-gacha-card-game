@@ -134,10 +134,13 @@ const ui = {
      deadlines below: `fairnessFor` reads the other side's collection size out
      of `roomState`, and `roomState` is replaced by every poll, so recomputing
      it later can answer differently from the screen the player just agreed to.
-     A room write built on a stale read drops `csB` (the room is a KV
-     read-modify-write with no compare-and-set), which is enough to turn the
-     shed the gate promised into no shed at all — or, in the other direction,
-     to shed a player who was never shown the screen. */
+     The ORIGINAL hazard here was a room write built on a stale read dropping
+     `csB` — KV was a read-modify-write with no compare-and-set — which was
+     enough to turn the shed the gate promised into no shed at all, or to shed a
+     player never shown the screen. The Durable Object removed that mechanism.
+     Deciding once and keeping it is kept anyway, because the weaker reason was
+     always the real one: `roomState` is REPLACED by every poll, so a screen that
+     promised something must not be able to answer differently a moment later. */
   gate: null,
   locked: false,        // have I locked my team in the live shared build phase
   eligiblePool: null,   // this side's battle-eligible collection (fairness.js's shed, or the full collection)
@@ -2142,11 +2145,27 @@ const POLL_MS = 1200;
    seconds before the match would have started ON ITS OWN. Telling a player to
    quit something that is merely slow is worse than making them wait, so the
    patience now outlasts the staleness. Two windows on one machine share an edge
-   location and never see any of this, which is exactly why it survived testing. */
+   location and never see any of this, which is exactly why it survived testing.
+
+   ── THIS NUMBER IS NOW CONSERVATIVE, ON PURPOSE (2026-08-22) ──────────────
+   The staleness it was sized against is GONE: the room is a Durable Object,
+   strongly consistent, one instance per room id, and the KV implementation was
+   deleted. A cross-network read is now immediate, so the honest worst case is a
+   round trip rather than a minute — and 75s is roughly six times longer than it
+   needs to be before a genuinely dead lobby admits it.
+
+   Left alone anyway, and deliberately. Retuning the lobby's patience in the
+   same pass that deleted its old backend would be changing the timing of the
+   exact flow that had just been confirmed working cross-device, with no way to
+   tell a regression from the retune. Too long is a slow message on a broken
+   match; too short is the 12s bug over again, which was a WORKING match being
+   called dead. The asymmetry says which way to err while the numbers are
+   untested. TASKS.md carries it as its own step. */
 const STALL_MS = 75000;
 
 /* How long a cross-network room can lag, for copy that has to explain a wait
-   without lying about it. Same 60s KV figure, rounded up for the round trip. */
+   without lying about it. Sized on KV's 60s edge cache; see STALL_MS above for
+   why a number describing a deleted backend is still sitting here. */
 const CROSS_NETWORK_MS = 65000;
 
 /* Bumped every time the ready screen is built or torn down. Presence work is
@@ -2383,16 +2402,19 @@ function renderChallengeOut(code) {
     });
   };
 
-  /* HOW OFTEN TO ASK A QUESTION THAT CANNOT BE ANSWERED FASTER. An acceptance
-     from another network can take up to a minute to become visible here — that
-     is KV's edge cache, not the network (see CROSS_NETWORK_MS) — so polling
-     this screen every 1.2s for ten minutes buys nothing and spends ~500 reads
-     of a 100,000/day budget per abandoned tab.
+  /* HOW OFTEN TO ASK. Written when an acceptance from another network could
+     take up to a minute to become visible here — KV's edge cache, not the
+     network — so polling every 1.2s for ten minutes bought nothing and spent
+     ~500 reads of a 100,000/day budget per abandoned tab.
 
-     Brisk while it might genuinely be quick (two windows on one machine see an
-     accept in well under a second), then backing off to the rate the substrate
-     can actually deliver. A ten-minute wait costs ~140 reads instead of ~500,
-     and nobody waits a millisecond longer for it. */
+     THAT CACHE IS GONE (the room is a Durable Object as of 2026-08-17, and the
+     KV path was deleted on 2026-08-22), so the backoff no longer buys latency
+     back — it only spends fewer requests. The second reason still holds and is
+     reason enough on its own: an abandoned tab should not poll a dead room 500
+     times. What changed is that the backoff is now a QUOTA choice rather than a
+     concession to a substrate, which means it can be shortened whenever
+     somebody wants a snappier accept and is willing to pay for it. See STALL_MS
+     for why the arena's timings were not retuned in the deletion pass. */
   const openedAt = Date.now();
   function waitInterval() {
     const waited = Date.now() - openedAt;

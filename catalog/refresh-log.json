@@ -441,6 +441,13 @@
       "slug": "core",
       "cards": 22720,
       "snapshotDate": "2026-08-17"
+    },
+    {
+      "at": "2026-08-22T10:14:06.367Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 22720,
+      "snapshotDate": "2026-08-17"
     }
   ]
 }

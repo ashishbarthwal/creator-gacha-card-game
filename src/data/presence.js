@@ -228,15 +228,15 @@ export const checkRoom = room => call(`${BASE}/${encodeURIComponent(room)}`, { m
    two people could ever agree on a team, and the player would be choosing a
    dead end.
 
-   A FIXED SENTINEL ROOM, NOT THE REAL ONE, AND NOT ONLY BECAUSE THERE ISN'T ONE
-   YET. Reading a room that does not exist is not free here: KV caches MISSES for
-   up to 60s and `cacheTtl` cannot go lower (see functions/api/ready/[room].js),
-   so probing a real room id before anybody has written it can keep that room
-   reading empty for a minute afterwards. A constant key that no match ever uses
-   cannot poison a real lobby, and answers the only question being asked — is
-   the endpoint there, and is KV bound — just as well. It stays inside the
-   server's `[a-z0-9]{4,40}` room-id alphabet so it is a well-formed request
-   rather than a 400. */
+   A FIXED SENTINEL ROOM, NOT THE REAL ONE. The original reason was KV: it cached
+   MISSES for up to 60s with no lower `cacheTtl`, so probing a real room id
+   before anybody had written it could keep that room reading empty for a minute
+   afterwards. The Durable Object has no such trap — that backend was deleted on
+   2026-08-22 — but the sentinel stays, because the weaker reason is sufficient
+   and always was: a probe should not address a match's real room at all. It
+   costs one instance that no game ever uses, and it cannot touch a live lobby by
+   construction rather than by timing. It stays inside the server's
+   `[a-z0-9]{4,40}` room-id alphabet so it is a well-formed request, not a 400. */
 export const presenceAvailable = () => checkRoom('presenceprobe0');
 
 /* ── THE RANDOM-OPPONENT QUEUE ─────────────────────────────────────────────

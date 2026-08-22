@@ -202,35 +202,56 @@ commitment, or take the consult first. Decide it rather than letting launch day 
    - [ ] Write down requests + unique visitors from that page before posting anywhere.
 
 
-0. **THE DURABLE OBJECT LOBBY IS LIVE — verified in production 2026-08-17.** The cross-network
-   hang is fixed at the mechanism, not mitigated. `curl -s
-   https://creator-gacha.pages.dev/api/ready/presenceprobe0` answers `"backend":"do"`, and the
-   whole protocol was driven against production: `enter b` then `enter a` leaves BOTH flags set
-   and stamps `buildStartAt` immediately, a fresh GET sees it with no staleness, and a second
+0. **THE DURABLE OBJECT LOBBY IS LIVE AND THE KV FALLBACK IS GONE (2026-08-22).** The
+   cross-network hang was fixed at the mechanism, not mitigated, and the old implementation has
+   now been deleted rather than left as a fallback.
+
+   `curl -s https://creator-gacha.pages.dev/api/ready/presenceprobe0` answers `enabled:true`, and
+   the whole protocol was driven against production: `enter b` then `enter a` leaves BOTH flags
+   set and stamps `buildStartAt` immediately, a fresh GET sees it with no staleness, and a second
    accept on the same code is still refused with `seatTaken` and no write.
 
-   **Two cleanups remain, and both are deliberately NOT done yet.**
-   - [ ] **Delete the KV fallback** — everything under "EVERYTHING BELOW IS THE KV PATH" in
-         `functions/api/ready/[room].js`, the `backend` marker in both that file and
-         `workers/match-room/src/index.js`, and `--kv READY` in `npm run dev`. Held back until a
-         real **phone-on-mobile-data vs PC-on-WiFi** match has been played, because that is the
-         pairing that was broken and no synthetic check replaces it. The marker is how you tell
-         which backend answered; delete the two together, since with one backend there is nothing
-         left to distinguish.
-   - [ ] **Tidy the binding name in the dashboard.** It is currently `"ROOM "` — one trailing
-         space, typed into a text field, invisible in every screen that shows it. The code now
-         trims and finds it anyway (that was a real half-hour: Worker deployed, namespace
-         registered, binding present in the deployment record, and `env.ROOM` still undefined
-         while everything reported healthy). Fixing the name is tidiness, not a fault — the
-         tolerant lookup stays either way, because a silent fallback must not hinge on an
-         unprintable character.
+   - [x] **The KV path is deleted** — everything under the old "EVERYTHING BELOW IS THE KV PATH"
+         marker in `functions/api/ready/[room].js`, the `backend` field in both server files, the
+         `--kv READY` flag, and the KV protocol tests in `test/room.test.js` (the protocol lives
+         in `test/match-room.test.js` now, so those were duplicates describing a dead backend).
+         The condition attached to keeping it was always **a real phone-on-mobile-data vs
+         PC-on-WiFi match** — Ash played one on 2026-08-22. Past that point a fallback to the
+         implementation whose bug motivated the rewrite is not a safety net, it is a second way
+         for the game to break.
+   - [x] `npm run dev` now binds the Durable Objects instead of KV, and `dev:lobby` is gone —
+         it had become byte-identical to `dev`. **A live arena needs two terminals:**
+         `npm run dev:room` hosts the objects, `npm run dev` serves the site bound to them.
+   - [ ] **The `READY` KV namespace is still bound to the Pages project and is now unread.**
+         Nothing breaks either way; remove the binding next time you are in the dashboard.
+   - [ ] **Tidy the binding name.** It is still `"ROOM "` — one trailing space, typed into a text
+         field, invisible in every screen that shows it. The proxies trim and find it anyway
+         (that was a real half-hour: Worker deployed, namespace registered, binding present in the
+         deployment record, and `env.ROOM` still undefined while everything reported healthy).
+         `QUEUE` was typed cleanly. Fixing `ROOM` is tidiness, not a fault — the tolerant lookup
+         stays either way, because a silent fallback must not hinge on an unprintable character,
+         and `test/room.test.js` pins that.
 
-   *For reference, what it took:* a token permission (**Account · Workers Scripts · Edit**),
-   `npm run deploy:room`, a dashboard **Durable Object** binding on Production, and a Pages
-   redeploy. The Pages REST API accepts a PATCH adding `durable_object_bindings`, returns
-   `success: true` and silently drops it — twice, in both documented shapes — so the dashboard is
-   the only route. `wrangler pages deploy --config <path>` is likewise refused ("Pages does not
-   support custom paths for the Wrangler configuration file"), so the binding cannot be held in
+   - [ ] **THE ARENA'S TIMINGS ARE NOW SIZED FOR A CONSTRAINT THAT NO LONGER EXISTS.** `STALL_MS`
+         (75s), `CROSS_NETWORK_MS` (65s) and the challenger screen's 1.2s -> 3s -> 5s backoff were
+         all measured against KV's 60-second edge cache. A Durable Object read is immediate, so
+         the honest worst case is a round trip and every one of those numbers is roughly six times
+         longer than it needs to be — a genuinely dead lobby currently takes 75 seconds to say so.
+
+         **Deliberately NOT retuned in the deletion pass**, because that would have changed the
+         timing of the exact flow that had just been confirmed working cross-device, with no way
+         to tell a regression from the retune. The asymmetry says which way to err meanwhile: too
+         long is a slow message on a broken match, too short is the 12s bug over again, which was
+         a WORKING match being called dead. Do it as its own step, with the two-window checklist
+         below run before and after.
+
+   *For reference, what the migration took:* a token permission (**Account · Workers Scripts ·
+   Edit**), `npm run deploy:room`, a dashboard **Durable Object** binding on Production, and a
+   Pages redeploy. The Pages REST API accepts a PATCH adding `durable_object_bindings`, returns
+   `success: true` and silently drops it — twice, in both documented shapes — and does not report
+   the field when reading either, so the dashboard is the only route and a missing binding is
+   invisible from outside. `wrangler pages deploy --config <path>` is likewise refused ("Pages does
+   not support custom paths for the Wrangler configuration file"), so the binding cannot be held in
    the repo without moving the whole dev loop onto `_site`.
 
 1. **Run the two-window checklist below against production**, or against `npm run dev`. The
