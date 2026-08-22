@@ -122,7 +122,14 @@
     <!-- The pack IS the button. Everything above was a form with a submit
          control at the bottom; a gacha is one object you open. -->
     <div class="stage">
-      <button id="pack-open" class="pack" type="button" aria-label="Open a pack">
+      <!-- STARTS DISABLED, and this is a real state rather than a precaution: the set
+           is ~1.6MB over the wire and `renderPool()` — the only thing that ever enabled
+           this button — cannot run until it lands. Without the attribute the pack looked
+           pressable for the whole download and `doPull` silently returned on an empty
+           pool, so a slow connection got a game that ignored its own main control. The
+           dimmed look was already designed for exactly this (`.pack:disabled`); it was
+           just never reachable. -->
+      <button id="pack-open" class="pack" type="button" aria-label="Open a pack" disabled>
         <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
         <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
         <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
@@ -137,7 +144,7 @@
       </div>
 
       <p id="status" class="status" role="status" aria-live="polite"></p>
-      <button id="pull-dev" class="btn debug" type="button" title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
+      <button id="pull-dev" class="btn debug" type="button" disabled title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
       <p id="set-meta" class="stamp"></p>
       <!-- Deck size while sourcing. Dev-only on purpose: DECISIONS.md
            ("The player is not shown the machine") took the set-size line off the
@@ -154,9 +161,21 @@
       <span id="coll-summary" class="hint"></span>
       <!-- The arena lives here rather than up on the banner because you battle
            WITH your cards — the button belongs next to the thing it operates on.
-           Disabled until there are five different creators to field; battle.js
-           says so in words when opened, so this is a signpost, not the gate. -->
-      <button id="battle-open" type="button" class="btn ghost btn-battle" disabled>⚔ Battle</button>
+
+           IT IS NO LONGER DISABLED BELOW FIVE CARDS (2026-08-22), and the old
+           comment here claimed the behaviour this change actually delivers:
+           "battle.js says so in words when opened, so this is a signpost, not
+           the gate". It was the gate. `renderMode()` has always carried a
+           written "Not enough cards yet — a team is 5 different creators, you
+           have 3" panel, and disabling the button made that panel unreachable;
+           the only explanation a player got was a `title` tooltip, which does
+           not exist on touch at all. A greyed control with no reason is the
+           worst of both.
+
+           The footer's roadmap strip made it worse by pointing new visitors
+           straight at it ("1v1 duels across devices are live — open Battle").
+           Now the button opens, and the arena explains. -->
+      <button id="battle-open" type="button" class="btn ghost btn-battle">⚔ Battle</button>
       <!-- Saved in this browser only. The button is what makes that claim
            honest: data kept on someone's device with no way to remove it is
            not "local and yours", it is just data you cannot delete. -->

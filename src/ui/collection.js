@@ -329,10 +329,18 @@ export function renderCollection() {
      field. Counted off `items` (the whole collection) rather than `shown`,
      because a rarity filter is a way of looking at the binder, not a change to
      what you own. */
+  /* THE BUTTON IS NEVER DISABLED ANY MORE (2026-08-22). It used to be, below
+     five unique creators, with the reason carried only in a `title` — which is
+     hover-only, so on a phone the entire explanation was "this is grey". The
+     arena has always had the real answer written out (`renderMode`'s "Not
+     enough cards yet" panel) and disabling the button was the one thing making
+     it unreachable.
+
+     The title stays for pointer users, where it costs nothing and arrives
+     sooner. It is now a preview of what the arena will say rather than the only
+     place it is said. */
   if (battleBtn) {
-    const canField = unique >= TEAM_SIZE;
-    battleBtn.disabled = !canField;
-    battleBtn.title = canField
+    battleBtn.title = unique >= TEAM_SIZE
       ? 'Build a team of five and fight'
       : `Needs ${TEAM_SIZE} different creators — you have ${unique}`;
   }

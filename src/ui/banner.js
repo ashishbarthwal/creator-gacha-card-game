@@ -61,11 +61,21 @@ let packCount = 10;
    import time. */
 export const packSize = () => packCount;
 
-function showStatus(message, isError = false) {
+/* A TRANSIENT MESSAGE EXPIRES; A STATE DOES NOT. The 3.5s auto-clear is right
+   for "Pulled 10 cards" and wrong for "Loading cards…", and until 2026-08-22
+   this function could not tell them apart — so on any connection slower than
+   3.5 seconds the loading line vanished while the load was still running, and
+   the player was left with a disabled pack and no stated reason for it. The
+   worst case is the first visit on mobile data, which is also the only visit
+   that decides whether there is a second one.
+
+   `sticky` is the caller saying "this describes something still happening";
+   errors were already sticky for the same reason and stay that way. */
+function showStatus(message, { error = false, sticky = false } = {}) {
   clearTimeout(statusTimer);
   statusEl.textContent = message;
-  statusEl.classList.toggle('error', isError);
-  if (!isError && message) {
+  statusEl.classList.toggle('error', error);
+  if (!error && !sticky && message) {
     statusTimer = setTimeout(() => { statusEl.textContent = ''; }, 3500);
   }
 }
@@ -121,7 +131,7 @@ let notifySetLoaded = () => {};
    file in git is permanent — which would break both the 30-day statistics cap
    and the promise that a removal is performable. Production is the built one. */
 async function loadTheSet() {
-  showStatus('Loading cards…');
+  showStatus('Loading cards…', { sticky: true });
   const offered = [
     ...await setsFrom('sets/index.json'),
     ...await setsFrom('sets/built/index.json'),
@@ -162,7 +172,7 @@ async function setsFrom(url) {
    likely cause is a connection that was not there a moment ago. */
 function failed(message) {
   packBtn.disabled = true;
-  showStatus(`${message} Check your connection and try again.`, true);
+  showStatus(`${message} Check your connection and try again.`, { error: true });
   if (document.getElementById('set-retry')) return;
   const retry = document.createElement('button');
   retry.id = 'set-retry';
@@ -171,7 +181,11 @@ function failed(message) {
   retry.textContent = 'Retry';
   retry.addEventListener('click', () => {
     retry.remove();
-    packBtn.disabled = false;
+    /* The pack stays DISABLED across the retry — re-enabling it here reopened
+       the same hole this file just closed, one path over: a pressable pack with
+       no pool behind it for the length of a second download. `renderPool` turns
+       it back on when there are actually cards, which is the only moment that
+       is ever true. */
     loadTheSet();
   });
   statusEl.after(retry);
