@@ -5,28 +5,316 @@ this file is only "what is done, what is next". A WP is for **architectural** wo
 a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
 individually.
 
-**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 15,833 cards**
-(deployed 2026-08-05, commit `e509076`) — every staged institution permanently cut, series
-numbering retired. See "Core Set replaces Series 1" below. (This section was stale until now —
-the deploy happened but the doc was never updated after it.)
-**Next:** WP-Ruby Tier — **built and tested, not yet deployed.** A genuine sixth rarity band,
-internal key `RUBY`, for 100M+ subscriber channels — displayed as **Red Diamond Play Button**
-(UR's band is the real Ruby Play Button, 50M; names were swapped 2026-08-07 after Ash asked
-whether "Ruby" was even the right call — see DECISIONS.md), fully decoupled from UR's weight.
-The old UR band (31 cards) splits into UR 22 / RUBY 9 on a fresh local build
-(`sets/built/core.json`, 2026-08-06/07). Full reveal-FX escalation (ignition/discharge/aura,
-frame ember, holo sheen — all in `styles.css`) and card-frame tokens (`.r-RUBY`, dark blood-red
-after the naming fix) are in; 425 tests pass. Deploy needs `npx wrangler pages deploy _site
---project-name=creator-gacha --branch=main && node tools/record-deploy.js`, pending Ash's
-go-ahead. See below.
-Separately: WP12's battle system engine is built and tested with a playable prototype at
-`prototype/index.html` (local only); the in-app UI is still missing.
+**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 22,720 cards**
+(snapshot **2026-08-17**), deployed **2026-08-17** at `b4e873a` — the live site and the repo
+match, verified by fetching the deployed `styles.css`, `src/ui/reveal.js` and
+`src/ui/collection.js` and confirming each carries the change it should. Production now holds
+the 2026-08-15 body of work (the arena lobby, the shared blind build phase, the AI collection
+model, the pack-opening summon, the coffee-link removal), the 2026-08-16 run (chaos pass, card
+finish, mobile pull path, shareable links, One Deck), and the 2026-08-17 twinkle pass. The live
+lobby now runs on a Durable Object (`workers/match-room`) and is confirmed running the four-op protocol (`accept`/`enter`/`bail`/`lock`).
+**597 tests pass.**
+
+**This was a CODE-ONLY deploy** — `build:site` + `wrangler pages deploy`, deliberately not
+`npm run deploy`. The full script starts with `build-set.js`, which would have rebuilt the deck
+from the **staged, unreviewed** candidate batch described in NEXT item 3 and published ~2,000
+cards nobody has read. Use the code-only path for any change that does not touch the deck; see
+the deck-refresh note in NEXT item 4 for when the full script is the right one.
+
+*(The 2026-08-16 deploy was never recorded — `record-deploy.js` did not run after it — so the
+refresh log skips from 2026-08-15 to today. Nothing is wrong with the deck; the receipt just has
+a gap, and it is noted here rather than back-filled with a timestamp nobody measured.)*
+
+**Run it locally with `npm run dev`** (`wrangler pages dev`, default `http://localhost:8788`).
+That is the only command that serves the site AND runs `functions/api/ready/[room].js` against a
+local KV namespace, so it is the only way to exercise a challenge. `npm run dev:static`
+(`npx serve`) is static-only and answers 404 for `/api/ready/…`, which the app now correctly
+reads as "no lobby today".
+
+**⚠ READ CLAUDE.md FIRST for anything touching battle, the arena or the pull screen.** Four
+sections there carry the reasoning and the traps: "Battle balance — the 2026-08-15 rebalance is
+now the settled state", "Collection-size fairness", "The lobby — how a live challenge actually
+runs", and "Quick battle — the AI has a collection, not a rating". They supersede everything
+below this paragraph that mentions the OLD invariant (19% N-above-median-UR) — that was
+**deliberately reversed** on Ash's instruction, not regressed. Do not "fix" it back.
+
+**DONE 2026-08-15, do not redo.** All of it shipped to production on 2026-08-16 and is live.
+What is still outstanding is *watching* it run with two humans — see NEXT item 1.
+
+*The 40-item brief:*
+1. **Subscriber count dominates raw power** (items 1-3). `BUDGET_GAIN` 25 -> 170 plus a
+   subscriber power floor (`SUBSCRIBER_FLOOR_FRACTION`, `battle-stats.js`). N 1.00x -> RUBY
+   2.05x median.
+2. **Auto Select has an explicit power/rarity-first hierarchy** (items 4-6). `bestTeamFrom`/
+   `pickBestTeam` in `opponent.js`: greedy by power, diversity/element break ties inside an 8%
+   window only.
+3. **Collection-size fairness**, engine and UI (items 15-27, 33-35). `src/engine/fairness.js`
+   + `test/fairness.test.js` (26 tests); the CONTINUE/CHICKEN OUT screen lives in the lobby.
+4. **CODE_VERSION 2** — a challenge may carry no team, every code carries `collectionSize`.
+5. **The challenge flow rework** (items 8-14, 32, 37) — see CLAUDE.md's "The lobby".
+6. **In-arena field manual** — `src/ui/codex.js`, built from live engine exports so it cannot
+   drift from the code.
+
+*Follow-ups the same day, after playtesting caught real bugs:*
+7. **The lobby** — acceptance opens a 10s decision window both sides sit in; the 30s build clock
+   starts on the SECOND `enter`, not on `accept`. Fixes the last asymmetry: the side facing the
+   fairness gate used to lose its deliberation time from its build time (measured: 7s of 30).
+   `bail` (CHICKEN OUT) now reaches the room.
+8. **Countdown arithmetic** — deadlines are resolved to a fixed local timestamp once, not
+   recomputed per tick. The old form froze the clock, never auto-locked, and left the two sides
+   showing different numbers.
+9. **`resetMatch()`** — a match is not the arena's lifetime. Every new match resets through one
+   function; the second fight of a session used to inherit the first one's dead state.
+10. **"Build my team first" removed** and the deck tray starts empty on both sides, every time.
+    Consequence: a cross-device challenge now REQUIRES the lobby (locked decision 3 narrowed —
+    Quick battle still needs no server).
+11. **The AI rolls its own collection** — same size as the player's, same odds, best five.
+    Replaces power-matching. `test/opponent.test.js`, 7 tests.
+12. **Pack-opening summon** — `src/ui/packopen.js`, ~1s, rarity-teased, skippable. Plus the
+    reveal's "Pull again" loop and a rewritten empty-binder state.
+13. **The Buy Me a Coffee link is gone** from the site and every doc (Ash's call). No donation
+    path anywhere; locked decision 2 withdrawn.
+
+**LAUNCH BLOCKERS — the three found 2026-08-16 when Ash asked how to launch properly.**
+
+1. [x] **Shareable links.** `index.html` had a `<title>` and nothing else, so every link posted
+   to Reddit, Discord, WhatsApp or Twitter rendered as a naked URL — no image, no description,
+   on a game whose whole appeal is what the cards look like. Now carries og: + twitter: tags, a
+   description and a canonical, all absolute.
+   - [ ] **ONE MANUAL STEP LEFT, and the tags are pointing at a 404 until it is done:** open
+         `og.html`, DevTools → right-click the `div.og` node → "Capture node screenshot", save as
+         `og.png` in the repo root, redeploy. `build-site.js` ships it when present and prints a
+         loud warning when it is not. Faces in it are EMBLEMS, not photos — see the note at the
+         top of og.html for why that one is not a close call.
+
+2. [x] **Knowing whether anyone came — NEEDS NO CODE, and deliberately none.** Cloudflare Pages
+   already collects requests, bandwidth and top paths server-side for this project: dash →
+   Workers & Pages → creator-gacha → **Analytics**. Nothing is deployed, nothing touches a
+   visitor, and it is already recording — so it just needs looking at.
+   **Do NOT switch on Cloudflare "Web Analytics".** That is a different product: it injects a
+   client-side beacon that phones home on every pageview. Cookieless, but the footer promises
+   "No accounts, no tracking", and a script reporting each visit is the thing that sentence
+   tells people is not happening. The free server-side numbers answer "did anyone play" without
+   spending the promise.
+
+3. [x] **KV quota leaks.** Free tier is 100,000 reads and 1,000 writes a day; the arena is the
+   only thing spending either. A tab left on the waiting screen or an empty lobby polled
+   FOREVER at ~3,000 reads/hour, so two forgotten tabs could have taken the day's budget and the
+   symptom would have been the lobby failing for real players. Fixed three ways: poll chains stop
+   at the room's own ten-minute TTL and say so on screen, hidden tabs do not poll at all, and the
+   challenger's screen backs off 1.2s → 3s → 5s because a cross-network accept cannot show up
+   faster than KV's 60s cache anyway. A ten-minute wait costs ~140 reads instead of ~500.
+   - [ ] Still true and worth watching after launch: **~150 cross-device matches/day** is the
+         WRITE ceiling (5-10 writes each against 1,000/day). Quick battle costs nothing, so the
+         main game is immune. If the lobby starts failing, check writes before anything else.
+
+**BEFORE POSTING ANYWHERE — Ash's own call, not a technical item.** DECISIONS.md's plan was an
+Indian lawyer consult pre-real-launch, with real profile pictures flagged as the biggest likeness
+exposure and `AVATAR_SOURCE` built as the reversible escape hatch. A live site and a site being
+actively promoted are different exposure levels. Three honest options: launch on emblems
+(`AVATAR_SOURCE = 'emblem'`), launch on photos with the opt-out link and a same-day takedown
+commitment, or take the consult first. Decide it rather than letting launch day decide it.
+
+**NEXT — start here.**
+
+0z. **"FIND AN OPPONENT" IS LIVE — random matchmaking shipped 2026-08-22, and cross-device is
+   confirmed working by Ash on two real devices.** The third way to start a fight, after Quick
+   battle and a friend code. `workers/match-room/src/queue.js`, `functions/api/queue.js`,
+   `renderFindOpponent` in `src/ui/battle.js`, 31 tests across `test/queue.test.js` and
+   `test/presence.test.js`, DECISIONS.md 2026-08-22. **628 tests pass.**
+
+   The whole design in one line: the queue's only job is to let two strangers agree on a room
+   id, a seed, a pinned clock and who sits in which seat - after which they are exactly where a
+   friend match is the instant a code is pasted, and the existing lobby carries them. **The room
+   protocol was NOT changed**, and the `MatchQueue` class rides in the Worker that already
+   existed, so this cost no new deployable.
+
+   *Three bugs were found by testing it, and all three were in the CLIENT while the server was
+   answering correctly the whole time. Worth keeping, because that is where the next one will be
+   too:*
+   - **The queue reused `call`, the room's client**, which ends by testing the ROOM's `enabled`
+     field and rebuilding the ROOM's fields by name. A perfectly good `{"status":"waiting"}` was
+     read as "there is no queue", and a `matched` answer would have had its room id and seed
+     dropped even if it had not been. `transport` is now split out so the fault handling is
+     shared and the success shapes are not. `test/presence.test.js` exists because of this.
+   - **`pollChain` pauses a hidden tab**, which is right for every screen that WATCHES a room and
+     fatal for one that polls a queue - there, the poll IS the heartbeat that keeps you in it. Two
+     maximised windows means the one behind is occluded, so the two searchers were never parked
+     at the same moment. The search loop now keeps its heartbeat while hidden.
+   - **A screen that gave up kept polling** with an emptied ticket, ~21 × `400 bad ticket` in one
+     dev-server log.
+
+   - [x] `npm run deploy:room` - migration `v2`, `MatchQueue` namespace `e68288c1…`.
+   - [x] Durable Object binding `QUEUE` on the Pages project, Production, via the dashboard.
+   - [x] Pages redeployed; `{"op":"leave","ticket":"probe0000"}` answers `{"status":"left"}`.
+   - [x] Two-window test, then **cross-device on two networks — Ash, 2026-08-22**.
+   - [x] The temporary `?debug=bindings` route is REMOVED. It existed because a missing DO
+         binding is invisible from outside: the endpoint answers "off", which is also what a
+         correctly-working endpoint says on a host with no binding, and the Pages REST API does
+         not report `durable_object_bindings` at all (it reads `{}` even for the `ROOM` binding
+         that demonstrably works). Asking the running Function was the only way to tell "absent"
+         from "named wrong" from "bound to Preview". If a binding ever goes missing again, that
+         six-line branch is the fastest way back to an answer.
+
+   - [ ] **The roadmap strip is footer-only** as of the same day (Ash: "bottom is good enough").
+         It ran in the header too for a few hours; nothing to do here, noted so the removal is
+         not read as an accident.
+
+0a. **⚠ MINORS ARE IN THE SHIPPED DECK — 46 cards, and 2 of the 9 RUBYs.** Found 2026-08-17 by
+   `node tools/minors-audit.js --names`, which screens the BUILT set against Wikidata's recorded
+   birth dates (P569) — a claim, not a guess, so there is no false-positive mode. 10,089 of
+   22,772 cards carry a birth date at all; of those, **46 are under 18 today**.
+
+   The two rarest cards in the game are children:
+   - **Kids Diana Show** — 138.0M subs, RUBY, age 12
+   - **Like Nastya** — 133.0M subs, RUBY, age 11 (plus **10 more Like Nastya channels**, most SSR)
+   - **Ryan's World** — 40.3M subs, SSR, age 14
+   - youngest in the deck: **Angelica Nero, age 5** (289K subs)
+
+   By band: RUBY 2/9 · UR 0/22 · SSR 10/322 · SR 3/2391 · R 8 · N 23.
+
+   **Why this is not the same question as the institution rule.** That rule is about a
+   trademark-holder's asymmetric downside. This is about a child's face and name on a collectible
+   with combat stats, on a public site, with the chase cards being the children. An opt-out link
+   does not fix it after the fact, because a minor is not the person who would send the email.
+
+   - [ ] **Decide before launch.** Removal is `catalog/denylist.json` (permanent, re-enforced on
+         every future sourcing run) rather than `excluded.txt` (editorial, revisable) — an age
+         decision must not be quietly undone by a later curation pass. Then rebuild and redeploy.
+   - [ ] Consider whether the screen should run **inside the pipeline**, not beside it: a P569
+         check in `tools/wikidata-sweep.js` would stop minors entering the roster at all, the way
+         P31 stops institutions. Cheap (WDQS is free) and it makes the answer durable.
+   - [ ] **171 more channels flagged by the advisory name pass** (`--names`) — family/kids/toy
+         channels, which are the screen's biggest blind spot because they are registered to a
+         parent and carry no birth date. That list is for reading, never filtering.
+
+0b. **PRE-LAUNCH ANALYTICS BASELINE, recorded 2026-08-17** so "did launch do anything" is
+   answerable rather than a vibe.
+   - **Pages Functions invocations, last 30 days: 3,333** (Cloudflare GraphQL,
+     `pagesFunctionsInvocationsAdaptiveGroups`). This is the lobby endpoint only. Essentially
+     ALL of it is development: 797 on 08-08 (KV bring-up), 2,222 on 08-16 and 227 on 08-17
+     (the Durable Object migration). **Real-player lobby traffic is ~0.**
+   - **Page views: not exposed at account level** — the account-scoped GraphQL datasets cover
+     Workers/Pages Functions, not static asset requests. Read them at dash → Workers & Pages →
+     creator-gacha → **Analytics** (server-side, already collecting, no beacon — do NOT enable
+     "Web Analytics", which injects a client-side script and would break the footer's
+     "no tracking" promise).
+   - [ ] Write down requests + unique visitors from that page before posting anywhere.
+
+
+0. **THE DURABLE OBJECT LOBBY IS LIVE AND THE KV FALLBACK IS GONE (2026-08-22).** The
+   cross-network hang was fixed at the mechanism, not mitigated, and the old implementation has
+   now been deleted rather than left as a fallback.
+
+   `curl -s https://creator-gacha.pages.dev/api/ready/presenceprobe0` answers `enabled:true`, and
+   the whole protocol was driven against production: `enter b` then `enter a` leaves BOTH flags
+   set and stamps `buildStartAt` immediately, a fresh GET sees it with no staleness, and a second
+   accept on the same code is still refused with `seatTaken` and no write.
+
+   - [x] **The KV path is deleted** — everything under the old "EVERYTHING BELOW IS THE KV PATH"
+         marker in `functions/api/ready/[room].js`, the `backend` field in both server files, the
+         `--kv READY` flag, and the KV protocol tests in `test/room.test.js` (the protocol lives
+         in `test/match-room.test.js` now, so those were duplicates describing a dead backend).
+         The condition attached to keeping it was always **a real phone-on-mobile-data vs
+         PC-on-WiFi match** — Ash played one on 2026-08-22. Past that point a fallback to the
+         implementation whose bug motivated the rewrite is not a safety net, it is a second way
+         for the game to break.
+   - [x] `npm run dev` now binds the Durable Objects instead of KV, and `dev:lobby` is gone —
+         it had become byte-identical to `dev`. **A live arena needs two terminals:**
+         `npm run dev:room` hosts the objects, `npm run dev` serves the site bound to them.
+   - [ ] **The `READY` KV namespace is still bound to the Pages project and is now unread.**
+         Nothing breaks either way; remove the binding next time you are in the dashboard.
+   - [ ] **Tidy the binding name.** It is still `"ROOM "` — one trailing space, typed into a text
+         field, invisible in every screen that shows it. The proxies trim and find it anyway
+         (that was a real half-hour: Worker deployed, namespace registered, binding present in the
+         deployment record, and `env.ROOM` still undefined while everything reported healthy).
+         `QUEUE` was typed cleanly. Fixing `ROOM` is tidiness, not a fault — the tolerant lookup
+         stays either way, because a silent fallback must not hinge on an unprintable character,
+         and `test/room.test.js` pins that.
+
+   - [x] **The arena's timings were resized for the Durable Object (2026-08-22).** They had all
+         been measured against KV's 60-second edge cache, which no longer exists.
+         `STALL_MS` **75s -> 20s** (if the other side had entered, the next poll says so in 1.2s;
+         20 covers a couple of retried requests at the 5s fetch timeout, and the message is
+         advisory rather than terminal - `checkStall` un-stalls itself the moment they appear).
+         `CROSS_NETWORK_MS` **deleted** - it existed only to size copy about a mechanism that is
+         gone, so the copy was rewritten rather than the number shrunk: the stall panel and the
+         challenger's waiting note no longer tell players about a minute-long cross-network hold
+         that cannot happen, and now say the one true remaining thing, which is that the other
+         person has not opened it yet. The challenger's poll stays brisk for **60s** instead of
+         20 before backing off, because every poll now genuinely buys latency where before it
+         bought nothing - costed at ~190 requests for a full ten-minute wait against ~140 before.
+         `MIN_GATE_MS` (6s) stays: its ORIGINAL reason was KV staleness, and the ordinary ones
+         never depended on it.
+         **Not covered by tests** - run the two-window checklist below before trusting it.
+
+   *For reference, what the migration took:* a token permission (**Account · Workers Scripts ·
+   Edit**), `npm run deploy:room`, a dashboard **Durable Object** binding on Production, and a
+   Pages redeploy. The Pages REST API accepts a PATCH adding `durable_object_bindings`, returns
+   `success: true` and silently drops it — twice, in both documented shapes — and does not report
+   the field when reading either, so the dashboard is the only route and a missing binding is
+   invisible from outside. `wrangler pages deploy --config <path>` is likewise refused ("Pages does
+   not support custom paths for the Wrangler configuration file"), so the binding cannot be held in
+   the repo without moving the whole dev loop onto `_site`.
+
+1. **Run the two-window checklist below against production**, or against `npm run dev`. The
+   arena is untested DOM wiring by design; 597 tests cover the engine under it and none of them
+   touch `src/ui/battle.js`. The lobby has never been watched by two humans at once.
+2. **Watch the pack summon in a real browser** and tune `CHARGE_MS` in `src/ui/packopen.js` if
+   ~1s drags by the tenth pull. Nobody has seen it in motion yet.
+3. **A sourcing run is staged and not yet built.** `catalog/candidates.json` is +10,181 lines
+   uncommitted, with untracked `catalog/reach-11*.txt` / `reach-12*.txt` alongside it.
+   `npm run status` reports **31,305 candidate ids, 22,781 shipping** against the 20,739 in the
+   live deck, and flags "roster changed since the last build". Decide whether that batch is
+   reviewed and wanted, then commit it and `npm run deploy`; leaving it uncommitted means the
+   next session cannot tell a staged roster from a stray edit.
+4. **The deck's own refresh is NOT yet due** — snapshot is 2026-08-15, so the 25-day cadence
+   puts the next rebuild around **2026-09-09** and the 30-day statistics cap bites on
+   **2026-09-14**. `npm run deploy` re-hydrates (~318 quota units) and ships in one step. If
+   item 3 goes ahead it resets both dates, since it rebuilds the set on the way through.
+5. **The scheduled refresh job has failed twice in a row** (runs #2 and #3, 2026-08-09 and
+   2026-08-16 — `node tools/refresh-runs.js`). The deck is fresh because it has been deployed
+   by hand, which is exactly the condition that hides a broken alarm until the day it is needed.
+6. Everything below this point is the OLDER backlog, from before the 2026-08-15 brief. Still
+   real, still open, lower priority.
+
+**Manual test checklist — two windows (or two devices), against `npm run dev`.**
+- [ ] **Challenge, live room.** Window A: Challenge someone -> Send the challenge. Paste the code
+      into window B -> Challenge accepted. Both windows should show **LOBBY — 00:10** counting
+      down together, and NEITHER should be able to build during it.
+- [ ] **The gate is one-sided but the wait is not.** With one profile holding a much larger
+      collection, confirm only the larger side sees COLLECTION SIZE / CONTINUE / CHICKEN OUT, the
+      smaller side sees "your opponent is confirming whether to go ahead", and both see the same
+      lobby clock.
+- [ ] **Auto-enter.** Let the lobby hit 00:00 with nobody pressing. Both should enter and the
+      30s build clock should start together.
+- [ ] **Both build clocks match.** In the shared build phase the two windows must show the SAME
+      number, ticking. (They once froze at 30 and 26.)
+- [ ] **Independent lock.** Press Ready in A only: A's slots/pool/Auto-pick/Clear stop responding,
+      A reads "waiting on them", B still edits freely. Lock B -> both move to "Both locked in" and
+      the fight starts without waiting out the timer.
+- [ ] **Build auto-lock.** Let the build clock reach 00:00 in one window with 2-3 slots filled —
+      it should top up to five via Auto Select and lock, not stall.
+- [ ] **CHICKEN OUT reaches the other side.** The waiting player should be told the match is off,
+      not left building alone.
+- [ ] **One defender per code** (the 2026-08-16 freeze). Paste the SAME challenge code into a
+      THIRD window: it must say the challenge has already been accepted, and windows A and B must
+      carry on to the build phase undisturbed. Before the seat was claimable this deadlocked
+      everyone on LOBBY — 00:00, because two browsers held seat B and nobody held seat A.
+- [ ] **A lobby nobody joins.** Accept a challenge, then close the challenger's window. About 12s
+      past 00:00 the survivor must say the opponent never came through and offer Back out —
+      and CHICKEN OUT must still be pressable after CONTINUE, not greyed out with it.
+- [ ] **A second match in the same session.** Finish a fight -> New opponent -> challenge again.
+      The lobby and build clocks must start fresh, and BOTH trays must be empty.
+- [ ] **Empty tray, always.** Neither side opens the shared builder holding cards.
+- [ ] **No lobby.** Run `npm run dev:static` instead: "Challenge someone" should disable the send
+      button and explain, and Quick battle should still work perfectly.
 
 ---
 
 ## Open
 
-### WP-Ruby Tier — a real sixth band for 100M+ (built 2026-08-07, not yet deployed)
+### WP-Ruby Tier — a real sixth band for 100M+ (LIVE 2026-08-07)
 Started as "should UR be rarer" (Ash: pulling MrBeast should be a YOOOO moment). A first-pass
 continuous within-UR skew was considered and set aside: it dilutes as the UR roster grows, since
 the whole band still gets a fixed share of pulls no matter how many cards sit in it. Built instead
@@ -52,12 +340,16 @@ already loop generically over `RARITY_ORDER`, so almost no new pull logic was ne
       with the other bands, so RUBY is excluded from that parity check and UR's own tolerance
       widened slightly (10% → 15%) now that a 6th band thins its share too.
 - [X] Local rebuild: UR 22 / RUBY 9 (split from the old 31-card UR band). 425 tests pass.
-- [ ] **Not yet deployed.** Needs `tools/build-site.js` + `wrangler pages deploy` — independent
-      of the Core Set data deploy. The live site still runs the old flat-UR pull table and card
-      frame until this ships.
-- [ ] `test/gacha.test.js`/`test/core.test.js` cover the new band, but nobody has looked at the
-      reveal animation or the collection-grid RUBY card in a real browser yet — do that before
-      calling the visual side done.
+- [X] **Deployed 2026-08-07** (`da4a635`, "Record deploy: RUBY admire-screen visuals live") —
+      core, 15,831 cards, composition unchanged by the deploy itself. The live site runs the
+      six-band pull table and the `.r-RUBY` frame.
+- [X] **The admire screen** (`f29abd1`) — gem-cut refinements and a museum-display sequence,
+      plus stars on it (`0969fbe`), which is the one thing moving on a phone at that moment.
+      Two card-finish fixes landed alongside: the black cutout ring (`bc79e63`) and a mobile
+      holo rework that dropped gyro tilt (`69982a7`).
+- [ ] Nobody has looked at the reveal animation or the collection-grid RUBY card in a real
+      browser **since the finish rework**. The band itself is covered by
+      `test/gacha.test.js`/`test/core.test.js`; the visuals are not testable from the suite.
 
 ### WP10 — Deploy + README
 - [X] **Netlify direct upload + live link.** LIVE at https://creator-gacha.netlify.app
@@ -123,20 +415,24 @@ already loop generically over `RARITY_ORDER`, so almost no new pull logic was ne
       already-updated hydrate path (`CHANNEL_PARTS` requests `topicDetails`, `setbuild.js` keeps
       `publishedAt`), so the new `sets/built/core.json` carries **real dates on 100% of cards**
       and **real elements** (`node tools/battle-balance.js` no longer synthesizes anything).
-- [ ] **New finding from real data, not yet acted on:** cadence and devotion now correlate with
-      channel size at 0.42 and 0.35 — both above the tool's own ~0.25 "stopped being size-free"
-      flag. Every balance THRESHOLD still passes (largest class 40.6%, power ratio 1.15, small-
-      out-rating-giant 21.8%, win rate 60.6%), so nothing is broken, but the anchors were tuned
-      against synthesized ages and real ages read differently (median maturity 65 vs. the
-      synthetic 51 — the deck skews older than assumed). Worth a deliberate retune pass; not
-      done as a side effect of this rebuild.
-- [ ] **Not yet deployed.** `sets/built/core.json` is local only — `npm run deploy` (the
-      `wrangler pages deploy` step) needs a separate go-ahead before real users see this.
+- [X] **The size-correlation finding was acted on** (2026-08-08, `662fd73`). Cadence and
+      devotion correlated with channel size at 0.42 and 0.35, well past the tool's ~0.25
+      "stopped being size-free" flag — so both were de-sized against Influence the same way
+      `punch` always had been, with `DEVOTION_TREND`/`CADENCE_TREND` fitted on the live deck
+      and then frozen. Measured after: devotion **-0.013**, cadence **0.027**. Those two feed
+      DEF and SPD, so this was the single biggest way size still bought power, and it is also
+      why picking a team by subscriber count used to work.
+- [X] **Deployed 2026-08-05** (`e509076`, "WP-Core Set: … deploy").
 
-### WP12 — Battle system — engine done, no UI
-5v5, auto-resolved, against an AI matched to the player's own team power. Client-side only, so
-locked decision 3 is untouched. Rationale and the three measured failures behind the design are
-in DECISIONS.md.
+### WP12 — Battle system — LIVE 2026-08-08
+5v5, auto-resolved, against an AI matched to the player's own team power. Rationale and the
+three measured failures behind the design are in DECISIONS.md.
+
+**This section used to say "client-side only, so locked decision 3 is untouched", and that
+stopped being true on 2026-08-08.** Decision 3 was *amended* — not overturned — for exactly one
+file: `functions/api/ready/[room].js`, a two-player lobby holding one match under a hashed room
+id for ten minutes. It must stay optional, and it is: no KV binding, a failed request or being
+offline all fall back to the copy-paste flow the arena shipped with.
 - [X] **`engine/battle-stats.js`** — channel → five size-free axes → HP/ATK/DEF/SPD/MOM + class.
       Size buys a compressed *budget*; shape decides where it goes, so rarity does not decide
       the fight.
@@ -156,21 +452,103 @@ in DECISIONS.md.
 - [X] **`tools/battle-balance.js`** — measures the engine against the real deck: axis spread and
       size-correlation, class and element mix, the size claims, fight length and matchmaker
       fairness. The test block says "still true"; this says "how true, and where".
-- [X] **83 tests** across `battle` and `element`, including a balance block that asserts the
-      design goals rather than hoping. Current live-deck figures: attack flat with size at 1.02,
-      power median ratio 1.15, small cards out-rating the median giant 32.0%, even-match win rate
-      ~44-50%, median fight 6 rounds.
+- [X] **117 tests** across `battle` and `element` (452 in the suite overall), including a balance
+      block that asserts the design goals rather than hoping. Figures below are measured against
+      the **2026-08-09 rebuild** with `node tools/battle-balance.js`, not carried over: attack
+      flat with size at **0.94**, power median ratio **1.13**, small cards out-rating the median
+      giant **29.5%**, even-match win rate **37.2%**, median fight **6** rounds, 100% decided by
+      elimination.
+      **The 37.2% is left as recorded, and annotated rather than restated** — same rule the
+      `WPn` tags follow. It is what the tool printed that day; what has since changed is the
+      tool. That figure was 9 matchups re-fought 40 times, which is why no CI sits beside it.
+      Re-measured properly on 2026-08-15: **33.2% +/- 4.1** over 500 matchups, and the cause
+      is a class-diversity gap rather than the matchmaker's aim (see Next, item 2).
+- [X] **All five axes are size-free on real data** — the thing the residual trends exist to
+      guarantee, now confirmed against real ages rather than synthetic ones. `corr(size)`:
+      maturity 0.189, punch -0.004, devotion -0.027, cadence 0.038, velocity -0.058, all well
+      inside the ~0.25 flag. The 2026-08-08 de-sizing of devotion and cadence holds up.
 - [X] **A playable prototype** — `prototype/index.html`. Five packs each side, the opposition
       commits first so you build against something visible, formation, and the event log replayed
       on the cards. Fictional deck, real engine; not in the deploy allowlist.
-- [X] **The rebuild happened** (2026-08-05, as part of the Core Set rename — see above). Real
-      dates and real elements now flow through; the "every card is Unaligned" fallback is gone
-      on the new local build. **Not yet deployed**, so the *live* site is still on the old
-      fallback path until `npm run deploy` runs.
-- [ ] **UI in the real app** — team picker, battle screen, log replay. The prototype is the design,
-      not the shipped feature.
+      **Superseded by the shipped arena** — kept as the design record, not a live path. The
+      shipped app deliberately does not import from it (`ui/battle.js` re-implements mulberry32
+      rather than depend on a file that exists to be thrown away).
+- [X] **The rebuild happened** (2026-08-05, as part of the Core Set rename — see above) **and
+      shipped** (`e509076`). Real dates and real elements flow through on the live site; the
+      "every card is Unaligned" fallback is gone.
+- [X] **UI in the real app** — `src/ui/battle.js` (`4fd217a`), reached from the ⚔ Battle button.
+      Team picker with front/back ranks, matchup preview against a scouted enemy, the formation
+      bonus shown while it is still a choice, and the event log replayed on the cards. Wiring
+      only: every rule it enforces comes from `engine/`.
+- [X] **Cross-device 1v1 without a backend** — `engine/challenge.js` (`4fd217a`). A whole fight
+      folded into a pasteable `CGB1.` string: both teams, the seed, and a pinned `now`, so two
+      windows replay the identical fight hit for hit rather than merely agreeing on a winner.
+      The reply carries **inputs, not a verdict** — the challenger re-resolves, so a claimed
+      outcome cannot be taken on trust. Not tamper-proof, and `challenge.js` says so plainly:
+      detecting an edited team needs a secret, and a secret needs a server.
+- [X] **The lobby** — `functions/api/ready/[room].js` + `data/presence.js` (`d336cac`). Live on
+      KV since 2026-08-08; a real cross-device 1v1 has been played on it. Two lessons pinned in
+      the code: **readiness is something a person does**, so `team` and `ready` are separate ops
+      (conflating them started a fight one player never agreed to), and **a dropped request is
+      not a missing lobby**, so `presence.js` reports `off` and `error` separately.
+- [X] **The balance pass** (`fa22642`) — the game was solved, and not for the reason it looked
+      like. "Bring your five highest-rated cards" beat everything 87-100%, and an accurate
+      rating is exactly what produces a total order, so the fix had to be something the rating
+      cannot see: a **formation bonus** on the number of distinct classes fielded. Auto-pick is
+      greedy on card rating, so it can no longer see the bonus either — it stops being optimal
+      and becomes a baseline a thinking player beats.
+- [X] **The repricing** (`662fd73`) — five specialists built from one budget came out HP 83.9% /
+      ATK 82.7% / DEF 39.7% / SPD 20.0% / MOM 4.7%. A point spent on momentum bought a
+      seventeenth of what the same point bought on health, which is not a trade-off but a trap.
+      MOM's scale and cap both rose; `AXIS_FLOOR` went in so **nobody is zero at anything**
+      (3.7% of the deck was walking into fights with an attack of 1); crit moved off cadence
+      onto **punch**, where "this channel's uploads land above its weight" actually means
+      something.
+- [X] **A combat reference for humans** — `Battle Layout/battle-system.html` (`50ec6e0`). Every
+      number in it is measured; regenerate with `node tools/battle-balance.js` rather than
+      editing figures by hand.
+- [ ] **Refit `VELOCITY_TREND` against real ages** — the one constant still fitted on a
+      synthetic age profile. See "Next" at the top.
 - [ ] Decide whether individual matchups should stay deterministic (see DECISIONS.md — currently
       a fight is decided by composition, not luck, which is what auto-battle means).
+- [X] **"Class ratings span 1.86x" — INVESTIGATED AND WITHDRAWN 2026-08-09.** The figure is
+      real and the conclusion drawn from it was wrong. `powerOf` cannot see a class verb, and
+      Backstab bypasses a whole rank. An all-one-class round robin looks worse still (Assassin
+      6.3%, a 12.9x spread) and is equally misleading, because **nobody fields five Assassins**
+      — five low-attack cards cannot between them kill anything. Measured the way a player
+      actually decides, holding four slots and dropping in a rating-matched fifth, every class
+      lands between **47% and 60%** and an Assassin contributes more than a Titan.
+      `tools/battle-balance.js` grew a MARGINAL VALUE section so the next reader is not
+      misled the same way. Acting on the 1.86x would have cost real size-neutrality.
+- [ ] **Three of six classes are under 6% of the deck** — Bulwark 5.2%, Riser 4.7%,
+      Balanced 3.9%, against Titan's 37.7%. Still open, and it has a known cause: `maturity`
+      is the one axis not centred where the other four are (deck median 65 against ~50), so
+      the median card is a Titan by construction. **Every fix measured so far costs more than
+      it buys** — centring maturity and equalising all five axes lifts the floor to 8.2%, but
+      drops the share of N cards out-rating the median UR/RUBY from 19% to 13% and makes
+      marginal class balance *worse* (12.2 → 25.6 points). Worth revisiting only with a
+      mechanism that does not trade against the upset structure.
+- [ ] **Music is 47.6% of the element wheel — SOURCING, not mapping.** Diagnosed 2026-08-09
+      with a 500-channel hydrate (10 quota units): 50.6% of the deck carries a `music` topic
+      and **234 of 246** Music cards carry a specific genre slug (`pop_music`, `rock_music`,
+      `independent_music`), not the bare generic tag. `element.js` is reading YouTube
+      correctly; YouTube really does think half this deck is musicians, which follows from
+      sourcing notable people out of Wikidata. It dilutes the ring — the counter to Music
+      (Knowledge) is 10.6% of the deck — but a seventh element was already rejected on its own
+      merits and re-mapping cannot fix a population. Fixable only at the sourcing layer.
+- [ ] **A momentum team still loses essentially everything** — the "fastest growing" strategy
+      averages **0.9%** across the strategy matrix, and 0.0% against a diverse team. The
+      2026-08-08 repricing raised MOM's scale and cap and moved the needle for individual
+      Risers, but building *around* growth is still not a strategy. Related to the speed item
+      below; both are stats that multiply an attack the card could not afford. Note the
+      constraint any fix must respect: raising MOM's or SPD's scale re-amplifies SIZE, because
+      every stat is budget-scaled — measured, it cuts small-cards-out-rating-giants from 29%
+      to 7%.
+- [ ] **Speed is still the weakest place to spend a budget** (~20% against a 50% target), and
+      `battle-stats.js` records why the fix is partial by construction: `extraActionChance` is a
+      probability, so even a perfect roll buys one extra swing, and two swings of a budget
+      attack lose to one swing of a real one. Closing it needs a *second* thing for speed to
+      buy — evasion, or a genuine multi-action roll — not another constant.
 
 ### WP11 — Procedural Creator Emblems  (proposed, not started)
 Replaces the creator's profile picture with a deterministic generated emblem, dissolving the
@@ -198,7 +576,11 @@ DECISIONS.md, move on.
 - **Curation exclusions.** `catalog/excluded.txt` — editorial, revisable, and never to be
   confused with the opt-out denylist.
 - **Printing size changes** and rebuilds at the 25-day cadence.
-- **Card visuals, CSS, page layout, copy tweaks.**
+- **Card visuals, CSS, page layout, copy tweaks.** The 2026-08-15 pack-opening summon
+  (`src/ui/packopen.js`), the reveal's "Pull again" loop and the rewritten empty-binder state
+  all landed under this line rather than as a WP — polish, not architecture. The one thing in
+  them worth reading before changing is the DECISIONS.md entry on why the summon deliberately
+  leaks the pull's best rarity when `ui/reveal.js` deliberately hides it.
 - **Keyword vocabulary tuning** (`KEYWORD_SEEDS`, `KEYWORD_MODIFIERS`).
 - **Roster handle fixes** — ~10% of guessed handles fail at 1 unit each.
 
@@ -224,7 +606,8 @@ One line each. The reasoning is in DECISIONS.md; the receipts are the `wpN` tags
 
 - [X] **WP0 — Split the monolith** (`wp0`). Pure core, gacha engine, data seam, ui, wiring.
 - [X] **WP1 — Test suite** (`wp1`). Vitest, CI on every push, badge, self-contained HTML reports.
-- [X] **WP2 — Footer.** Buy Me a Coffee (never wired to game state) + not-affiliated disclaimer.
+- [X] **WP2 — Footer.** Not-affiliated disclaimer. The Buy Me a Coffee link it also shipped was
+      **removed 2026-08-15** (Ash's call) — no donation path remains anywhere.
 - [X] **WP3 — Holographic cards.** Rarity-gated tilt/holo; grew into the metal-bevel tier
       frames, ringed avatar centrepiece, and the card inspector.
 - [X] **WP4 — Card sets** (`wp4`). Sets adapter behind the seam, manifest, picker, bundled demo

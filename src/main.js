@@ -4,17 +4,30 @@
 import { pull } from './engine/gacha.js';
 import { RARITY_ORDER } from './engine/core.js';
 import { currentPool, addToCollection, persistCollection } from './state.js';
-import { initBanner } from './ui/banner.js';
-import { renderCollection, notePulled } from './ui/collection.js';
-import { openReveal } from './ui/reveal.js';
+import { initBanner, packSize } from './ui/banner.js';
+import { renderCollection, notePulled, showBinder } from './ui/collection.js';
+import { openReveal, initReveal } from './ui/reveal.js';
+import { playPackOpen } from './ui/packopen.js';
+import { openArena } from './ui/battle.js';
 
-function doPull(count) {
+/* THE PULL IS RESOLVED AND BANKED BEFORE THE ANIMATION RUNS, and the ordering
+   is deliberate rather than incidental. `playPackOpen` is a decoration in front
+   of a decision that has already been made: the cards are drawn, added to the
+   collection and persisted first, so a player who closes the tab mid-flourish
+   keeps what they pulled, and nothing about the summon can influence what came
+   out of it. It is awaited only to decide WHEN the reveal opens.
+
+   It also cannot fail the pull. `playPackOpen` never rejects — reduced motion,
+   a missing overlay, a skipped sequence all resolve — so there is no path here
+   where a broken animation costs someone their cards. */
+async function doPull(count) {
   const pool = currentPool();
   if (!pool.length) return;
   const results = pull(pool, count).map(addToCollection);
   persistCollection();          // once per pull, not once per card
   notePulled(results);          // session order + NEW flags, for the collection view
   renderCollection();
+  await playPackOpen(results);
   openReveal(results);
 }
 
@@ -32,7 +45,7 @@ function pickRandom(cards) {
   return cards[Math.floor(Math.random() * cards.length)];
 }
 
-function doDevPull() {
+async function doDevPull() {
   const pool = currentPool();
   if (!pool.length) return;
   const oneEach = RARITY_ORDER
@@ -43,8 +56,24 @@ function doDevPull() {
   persistCollection();
   notePulled(results);
   renderCollection();
+  await playPackOpen(results);
   openReveal(results);
 }
 
 initBanner({ onPull: doPull, onDevPull: doDevPull, onSetLoaded: renderCollection });
+
+/* The reveal's "pull again" runs the SAME doPull the pack runs — summon,
+   reveal and all — rather than a quieter shortcut, so the loop a player falls
+   into is the loop the game was designed around. `packSize` is passed as the
+   getter banner.js exports so the button can name the size actually selected. */
+/* `onDismiss` fires when the player is FINISHED with the reveal — Done, the
+   backdrop, Escape — and deliberately not when "Pull again" takes the overlay
+   down on its way to another pack. See the note above `closeReveal`. */
+initReveal({ onPullAgain: () => doPull(packSize()), packSize, onDismiss: showBinder });
+
+/* The arena's own enabled state is maintained by ui/collection.js (it is the
+   module that knows how many different creators are owned); introducing the two
+   is main's job, which is the whole of what this file is for. */
+document.getElementById('battle-open').addEventListener('click', openArena);
+
 renderCollection();

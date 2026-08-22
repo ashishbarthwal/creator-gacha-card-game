@@ -347,8 +347,17 @@ describe('assembleSet — the strip is the last Gate item', () => {
        either, and storing the answer rather than the evidence keeps ~4 strings
        per record out of a 23.5k-card file. */
     expect(Object.keys(set.channels[0]).sort()).toEqual(
-      ['avatarUrl', 'element', 'handle', 'hiddenSubscriberCount', 'id', 'publishedAt', 'subscriberCount', 'title', 'videoCount', 'viewCount'],
+      ['avatarUrl', 'element', 'handle', 'id', 'publishedAt', 'subscriberCount', 'title', 'videoCount', 'viewCount'],
     );
+  });
+
+  /* `hiddenSubscriberCount` LEFT THIS LIST and did not leave the format: it is
+     written only when true now, exactly as subscriberCount is written only when
+     present. It was false on all 15,831 cards of the live deck, which is 0.46 MB
+     of a 7.29 MB file spent restating the default. */
+  it('omits hiddenSubscriberCount when it is false', () => {
+    const { set } = build({ N: 40, R: 30 });
+    expect(set.channels[0]).not.toHaveProperty('hiddenSubscriberCount');
   });
 
   it('omits subscriberCount for a hidden channel, matching the live API', () => {

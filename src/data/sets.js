@@ -34,6 +34,28 @@ export function parseSet(raw) {
   };
 }
 
+/* ── REHYDRATING THE PACKED AVATAR ──────────────────────────────────────────
+   setbuild.js writes the variable middle of a Google avatar URL to `avatar`
+   and drops the host and size spec, which are identical on effectively every
+   card (see packAvatar there for the measurement). This puts them back.
+
+   IT IS THE SEAM THAT MAKES THIS FINE. A set is the only source that packs;
+   demo and live emit a whole `avatarUrl` and always have. Because the shape
+   handed onward is identical either way, nothing downstream — card render,
+   battle card, reveal — can tell which source it came from, which is the
+   guarantee the seam exists to provide. Both fields are accepted, so a set
+   built before this existed still loads, and so does one carrying a URL that
+   did not fit the template. */
+const AVATAR_PREFIX = 'https://yt3.ggpht.com/';
+const AVATAR_SUFFIX = '=s800-c-k-c0x00ffffff-no-rj';
+
+export function unpackAvatar(ch) {
+  if (typeof ch?.avatar === 'string' && ch.avatar) {
+    return AVATAR_PREFIX + ch.avatar + AVATAR_SUFFIX;
+  }
+  return String(ch?.avatarUrl ?? '');
+}
+
 function normalizeChannel(ch, i, slug) {
   if (!ch || typeof ch !== 'object' || !ch.id) {
     throw new Error(`Card set "${slug}" channel #${i} is missing an "id".`);
@@ -42,7 +64,9 @@ function normalizeChannel(ch, i, slug) {
     id: String(ch.id),
     title: String(ch.title ?? 'Untitled channel'),
     handle: String(ch.handle ?? ''),
-    avatarUrl: String(ch.avatarUrl ?? ''),
+    avatarUrl: unpackAvatar(ch),
+    /* Absent means false — setbuild.js only writes this when it is true, since
+       it was false on every card of the live deck. */
     hiddenSubscriberCount: Boolean(ch.hiddenSubscriberCount),
     viewCount: String(ch.viewCount ?? '0'),
     videoCount: String(ch.videoCount ?? '0'),

@@ -272,7 +272,18 @@ async function main() {
   if (dryRun) return console.log('\n--dry-run: nothing written.');
 
   await mkdir(BUILT_DIR, { recursive: true });
-  await writeFile(resolve(BUILT_DIR, `${slug}.json`), JSON.stringify(set, null, 2) + '\n');
+  /* NOT PRETTY-PRINTED, and the manifest below still is — the difference is who
+     reads them. This file is 15.8k generated records that no human opens: it is
+     gitignored, so there is no diff to keep legible, and the indentation was
+     1.43 MB of the 7.29 MB every player's browser parsed.
+
+     BE HONEST ABOUT WHICH COST THIS IS. Over the wire it saves almost nothing —
+     brotli compresses whitespace to about 10 KB, and the same is true of the
+     avatar template setbuild.js now strips. What it saves is `JSON.parse`
+     building 7.29 MB of string on a phone's main thread before the first pull,
+     which the two changes together cut to 4.57 MB. A parse win, not a download
+     win, and worth saying plainly so nobody re-derives it as a bandwidth claim. */
+  await writeFile(resolve(BUILT_DIR, `${slug}.json`), JSON.stringify(set) + '\n');
 
   /* A set nothing points at is not shipped. The committed sets/index.json can't
      list it — built sets never enter git — so built sets carry their own

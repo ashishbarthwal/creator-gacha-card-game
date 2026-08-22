@@ -9,10 +9,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Creator Gacha</title>
+<title>Creator Gacha — YouTube channels as collectible cards</title>
+
+<!-- ── HOW THIS LOOKS WHEN SOMEBODY SHARES IT ────────────────────────────────
+     Added 2026-08-16, pre-launch. Until now the page carried a <title> and
+     nothing else, so every link posted to Reddit, Discord, WhatsApp or Twitter
+     rendered as a naked URL: no image, no description, nothing to click for. On
+     a game whose whole appeal is what the cards look like, the preview card IS
+     the pitch, and its absence was the single cheapest thing standing between
+     this and an audience.
+
+     ABSOLUTE URLs, not relative. Every scraper resolves og:image against its own
+     idea of the base, and a relative path is the classic way to ship a preview
+     that works in a local test and shows nothing in production. If the domain
+     ever moves, these four lines move with it — which is also why the canonical
+     is here, so shares of a preview deployment still point people at the real
+     site rather than a hash nobody can find twice.
+
+     The image itself is generated from og.html — open it, screenshot the frame
+     at 1200x630, save as og.png. See the note at the top of that file. -->
+<meta name="description" content="A browser gacha game where real YouTube channels become collectible trading cards. Stats are derived from live channel data — subscribers set the rarity, views per video set the attack. Pull, collect, and battle 5v5. No signup, no API key, free.">
+<link rel="canonical" href="https://creator-gacha.pages.dev/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Creator Gacha">
+<meta property="og:url" content="https://creator-gacha.pages.dev/">
+<meta property="og:title" content="Creator Gacha — YouTube channels as collectible cards">
+<meta property="og:description" content="Real channels, real numbers. Subscribers set the rarity, views per video set the attack. Pull a x10, build a team of five, and battle. No signup, no API key, free.">
+<meta property="og:image" content="https://creator-gacha.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Creator Gacha trading cards — a rare card in a metal frame beside its five battle stats.">
+
+<!-- summary_large_image is the one that gives a full-width picture rather than a
+     thumbnail beside the text. Twitter/X falls back to the og: tags above for
+     everything else, so nothing here is repeated for its own sake. -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Creator Gacha — YouTube channels as collectible cards">
+<meta name="twitter:description" content="Real channels, real numbers. Pull a x10, build a team of five, and battle. No signup, no API key, free.">
+<meta name="twitter:image" content="https://creator-gacha.pages.dev/og.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;600;700&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <!-- Inlined as a data URI rather than a favicon.ico file: the brand mark is a
      play glyph on the plum stage, which is six shapes of SVG, and a separate
@@ -32,6 +71,14 @@
     <h1>Creator Gacha</h1>
   </div>
   <p class="tagline">Pull collectible cards minted from real YouTube channel stats.</p>
+
+  <!-- THE ROADMAP USED TO SIT HERE TOO, TOP RIGHT, AND CAME OUT ON 2026-08-22
+       (Ash: "bottom is good enough"). It was never wrong, it was redundant: the
+       same four items ran in the footer with more room and the "already live"
+       line the header copy had to drop, so the header version was the weaker of
+       two copies competing with the pack for the first second of attention. The
+       footer one is the one that survives; see the note above it for what is on
+       the list and what is deliberately not. -->
 </header>
 
 <main>
@@ -48,57 +95,41 @@
 
     <h2 id="banner-h" class="sr-only">Banner</h2>
 
-    <!-- The only two controls a player needs before opening: which set, and
-         (for the few who want it) their own API key. Both sit quietly at the
-         top edge so the pack owns the middle of the stage. -->
-    <div class="stage-top">
-      <div id="sets-controls">
-        <div class="select-wrap set-pick">
-          <select id="set-select" class="field" aria-label="Card set"></select>
-        </div>
-      </div>
-      <!-- Dev-only since 2026-08-03, so a player never sees a mode toggle at
-           all — just the set picker. Live mode asks for a Google Cloud API key
-           to reach a thinner version of what the front page already does, which
-           is a wall in front of the game rather than a feature. Gated by
-           src/config.js (WP8), not deleted: Magic Search and the key field live
-           inside the Live controls and are how sourcing is driven from the
-           browser. `?dev=1` brings it all back. -->
-      <div class="mode-toggle" role="group" aria-label="Data source">
-        <button id="mode-sets" class="mode-btn active" type="button">Sets</button>
-        <button id="mode-live" class="mode-btn" type="button">Live API</button>
-      </div>
-    </div>
+    <!-- NO CONTROLS HERE ANY MORE (2026-08-16, Ash's call). This strip used to
+         hold a set picker and a Live-API mode toggle, and both were answering
+         questions the game no longer has:
 
-    <div id="live-controls" hidden>
-      <input id="api-key" class="field" type="password" placeholder="YouTube Data API v3 key" autocomplete="off" spellcheck="false">
-      <div class="add-row">
-        <input id="add-input" class="field" placeholder="@handle, channel URL, or UC id" spellcheck="false">
-        <button id="add-btn" class="btn ghost" type="button">Add</button>
-      </div>
-      <!-- Magic Search is a dev sourcing tool, not a game feature: it spends the
-           visitor's own API quota. Hidden outside dev by src/config.js (WP8). -->
-      <div id="ms-input-row" class="add-row">
-        <input id="ms-input" class="field" placeholder="keyword, e.g. cooking — Magic Search (dev)" spellcheck="false">
-      </div>
-      <div id="ms-row" class="ms-row">
-        <span class="ms-label">Magic Search</span>
-        <button id="ms-legends" class="btn dev" type="button" title="Dev: 5M+ subs. Searches all-time most-viewed, where the big channels are.">Legends</button>
-        <button id="ms-majority" class="btn dev" type="button" title="Dev: 100K–5M subs. Jittered order and window — the broad middle.">Majority</button>
-        <button id="ms-wildcards" class="btn dev" type="button" title="Dev: 1K–100K subs. Searches recent uploads, where small active creators are.">Small</button>
-      </div>
-      <p class="hint">Your key stays in this page's memory — never stored, never sent anywhere except googleapis.com. Get one free in Google Cloud Console → YouTube Data API v3.</p>
-    </div>
+         THE SET PICKER offered exactly one real set. Core Set is the deck —
+         the demo set that used to sit above it in the list is gone entirely
+         (see the note in src/ui/banner.js), so a dropdown with one entry was a
+         control that could only ever be set to what it already was.
 
-    <!-- Live mode only: the hand-built banner has to be manageable, so its
-         channels stay enumerated. Sets mode renders nothing here — a player
-         does not need an inventory of the box they are pulling from. -->
-    <div id="pool-chips" class="chips"></div>
+         LIVE API was the app's original premise — bring your own key, pull any
+         channel — and sets made it vestigial: it asked a player for a Google
+         Cloud API key to reach a thinner version of what the front page already
+         does with 20,739 cards and no setup. It went dev-only on 2026-08-03 and
+         is now removed from the page outright.
+
+         The Magic Search buttons went with it, because they lived inside the
+         Live controls. Nothing is lost: `tools/magic-search.js` is the same
+         search from the command line, and the Wikidata sweep has been the
+         default sourcing route since well before this.
+
+         `data/youtube.js` — the live ADAPTER — is untouched and still shipped:
+         it is pipeline code that tools/add-candidates.js imports, and the data
+         seam still has it. Only the UI stopped offering it. -->
 
     <!-- The pack IS the button. Everything above was a form with a submit
          control at the bottom; a gacha is one object you open. -->
     <div class="stage">
-      <button id="pack-open" class="pack" type="button" aria-label="Open a pack">
+      <!-- STARTS DISABLED, and this is a real state rather than a precaution: the set
+           is ~1.6MB over the wire and `renderPool()` — the only thing that ever enabled
+           this button — cannot run until it lands. Without the attribute the pack looked
+           pressable for the whole download and `doPull` silently returned on an empty
+           pool, so a slow connection got a game that ignored its own main control. The
+           dimmed look was already designed for exactly this (`.pack:disabled`); it was
+           just never reachable. -->
+      <button id="pack-open" class="pack" type="button" aria-label="Open a pack" disabled>
         <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
         <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
         <span class="pack-card"><span class="pack-rings"></span><span class="pack-play"></span><span class="pack-word">Creator Gacha</span></span>
@@ -113,7 +144,7 @@
       </div>
 
       <p id="status" class="status" role="status" aria-live="polite"></p>
-      <button id="pull-dev" class="btn debug" type="button" title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
+      <button id="pull-dev" class="btn debug" type="button" disabled title="Testing only: a 10-pull with one of every rarity">Dev Pull</button>
       <p id="set-meta" class="stamp"></p>
       <!-- Deck size while sourcing. Dev-only on purpose: DECISIONS.md
            ("The player is not shown the machine") took the set-size line off the
@@ -128,6 +159,23 @@
     <div class="panel-head">
       <h2 id="coll-h">Collection</h2>
       <span id="coll-summary" class="hint"></span>
+      <!-- The arena lives here rather than up on the banner because you battle
+           WITH your cards — the button belongs next to the thing it operates on.
+
+           IT IS NO LONGER DISABLED BELOW FIVE CARDS (2026-08-22), and the old
+           comment here claimed the behaviour this change actually delivers:
+           "battle.js says so in words when opened, so this is a signpost, not
+           the gate". It was the gate. `renderMode()` has always carried a
+           written "Not enough cards yet — a team is 5 different creators, you
+           have 3" panel, and disabling the button made that panel unreachable;
+           the only explanation a player got was a `title` tooltip, which does
+           not exist on touch at all. A greyed control with no reason is the
+           worst of both.
+
+           The footer's roadmap strip made it worse by pointing new visitors
+           straight at it ("1v1 duels across devices are live — open Battle").
+           Now the button opens, and the arena explains. -->
+      <button id="battle-open" type="button" class="btn ghost btn-battle">⚔ Battle</button>
       <!-- Saved in this browser only. The button is what makes that claim
            honest: data kept on someone's device with no way to remove it is
            not "local and yours", it is just data you cannot delete. -->
@@ -173,11 +221,33 @@
 
     <div id="collection-grid" class="cards-grid"></div>
     <p id="coll-none" class="empty coll-none" hidden>Nothing matches those filters.</p>
-    <p id="coll-empty" class="empty">No cards yet — pull to start your collection.</p>
+    <!-- The first thing a new visitor sees in this panel, so it is written as an
+         invitation rather than a report of absence. The fan echoes the pack's
+         own three-card silhouette, which is the object it is pointing at. -->
+    <div id="coll-empty" class="empty">
+      <span class="ce-fan" aria-hidden="true"><i></i><i></i><i></i></span>
+      <b>Your binder is empty</b>
+      <span class="ce-sub">Open a pack above to start collecting. Every card is a real creator, and its stats are their real numbers.</span>
+    </div>
   </section>
 </main>
 
 <footer>
+  <!-- The roadmap again, at the other end of the page. See the long note in the
+       header for what is on the list and what is deliberately not. This copy is
+       the fuller one: someone reading a footer has already played, so it gets a
+       sentence and the "already live" line the header version has no room for. -->
+  <aside class="soon soon--foot" aria-label="In development">
+    <p class="soon-lead"><span class="soon-tag">In development</span> More is being built</p>
+    <ul class="soon-list">
+      <li>Tournament runs</li>
+      <li>Difficulty settings</li>
+      <li>Collection milestones</li>
+      <li>Seasonal card sets</li>
+    </ul>
+    <p class="soon-live"><span class="soon-dot" aria-hidden="true"></span>Already live: <b>1v1 duels across devices</b> — open <b>&#9876; Battle</b> and send a friend the code.</p>
+  </aside>
+
   <!-- Two columns at desktop: the standing legal text on the left, the two
        links a person might actually act on pulled out on the right, where they
        are not buried in the middle of a paragraph wall. -->
@@ -215,14 +285,41 @@
         <a class="optout-link" href="mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request">Ask to be removed</a>
         — no questions asked, and you'll be out of every set within 7 days.
       </p>
-      <p class="footer-coffee">
-        <a class="coffee-link" href="https://www.buymeacoffee.com/chunchunmaru" target="_blank" rel="noopener noreferrer">
-          <span aria-hidden="true">☕</span> Buy ChunChunMaru a coffee
-        </a>
-      </p>
     </div>
   </div>
 </footer>
+
+<!-- The summon: the beat between pressing the pack and seeing the cards. Purely
+     decorative and explicitly aria-hidden — it announces nothing a screen-reader
+     user needs, and the reveal dialog that follows it carries the real content.
+     It is skippable on any input, so it must never take focus or trap it.
+     See src/ui/packopen.js for the choreography and why it is this short. -->
+<div id="packopen" hidden aria-hidden="true">
+  <div id="po-stage" class="po-stage">
+    <div class="po-glow"></div>
+    <div class="po-rays"></div>
+    <div id="po-pack" class="po-pack">
+      <!-- .po-fan exists so the charge swell has its own transform layer: the
+           swell is an ANIMATION, and an animation on .po-pack itself would
+           outrank the FLIP travel transition in the cascade and snap the pack
+           to centre. The .po-card:nth-child() rules still hold — the cards
+           stay the first three children of their parent. -->
+      <span class="po-fan">
+        <span class="po-card"></span>
+        <span class="po-card"></span>
+        <span class="po-card">
+          <span class="po-rings"></span>
+          <span class="po-play"></span>
+        </span>
+        <span class="po-seam"></span>
+      </span>
+    </div>
+    <div id="po-streaks" class="po-streaks"></div>
+    <div class="po-ring"></div>
+    <div class="po-ring is-late"></div>
+    <div class="po-flash"></div>
+  </div>
+</div>
 
 <div id="reveal" hidden role="dialog" aria-modal="true" aria-label="Pull results">
   <div class="reveal-box">
@@ -230,8 +327,14 @@
     <div id="reveal-grid" class="reveal-grid"></div>
     <!-- Its own bar, because the button is sticky: it needs a full-width strip to
          carry the veil that keeps cards legible as they scroll under it. -->
+    <!-- Two exits, and the order is the point: the loop is offered first and
+         styled as the primary, because this is the moment momentum is highest
+         and a reveal that only offers "Done" spends that momentum on nothing.
+         Done stays a real, equal-weight way out — the invitation must never
+         become the only door. -->
     <div class="reveal-foot">
-      <button id="reveal-done" class="btn primary" type="button">Done</button>
+      <button id="reveal-again" class="btn primary" type="button">Pull again</button>
+      <button id="reveal-done" class="btn ghost" type="button">Done</button>
     </div>
   </div>
 </div>
@@ -240,6 +343,38 @@
   <div class="inspect-box">
     <div id="inspect-holder" class="inspect-holder"></div>
     <button id="inspect-close" class="btn ghost" type="button">Close</button>
+  </div>
+</div>
+
+<!-- The arena. A shell only: every panel inside is built by src/ui/battle.js,
+     the same way #reveal and #inspect hold nothing but a mount point. The three
+     flows (quick battle, challenge, accept) differ enough in shape that markup
+     for all of them would be three hidden layouts fighting over one container.
+
+     Two windows fight each other by passing a code through the player — see
+     src/engine/challenge.js. There is no backend and no connection: a normal
+     window and an incognito one share no storage at all, so the string IS the
+     channel, and the pure seed-deterministic engine is what makes both sides
+     replay the identical battle from it. -->
+<div id="arena" hidden role="dialog" aria-modal="true" aria-label="Arena">
+  <div class="arena-box">
+    <header class="arena-head">
+      <h2>Arena</h2>
+      <ol class="ar-steps" id="ar-steps"></ol>
+      <button id="arena-close" class="btn ghost" type="button">Close</button>
+    </header>
+    <!-- The flow and the field manual sit SIDE BY SIDE rather than the manual
+         living behind a help button. A rule you read while choosing is one you
+         can act on; a rule on a separate page is one you have forgotten by the
+         time it matters. It is a SIBLING of #ar-body, not a child, because
+         every phase renderer calls replaceChildren on that node — nesting it
+         would mean rebuilding the manual on every re-render, and losing which
+         sections the player had opened each time.
+         Populated by src/ui/codex.js, entirely from live engine values. -->
+    <div class="arena-split">
+      <div id="ar-body" class="arena-body"></div>
+      <aside id="ar-codex" class="arena-codex" aria-label="Combat reference"></aside>
+    </div>
   </div>
 </div>
 

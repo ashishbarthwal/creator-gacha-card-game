@@ -14,8 +14,9 @@
    been looked at on a real screen: a two-stop gradient disc carrying the
    channel's initial. Reusing a proven visual beats inventing a second one for
    the fallback path, and it means the emblem build looks like the app rather
-   than like a degraded version of it. data/demo.js now imports this instead
-   of keeping its own copy.
+   than like a degraded version of it. The demo set — now test/fixtures/demo-set.js,
+   since it stopped shipping on 2026-08-16 — imports this rather than keeping its
+   own copy.
 
    Pure and headless — it returns a string, touches no DOM, and runs unchanged
    in Node, which is why it lives here and can be tested without a browser. */

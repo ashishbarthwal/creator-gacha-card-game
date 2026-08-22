@@ -24,3 +24,10 @@
 # working through it line by line. The mechanism stays: the next institution
 # sweep, or any future bulk curation call, stages here first and is promoted
 # the same way once decided.
+#
+# A second batch (18 ids, corporations and broadcasters caught by a name-only
+# scan of the 2026-08-16 sourcing pass) sat here briefly and was reviewed and
+# DECLINED the same day — Ash's call: keep them rather than chase a handful of
+# cards out of a 20k+ deck. Removed rather than left as dead weight; the ids
+# and the reasoning for flagging each one are in git history if this ever
+# needs revisiting.

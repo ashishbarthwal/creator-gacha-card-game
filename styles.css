@@ -17,6 +17,27 @@
     --font-display: 'Anton', 'Arial Narrow', Impact, sans-serif;
     --font-body: 'Space Grotesk', system-ui, sans-serif;
     --font-mono: 'Space Mono', ui-monospace, monospace;
+    /* THE CHANNEL NAME HAS ITS OWN FACE (2026-08-22, Ash's call, measured on a
+       15.6" 1080p panel at 100% scaling — about 141 PPI, which is where this
+       breaks and where a phone does not).
+
+       Space Grotesk is a good body face and the wrong one for this job. Its
+       letterforms are narrow and quirky by design — the single-storey 'a', the
+       tight apertures on 'c'/'e'/'s', the short 'r' — and at the 12px the card
+       actually rendered at, bold, that quirk stops reading as character and
+       starts reading as mush. Bold made it worse rather than better: weight
+       closes apertures, and a closed aperture at 12px is the whole failure.
+
+       Inter is the opposite trade and is here for exactly one reason: it was
+       drawn for small sizes on screens, with open apertures and a tall x-height,
+       so it stays decipherable where Grotesk stops. It carries 600 rather than
+       700 for the same reason the size went UP — legibility at this scale comes
+       from letterform and size, not from ink.
+
+       It is a NAME font, not a body font. Nothing else on the site moves: the
+       display face, the stat numerals and the body copy are all unchanged, so
+       this is one job getting the tool for it rather than a re-skin. */
+    --font-name: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,6 +106,109 @@
   }
 
   .panel-banner { padding: 24px 26px 26px; }
+
+  /* ── THE "IN DEVELOPMENT" ROADMAP ─────────────────────────
+     Footer only, as of 2026-08-22. It ran in the header as well for a few hours
+     and came out again (Ash: "bottom is good enough"). The two copies said the
+     same four things, and the header one had to drop the sentence and the
+     "already live" line for space - so it was strictly the weaker of the two AND
+     the one competing with the pack for the first second of attention.
+     `.soon--foot` stays a modifier rather than folding into `.soon` because the
+     tag and the chips are reusable; only the LAYOUT was placement-specific.
+
+     IT IS QUIETER THAN EVERYTHING AROUND IT, DELIBERATELY. A promise about the
+     future competing visually with the thing that works today is how a page ends
+     up advertising what it cannot do yet. */
+  .soon-tag {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #ffd166;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 209, 102, 0.34);
+    background: rgba(255, 209, 102, 0.08);
+    white-space: nowrap;
+  }
+
+  .soon-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    min-width: 0;
+  }
+
+  .soon-list li {
+    font-family: var(--font-name);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
+  }
+
+  /* ── the footer copy: the fuller one ──────────────────────────────────── */
+  .soon--foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .soon-lead { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+
+  /* The one line here that is a fact rather than a plan, so it gets the live
+     colour and the only bit of motion on the block. */
+  .soon-live {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-name);
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .soon-live b { color: rgba(255, 255, 255, 0.92); font-weight: 600; }
+
+  .soon-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #6ee7a0;
+    box-shadow: 0 0 0 0 rgba(110, 231, 160, 0.55);
+    animation: soon-pulse 2.4s ease-out infinite;
+  }
+
+  @keyframes soon-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(110, 231, 160, 0.5); }
+    70%  { box-shadow: 0 0 0 7px rgba(110, 231, 160, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(110, 231, 160, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .soon-dot { animation: none; }
+  }
+
+  /* Narrow: the footer copy stacks so its live line stays a sentence rather
+     than a fragment wedged beside four chips. */
+  @media (max-width: 640px) {
+    .soon--foot { gap: 7px; }
+    .soon-lead,
+    .soon--foot .soon-live { width: 100%; }
+    .soon-list li { font-size: 12px; padding: 3px 9px; }
+  }
 
   /* The banner is where the page is used; the collection is where it is read
      back. Giving the two the same weight left the visitor no cue about which to
@@ -210,35 +334,12 @@
   .linkish:hover,
   .linkish:focus-visible { color: var(--red); opacity: 1; }
 
-  /* Mode toggle. Demoted: "Live API" is a power-user route that needs a Google
-     Cloud key, and for the player this build is aimed at it is noise. It stays
-     reachable — removing a working feature to tidy a screen is the wrong trade —
-     but it no longer wears the accent colour the pull controls own. */
-  .mode-toggle {
-    display: flex;
-    background: rgba(0, 0, 0, 0.24);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 2px;
-    opacity: 0.75;
-    transition: opacity 0.2s ease;
-  }
-
-  .mode-toggle:hover, .mode-toggle:focus-within { opacity: 1; }
-
-  .mode-btn {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 12px;
-    padding: 6px 13px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-
-  .mode-btn.active { background: rgba(255, 255, 255, 0.11); color: var(--ink); }
+  /* The mode toggle's styles were deleted 2026-08-16 along with Live API mode
+     itself. The comment they carried said the feature "stays reachable —
+     removing a working feature to tidy a screen is the wrong trade", and that
+     was the right call for a demotion; this is not a tidy-up. Sets made Live
+     vestigial (a key for a thinner version of the front page), and Ash removed
+     the mode rather than the clutter around it. */
 
   /* ---- the stage -----------------------------------------------------------
      One object, centred, with one instruction under it. The two-column layout
@@ -254,25 +355,10 @@
   }
 
   /* The two controls that must stay reachable, pushed to the top edge and kept
-     quiet. A player picks a set once and then never looks at this row again. */
-  .stage-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 6px;
-  }
-
-  .set-pick { max-width: 260px; }
-
-  .set-pick .field {
-    background: rgba(0, 0, 0, 0.22);
-    border-color: rgba(255, 255, 255, 0.1);
-    font-size: 13.5px;
-    padding: 9px 34px 9px 13px;
-  }
-
+  /* `.stage-top` and `.set-pick` styled the row that held the set picker and the
+     mode toggle. Both controls were removed on 2026-08-16 — one set means no
+     picker, and Live mode is gone — so the row they lived in went with them and
+     the pack now starts at the top of the stage. */
   /* Visually hidden but present for screen readers and the aria-labelledby on
      the section — the heading is redundant to anyone who can see the pack. */
   .sr-only {
@@ -387,6 +473,39 @@
   .pack:hover .pack-card:nth-child(3),
   .pack:focus-visible .pack-card:nth-child(3) { animation: none; }
 
+  /* A GLINT, not a shine. The pack is the primary call to action and it was the
+     one thing on the stage holding perfectly still apart from its float, which
+     reads as scenery rather than as something you press.
+
+     The long dead interval is the entire design: the sweep occupies the first
+     fifth of the cycle and the rest is nothing, so it lands as an occasional
+     catch of light. A continuous sweep is what storefront banners do, and it
+     would be the first thing in this UI to look like it was trying to sell
+     something. Painted as ::before so it passes UNDER the rings and the play
+     glyph — light moving across the card's surface, beneath the print. */
+  .pack-card:nth-child(3)::before {
+    content: '';
+    position: absolute;
+    inset: -40% -70%;
+    background: linear-gradient(74deg,
+      transparent 44%,
+      rgba(255, 255, 255, 0.13) 50%,
+      transparent 56%);
+    animation: pack-glint 5.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pack-glint {
+    0%        { transform: translateX(-55%); opacity: 0; }
+    3%        { opacity: 1; }
+    18%       { transform: translateX(55%); opacity: 1; }
+    21%, 100% { transform: translateX(55%); opacity: 0; }
+  }
+
+  .pack:disabled .pack-card:nth-child(3)::before { animation: none; opacity: 0; }
+  .pack:hover .pack-card:nth-child(3)::before,
+  .pack:focus-visible .pack-card:nth-child(3)::before { animation: none; opacity: 0; }
+
   /* ---- the instruction -----------------------------------------------------
      Wikigacha's "TAP TO OPEN" does the entire job of a call to action without
      being a button, because the object above it already is one. */
@@ -405,6 +524,304 @@
   @keyframes tap-pulse {
     0%, 100% { opacity: 0.5; }
     50%      { opacity: 1; }
+  }
+
+  /* ---- the summon ----------------------------------------------------------
+     The beat between pressing the pack and seeing the cards. Every layer here
+     is transform/opacity only so the whole sequence stays on the compositor —
+     the same rule the hero ambience and the reveal FX follow, and the reason a
+     ten-card burst costs nothing on a phone.
+
+     Sits at z-index 55: above the page, BELOW the reveal (60). That ordering is
+     load-bearing rather than arbitrary — the reveal is meant to slide over the
+     top of a shockwave still expanding underneath it, which is what makes the
+     hand-off read as one motion instead of two screens in a queue.
+
+     Tier colour comes from --t-glow, the same token the card frames and the
+     reveal's seam glow use, so "the colour the pack charged up" and "the colour
+     the card turns out to be" are the same colour by construction. */
+  #packopen {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    pointer-events: none;
+    /* The stage colour, not a black scrim: the banner stays faintly readable
+       behind it so the pack is opening ON the page rather than in a void. */
+    background: radial-gradient(120% 90% at 50% 50%, rgba(21, 14, 31, 0.82) 0%, rgba(21, 14, 31, 0.96) 70%);
+    animation: po-veil 260ms ease both;
+  }
+
+  @keyframes po-veil { from { opacity: 0; } to { opacity: 1; } }
+
+  /* The two top tiers get a deeper stage. Same veil, ~8% darker: a UR or RUBY
+     charge happens in a dimmed room, which is the cheapest drama there is —
+     one static gradient swap, nothing animated. */
+  #packopen.po-tier-UR,
+  #packopen.po-tier-RUBY {
+    background: radial-gradient(120% 90% at 50% 50%, rgba(16, 10, 25, 0.9) 0%, rgba(14, 9, 21, 0.98) 70%);
+  }
+
+  #packopen[hidden] { display: none; }
+
+  .po-tier-N    { --po: #9aa3b2; --po-soft: #c9ced8; }
+  .po-tier-R    { --po: #cdd8ea; --po-soft: #f6f9fd; }
+  .po-tier-SR   { --po: #ffcf6b; --po-soft: #ffe9a6; }
+  .po-tier-SSR  { --po: #7fe7ff; --po-soft: #eaf7ff; }
+  .po-tier-UR   { --po: #a855f7; --po-soft: #efdcff; }
+  .po-tier-RUBY { --po: #d61030; --po-soft: #d98a96; }
+
+  .po-stage {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+  }
+
+  /* The charge glow. Grows and warms as the pack holds — this is the whole of
+     the rarity tease, and the reason a RUBY feels different from an N before a
+     single card has turned. */
+  .po-glow {
+    position: absolute;
+    width: min(760px, 150vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--po) 55%, transparent) 0%, transparent 62%);
+    opacity: 0;
+    transform: scale(0.35);
+    transition: opacity 480ms ease, transform 620ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  .po-stage.is-charging .po-glow { opacity: 0.75; transform: scale(1); }
+  .po-stage.is-burst .po-glow { opacity: 0; transform: scale(1.5); transition-duration: 520ms; }
+
+  /* Light rays. The one unmistakably "a rare thing is happening" cue in the
+     gacha vocabulary, so it is gated to feel earned: barely there for commons,
+     unmissable for the top tiers (see the per-tier opacity below). */
+  .po-rays {
+    position: absolute;
+    width: min(900px, 170vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    opacity: 0;
+    background: repeating-conic-gradient(
+      from 0deg,
+      color-mix(in srgb, var(--po) 30%, transparent) 0deg 3deg,
+      transparent 3deg 14deg);
+    mask-image: radial-gradient(circle, transparent 14%, #000 38%, transparent 72%);
+    animation: po-spin 22s linear infinite;
+    transition: opacity 520ms ease;
+  }
+  .po-stage.is-charging .po-rays { opacity: 0.16; }
+  .po-tier-SR .po-stage.is-charging .po-rays  { opacity: 0.3; }
+  .po-tier-SSR .po-stage.is-charging .po-rays { opacity: 0.42; }
+  .po-tier-UR .po-stage.is-charging .po-rays,
+  .po-tier-RUBY .po-stage.is-charging .po-rays { opacity: 0.55; }
+  .po-stage.is-burst .po-rays { opacity: 0; }
+
+  @keyframes po-spin { to { transform: rotate(360deg); } }
+
+  /* The pack itself — same three-card fan and the same vocabulary as the pack
+     on the page, because it is meant to read as that exact object having
+     travelled here rather than a second, similar one. */
+  .po-pack {
+    position: relative;
+    width: min(260px, 62vw);
+    aspect-ratio: 5 / 7;
+    transform-origin: 50% 50%;
+    transition: transform 400ms cubic-bezier(0.2, 0.7, 0.3, 1.05);
+  }
+
+  /* The swell layer. A SEPARATE element from .po-pack, and that is the whole
+     reason it exists: the swell is an animation on `transform`, and an
+     animation outranks a transition in the cascade whatever the specificity —
+     put it on .po-pack and the FLIP travel from the banner would snap to
+     centre the moment charging began. On its own wrapper the two compose.
+
+     The choreography is anticipation, the oldest trick in animation: the pack
+     inhales slowly through the whole charge, then pulls IN sharply over the
+     last tenth — and when the burst drops this class, the animation vanishes
+     and the wrapper snaps from 0.95 back to 1 in a single frame while
+     .po-pack's own transition carries on to 1.14. That one-frame kick is not
+     a glitch to be smoothed; it IS the impact frame the compression was
+     winding up. `--po-buildup` is set by packopen.js to travel + charge, so
+     the dip always lands exactly on the burst whatever the tier's hold.
+
+     THE ONE FLOURISH THAT SURVIVED THE 2026-08-16 LAG PASS, and it survived on
+     exactly the terms the block above lays out: one transform, one element, no
+     mask, no clip, not infinite, and it ends. Three keyframe stops rather than
+     four — the extra stop bought a nuance nobody could see at this duration. */
+  .po-fan {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 50%;
+  }
+  .po-stage.is-charging .po-fan {
+    animation: po-swell var(--po-buildup, 900ms) cubic-bezier(0.4, 0, 0.6, 1) both;
+  }
+  @keyframes po-swell {
+    0%   { transform: scale(1); }
+    82%  { transform: scale(1.05); }
+    100% { transform: scale(0.95); }
+  }
+
+  .po-card {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: radial-gradient(circle at 50% 42%, #3a2757 0%, #1c1229 72%);
+    box-shadow: 0 22px 50px -16px rgba(0, 0, 0, 0.8);
+    transition: transform 420ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms ease;
+  }
+  .po-card:nth-child(1) { transform: rotate(-9deg) translate(-14px, 4px) scale(0.96); filter: brightness(0.62); }
+  .po-card:nth-child(2) { transform: rotate(5deg) translate(10px, 1px) scale(0.98); filter: brightness(0.8); }
+  .po-card:nth-child(3) { transform: rotate(-1deg); }
+
+  .po-rings {
+    position: absolute;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 0 22px rgba(255, 255, 255, 0.045),
+      0 0 0 44px rgba(255, 255, 255, 0.03);
+  }
+
+  .po-play {
+    position: relative;
+    width: 0; height: 0;
+    margin-left: 6px;
+    border-left: 24px solid var(--red);
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    filter: drop-shadow(0 0 12px rgba(255, 45, 85, 0.55));
+    transition: filter 400ms ease;
+  }
+  .po-stage.is-charging .po-play {
+    filter: drop-shadow(0 0 22px color-mix(in srgb, var(--po) 80%, transparent));
+  }
+
+  /* The tear line. A hairline that swells into a blade of light down the middle
+     of the pack — the thing that makes the burst read as the pack SPLITTING
+     rather than simply disappearing in a flash. */
+  .po-seam {
+    position: absolute;
+    left: 50%;
+    top: -6%;
+    width: 3px;
+    height: 112%;
+    margin-left: -1.5px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, transparent, var(--po-soft), var(--po), var(--po-soft), transparent);
+    opacity: 0;
+    transform: scaleY(0.2);
+    filter: blur(0.5px);
+    transition: opacity 300ms ease, transform 420ms cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 300ms ease;
+  }
+  .po-stage.is-charging .po-seam {
+    opacity: 1;
+    transform: scaleY(1);
+    box-shadow: 0 0 26px 5px color-mix(in srgb, var(--po) 70%, transparent);
+  }
+  .po-stage.is-burst .po-seam { opacity: 0; transform: scaleX(9) scaleY(1); transition-duration: 260ms; }
+
+  /* ── WHAT WAS TRIED HERE AND REMOVED 2026-08-16 (it made the pull lag) ─────
+     Three additions were pulled back out on Ash's report of stutter, and the
+     reason each was expensive is worth keeping so none of them gets rebuilt:
+
+       .po-orbit  — comet arcs on a conic-gradient behind a radial MASK,
+                    rotating at 1.3s. A masked layer cannot be composited as a
+                    plain transform: the mask has to be rasterised, and this one
+                    was ~400px square turning 17x faster than .po-rays (22s).
+                    Fast rotation of a large masked gradient is the single most
+                    expensive thing this overlay ever did.
+       .po-glint  — a light bar sweeping the front card, infinite, inside
+                    `overflow: hidden`. The clip forces its own paint, and it sat
+                    on the ONE element already running `po-rumble` at 70-110ms —
+                    two animations fighting for the same layer.
+       .po-pillar — a 160vh column. Cheap per frame in theory, but it is a
+                    layer taller than the screen appearing at the exact moment
+                    the burst, the streaks, both rings and the flash all fire.
+
+     THE LESSON, AND IT IS THE ONE THIS FILE ALREADY KNEW: "transform and
+     opacity only" is necessary but NOT sufficient. A masked or clipped layer
+     still costs a rasterisation, and stacking effects at the same instant costs
+     whatever they sum to. The swell below is what survived — one transform, on
+     one element, not masked, not clipped, not infinite. */
+
+  /* Charge shake. Amplitude escalates by tier — a common barely trembles, a
+     RUBY is visibly straining to stay shut. Applied to the fan rather than the
+     wrapper so it composes with the FLIP travel transform above it. */
+  .po-stage.is-charging .po-card:nth-child(3) { animation: po-rumble 110ms linear infinite; }
+  .po-tier-SSR .po-stage.is-charging .po-card:nth-child(3),
+  .po-tier-UR .po-stage.is-charging .po-card:nth-child(3),
+  .po-tier-RUBY .po-stage.is-charging .po-card:nth-child(3) { animation-duration: 70ms; }
+
+  @keyframes po-rumble {
+    0%   { transform: rotate(-1deg) translate(0, 0); }
+    25%  { transform: rotate(-1.4deg) translate(-1.5px, 1px); }
+    50%  { transform: rotate(-0.6deg) translate(1.5px, -1px); }
+    75%  { transform: rotate(-1.2deg) translate(-1px, -1.5px); }
+    100% { transform: rotate(-1deg) translate(0, 0); }
+  }
+
+  /* Burst: the fan blows apart, the front card punches toward the viewer.
+     `animation: none` is belt-and-braces against the rumble above — packopen.js
+     already swaps `is-charging` off rather than stacking `is-burst` on top of
+     it, for exactly this reason, but a running animation beats a plain
+     declaration in the cascade regardless of specificity, so the one rule that
+     would break silently says so itself. */
+  .po-stage.is-burst .po-pack { transform: scale(1.14); transition-duration: 280ms; }
+  .po-stage.is-burst .po-card { opacity: 0; animation: none; }
+  .po-stage.is-burst .po-card:nth-child(1) { transform: rotate(-34deg) translate(-150px, 40px) scale(0.9); }
+  .po-stage.is-burst .po-card:nth-child(2) { transform: rotate(30deg) translate(150px, 26px) scale(0.9); }
+  .po-stage.is-burst .po-card:nth-child(3) { animation: none; transform: scale(1.5); }
+
+  /* The ten flying cards came out 2026-08-16: the SUMMON is the one thing Ash
+     asked to simplify, and they were its most expensive frames. `.po-streaks`
+     keeps its layout rule alone — the element is still in index.html and still
+     cleared on teardown, it is simply never filled now.
+
+     NOTHING ELSE IN THIS FILE WAS PART OF THAT ASK. The card FX below — stars,
+     sweep, ignition, bloom, aura — were stripped in the same pass by mistake and
+     restored the same day. The request was about the button, not the cards. */
+  .po-streaks { position: absolute; inset: 0; pointer-events: none; }
+
+  /* Shockwave. Two rings, the second late and wider, because one ring reads as
+     a circle drawn on screen and two read as a wave with a front and a tail. */
+  .po-ring {
+    position: absolute;
+    width: 180px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--po) 75%, transparent);
+    opacity: 0;
+  }
+  .po-stage.is-burst .po-ring { animation: po-wave 700ms cubic-bezier(0.1, 0.7, 0.2, 1) both; }
+  .po-stage.is-burst .po-ring.is-late { animation-delay: 110ms; animation-duration: 820ms; }
+
+  @keyframes po-wave {
+    0%   { opacity: 0.9; transform: scale(0.2); border-width: 3px; }
+    100% { opacity: 0; transform: scale(5.2); border-width: 1px; }
+  }
+
+  /* The flash. Tier-tinted rather than white — white is the same flash for
+     every pull, and this one moment is worth spending on saying which. */
+  .po-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, var(--po-soft) 0%, color-mix(in srgb, var(--po) 60%, transparent) 34%, transparent 68%);
+    opacity: 0;
+  }
+  .po-stage.is-burst .po-flash { animation: po-flash 420ms ease-out both; }
+
+  @keyframes po-flash {
+    0%   { opacity: 0; }
+    12%  { opacity: 0.92; }
+    100% { opacity: 0; }
   }
 
   /* ---- how many ------------------------------------------------------------
@@ -536,28 +953,9 @@
     color: var(--muted);
   }
 
-  #live-controls { display: grid; gap: 10px; }
-  #live-controls[hidden] { display: none; }
-  .add-row { display: flex; gap: 10px; }
-  .add-row .field { flex: 1; }
-
-  /* Magic Search tier row (dev) — one button per sourcing pool. */
-  .ms-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-  .ms-row .btn { padding: 8px 14px; font-size: 13px; }
-  .ms-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-right: 2px;
-  }
-
-  /* Block, not grid: as a grid item the snapshot stamp stretched to the full
-     column width and read as an empty input rather than a small tag. Spacing is
-     owned by the children instead. */
-  #sets-controls { display: block; }
-  #sets-controls[hidden] { display: none; }
+  /* #live-controls, .add-row, .ms-row and .ms-label went with the Live API mode
+     on 2026-08-16 (see ui/banner.js). #sets-controls went with the set picker
+     the same day: one set, no choice, no wrapper. */
   #set-select { cursor: pointer; }
   #set-meta { font-family: var(--font-mono); }
 
@@ -622,65 +1020,12 @@
   .stage .btn.debug { margin-top: 14px; }
   .stage .stamp { margin-top: 16px; opacity: 0.65; }
 
-  /* banner chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chips:empty { display: none; }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px 6px 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    font-size: 13px;
-  }
-
-  /* The pfp slot is a rarity-tinted initial; a usable avatar covers it. That
-     makes "no picture" a designed state rather than a broken image — the same
-     monogram idea the card uses, sized down. */
-  .chip-pfp {
-    position: relative;
-    flex: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-    font-family: var(--font-display);
-    font-size: 11px;
-    line-height: 1;
-    color: var(--t-ink, #0d1120);
-    background: var(--rc, var(--muted));
-  }
-
-  .chip-pfp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .chip .dot,
-  .filter-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc, var(--muted)); }
-
-  /* Real channel names run long (and CJK titles longer still), and one of them
-     blowing the row onto a second line is not the chip's call to make. The full
-     title stays available as a tooltip. */
-  .chip-name {
-    max-width: 18ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .chip-x {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 0 2px;
-  }
-
-  .chip-x:hover { color: var(--ink); }
+  /* The banner chips (.chips/.chip/.chip-pfp/.chip-name/.chip-x) came out
+     2026-08-16 with Live mode. They enumerated a hand-built live pool so it
+     stayed manageable — a set never had them, because a player does not need an
+     inventory of the box they are pulling from. Nothing renders them now.
+     `.filter-chip` in the collection and `.el-chip`/`.cls-chip` on the battle
+     card are unrelated classes that merely read alike. */
 
   /* The empty collection is the first thing most visitors will see in this
      panel, and it was a large blank box with one grey sentence in the corner.
@@ -693,26 +1038,63 @@
      guard #live-controls and #sets-controls already carry. */
   #coll-empty[hidden] { display: none; }
 
+  /* An INVITATION, not a report of absence. This is the first thing a visitor
+     with no cards reads in this panel, and "No cards yet" told them something
+     they could already see. The ghost fan repeats the pack's silhouette so the
+     empty tray points at the object that fills it. */
   #coll-empty {
     display: grid;
     place-items: center;
-    gap: 4px;
-    padding: 34px 20px;
+    gap: 5px;
+    padding: 40px 20px 42px;
     border: 1px dashed rgba(255, 255, 255, 0.12);
     border-radius: 14px;
-    background: rgba(0, 0, 0, 0.15);
+    background:
+      radial-gradient(90% 120% at 50% -10%, rgba(255, 45, 85, 0.05) 0%, transparent 60%),
+      rgba(0, 0, 0, 0.15);
     text-align: center;
   }
 
-  #coll-empty::before {
-    content: '';
+  #coll-empty b {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 17px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  #coll-empty .ce-sub { max-width: 46ch; line-height: 1.5; }
+
+  /* Three ghost cards, fanned like the pack. Built from real elements rather
+     than one ::before so the fan can actually splay — and so it can lean toward
+     the pack on hover, which is the whole of the nudge. */
+  .ce-fan {
+    position: relative;
+    display: block;
+    width: 74px;
+    height: 50px;
+    margin-bottom: 12px;
+  }
+
+  .ce-fan i {
+    position: absolute;
+    left: 50%;
+    top: 0;
     width: 30px;
     height: 42px;
-    margin-bottom: 8px;
+    margin-left: -15px;
     border-radius: 5px;
     border: 1px dashed rgba(255, 255, 255, 0.2);
     background: repeating-linear-gradient(115deg, transparent 0 7px, rgba(255, 255, 255, 0.035) 7px 9px);
+    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1.05);
   }
+  .ce-fan i:nth-child(1) { transform: rotate(-14deg) translate(-15px, 3px); opacity: 0.6; }
+  .ce-fan i:nth-child(2) { transform: rotate(9deg) translate(15px, 2px); opacity: 0.8; }
+  .ce-fan i:nth-child(3) { transform: rotate(-2deg); }
+
+  #coll-empty:hover .ce-fan i:nth-child(1) { transform: rotate(-22deg) translate(-25px, 6px); }
+  #coll-empty:hover .ce-fan i:nth-child(2) { transform: rotate(17deg) translate(25px, 5px); }
 
   /* The grid and the empty state are mutually exclusive; collapsing the grid
      when it has no cards stops it reserving a gap above the empty box. */
@@ -724,14 +1106,25 @@
      UR=Ruby Play Button, RUBY=Red Diamond Play Button — the same 100K / 1M /
      10M / 50M / 100M thresholds YouTube's own play buttons use (award names
      swapped 2026-08-07 to match reality — see card.js's TIER_NAME comment).
-     RUBY (Red Diamond) runs darker and less saturated than UR (Ruby) — a
+
+     UR WEARS VIOLET, NOT RED, AS OF 2026-08-16 — Ash's call, and it departs
+     from the award-color mapping on purpose. Two reasons. Purple is the color
+     every gaming rarity ladder already teaches for "very rare" (WoW's epic,
+     Fortnite's epic, Destiny's legendary), so a violet UR reads instantly to
+     the audience this game is for. And it hands RED to RUBY alone: the two top
+     tiers used to compete on the same hue — UR a bright red, RUBY a darker one
+     — which made the ceiling a shade of the tier below it. Now the ladder ends
+     silver → gold → diamond-blue → VIOLET → blood-red crystal, and no rung
+     shares a hue with its neighbor. The award NAME is unchanged (the band is
+     still the Ruby Play Button threshold); only the paint moved.
+     RUBY still runs darker and less saturated than every bright tier — a
      near-black crystal rather than a brighter gem — so the top of the ladder
-     reads as denser and heavier, not just a different red. */
+     reads as denser and heavier. */
   .r-N    { --t-hi:#c9ced8; --t-mid:#828a97; --t-lo:#4d535e; --t-soft:#a7adb8; --t-glow:#9aa3b2; --t-ink:#12151b; --rc: var(--t-glow); }
   .r-R    { --t-hi:#f6f9fd; --t-mid:#c2ccda; --t-lo:#93a3b8; --t-soft:#e7eef7; --t-glow:#cdd8ea; --t-ink:#0f1622; --rc: var(--t-glow); }
   .r-SR   { --t-hi:#ffe9a6; --t-mid:#eec04b; --t-lo:#cf992a; --t-soft:#ffd977; --t-glow:#ffcf6b; --t-ink:#241a05; --rc: var(--t-glow); }
   .r-SSR  { --t-hi:#eaf7ff; --t-mid:#a9d4e8; --t-lo:#7fbfe0; --t-soft:#dff3ff; --t-glow:#7fe7ff; --t-ink:#0c1524; --rc: var(--t-glow); }
-  .r-UR   { --t-hi:#ffe4bf; --t-mid:#ff5566; --t-lo:#b3162e; --t-soft:#ffb066; --t-glow:#ff3b57; --t-ink:#2a060c; --rc: var(--t-glow); }
+  .r-UR   { --t-hi:#efdcff; --t-mid:#b45bff; --t-lo:#5d13a6; --t-soft:#cf8fff; --t-glow:#a855f7; --t-ink:#240a45; --rc: var(--t-glow); }
   /* --t-lo is a deep WINE, not the near-black it started as. A facet needs to
      be dark enough to contrast its neighbour, but true black reads as a gap in
      the frame rather than a plane turned away from the light — and nothing else
@@ -880,11 +1273,16 @@
   .title-wrap { min-width: 0; flex: 1; text-align: right; }
 
   .card-name {
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: clamp(12px, 5cqw, 19px);
-    line-height: 1.1;
-    letter-spacing: 0.2px;
+    /* Was Space Grotesk 700 at clamp(12px, 5cqw, 19px). At the ~200px the
+       collection grid actually gives a card, 5cqw is 10px — so every desktop
+       card was pinned to the 12px FLOOR and the middle term never did anything.
+       Raising the coefficient with the floor is what makes a bigger card
+       actually print a bigger name instead of sitting on the minimum. */
+    font-family: var(--font-name);
+    font-weight: 600;
+    font-size: clamp(14px, 6.2cqw, 22px);
+    line-height: 1.15;
+    letter-spacing: 0;
     /* A long single-word channel name ("TheBackgroundNPC") has no break
        opportunity, so it ran past this box and overflow:hidden sheared it
        mid-word with no ellipsis. `anywhere` also lets the box shrink to
@@ -994,6 +1392,17 @@
     font-family: var(--font-mono);
     font-size: clamp(8px, 3.3cqw, 12px);
     color: var(--muted);
+  }
+
+  /* The card's archetype, sitting opposite the subscriber count in the line
+     above the numbers. `.subs-line` was already a `space-between` flex with one
+     child, so this needs no layout of its own. Dimmer than the subs figure on
+     purpose: it explains the two numbers rather than competing with them — an
+     ATK of 46 reads as a broken card until the word "Assassin" is next to it. */
+  .card-class {
+    opacity: 0.72;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
   }
 
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(5px, 2.5cqw, 9px); }
@@ -1755,6 +2164,12 @@
        rarity badge directly above it and by the frame's own metal. */
     .tier-label { display: none; }
 
+    /* Same trade as the tier label, one line down. The class is context for the
+       two numbers rather than one of them, and at this width the subs figure and
+       the class name were competing for a line that fits one comfortably. The
+       battle card says it properly, with a glyph and a colour. */
+    .card-class { display: none; }
+
     /* One line, not two. The second line is what pushed the avatar down into the
        subs figure; a name that needs two lines at this size was going to be
        ellipsised either way. */
@@ -1972,6 +2387,10 @@
     z-index: 5;
     display: flex;
     justify-content: center;
+    /* Two buttons since the loop landed — gap and wrap so a narrow phone stacks
+       them instead of shrinking both below a comfortable tap target. */
+    gap: 10px;
+    flex-wrap: wrap;
     padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px));
     /* Near-solid under the button itself. The fade is not this element's job —
        see ::before — because anything that fades here has to be paid for in
@@ -2142,7 +2561,7 @@
   .glow-SSR.reveal-cell.flipped { --seam: rgba(127, 231, 255, 0.6);  --seam-peak: 46px 7px; --seam-rest: 14px 0; }
   /* UR still rests wider and hotter than the others — it has an aura to sit
      inside — it just no longer rests wider than the gap it sits in. */
-  .glow-UR.reveal-cell.flipped  { --seam: rgba(255, 70, 95, 0.78);   --seam-peak: 64px 11px; --seam-rest: 18px 1px; }
+  .glow-UR.reveal-cell.flipped  { --seam: rgba(168, 85, 247, 0.78); --seam-peak: 64px 11px; --seam-rest: 18px 1px; }
   /* RUBY (Red Diamond) rests wider again, one step past UR, but darker and less
      saturated — a deep blood-red glow rather than a brighter pink one. */
   .glow-RUBY.reveal-cell.flipped { --seam: rgba(196, 16, 40, 0.85);  --seam-peak: 78px 13px; --seam-rest: 22px 1px; }
@@ -2181,6 +2600,46 @@
   }
   .reveal-cell.flipped .stars { animation: stars-in 0.7s ease-out 0.52s both; }
   @keyframes stars-in { to { opacity: 1; } }
+
+  /* MOBILE ADMIRE: inspect.js builds the same star field for the inspector,
+     every open, for every rarity that has one — but it only ever shows on a
+     coarse pointer. A fine pointer already gets motion in here from the tilt
+     + tracked holo shine (holo.js's enableCardTilt, `hover: hover and
+     pointer: fine` only); touch never sets `.lit` at all (device-tilt was
+     removed 2026-08-07 — see holo.js), so a phone's admire screen was just a
+     flat, still card with no `.gem-edge`/twinkle exception (RUBY only). This
+     is what every other tier gets instead: same `hover: none` gate the holo
+     touch fallback further down (WP3 section) uses, so a mouse user's
+     inspector is unchanged. */
+  @media (hover: none) {
+    #inspect .card .stars { animation: stars-in 0.5s ease-out both; }
+  }
+
+  /* THE BINDER, 2026-08-17 — Ash: "in the collection tray as well. it's cheap
+     and pretty so lets keep it."
+
+     Needs its own rule for the same reason the admire screen does: `.stars` is
+     `opacity: 0` at rest and is faded in by whichever surface owns it, so a
+     field appended to a binder card would otherwise be built, animated and
+     completely invisible. On EVERY pointer type here, not behind `(hover: none)`
+     like the inspector above — the inspector withholds them from a mouse because
+     a fine pointer already gets the tilt + tracked shine on the card it is
+     pointing AT, and the binder is a grid where all but one card are unpointed
+     at any moment.
+
+     ui/collection.js attaches a field only while its card is near the viewport,
+     so this rule can never apply to more than a screenful at a time however
+     large the binder gets. */
+  #collection-grid .card .stars { animation: stars-in 0.5s ease-out both; }
+
+  /* The field clips its dots with `overflow: hidden`, so its corners have to be
+     the CARD's corners — and `.card`'s radius is container-query based
+     (`clamp(11px, 6cqw, 22px)`), so it differs between a binder thumbnail and
+     the inspector's hero. Inherited rather than the flat 15px above, which was
+     written for the reveal's fixed-size flip face and is left alone there. Only
+     applies where the field is a direct child of the card, which is exactly the
+     two surfaces that append it that way (inspect.js, collection.js). */
+  .card > .stars { border-radius: inherit; }
   .star {
     position: absolute;
     width: var(--sz, 3px);
@@ -2192,13 +2651,13 @@
     opacity: 0;
     animation: twinkle var(--tw, 2.4s) ease-in-out infinite;
   }
-  /* Tints track the frame tokens: SR gold, SSR cold diamond, UR hot amber,
-     RUBY cold diamond-white with a red cast — so UR never reads as "SSR with
-     more dots", and RUBY never reads as "UR with more dots". */
+  /* Tints track the frame tokens: SR gold, SSR cold diamond, UR electric
+     violet, RUBY cold diamond-white with a red cast — so UR never reads as
+     "SSR with more dots", and RUBY never reads as "UR with more dots". */
   .glow-SR  .star { --star: rgba(255, 214, 140, 0.85); }
   .glow-SSR .star { --star: rgba(190, 240, 255, 0.9); }
   .glow-UR  .star {
-    --star: rgba(255, 210, 172, 0.98);
+    --star: rgba(220, 185, 255, 0.98);
     box-shadow: 0 0 8px var(--star), 0 0 17px var(--star); /* UR dots carry a second, wider halo */
   }
   /* Red Diamond's are not dots at all — they are four-point reflections, the
@@ -2248,7 +2707,7 @@
   .glow-R    .beam { --beam: #cdd8ea; }
   .glow-SR   .beam { --beam: #ffcf6b; }
   .glow-SSR  .beam { --beam: #7fe7ff; }
-  .glow-UR   .beam { --beam: #ff5566; }
+  .glow-UR   .beam { --beam: #b45bff; }
   .glow-RUBY .beam { --beam: #c81030; }
   /* Back-loaded curve: ease-out spent the beam in its first third and left the
      rest as a near-static hold — at UR's ~1s that read as dead air. Accelerating
@@ -2303,7 +2762,7 @@
      card that's facing you. Rarer = slower and brighter. */
   .glow-SR   .sweep { --sweep: rgba(255, 240, 205, 0.72); --sweep-ms: 0.9s;  --sweep-delay: 0.46s; }
   .glow-SSR  .sweep { --sweep: rgba(224, 246, 255, 0.92); --sweep-ms: 1s;    --sweep-delay: 0.62s; }
-  .glow-UR   .sweep { --sweep: rgba(255, 232, 214, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
+  .glow-UR   .sweep { --sweep: rgba(240, 224, 255, 1);    --sweep-ms: 1.15s; --sweep-delay: 0.62s; }
   .glow-UR   .sweep::before { width: 52%; filter: blur(2.2px); } /* broader, softer band */
   .glow-RUBY .sweep { --sweep: rgba(255, 226, 220, 1);    --sweep-ms: 1.3s;  --sweep-delay: 0.72s; }
   .glow-RUBY .sweep::before { width: 58%; filter: blur(2.6px); } /* broader still than UR's */
@@ -2349,16 +2808,16 @@
        subtree, so they can't be inherited here. */
     background: conic-gradient(from 0deg,
       transparent 0 52%,
-      rgba(179, 22, 46, 0.55) 68%,
-      #ff5566 83%,
-      #ffb066 93%,
-      #ffe4bf 97.5%,
+      rgba(93, 19, 166, 0.55) 68%,
+      #b45bff 83%,
+      #cf8fff 93%,
+      #efdcff 97.5%,
       #fff 99.4%,
       transparent 100%);
   }
 
   /* Red Diamond's ignition runs a hair longer than Ruby's — a near-black-red
-     head brightening to white, against UR's amber-into-crimson, so the top of
+     head brightening to white, against UR's violet-into-white, so the top of
      the ladder reads as denser and heavier rather than a recolor of the same
      ring. */
   .glow-RUBY .fuse i {
@@ -2413,8 +2872,8 @@
     border-radius: 12px;
     pointer-events: none;
     opacity: 0;
-    background: radial-gradient(closest-side, rgba(255, 90, 110, 0.2), transparent 76%);
-    box-shadow: 0 0 0 2px rgba(255, 140, 130, 0.85), 0 0 40px 8px rgba(255, 70, 95, 0.5);
+    background: radial-gradient(closest-side, rgba(178, 105, 255, 0.2), transparent 76%);
+    box-shadow: 0 0 0 2px rgba(214, 170, 255, 0.85), 0 0 40px 8px rgba(168, 85, 247, 0.5);
   }
   /* The discharge is a ghost of the card's own silhouette pushing outward, so
      for RUBY it has to be the gem's silhouette, not a rounded rectangle. The
@@ -2468,15 +2927,15 @@
     inset: -6%;
     border-radius: 50% / 42%;
     background: radial-gradient(closest-side,
-      rgba(255, 80, 100, 0.4) 0%,
-      rgba(255, 120, 80, 0.15) 58%,
+      rgba(170, 90, 250, 0.4) 0%,
+      rgba(120, 60, 220, 0.15) 58%,
       transparent 78%);
     filter: blur(10px);
     animation: aura-breathe 3.8s ease-in-out infinite;
   }
 
   /* Red Diamond's aura runs deep blood-red fading to near-black rather than
-     Ruby's orange-red, and breathes a touch wider — the field behind the top
+     Ruby's violet, and breathes a touch wider — the field behind the top
      card in the game. */
   .glow-RUBY .aura::before {
     background: radial-gradient(closest-side,
@@ -2499,13 +2958,13 @@
     height: var(--sz, 2px);
     margin: calc(var(--sz, 2px) / -2);
     border-radius: 50%;
-    background: radial-gradient(circle, #fff4e2 0%, #ffab72 45%, transparent 74%);
-    box-shadow: 0 0 5px rgba(255, 150, 110, 0.8);
+    background: radial-gradient(circle, #f5ecff 0%, #c084ff 45%, transparent 74%);
+    box-shadow: 0 0 5px rgba(190, 130, 255, 0.8);
     opacity: 0;
   }
 
-  /* Red Diamond sheds white-hot-into-deep-red motes rather than Ruby's amber
-     ones — a colder core than Ruby's, matching the crystal. */
+  /* Red Diamond sheds white-hot-into-deep-red motes rather than Ruby's violet
+     ones — a hotter core than Ruby's, matching the crystal. */
   .glow-RUBY .mote {
     background: radial-gradient(circle, #fff0ee 0%, #c8102e 45%, transparent 74%);
     box-shadow: 0 0 5px rgba(196, 16, 40, 0.85);
@@ -2565,10 +3024,10 @@
 
   .footer-optout { margin-top: 0; }
 
-  /* Underlined by default, unlike the coffee link one line below it. The two
-     footer links want opposite postures: the coffee is deliberately passive and
-     easy to miss, while the opt-out is a promise to someone who may be unhappy
-     to be here — it has to be findable on the first look. */
+  /* Underlined by default. This is a promise to someone who may be unhappy to be
+     here, so it has to be findable on the first look rather than discovered.
+     (It used to be described in contrast to a deliberately passive donation link
+     below it; that link is gone — see DECISIONS.md 2026-08-15.) */
   .optout-link {
     color: var(--muted);
     text-decoration: underline;
@@ -2578,24 +3037,6 @@
 
   .optout-link:hover,
   .optout-link:focus-visible { color: var(--ink); }
-
-  .footer-coffee { margin-top: 12px; }
-
-  .coffee-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-
-  .coffee-link:hover,
-  .coffee-link:focus-visible {
-    color: var(--c-ssr);
-    border-bottom-color: var(--c-ssr);
-  }
 
   @media (max-width: 560px) {
     /* Two per row, and the card gets every pixel that buys. The old rule here
@@ -2634,8 +3075,15 @@
     .amb-glow { animation: none; opacity: 0.8; }
     .amb-mote { animation: none; opacity: 0; }
     .pack-card:nth-child(3) { animation: none; }
+    .pack-card:nth-child(3)::before { animation: none; opacity: 0; }
+    .ce-fan i { transition: none; }
     .pack { transition: none; }
     .tap-hint { animation: none; opacity: 0.85; }
+    /* The summon does not run at all under reduced motion — playPackOpen()
+       resolves immediately and the reveal opens straight away, so this overlay
+       is never shown. Belt and braces anyway: if it ever were, it must not
+       spin, shake, flash or pulse. */
+    #packopen { display: none !important; }
     .count-btn, .filter-chip, .cards-grid .card { transition: none; }
     /* Still wear the rarity halo, just arrived-at rather than animated-to. */
     .reveal-cell.flipped { animation: none; box-shadow: 0 0 var(--seam-rest, 22px 3px) var(--seam, transparent); }
@@ -2652,6 +3100,15 @@
        animation off, the layer has to be turned back on explicitly. */
     .stars { animation: none; opacity: 1; }
     .star { animation: none; opacity: 0.5; transform: scale(0.85); }
+    /* The `(hover: none)` admire rule above targets `#inspect .card .stars`,
+       which out-specifies the plain `.stars` two lines up — without this a
+       phone with reduced motion on would still get the fade-in. Same
+       specificity, same override, just repeated at the selector that needs
+       to lose. The binder rule added 2026-08-17 out-specifies it the same way
+       and needs the same treatment; both leave the field visible but still,
+       which is what every other effect in this block does. */
+    #inspect .card .stars,
+    #collection-grid .card .stars { animation: none; opacity: 1; }
   }
 
 /* ===========================================================================
@@ -2772,16 +3229,17 @@
      touchscreen laptop) where a real pointer can still hover the reveal grid. */
   #reveal-grid .card.lit { transform: none; }
 
-  /* UR's signature molten sheen — a warm gold→crimson holo (not the cool
-     rainbow), so the top tier reads hotter and richer than SSR's diamond
-     instead of competing on the same rainbow. */
+  /* UR's signature arcane sheen — a violet→magenta→indigo holo (not the cool
+     rainbow), so the tier reads richer and stranger than SSR's diamond
+     instead of competing on the same rainbow. Recolored with the 2026-08-16
+     violet pass; the escalation logic is unchanged. */
   .card.r-UR .holo {
     background: repeating-linear-gradient(115deg,
-      rgba(255, 214, 130, 0.46)  0%,
-      rgba(255, 135, 95, 0.46)  12%,
-      rgba(255, 90, 120, 0.46)  24%,
-      rgba(255, 165, 90, 0.46)  36%,
-      rgba(255, 214, 130, 0.46) 48%);
+      rgba(216, 156, 255, 0.46)  0%,
+      rgba(150, 95, 255, 0.46)  12%,
+      rgba(255, 110, 220, 0.46) 24%,
+      rgba(120, 140, 255, 0.46) 36%,
+      rgba(216, 156, 255, 0.46) 48%);
     filter: saturate(1.25);
   }
 
@@ -2798,9 +3256,11 @@
     filter: saturate(1.15);
   }
 
-  /* UR (Ruby Play Button): a low, smouldering flicker at the seam — the tier
-     reading as legendary without a distracting full-card colour sweep. Only
-     the frame glow moves; irregular keyframe stops make it flicker like heat. */
+  /* UR (Ruby Play Button band, violet paint): a low, arcing flicker at the
+     seam — the tier reading as legendary without a distracting full-card
+     colour sweep. Only the frame glow moves; irregular keyframe stops make it
+     flicker like a charge looking for ground. (The animation keeps its
+     `ur-ember` name from the red era — renaming an identifier buys nothing.) */
   @media (prefers-reduced-motion: no-preference) {
     .card.r-UR { animation: ur-ember 4.2s ease-in-out infinite; }
     /* RUBY (Red Diamond) deliberately has NO ember. It briefly did, and it was
@@ -2823,9 +3283,58 @@
        drama, they were the resting state three quarters of the time. The flicker
        is unchanged in shape and rhythm; only its radius came in. */
     0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 12px -8px var(--t-glow); }
-    28%      { box-shadow: 0 0 0 1px rgba(255,120,90,0.20) inset, 0 0 20px -6px #ff5a3c; }
+    28%      { box-shadow: 0 0 0 1px rgba(200,140,255,0.20) inset, 0 0 20px -6px #c07dff; }
     52%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 0 15px -8px var(--t-glow); }
-    76%      { box-shadow: 0 0 0 1px rgba(255,150,60,0.17) inset, 0 0 24px -6px #ff7a33; }
+    76%      { box-shadow: 0 0 0 1px rgba(180,110,255,0.17) inset, 0 0 24px -6px #9a4df5; }
+  }
+
+  /* ---- the point twinkle -----------------------------------------------------
+     Pinpoints that flash once and go dark, each on its own 1-3s cycle. UR gets
+     two placements of it — `makeEdgeTwinkles` (just inside the face, sides
+     only) and `makeFrameTwinkles` (walking the metal bevel) — and RUBY gets the
+     first one too, at a lower count. Built by ui/stars.js (which carries the
+     reasoning for every choice here); this is only the paint and the flash,
+     shared by both wrappers and both tiers.
+
+     The dot is a plain radial gradient with a small box-shadow halo and nothing
+     else — no blur filter, no mask, no clip of its own. That matters: this runs
+     permanently on every UR and RUBY card on screen, so it had to be built out
+     of the things that are genuinely free to animate. `--t-glow` is inherited
+     from `.r-UR` or `.r-RUBY` on the card, so the colour is never repeated here
+     — violet on one, blood-red on the other, automatically, and either would
+     follow its token anywhere it moved again. */
+  .pt-twinkles {
+    position: absolute;
+    inset: 0;
+    z-index: 3;          /* above .holo (2), so a point stays crisp through the sheen */
+    pointer-events: none;
+  }
+
+  .pt-twinkle {
+    position: absolute;
+    width: var(--tw-size, 2px);
+    height: var(--tw-size, 2px);
+    /* Centre the dot on its own point, so the inline left/top are the middle of
+       the light rather than its top-left corner — same trick as `.star`. */
+    margin: calc(var(--tw-size, 2px) / -2) 0 0 calc(var(--tw-size, 2px) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, var(--t-glow) 55%, transparent 76%);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--t-glow) 65%, transparent);
+    opacity: 0;
+  }
+
+  /* MOSTLY DARK BY DESIGN. The flash occupies about a quarter of the cycle and
+     the rest is held at zero, which is what makes this read as "a point catches
+     the light every second or two" instead of a constant shimmer. */
+  @media (prefers-reduced-motion: no-preference) {
+    .pt-twinkle { animation: pt-twinkle var(--tw-dur, 2s) ease-in-out infinite; }
+  }
+
+  @keyframes pt-twinkle {
+    0%        { opacity: 0; transform: scale(0.3); }
+    10%       { opacity: 1; transform: scale(1); }
+    26%       { opacity: 0; transform: scale(0.3); }
+    100%      { opacity: 0; transform: scale(0.3); }
   }
 
   /* Touch / no-hover devices can't poke-holo — this is mobile's holo treatment,
@@ -2843,40 +3352,81 @@
      OFF-CENTRE ON PURPOSE. A highlight sitting exactly in the middle of every
      card reads as a sticker; one that falls unevenly reads as a surface. And
      richness ESCALATES WITH RARITY, the same language the seam glow and the
-     UR ember already speak elsewhere on this card: SR gets one soft sheen,
-     SSR two crossing facets (a cut gem's internal reflections), UR a warm
-     corner glow underneath a molten sheen. A mobile pull still feels rarer the
-     rarer it is, even with nothing moving and nothing tracking your thumb. */
+     UR ember already speak elsewhere on this card: R a whisper of brushed
+     silver, SR one soft sheen over a gold corner light, SSR crossing facets
+     under an icy crown, UR a violet corner bloom beneath an arcane sheen. A
+     mobile pull still feels rarer the rarer it is, even with nothing moving
+     and nothing tracking your thumb.
+
+     DEEPENED 2026-08-16 ("flat and bland" — Ash). Three changes, all static
+     paint on layers that already exist, so the phone pays nothing new at
+     runtime: R joins the ladder (it was the one framed tier with a bare
+     face), every tier gains one gradient layer and ~0.1 opacity, and the
+     card face itself takes a stronger tier-coloured cast (below) — on
+     desktop the cast stays subtle because tilt + tracked holo carry the
+     tier; here the paint is all there is, so it speaks up. */
   @media (hover: none) {
+    /* Brushed silver: two soft parallel strokes, unmistakably metal, quiet
+       enough that R keeps reading as the second rung and not a prize. */
+    .card.r-R .holo {
+      opacity: 0.42;
+      background:
+        linear-gradient(132deg,
+          transparent 30%,
+          color-mix(in srgb, var(--t-soft) 45%, transparent) 44%,
+          color-mix(in srgb, var(--t-hi)   75%, transparent) 50%,
+          color-mix(in srgb, var(--t-soft) 45%, transparent) 56%,
+          transparent 70%),
+        linear-gradient(132deg, transparent 68%, color-mix(in srgb, var(--t-soft) 35%, transparent) 78%, transparent 88%);
+    }
     .card.r-SR .holo {
-      opacity: 0.55;
-      background: linear-gradient(128deg,
-        transparent 36%,
-        color-mix(in srgb, var(--t-soft) 65%, transparent) 46%,
-        color-mix(in srgb, var(--t-hi)   85%, transparent) 50%,
-        color-mix(in srgb, var(--t-soft) 65%, transparent) 54%,
-        transparent 64%);
+      opacity: 0.66;
+      background:
+        linear-gradient(128deg,
+          transparent 36%,
+          color-mix(in srgb, var(--t-soft) 65%, transparent) 46%,
+          color-mix(in srgb, var(--t-hi)   85%, transparent) 50%,
+          color-mix(in srgb, var(--t-soft) 65%, transparent) 54%,
+          transparent 64%),
+        radial-gradient(120% 80% at 88% 106%, color-mix(in srgb, var(--t-glow) 40%, transparent) 0%, transparent 58%);
     }
     .card.r-SSR .holo {
-      opacity: 0.6;
+      opacity: 0.7;
       background:
         linear-gradient(112deg, transparent 28%, color-mix(in srgb, var(--t-hi)   82%, transparent) 40%, transparent 50%),
-        linear-gradient(206deg, transparent 58%, color-mix(in srgb, var(--t-glow) 60%, transparent) 68%, transparent 80%);
+        linear-gradient(206deg, transparent 58%, color-mix(in srgb, var(--t-glow) 60%, transparent) 68%, transparent 80%),
+        radial-gradient(140% 60% at 50% -14%, color-mix(in srgb, var(--t-glow) 38%, transparent) 0%, transparent 55%);
     }
     .card.r-UR .holo {
-      opacity: 0.62;
+      opacity: 0.72;
       background:
-        radial-gradient(130% 95% at 18% 104%, color-mix(in srgb, var(--t-glow) 55%, transparent) 0%, transparent 62%),
-        linear-gradient(122deg, transparent 42%, color-mix(in srgb, var(--t-soft) 78%, transparent) 51%, transparent 62%);
+        radial-gradient(130% 95% at 18% 104%, color-mix(in srgb, var(--t-glow) 60%, transparent) 0%, transparent 62%),
+        linear-gradient(122deg, transparent 42%, color-mix(in srgb, var(--t-soft) 82%, transparent) 51%, transparent 62%),
+        linear-gradient(244deg, transparent 60%, color-mix(in srgb, var(--t-mid) 45%, transparent) 71%, transparent 82%);
     }
     /* RUBY one step past UR again: a corner glow AND two crossing facets, same
        escalation language as the desktop repeating-gradient above. */
     .card.r-RUBY .holo {
-      opacity: 0.66;
+      opacity: 0.72;
       background:
-        radial-gradient(130% 95% at 82% 104%, color-mix(in srgb, var(--t-glow) 55%, transparent) 0%, transparent 62%),
-        linear-gradient(112deg, transparent 30%, color-mix(in srgb, var(--t-soft) 70%, transparent) 42%, transparent 54%),
-        linear-gradient(250deg, transparent 55%, color-mix(in srgb, var(--t-hi)   60%, transparent) 66%, transparent 78%);
+        radial-gradient(130% 95% at 82% 104%, color-mix(in srgb, var(--t-glow) 60%, transparent) 0%, transparent 62%),
+        linear-gradient(112deg, transparent 30%, color-mix(in srgb, var(--t-soft) 76%, transparent) 42%, transparent 54%),
+        linear-gradient(250deg, transparent 55%, color-mix(in srgb, var(--t-hi)   66%, transparent) 66%, transparent 78%);
+    }
+
+    /* The tier cast on the face itself. Desktop paints this at 14% on every
+       card (see .card-inner) and lets motion do the rest; a phone has no
+       motion, so the cast carries more of the tier here — 22% and a longer
+       fall. RUBY keeps its own carved interior (.card.r-RUBY .card-inner) and
+       is deliberately absent; N stays at the base 14%, because a common's job
+       is to make the others look like what they are. */
+    .card.r-R .card-inner,
+    .card.r-SR .card-inner,
+    .card.r-SSR .card-inner,
+    .card.r-UR .card-inner {
+      background:
+        radial-gradient(120% 90% at 50% -12%, color-mix(in srgb, var(--t-glow) 22%, #1a2130) 0%, transparent 60%),
+        linear-gradient(180deg, #141a29 0%, #0d1120 100%);
     }
   }
 
@@ -3061,3 +3611,1121 @@
     padding-top: 18px;
     border-top: 1px solid var(--line);
   }
+
+/* ===========================================================================
+   THE ARENA — 5v5 battles
+   ---------------------------------------------------------------------------
+   A full-screen overlay (#arena), built the same way #reveal and #inspect are:
+   a shell in index.html and every panel inside constructed by src/ui/battle.js.
+
+   THE BATTLE CARD IS THE SAME OBJECT THE PLAYER PULLED, seen from a different
+   side — so it borrows the collection card's metal bevel, rarity badge and
+   ringed portrait verbatim, and spends the interior on a stat block instead of
+   a big face. It gets those tier ramps for free: `.r-N` … `.r-RUBY` above are
+   declared on the bare class rather than on `.card`, so `.bcard.r-SSR` picks up
+   the identical --t-* tokens with nothing repeated here. RUBY included.
+
+   Every internal size is a container-query unit, so ONE markup renders at 110px
+   in the collection strip and at 190px in the arena with no second stylesheet
+   and no size prop threaded through the renderer.
+   =========================================================================== */
+
+  :root {
+    /* One hue per battle stat, used by the bars, the class chips and the damage
+       numbers alike, so the same colour always means the same thing wherever it
+       appears. Distinct from the rarity ramp on purpose — rarity says how hard
+       a card was to pull, these say what it does, and conflating the two is the
+       exact confusion engine/battle-stats.js exists to prevent. */
+    --s-hp: #4fd67f;
+    --s-atk: #ff5a72;
+    --s-def: #57b0ff;
+    --s-spd: #ffd166;
+    --s-mom: #b06cff;
+  }
+
+  /* ── the button that opens it ───────────────────────────────────────────── */
+  .btn-battle {
+    margin-left: auto;
+    letter-spacing: 0.5px;
+  }
+  .btn-battle:not(:disabled) {
+    border-color: rgba(255, 45, 85, 0.45);
+    background: rgba(255, 45, 85, 0.12);
+  }
+
+  /* ── overlay shell ──────────────────────────────────────────────────────── */
+  #arena {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow-y: auto;
+    padding: clamp(10px, 3vw, 30px);
+    background: rgba(10, 6, 16, 0.86);
+    backdrop-filter: blur(7px);
+  }
+
+  .arena-box {
+    max-width: var(--page);
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(38, 26, 54, 0.96), rgba(21, 14, 31, 0.98));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 30px 90px -30px #000;
+    overflow: hidden;
+  }
+
+  /* Sticky so the phase stepper and the way out stay reachable through a long
+     scroll — the build phase is a whole collection tall, and an overlay you
+     have to scroll back up to escape is a trap rather than a dialog. */
+  .arena-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px clamp(12px, 2.4vw, 22px);
+    background: rgba(24, 15, 35, 0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  .arena-head h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .arena-head .btn { margin-left: auto; }
+
+  .ar-steps {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ar-steps li {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .ar-steps li.done { color: #6ee7a0; border-color: rgba(110, 231, 160, 0.35); }
+  .ar-steps li[aria-current='step'] {
+    color: #fff;
+    background: rgba(255, 45, 85, 0.16);
+    border-color: rgba(255, 45, 85, 0.5);
+  }
+
+  .arena-body { padding: clamp(12px, 2.4vw, 22px); display: grid; gap: 18px; }
+
+  /* ── THE FIELD MANUAL RAIL ────────────────────────────────────────────────
+     The flow on the left, the reference on the right. Deliberately a COLUMN
+     rather than a help button: the rules are worth reading while you are
+     choosing, and a modal you have to open is one nobody opens twice.
+
+     `minmax(0, 1fr)` on the first track, not `1fr` — the builder holds a card
+     grid, and a grid child's default `min-width: auto` would let it refuse to
+     shrink and push the rail off the edge. */
+  .arena-split { display: grid; }
+
+  @media (min-width: 1100px) {
+    .arena-split {
+      grid-template-columns: minmax(0, 1fr) clamp(280px, 26vw, 360px);
+      align-items: start;
+    }
+    .arena-codex {
+      position: sticky;
+      /* Clears the sticky header rather than guessing — the arena head is
+         ~58px, so the rail parks just under it through a long scroll. */
+      top: 66px;
+      max-height: calc(100dvh - 92px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      border-left: 1px solid var(--line);
+    }
+  }
+
+  .arena-codex {
+    padding: clamp(12px, 2.4vw, 22px);
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    font-size: 13px;
+  }
+
+  .cx-head h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .cx-head p { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+  .cx-block {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 9px 12px;
+  }
+  .cx-block > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .cx-block > summary::-webkit-details-marker { display: none; }
+  /* A rotating caret drawn in CSS — one fewer asset, and it cannot 404. */
+  .cx-block > summary::after {
+    content: '';
+    margin-left: auto;
+    width: 6px; height: 6px;
+    border-right: 1.5px solid var(--muted);
+    border-bottom: 1.5px solid var(--muted);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform 0.18s ease;
+  }
+  .cx-block[open] > summary::after { transform: rotate(-135deg) translate(-1px, -1px); }
+  .cx-block > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+
+  .cx-lede { color: var(--muted); font-size: 12.5px; line-height: 1.55; margin-top: 8px; }
+  .cx-lede b, .cx-hints b { color: var(--ink); }
+
+  .cx-rows { margin-top: 9px; display: grid; gap: 7px; }
+  .cx-rows dt {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #f0c26e;
+  }
+  .cx-rows dd { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 0 0 3px; }
+  .cx-classes dt { color: #7ec8ff; }
+  .cx-verb {
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
+  }
+
+  .cx-ring { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+  .cx-ring li {
+    display: grid;
+    gap: 1px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .cx-ring b { color: var(--ink); }
+  .cx-ring span { font-size: 11.5px; font-style: italic; opacity: 0.8; }
+  .cx-foot { margin-top: 8px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+  .cx-hints { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 9px; }
+  .cx-hints li { display: grid; gap: 2px; }
+  .cx-hints b { font-size: 12.5px; }
+  .cx-hints span { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+  /* On a phone the manual drops BELOW the flow so it never stands between the
+     player and the Fight button. Which sections start open is decided in
+     codex.js, because `open` is an attribute rather than a style. */
+  @media (max-width: 1099px) {
+    .arena-codex {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+  }
+
+  .ar-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: clamp(12px, 2vw, 18px);
+    display: grid;
+    gap: 14px;
+  }
+  .ar-panel > header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .ar-panel h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .ar-panel .hint { flex: 1 1 260px; }
+  .ar-panel code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .ar-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .ar-readout { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-left: auto; }
+  .ar-readout b { color: var(--ink); }
+  .ar-empty { color: var(--muted); font-size: 14px; }
+  .ar-name { max-width: 320px; }
+
+  .ar-note { font-size: 13px; color: #ffd166; }
+  .ar-note.error { color: #ff8fa3; }
+
+  /* ── choosing an opponent ───────────────────────────────────────────────── */
+  .ar-modes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .ar-mode-card {
+    display: grid;
+    gap: 6px;
+    text-align: left;
+    padding: 16px;
+    cursor: pointer;
+    color: var(--ink);
+    font-family: var(--font-body);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .ar-mode-card:hover { background: rgba(255, 45, 85, 0.1); border-color: rgba(255, 45, 85, 0.45); }
+  .ar-mode-card:active { transform: translateY(1px); }
+  .ar-mode-card b { font-size: 15px; }
+  .ar-mode-card span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+
+  /* An option that cannot work right now — dimmed and inert rather than removed,
+     so the choice the game offers stays the same shape every time and the reason
+     is readable instead of the option silently not existing. */
+  .ar-mode-card.is-unavailable,
+  .ar-mode-card:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .ar-mode-card.is-unavailable:hover,
+  .ar-mode-card:disabled:hover { background: rgba(255, 255, 255, 0.02); border-color: var(--line); }
+  .ar-mode-card.is-unavailable:active,
+  .ar-mode-card:disabled:active { transform: none; }
+
+  /* ── the battle code ────────────────────────────────────────────────────── */
+  /* Monospace and wrapped rather than scrolled: a code that runs off the right
+     edge looks truncated, and "did I copy all of it?" is the one doubt this
+     screen cannot afford. Selecting on focus means the keyboard route works
+     even where the clipboard API is unavailable (any insecure origin — which
+     includes a LAN-IP dev server, exactly where this gets tested). */
+  .ar-code-out,
+  .ar-code-in {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.34);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    resize: vertical;
+    word-break: break-all;
+  }
+  .ar-code-out { color: #b6f0c4; }
+  .ar-code-in::placeholder { color: rgba(167, 149, 194, 0.55); }
+
+  /* ── line-up slots and the collection strip ─────────────────────────────── */
+  .ar-ranks { display: grid; gap: 14px; }
+  .ar-rank { display: grid; gap: 8px; }
+  .ar-rank-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ar-rank-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .ar-rank-cards { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .ar-slot {
+    width: clamp(104px, 15vw, 152px);
+    aspect-ratio: 5 / 7.4;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .ar-slot:hover,
+  .ar-slot.is-target { border-color: var(--red); color: var(--ink); background: rgba(255, 45, 85, 0.08); }
+  .ar-slot.filled { border-style: solid; border-color: transparent; background: none; }
+  .ar-slot .bcard { width: 100%; }
+  .ar-ranks.enemy .ar-slot { cursor: default; }
+  .ar-ranks.enemy .ar-slot:hover { border-color: transparent; background: none; }
+
+  .ar-pool {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+    gap: 12px;
+    max-height: 62vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .ar-pick {
+    padding: 0;
+    border: 0;
+    background: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.14s ease;
+  }
+  .ar-pick:hover { transform: translateY(-4px); }
+  /* Fielded cards dim rather than disappear: a card that vanishes from the
+     strip when you slot it makes the strip re-flow under the cursor, and the
+     next click lands on whatever moved into that space. */
+  .ar-pick.is-fielded { opacity: 0.34; }
+  .ar-pick.is-fielded .bcard { filter: saturate(0.4); }
+
+  /* ── the element wheel ──────────────────────────────────────────────────── */
+  .ar-wheel { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
+  .ar-wheel li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.4px;
+    color: var(--el);
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--el) 40%, transparent);
+    background: color-mix(in srgb, var(--el) 10%, transparent);
+    border-radius: 999px;
+  }
+  .ar-wheel li i { font-style: normal; }
+  .ar-wheel li span { color: var(--muted); }
+
+  /* ── the fight ──────────────────────────────────────────────────────────── */
+  .ar-arena { display: grid; gap: 10px; }
+  .ar-side { display: grid; gap: 8px; }
+  .ar-side-head {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ar-side-head b { color: var(--ink); }
+  .ar-line { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ar-line.back { opacity: 0.94; }
+  .ar-line .bcard { width: clamp(92px, 14vw, 140px); }
+
+  .ar-vs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+  }
+  .ar-vs::before,
+  .ar-vs::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .ar-round {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #cdb9e6;
+  }
+
+  .bcard.is-acting {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.13), 0 0 26px -4px var(--el);
+    transform: translateY(-6px) scale(1.03);
+  }
+  .bcard.is-hit { animation: ar-shake 0.24s ease; }
+  .bcard.is-down { opacity: 0.35; filter: grayscale(0.8); }
+  @keyframes ar-shake {
+    0%, 100% { transform: none; }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* The damage number. Absolutely positioned inside the card it lands on, so it
+     reads as coming off THAT card rather than floating over the board. */
+  .ar-pop {
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    animation: ar-pop 0.9s ease-out forwards;
+    z-index: 4;
+    text-align: center;
+  }
+  .ar-pop.crit { color: #ffd166; font-size: 28px; }
+  .ar-pop.strong { color: #6ee7a0; }
+  .ar-pop.weak { color: #9fb0c9; font-size: 18px; }
+  .ar-pop small {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  @keyframes ar-pop {
+    0% { opacity: 0; transform: translate(-50%, -20%) scale(0.7); }
+    22% { opacity: 1; transform: translate(-50%, -60%) scale(1.08); }
+    100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+  }
+
+  .ar-log {
+    max-height: 190px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .ar-log p { color: var(--muted); }
+  .ar-log p.round-line {
+    color: #cdb9e6;
+    margin-top: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 10px;
+  }
+  .ar-log p.round-line:first-child { margin-top: 0; }
+  /* Coloured by WHOSE BLOW IT WAS from the reader's seat, not by engine side —
+     ui/battle.js resolves 'a'/'b' against `youAre` before it gets here, so the
+     defender reading their own log sees their hits in the same colour the
+     challenger sees theirs. */
+  .ar-log p.mine { color: #ffb3c1; }
+  .ar-log p.theirs { color: #a8d5ff; }
+  .ar-log .tag { color: #ffd166; }
+  .ar-log .dead { color: var(--red); font-weight: 700; }
+
+  .ar-verdict {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(30px, 7vw, 52px);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px 0 4px;
+  }
+  .ar-verdict.win { color: #6ee7a0; text-shadow: 0 0 40px rgba(110, 231, 160, 0.4); }
+  .ar-verdict.loss { color: var(--red); text-shadow: 0 0 40px rgba(255, 45, 85, 0.4); }
+  .ar-verdict.draw { color: var(--muted); }
+  .ar-verdict small {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-top: 10px;
+    text-transform: none;
+  }
+
+  /* ── THE BATTLE CARD ────────────────────────────────────────────────────── */
+  /* THE RATIO IS A FLOOR, NOT A GUILLOTINE. `aspect-ratio` alone sets the height
+     from the width and then lets anything taller overflow — and since
+     `.bcard-inner` clips, "overflow" meant a stat row sliced through the middle.
+     A card that shows three and a half of its five stats is worse than an ugly
+     card: it silently misreports what a unit is. `min-height: max-content` makes
+     the height the LARGER of the ratio and what the card actually contains, so
+     the shape is kept whenever it can be and abandoned when it cannot. */
+  .bcard {
+    container-type: inline-size;
+    position: relative;
+    aspect-ratio: 5 / 7.4;
+    min-height: max-content;
+    /* Declared once and read in two places — the bar's own height, and the room
+       the card reserves for it (`.bcard.has-hp`). Two hardcoded copies of this
+       number is exactly how the bar came to sit on top of MOM. */
+    --hp-h: clamp(11px, 5.5cqw, 17px);
+    border-radius: clamp(9px, 5cqw, 16px);
+    padding: clamp(2px, 1.4cqw, 4px);
+    background: conic-gradient(from 210deg,
+      var(--t-mid), var(--t-hi), var(--t-lo), var(--t-soft),
+      var(--t-mid), var(--t-hi), var(--t-lo), var(--t-mid));
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    transition: transform 0.14s ease, box-shadow 0.14s ease;
+  }
+
+  .bcard-inner {
+    position: relative;
+    /* `min-height` rather than `height` so the inner can grow past the ratio and
+       carry the card with it — with a fixed height it would clip its own content
+       no matter how much room the outer card was willing to give. */
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2px, 1.2cqw, 5px);
+    padding: clamp(5px, 3cqw, 9px);
+    border-radius: clamp(7px, 4cqw, 13px);
+    overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--el) 20%, transparent) 0%, transparent 60%),
+      linear-gradient(180deg, #171d2c 0%, #0d1120 100%);
+  }
+
+  .bcard-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+
+  .bcard .rarity-badge {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(9px, 4.4cqw, 14px);
+    line-height: 1;
+    letter-spacing: 0.5px;
+    padding: clamp(2px, 1.3cqw, 4px) clamp(4px, 2cqw, 7px);
+    border-radius: clamp(4px, 2cqw, 6px);
+    color: var(--t-ink);
+    background: linear-gradient(160deg, var(--t-hi), var(--t-lo));
+    box-shadow: 0 0 clamp(5px, 2.5cqw, 10px) -2px var(--t-glow);
+  }
+
+  /* The two chips are the card's identity line. Element on the top right and
+     class under the portrait, so the eye reads "what is it about" then "what
+     does it do" in the order a player asks. */
+  .el-chip,
+  .cls-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(2px, 1.2cqw, 4px);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7px, 3.1cqw, 10px);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: clamp(2px, 1.2cqw, 4px) clamp(4px, 2cqw, 7px);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .el-chip {
+    color: var(--el);
+    border: 1px solid color-mix(in srgb, var(--el) 55%, transparent);
+    background: color-mix(in srgb, var(--el) 14%, transparent);
+  }
+  .el-chip i { font-style: normal; font-size: 1.2em; line-height: 1; }
+
+  .cls-chip {
+    align-self: center;
+    color: #dfe6f5;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .cls-chip i { font-style: normal; opacity: 0.85; }
+  .cls-chip.c-Titan { color: var(--s-hp); border-color: color-mix(in srgb, var(--s-hp) 45%, transparent); }
+  .cls-chip.c-Carry { color: var(--s-atk); border-color: color-mix(in srgb, var(--s-atk) 45%, transparent); }
+  .cls-chip.c-Bulwark { color: var(--s-def); border-color: color-mix(in srgb, var(--s-def) 45%, transparent); }
+  .cls-chip.c-Assassin { color: var(--s-spd); border-color: color-mix(in srgb, var(--s-spd) 45%, transparent); }
+  .cls-chip.c-Riser { color: var(--s-mom); border-color: color-mix(in srgb, var(--s-mom) 45%, transparent); }
+
+  .bcard-face { display: flex; align-items: center; gap: clamp(4px, 2.4cqw, 8px); min-width: 0; }
+
+  /* The portrait keeps its metal ring but gives up the centre of the card. It
+     is still the biggest single thing on the face, which is what stops a battle
+     card reading as a spreadsheet. */
+  .bavatar {
+    flex: none;
+    width: clamp(28px, 27cqw, 62px);
+    height: clamp(28px, 27cqw, 62px);
+    border-radius: 50%;
+    padding: clamp(1px, 1cqw, 3px);
+    background: conic-gradient(from 140deg, var(--t-lo), var(--t-hi), var(--t-glow), var(--t-soft), var(--t-lo), var(--t-hi), var(--t-lo));
+    box-shadow: 0 0 clamp(5px, 3cqw, 14px) -4px var(--t-glow);
+    display: block;
+  }
+  .bavatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: #223049;
+  }
+
+  .bcard-id { min-width: 0; flex: 1; }
+  .bcard-id h3 {
+    /* Same change as `.card-name`, and this is the screen it was reported on:
+       a battle card in the arena line is clamp(92px, 14vw, 140px) wide, so
+       4.4cqw landed at 6px and every one of them sat on the 9px floor. */
+    font-family: var(--font-name);
+    font-size: clamp(11px, 5.4cqw, 16px);
+    font-weight: 600;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bsubs {
+    margin-top: 2px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: clamp(6.5px, 2.9cqw, 9.5px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── the stat block ─────────────────────────────────────────────────────── */
+  .bstats { display: grid; gap: clamp(1px, 0.9cqw, 3px); margin-top: auto; }
+  .bstat {
+    display: grid;
+    grid-template-columns: clamp(17px, 8.5cqw, 26px) 1fr clamp(19px, 10cqw, 32px);
+    align-items: center;
+    gap: clamp(3px, 1.6cqw, 6px);
+  }
+  .bstat em {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: clamp(6px, 2.7cqw, 9px);
+    letter-spacing: 0.4px;
+    color: var(--muted);
+  }
+  .bstat .bar {
+    height: clamp(4px, 2cqw, 7px);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  }
+  .bstat .bar i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, transparent), var(--c));
+    box-shadow: 0 0 8px -2px var(--c);
+  }
+  .bstat b {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7.5px, 3.3cqw, 11px);
+    text-align: right;
+    color: #e9edf7;
+  }
+  .s-hp { --c: var(--s-hp); }
+  .s-atk { --c: var(--s-atk); }
+  .s-def { --c: var(--s-def); }
+  .s-spd { --c: var(--s-spd); }
+  .s-mom { --c: var(--s-mom); }
+  .s-hp em { color: var(--s-hp); }
+  .s-atk em { color: var(--s-atk); }
+  .s-def em { color: var(--s-def); }
+  .s-spd em { color: var(--s-spd); }
+  .s-mom em { color: var(--s-mom); }
+
+  .bability {
+    font-size: clamp(6.5px, 2.9cqw, 9.5px);
+    line-height: 1.3;
+    color: var(--muted);
+    padding-top: clamp(2px, 1.4cqw, 5px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bability b { color: #dfe6f5; }
+
+  /* Matchup flag against the line-up the player can already see. Sits on the
+     card because that is where the decision it informs gets made. */
+  .matchup {
+    position: absolute;
+    top: clamp(26px, 13cqw, 40px);
+    right: clamp(3px, 2cqw, 7px);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7px, 3cqw, 10px);
+    padding: 2px 5px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid currentColor;
+  }
+  .matchup.m-good { color: #6ee7a0; }
+  .matchup.m-bad { color: #ff7d92; }
+  .matchup.m-flat { color: var(--muted); }
+
+  /* ── health, only while fighting ────────────────────────────────────────── */
+  /* THE BAR IS ABSOLUTE, SO THE CARD HAS TO MAKE ROOM FOR IT — it does not take
+     part in the flex column and cannot push anything, which meant it landed
+     squarely on top of the last stat row for the whole fight. MOM was not
+     "hidden behind an overlay" in any way a player could tell; the card simply
+     showed four stats while claiming to show five, during the one screen where
+     the five numbers are the entire reason to look at a card.
+
+     The room comes from ABOVE the block, not out of it. `.bstats` is pushed
+     down by `margin-top: auto`, so there is already dead space between the
+     class chip and the first bar; padding the inner's bottom slides the whole
+     stat block up into it. Nothing shrinks, nothing is dropped, and a card that
+     is not in a fight is untouched — `armHealthBar` adds `has-hp`, so the
+     reservation exists exactly when the bar does. */
+  .bcard.has-hp .bcard-inner {
+    padding-bottom: calc(var(--hp-h) + clamp(3px, 1.6cqw, 6px));
+  }
+
+  .hpbar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--hp-h);
+    background: rgba(0, 0, 0, 0.7);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+  }
+  .hpbar i {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, #63e88f, #2fa85f);
+    transition: width 0.28s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .hpbar.is-low i { background: linear-gradient(180deg, #ff8f6b, #d63b2f); }
+  .hpbar span {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(7px, 3cqw, 10px);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  }
+
+  /* ── card at small widths: shed PROSE, never numbers ────────────────────── */
+  @container (max-width: 168px) {
+    .bability { display: none; }
+    .bsubs { display: none; }
+  }
+  @container (max-width: 124px) {
+    /* DEF and MOM used to be dropped here, and that was the wrong thing to shed.
+       The ability text and the subscriber line are commentary — a player who
+       loses them loses flavour. The five stats ARE the card: they are what the
+       fight is computed from and the only reason to look at it during one, and a
+       card showing three of them is a card lying about a unit. So the stats stay
+       at every width, and the type tightens to make room instead. */
+    .bstat { grid-template-columns: clamp(15px, 9cqw, 26px) 1fr clamp(17px, 11cqw, 32px); gap: 3px; }
+    .bstat em { font-size: 6px; letter-spacing: 0.2px; }
+    .bstat b { font-size: 7.5px; }
+    .bstat .bar { height: 3.5px; }
+    .cls-chip { font-size: 7px; padding: 1px 4px; }
+  }
+
+  /* ── THE PHONE REVEAL (2026-08-16) ──────────────────────────────────────
+     ui/reveal.js already declines to BUILD the sweep, ignition, bloom and aura
+     on a phone (see LOW_FX there) — building nothing is what saves the frames,
+     and this block is the half that CSS owns. (The twinkling STARS were on that
+     list until 2026-08-17 and are not any more: Ash asked for them back on
+     every device, and their cost is compositor-only where the aura's is a
+     blurred, masked field. See the LOW_FX note for that distinction.)
+
+     `backdrop-filter` is the one property in the overlay whose cost scales with
+     screen AREA rather than with content: it re-blurs everything behind a
+     full-screen, SCROLLING surface, every frame that surface or its contents
+     move, which during a reveal is every frame there is. Desktop keeps it — it
+     has the GPU to spare and the effect is doing real separation work. A phone
+     buys the same separation with opacity, for free. */
+  @media (max-width: 640px), (pointer: coarse) {
+    #reveal {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: color-mix(in srgb, var(--bg0) 97%, transparent);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .arena-head h2 { font-size: 18px; }
+    .ar-pool { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+    .ar-readout { margin-left: 0; flex-basis: 100%; }
+
+    /* TALLER ON A PHONE, because width is the scarce axis and height is not.
+       A phone card is ~92-130px wide, and at 5/7.4 that bought roughly 140px of
+       height for content that wants closer to 150 — so the ratio, not the
+       content, was what pushed MOM off the bottom. Height costs nothing here:
+       the arena already scrolls vertically, and nothing sits beside a card that
+       a taller card would crowd. The stat block gets its room, and the portrait
+       keeps its proportions instead of being squeezed to make space. */
+    .bcard { aspect-ratio: 5 / 8.2; }
+
+    /* THE BACK RANK MUST FIT IN ONE ROW. Three slots at the desktop minimum
+       (104px + 10px gaps) need 332px, which overflows a 360px phone once the
+       overlay and panel padding are taken out — so the rank wrapped 2 + 1 and
+       stopped reading as a rank at all. The formation is the whole decision on
+       this screen; a row that silently breaks in half hides it. */
+    .ar-slot { width: clamp(84px, 27vw, 120px); }
+    .ar-rank-cards { gap: 6px; }
+
+    /* A scrollable strip INSIDE a scrollable overlay is a touch trap — a drag
+       that starts on a card scrolls the strip instead of the page, and there is
+       no visible boundary saying which one you grabbed. On a phone the strip
+       just becomes part of the page. */
+    .ar-pool { max-height: none; overflow-y: visible; }
+
+    /* Codes are the one thing a player has to select by hand if the clipboard
+       API is refused, so give them room to be legible while doing it. */
+    .ar-code-out,
+    .ar-code-in { font-size: 12.5px; }
+
+    /* Full-width so a thumb can hit them, and so "Copy code" never ends up
+       sharing a line with a button that navigates away from the code. */
+    .ar-row .btn { flex: 1 1 auto; min-width: 44%; }
+  }
+
+  /* The arena head carries a title, a three-step stepper and the way out. Below
+     this the three cannot share a line without the close button being pushed
+     off the edge, so the stepper takes its own row and Close stays reachable —
+     it is the only control on this screen a player cannot do without. */
+  @media (max-width: 420px) {
+    .arena-head { gap: 8px; }
+    .arena-head h2 { font-size: 16px; }
+    .ar-steps { order: 3; flex-basis: 100%; }
+    .ar-steps li { font-size: 9.5px; padding: 4px 8px; }
+  }
+
+  /* Reduced motion: the replay is still a replay — it is a sequence of states,
+     not an animation — but nothing slides, shakes or floats to get there. The
+     health bar keeps its value and loses its tween. */
+  @media (prefers-reduced-motion: reduce) {
+    .bcard,
+    .ar-pick,
+    .ar-slot,
+    .ar-mode-card { transition: none; }
+    .bcard.is-hit { animation: none; }
+    .bcard.is-acting { transform: none; }
+    .ar-pick:hover { transform: none; }
+    .hpbar i { transition: none; }
+    .ar-pop { animation: none; opacity: 1; transform: translate(-50%, -80%); }
+  }
+
+  /* The formation readout. Deliberately loud when it is EARNED and quiet when
+     it is not — it is the one number on this screen the card ratings cannot
+     tell you, so it has to survive being glanced at. */
+  .ar-formation {
+    font-size: 12.5px;
+    color: var(--muted);
+    padding: 8px 12px;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+  }
+  .ar-formation b { color: var(--ink); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.5px; }
+  .ar-formation.is-on {
+    color: #b6f0c4;
+    border-style: solid;
+    border-color: rgba(110, 231, 160, 0.45);
+    background: rgba(110, 231, 160, 0.09);
+  }
+  .ar-formation.is-on b { color: #6ee7a0; }
+
+  /* THE COMPARISON LINE, and it is deliberately quieter than the rest of the
+     block. It appears only once five cards are down and there is an enemy to
+     compare against, and it exists because the ratings above it can read "even"
+     while a diversity gap decides the fight — measured, 3 classes against 5 is
+     a ~25% win rate at matched rating. Warm amber rather than red: this is
+     information the player can still act on by swapping a card, not a failure
+     state, and the arena already spends red on damage. */
+  .ar-formation-vs {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+  .ar-formation-vs.is-good { color: #6ee7a0; }
+  .ar-formation-vs.is-warn { color: #f0c26e; }
+
+  /* ── THE READY SCREEN ─────────────────────────────────────────────────────
+     A deliberately different colour from every other action in the app. The
+     magenta primary means "do the thing you came here for" and is on the pack,
+     the pull, the commit and the copy button; if the one control that fires a
+     synchronised countdown wore it too, the moment that is supposed to feel
+     like a starting pistol would look like every other button on the page.
+
+     Cyan because it is the only strong hue in the palette not already spoken
+     for: red is the brand and defeat, green is victory, gold is a crit, and the
+     six element hues are card identity. Cyan appears nowhere else, so it reads
+     as its own state rather than borrowing a meaning. */
+  .btn.go {
+    background: linear-gradient(180deg, #2ee6d0, #12b5c9);
+    border-color: transparent;
+    color: #04222a;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    box-shadow: 0 8px 22px -10px #12b5c9;
+  }
+  .btn.go:hover:not(:disabled) { background: linear-gradient(180deg, #4df0dd, #17c9de); }
+  /* Armed: the press landed and the countdown owns the screen now. Stays lit
+     rather than greying out — a disabled button that looks broken mid-countdown
+     invites a second click on something that is already working. */
+  .btn.go.is-armed {
+    opacity: 1;
+    background: linear-gradient(180deg, #0f8fa1, #0b6d7c);
+    color: #bff4fb;
+    box-shadow: none;
+  }
+
+  .ar-faceoff {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 4vw, 34px);
+    padding: 6px 0;
+    text-align: center;
+  }
+  .ar-faceoff span { display: grid; gap: 3px; min-width: 0; }
+  .ar-faceoff b {
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ar-faceoff i {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ar-faceoff em {
+    font-style: normal;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .ar-countdown {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(56px, 18vw, 110px);
+    line-height: 1;
+    letter-spacing: 3px;
+    color: #2ee6d0;
+    text-shadow: 0 0 46px rgba(46, 230, 208, 0.45);
+    padding: 8px 0 4px;
+    /* Reserves its own height from the first frame, so the panel does not jump
+       when the number appears and the button does not slide out from under a
+       finger that is still on it. */
+    min-height: clamp(64px, 20vw, 120px);
+  }
+  .ar-countdown.tick { animation: ar-tick 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+  .ar-countdown.is-go {
+    color: #6ee7a0;
+    text-shadow: 0 0 54px rgba(110, 231, 160, 0.55);
+    animation: ar-go 0.42s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  @keyframes ar-tick {
+    0% { opacity: 0; transform: scale(1.45); }
+    22% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0.55; transform: scale(0.94); }
+  }
+  @keyframes ar-go {
+    0% { opacity: 0; transform: scale(0.7); }
+    45% { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Reduced motion: the count still counts — it is information, not decoration
+     — it simply arrives instead of springing. */
+  @media (prefers-reduced-motion: reduce) {
+    .ar-countdown.tick,
+    .ar-countdown.is-go { animation: none; opacity: 1; transform: none; }
+  }
+
+  /* The presence lamp. Three states and each says something different: we do
+     not know yet, they are waiting on you, you are waiting on them. Neutral by
+     default because "press when they tell you" is the honest instruction when
+     there is no server to ask. */
+  .ar-lamp {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    min-height: 18px;
+  }
+  .ar-lamp.is-ready { color: #2ee6d0; }
+  .ar-lamp.is-waiting { color: #ffd166; }
+
+  /* The accepted flash. Green rather than the cyan the ready lamps use: this
+     fires once, means something different (someone arrived), and is the only
+     moment on the challenger screen worth interrupting a wait for. */
+  .ar-lamp.is-ready { animation: ar-accepted 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+  @keyframes ar-accepted {
+    0%   { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ar-lamp.is-ready { animation: none; }
+  }
+
+  /* ── the shared build phase (2026-08-15) ──────────────────────────────── */
+
+  /* The live 30-second team-building clock — brief item 12's "TEAM BUILDING /
+     00:30" mockup, kept as one line rather than a stacked header+number since
+     it sits inside a panel that already has a title. */
+  .ar-timer {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.6px;
+    color: var(--ink);
+    text-align: center;
+  }
+  .ar-timer.is-low {
+    color: var(--red);
+    animation: ar-timer-pulse 1s ease-in-out infinite;
+  }
+  @keyframes ar-timer-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ar-timer.is-low { animation: none; }
+  }
+
+  /* The "your collection is more than 1.5x theirs" screen — brief item 20. */
+  .ar-fairness p { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .ar-fairness p:last-child { margin-bottom: 0; }
+  .ar-fairness b { color: var(--ink); }
+  .ar-fairness-guarantee {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(110, 231, 160, 0.35);
+    border-radius: 10px;
+    background: rgba(110, 231, 160, 0.06);
+  }
+  .ar-fairness-guarantee p { margin: 0 0 6px; color: #6ee7a0; font-size: 13px; }
+  .ar-fairness-guarantee ul { margin: 0; padding: 0; list-style: none; display: flex; gap: 14px; flex-wrap: wrap; }
+  .ar-fairness-guarantee li { font-family: var(--font-mono); font-size: 13px; color: #6ee7a0; }

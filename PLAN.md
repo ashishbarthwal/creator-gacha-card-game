@@ -1,5 +1,15 @@
 # Plan
 
+> **HISTORICAL — do not read this as current architecture.** Written 2026-07-20 and left
+> as a record of what was planned, not retconned to match what shipped (the same rule the
+> `WPn` commits and tags follow). Several things below are now wrong on purpose: the file
+> tree predates the `src/engine/` reorganisation, `statsFrom` was deleted on 2026-08-09
+> when the card face moved onto the one derivation in `battle-stats.js`, and the sequential
+> WP numbering was retired on 2026-08-05.
+>
+> **For current state read `CLAUDE.md` (architecture + settled balance), `TASKS.md` (what
+> is done and open) and `DECISIONS.md` (why).**
+
 Work packages in dependency order. Each is independently shippable. Do not start a
 package before its blocker is done. Stop after each package and report, do not chain
 straight through.

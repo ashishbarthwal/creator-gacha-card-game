@@ -236,12 +236,19 @@ export function harvestChannelIds(searchJson) {
    caller opts into, never a global rule. The parameter is still named `floor`
    for its callers' sake though it now describes a band.
 
-   `minViews` exists because a card with a zero stat reads as a bug. Found by
-   playing (2026-07-31): a channel with ~8,100 videos and no view count rendered
-   ATK 0. statsFrom is log10-scaled, so even a single view scores 36 — an ATK of
-   exactly 0 means the API gave us nothing to derive from. Whether that count is
-   genuinely zero or merely absent, we cannot make a card out of it, so it is
-   culled at sourcing rather than papered over with a minimum stat downstream. */
+   `minViews` exists because a card with no data behind it reads as a bug. Found
+   by playing (2026-07-31): a channel with ~8,100 videos and no view count
+   rendered ATK 0 under the card-face derivation of the time, which was
+   log10-scaled — so even a single view scored 36, and an ATK of exactly 0 meant
+   the API had given us nothing to derive from.
+
+   That derivation is gone (2026-08-09; stats now come from battle-stats.js,
+   which floors every axis and cannot print a 0), so the SYMPTOM would no longer
+   appear — but the RULE is unchanged and the reason is the sturdier one: a
+   channel reporting no views tells us nothing about what kind of creator it is,
+   and every axis would fall back to a default. Whether the count is genuinely
+   zero or merely absent, there is no card to make, so it is culled at sourcing
+   rather than papered over downstream. */
 export const DEFAULT_FLOOR = { minSubs: 1_000, minViews: 1_000, maxSubs: Infinity, minVideos: 5 };
 
 export function passesFloor(channel, floor = DEFAULT_FLOOR) {

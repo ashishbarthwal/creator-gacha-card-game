@@ -1,24 +1,56 @@
 /* ui/reveal — the pull reveal overlay: a rarity-escalated flip sequence.
    Common cards resolve fast; rarer cards come LAST, each preceded by a
-   colour-coded beam (the telegraph). As a rare card lands, a single slow
-   specular sweep passes across its face and a seam glow lights up AROUND it
-   (rarity hidden until the turn — suspense); SR+ also carry twinkling stars,
-   placed to avoid the avatar circle. UR alone gets a three-beat finish, each
-   with its own shape and its own slot so they don't blur together: the ignition
-   (a hot point racing once around the frame), the discharge (a silhouette
-   pushing outward as the loop closes) and the aura (a breathing field behind
-   the card, shedding motes, looping). All CSS, zero dependencies —
-   no per-frame JS, so nothing to lag on. Reduced motion collapses it to an
-   instant, calm reveal. Self-contained: owns its close wiring; main just calls
-   openReveal(results). */
+   colour-coded beam — THE SPOILER, and the one piece of theatre this screen is
+   actually built around. It tells you something good is coming before you can
+   see what, which is the entire suspense mechanism. A seam glow lights up around
+   each card as it lands, and SR+ carry twinkling stars placed to avoid the
+   avatar circle.
+
+   THAT IS NOW THE WHOLE OF IT, ON EVERY DEVICE (2026-08-17). This file used to
+   run a specular sweep, and a three-beat top-tier finish — ignition, discharge,
+   and a breathing aura shedding fifty motes per card — with a phone/desktop
+   split deciding who saw them. Ash removed the lot: "simplify the card pull
+   animation in both phone and pc. Keep the colour spoiler thing." See the note
+   above the FX table for what came out and why the holds moved with it.
+
+   The header used to boast "all CSS, zero dependencies, no per-frame JS, so
+   nothing to lag on", and that was the mistake this file kept being measured
+   against: compositing several hundred simultaneously animating layers is
+   per-frame work whoever schedules it. The lesson generalised past the phone —
+   a pull you sit through is worse on a fast machine, because there is nothing
+   to blame it on.
+
+   Reduced motion collapses it to an instant, calm reveal on any device.
+   Self-contained: owns its close wiring; main just calls openReveal(results). */
 
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
 import { enableCardTilt } from './holo.js';
+import { STARS, makeStars } from './stars.js';
 
 const revealEl = document.getElementById('reveal');
 const revealGrid = document.getElementById('reveal-grid');
 const revealDone = document.getElementById('reveal-done');
+const revealAgain = document.getElementById('reveal-again');
+
+/* THE LOOP, wired by main rather than reached for. The reveal is the moment a
+   player is most likely to want another pull, and a screen whose only exit is
+   "Done" spends that on nothing — but this module has no business knowing what
+   a pull IS, so it takes the action and the size as callbacks from the
+   composition root, exactly as ui/banner.js takes `onPull`.
+
+   Left null until wired, and the button hides itself in that case rather than
+   sitting there dead. */
+let againAction = null;
+let dismissAction = null;
+let againSize = null;
+
+export function initReveal({ onPullAgain = null, packSize = null, onDismiss = null } = {}) {
+  againAction = onPullAgain;
+  dismissAction = onDismiss;
+  againSize = packSize;
+  if (revealAgain) revealAgain.hidden = !onPullAgain;
+}
 
 /* Pointer-tilt on a fine-pointer device (was previously only wired up in the
    collection grid and the inspector — the reveal screen itself had none, on
@@ -39,13 +71,17 @@ const CARD_BACK_HTML =
 /* Per-rarity theatre. rank orders the sequence (rarer flips later, for a
    crescendo); beam is the pre-flip telegraph time (ms); hold is the pause after
    this card lands. Sweep, seam glow and stars are gated per rarity downstream. */
+/* Beams keep their escalation — that is the colour spoiler and it is the point.
+   The HOLDS came down (UR 700 -> 320, RUBY 900 -> 400) because they existed to
+   give the ignition/bloom/aura finale room to play, and the finale is gone: what
+   was a pause is now a player waiting at a card that already landed. */
 const FX = {
   N:    { rank: 0, beam: 0,    hold: 0   },
-  R:    { rank: 1, beam: 200,  hold: 60  },
-  SR:   { rank: 2, beam: 360,  hold: 240 },
-  SSR:  { rank: 3, beam: 600,  hold: 430 },
-  UR:   { rank: 4, beam: 950,  hold: 700 },
-  RUBY: { rank: 5, beam: 1200, hold: 900 },
+  R:    { rank: 1, beam: 190,  hold: 40  },
+  SR:   { rank: 2, beam: 320,  hold: 130 },
+  SSR:  { rank: 3, beam: 480,  hold: 220 },
+  UR:   { rank: 4, beam: 700,  hold: 320 },
+  RUBY: { rank: 5, beam: 850,  hold: 400 },
 };
 
 /* Gap between consecutive commons — the cadence knob, and the one that decides
@@ -57,38 +93,61 @@ const FX = {
 const BASE_GAP = 200;
 const OPENING_BEAT = 300;  // let the overlay settle before the first flip
 
-const SWEPT = new Set(['SR', 'SSR', 'UR', 'RUBY']);   // get the specular sweep
-
-/* Twinkling stars, now starting at SR: a sparse small shimmer there, the dense
-   quick field at SSR, a little denser again at UR, denser still at RUBY.
-   Ranges are [min, max] — count, dot size (px), twinkle period (s). Tint is
-   per-tier in CSS and follows the frame, so SR reads gold, SSR cold diamond,
-   UR hot amber, RUBY cold diamond-white with a red cast. */
-const STARS = {
-  SR:   { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
-  SSR:  { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
-  UR:   { count: 26, size: [2.0, 4.4], tw: [1.1, 2.8] },
-  /* RUBY goes DOWN, against the escalation every other row follows, and that
-     inversion is the point. Up to UR the ladder buys drama with density. The
-     gem cut buys it with restraint: a cut stone throws a few big, deliberate
-     reflections, and a dense field of small ones is what costume jewellery
-     looks like. Fewer, larger, slower — and rendered as four-point sparkles
-     rather than round dots (`.glow-RUBY .star` in styles.css). */
-  RUBY: { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
-};
-
-/* The top-of-ladder finale — ignition, discharge and breathing aura — was
-   UR-exclusive when UR was the top tier. RUBY inherits the same mechanics
-   (WP-Ruby Tier); its own colours come from CSS (.glow-RUBY), keyed off the
-   same class this set gates. */
-const TOP_TIER = new Set(['UR', 'RUBY']);
-
-/* Avatar exclusion in card-relative fractions (the ringed centrepiece), so
-   stars never land on the pfp. y is scaled by the 5:7 aspect for a round check. */
-const AV = { cx: 0.5, cy: 0.45, r: 0.33 };
-const ASPECT = 7 / 5;
+/* SWEPT and TOP_TIER went with the layers they gated (2026-08-17) — the
+   specular sweep, and the ignition/bloom/aura finale. Nothing selects a rarity
+   for extra choreography any more; rarity is expressed by the beam, the order
+   and the card itself. */
 
 const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ── EVERY DEVICE GETS THE PLAIN REVEAL (2026-08-17) ───────────────────────
+   Ash: "simplify the card pull animation in both phone and pc. Keep the colour
+   spoiler thing but SIMPLIFY the pull animation."
+
+   So the device split below is GONE, and with it the idea that a desktop should
+   be shown more because it can survive more. The 2026-08-16 pass had cut these
+   layers on phones only, on the theory that the desktop reveal was fine because
+   it did not drop frames. Dropping frames was never the complaint — the reveal
+   was simply doing too much, and a pull you sit through is worse on a fast
+   machine than on a slow one, because there is nothing to blame it on.
+
+   WHAT IS KEPT, and the first of these is the one that was named:
+     - THE COLOUR SPOILER. The pre-flip beam, still escalating by rarity, still
+       the thing that tells you something good is coming before you can see it.
+       That is the whole suspense mechanism and it survives untouched.
+     - The flip, and rarest-last ordering, so a pull still builds.
+     - The seam glow that lights up around a card as it lands.
+     - The twinkling stars (Ash, earlier the same day: "it's cheap and pretty so
+       lets keep it") — they live on the CARD, in the binder and the inspector
+       too, so they are not really part of this choreography at all.
+
+   WHAT IS GONE, on every device: the specular sweep, and the top-tier trio of
+   ignition ring, discharge bloom and breathing aura — that last one shedding
+   fifty motes per card, looping for as long as the overlay stayed open.
+
+   THE HOLDS CAME DOWN AS A CONSEQUENCE, NOT AS A SEPARATE DECISION. UR held for
+   700ms and RUBY for 900 to give the finale room to play. With no finale that
+   is not a pause, it is dead air — the card has already landed and the player is
+   waiting at a finished screen. Beams keep their escalation; the holds are
+   trimmed to what a beat needs.
+
+   The `.sweep` / `.fuse` / `.bloom` / `.aura` / `.mote` rules in styles.css are
+   now inert — nothing builds those elements. Left in place rather than swept out
+   in the same pass, because deleting a few hundred lines of CSS by eye is how a
+   working card frame gets broken; see TASKS.md.
+
+   ── WHY THE STARS STAYED WHEN THE REST WENT ───────────────────────────────
+   Ash, earlier the same day: "the twinkling effects and stars should be in
+   mobile as well... it's cheap and pretty so lets keep it." Both instructions
+   hold together, and the line between them is COST PER CARD, not taste.
+
+   A star field is 18-26 absolutely-positioned dots animating `opacity` and
+   `transform` only — compositor work, no repaint (see `@keyframes twinkle`) —
+   and it lives on the CARD, so it is equally present in the binder and the
+   inspector where there is no choreography at all. The aura was fifty motes
+   PLUS a blurred, masked field that forces rasterisation, per card, for as long
+   as the overlay stayed open, and it existed nowhere but here. Removing the
+   pull's theatre and keeping the card's finish are not in tension. */
 
 /* ── A tick in the hand when a row lands ───────────────────────────────────
    The scroll snap already announces that a row arrived, but it announces it to
@@ -153,6 +212,14 @@ export function openReveal(results) {
 
   const cells = results.map(result => buildCell(result));
 
+  /* Labelled per open, because the size toggle can change between pulls and a
+     button that promises ×10 while the banner is set to ×1 is a lie the player
+     only finds out about by pressing it. */
+  if (revealAgain && againSize) {
+    const n = againSize();
+    revealAgain.textContent = Number.isFinite(n) && n > 1 ? `Pull again ×${n}` : 'Pull again';
+  }
+
   snapArmed = false;
   revealEl.hidden = false;
   /* A reopened overlay must start at the top. The scroll position survives
@@ -200,33 +267,6 @@ export function openReveal(results) {
   }
 }
 
-/* Scatter twinkling stars over the card, rejecting any that fall inside the
-   avatar circle. Positions + per-star timing/size are random (inline styles);
-   the twinkle itself is a CSS animation, so there's no JS running per frame. */
-function makeStars(rarity) {
-  const { count, size, tw } = STARS[rarity];
-  const span = (lo, hi) => lo + Math.random() * (hi - lo);
-  const wrap = document.createElement('div');
-  wrap.className = 'stars';
-  for (let placed = 0, guard = 0; placed < count && guard < count * 40; guard++) {
-    const x = 0.06 + Math.random() * 0.88;
-    const y = 0.06 + Math.random() * 0.88;
-    const dx = x - AV.cx;
-    const dy = (y - AV.cy) * ASPECT;
-    if (dx * dx + dy * dy < AV.r * AV.r) continue; // inside the pfp — skip
-    const star = document.createElement('i');
-    star.className = 'star';
-    star.style.left = (x * 100).toFixed(1) + '%';
-    star.style.top = (y * 100).toFixed(1) + '%';
-    star.style.setProperty('--sz', span(...size).toFixed(1) + 'px');
-    star.style.setProperty('--tw', span(...tw).toFixed(2) + 's');
-    star.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's'; // desync the twinkle
-    wrap.appendChild(star);
-    placed++;
-  }
-  return wrap;
-}
-
 /* UR aftermath — a breathing aura behind the card that sheds small motes.
    The aura sits BEHIND the card, so both it and everything it emits are only
    ever visible in the margin: the motes can't crowd the stars on the face (the
@@ -234,36 +274,6 @@ function makeStars(rarity) {
    as noise) and nothing drifts across the avatar. Motes spawn on the card's
    perimeter and drift outward along their own angle, so they look shed by the
    card rather than sprinkled around it. */
-/* Per-tier, because the two top tiers are shedding different things. UR is an
-   ember throwing sparks, and a lot of them is what makes it read as burning.
-   RUBY is a cut stone: what comes off it is the occasional glint, so the same
-   field at the same density would just look like UR again with a red filter —
-   the exact "recoloured UR" outcome the gem cut exists to avoid. */
-const MOTE_COUNT = { UR: 50, RUBY: 14 };
-
-function makeAura(rarity) {
-  const wrap = document.createElement('div');
-  wrap.className = 'aura';
-  for (let i = 0; i < (MOTE_COUNT[rarity] ?? 50); i++) {
-    const mote = document.createElement('i');
-    mote.className = 'mote';
-    const angle = Math.random() * Math.PI * 2;
-    const spawn = 0.42 + Math.random() * 0.09; // out near the card's edge
-    mote.style.left = (50 + Math.cos(angle) * spawn * 100).toFixed(1) + '%';
-    mote.style.top = (50 + Math.sin(angle) * spawn * 100).toFixed(1) + '%';
-    const dist = 24 + Math.random() * 44;
-    mote.style.setProperty('--tx', (Math.cos(angle) * dist).toFixed(1) + 'px');
-    /* Drift is outward along the spawn angle, minus a constant lift, so the
-       field has some buoyancy instead of expanding like a perfect ring. */
-    mote.style.setProperty('--ty', (Math.sin(angle) * dist - 12).toFixed(1) + 'px');
-    mote.style.setProperty('--sz', (1.5 + Math.random() * 1.8).toFixed(1) + 'px');
-    mote.style.setProperty('--float', (2.8 + Math.random() * 2.4).toFixed(2) + 's');
-    mote.style.animationDelay = (1.5 + Math.random() * 4.5).toFixed(2) + 's';
-    wrap.appendChild(mote);
-  }
-  return wrap;
-}
-
 function buildCell(result) {
   const rarity = result.card.rarity;
   const cell = document.createElement('div');
@@ -283,32 +293,13 @@ function buildCell(result) {
   const front = document.createElement('div');
   front.className = 'face front';
   front.appendChild(renderCard(result.card, { isNew: result.isNew }));
-  if (SWEPT.has(rarity)) {
-    const sweep = document.createElement('div'); // one specular pass across the face
-    sweep.className = 'sweep';
-    front.appendChild(sweep);
-  }
+  /* THE ONLY LAYER LEFT ON THE FACE. The sweep, ignition, bloom and aura were
+     removed on 2026-08-17 (see the header) — the star field stays because it is
+     the card's own finish rather than the pull's theatre, and it is on this card
+     in the binder and the inspector too. Built rather than hidden in CSS, on the
+     principle the removed layers were judged by: an element that is never made
+     costs no DOM, no style resolution and no compositor layer. */
   if (STARS[rarity]) front.appendChild(makeStars(rarity));
-  if (TOP_TIER.has(rarity)) {
-    /* Top tier only — the ignition: a white-hot point races once around the
-       frame bevel as the card lands, and the seam halo floods in behind it.
-       This is the strike the card's ambient ember (`.card.r-UR`/`.r-RUBY`,
-       *-ember) is the aftermath of. The <i> carries the spinning gradient; the
-       wrapper is a static masked ring, so the ring itself never rotates — only
-       the head appears to travel. Border-only by construction, so it never
-       crosses the avatar. */
-    const fuse = document.createElement('div');
-    fuse.className = 'fuse';
-    fuse.appendChild(document.createElement('i'));
-    front.appendChild(fuse);
-    /* The discharge and the aura both go on the CELL rather than the face:
-       behind the card, so they read as the silhouette pushing outward and never
-       wash over the avatar the way a full-face tint would. The bloom fires as
-       the fuse closes its loop; the aura settles in behind it and stays. */
-    const bloom = document.createElement('div');
-    bloom.className = 'bloom';
-    cell.append(bloom, makeAura(rarity));
-  }
   inner.append(back, front);
   flipEl.appendChild(inner);
   cell.appendChild(flipEl);
@@ -399,14 +390,37 @@ if ('onscrollsnapchange' in revealEl) {
   });
 }
 
-export function closeReveal() {
+function hideReveal() {
   revealTimers.forEach(clearTimeout);
   revealTimers = [];
   revealEl.hidden = true;
 }
 
+/* DISMISSING THE REVEAL IS NOT THE SAME AS CLOSING IT, and conflating the two
+   is the trap here. "Pull again" also has to take this overlay down — see the
+   note on that handler — so anything hung on "the reveal closed" fires on the
+   one path where it is exactly wrong: the player is about to watch another pack
+   open, and would be scrolled away from it first.
+
+   So the callback is on DISMISSAL — Done, the backdrop, Escape — which is the
+   player saying they are finished looking. `hideReveal` is the mechanical half
+   and is what "Pull again" uses. */
+export function closeReveal() {
+  hideReveal();
+  dismissAction?.();
+}
+
 revealDone.addEventListener('click', closeReveal);
 revealEl.addEventListener('click', e => { if (e.target === revealEl) closeReveal(); });
+
+/* Close FIRST, then pull. The next pull opens the summon overlay and then this
+   same reveal again, so leaving the old one up would stack a fresh sequence
+   behind a screen still showing the previous pull's cards. */
+revealAgain?.addEventListener('click', () => {
+  if (!againAction) return;
+  hideReveal();          // not closeReveal: this is a continuation, not a dismissal
+  againAction();
+});
 
 /* Escape closes the TOP overlay only. Now that the inspector can open from the
    reveal, both are listening on document, and one Escape would otherwise close

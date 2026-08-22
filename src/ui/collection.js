@@ -3,16 +3,23 @@
    Reads shared state; owns its own DOM refs. */
 
 import { RARITY_ORDER, toCount } from '../engine/core.js';
+import { battleStatsFrom } from '../engine/battle-stats.js';
+import { TEAM_SIZE } from '../engine/battle.js';
 import { state, resetCollection } from '../state.js';
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
 import { openInspect } from './inspect.js';
+import { makeStars } from './stars.js';
 
 const collGrid = document.getElementById('collection-grid');
 const collSummary = document.getElementById('coll-summary');
 const collEmpty = document.getElementById('coll-empty');
 const collNone = document.getElementById('coll-none');
 const collClear = document.getElementById('coll-clear');
+/* Owned here because this module is the one that knows how many DIFFERENT
+   creators are in the binder; the click itself is wired in main.js, which is
+   where modules get introduced to each other. */
+const battleBtn = document.getElementById('battle-open');
 const collTools = document.getElementById('coll-tools');
 const collSearch = document.getElementById('coll-search');
 const collFilters = document.getElementById('coll-filters');
@@ -112,8 +119,13 @@ const SORTS = {
      arbitrary. */
   recent: (a, b) => (pulledAt.get(b.card.channel.id) ?? 0) - (pulledAt.get(a.card.channel.id) ?? 0) || byRarity(a, b),
   rarity: byRarity,
-  atk:    (a, b) => b.card.atk - a.card.atk,
-  def:    (a, b) => b.card.def - a.card.def,
+  /* Derived on demand rather than read off the card, because a card no longer
+     carries numbers — there is one derivation and it lives in battle-stats.js
+     (see engine/core.js). Memoized: sorting a few hundred cards would otherwise
+     re-derive each one on every comparison, which is O(n log n) calls into the
+     same pure function for the same answer. */
+  atk:    (a, b) => statOf(b, 'atk') - statOf(a, 'atk'),
+  def:    (a, b) => statOf(b, 'def') - statOf(a, 'def'),
   subs:   (a, b) => toCount(b.card.channel.subscriberCount) - toCount(a.card.channel.subscriberCount),
   name:   (a, b) => a.card.channel.title.localeCompare(b.card.channel.title),
 };
@@ -121,6 +133,18 @@ const SORTS = {
 function byRarity(a, b) {
   return RARITY_ORDER.indexOf(b.card.rarity) - RARITY_ORDER.indexOf(a.card.rarity)
     || toCount(b.card.channel.subscriberCount) - toCount(a.card.channel.subscriberCount);
+}
+
+/* One derivation per channel per sort, cached by id. Cleared nowhere on
+   purpose: battleStatsFrom is deterministic in the channel and the clock, and
+   the clock only matters at the granularity of channel AGE — so a value cached
+   for the life of a page view cannot be stale in any way a player could see. */
+const statCache = new Map();
+function statOf(item, key) {
+  const id = item.card.channel.id;
+  let s = statCache.get(id);
+  if (!s) { s = battleStatsFrom(item.card.channel); statCache.set(id, s); }
+  return s[key];
 }
 
 /* What the empty grid says. "Nothing matches those filters" is accurate and
@@ -172,6 +196,93 @@ function renderFilters() {
     ).join('');
 }
 
+/* ── POINT AT THE CARDS THEY JUST PULLED (2026-08-22) ──────────────────────
+   The reveal closes and returns the player to the pack, while the cards it just
+   showed them sit below the fold wearing NEW badges nobody scrolls down to see.
+   The loop was pull -> see -> nothing; this makes it pull -> see -> own.
+
+   IT DECLINES TO SCROLL WHEN THE BINDER IS ALREADY THERE, which is what keeps
+   it from being irritating rather than helpful. Someone who has scrolled down
+   to their collection and is pulling from there does not want the page jumping
+   under them on every close, and after the first scroll that is exactly the
+   state they are in — so this fires roughly once per session, at the moment it
+   is the only useful thing to do.
+
+   Wired through `initReveal`'s `onDismiss` rather than reached for directly,
+   for two reasons. reveal.js already imports from this module's neighbours and
+   a second cross-import is how cycles start; and DISMISSAL is not the same
+   event as "the overlay closed" — "Pull again" closes it too, and scrolling
+   there would drag the player away from the pack they are about to open. */
+export function showBinder() {
+  const panel = collGrid?.closest('.panel');
+  if (!panel) return;
+  const { top } = panel.getBoundingClientRect();
+  /* Already looking at it: anything from just above the fold to the top half of
+     the viewport counts as "there", so a near-miss does not trigger a nudge. */
+  if (top > -panel.offsetHeight && top < window.innerHeight * 0.5) return;
+  const still = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  panel.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+}
+
+/* ── THE BINDER TWINKLES TOO (2026-08-17) ──────────────────────────────────
+   Ash: "the twinkling effects and stars should be in mobile as well... in the
+   collection tray as well. it's cheap and pretty so lets keep it."
+
+   The UR/RUBY point twinkles were already here — `renderCard` appends those on
+   every surface and has never gated them by device. What was missing is the
+   SCATTER field (`makeStars`, SR and up), which only the pull reveal and the
+   admire screen ever built. This adds it to the binder.
+
+   ── WHY AN OBSERVER, WHEN NOTHING ELSE THAT USES makeStars NEEDS ONE ───────
+   Because the binder is the one surface with no bound on how many cards are on
+   it. A reveal is ten cards and the inspector is exactly one; `renderCollection`
+   below renders EVERY matching card at once, with no virtualisation. A star
+   field is ~20 infinitely-animating nodes, so a thousand-card binder filtered to
+   SR would put ~18,000 of them on one page — and "filtered to SR" is not a
+   corner case, it is what the rarity chips are for.
+
+   So a field is attached when its card comes near the viewport and detached
+   when it leaves. Detached rather than hidden, deliberately: `display: none`
+   still means the nodes exist and were built, which is the exact distinction
+   reveal.js's LOW_FX comment draws about the aura's motes. Animations do not
+   run on a detached node, so the active count tracks what is on screen instead
+   of what is owned.
+
+   FIELDS ARE CACHED BY CHANNEL ID, and that is not a micro-optimisation — it is
+   what keeps a card's own constellation STABLE. `makeStars` randomises every
+   position, so rebuilding on each scroll-in would give one card a different
+   star pattern every time it passed the viewport, which reads as flicker rather
+   than as sparkle. Cached, a card keeps the sky it was born with for the life
+   of the page. A detached wrapper of twenty <i>s costs nothing to keep.
+
+   `null` is cached too (N and R have no field), so a common card is never asked
+   about twice. */
+const starFields = new Map();       // channel id -> the field, or null for N/R
+const fieldForCard = new WeakMap(); // card element -> its field, for the observer
+
+function starFieldFor(card) {
+  const id = card.channel.id;
+  if (!starFields.has(id)) starFields.set(id, makeStars(card.rarity));
+  return starFields.get(id);
+}
+
+/* Built once and disconnected on every re-render, rather than made fresh each
+   time: an IntersectionObserver holds a STRONG reference to what it observes,
+   so leaving the previous render's (now discarded) card elements observed would
+   pin every card the player has ever scrolled past. */
+const starWatcher = typeof IntersectionObserver === 'function'
+  ? new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const field = fieldForCard.get(entry.target);
+        if (!field) continue;
+        if (entry.isIntersecting) entry.target.appendChild(field);
+        else field.remove();
+      }
+      /* A card is attached slightly before it scrolls in and released well
+         after it leaves, so a slow scroll never thrashes at the boundary. */
+    }, { rootMargin: '250px' })
+  : null;
+
 export function renderCollection() {
   const items = [...state.collection.values()];
 
@@ -183,6 +294,11 @@ export function renderCollection() {
      which is the one thing this change exists to allow. */
   const shown = items.filter(matches).sort(SORTS[view.sort] ?? byRarity);
 
+  /* Every card element from the previous render is about to be discarded, so
+     the observer's whole watch list is stale. Cleared here rather than
+     unobserved one by one — the list and the grid are rebuilt together. */
+  starWatcher?.disconnect();
+
   collGrid.innerHTML = '';
   for (const item of shown) {
     const el = renderCard(item.card, { count: item.count, isNew: newThisSession.has(item.card.channel.id) });
@@ -191,11 +307,25 @@ export function renderCollection() {
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', `View ${item.card.channel.title} up close`);
     collGrid.appendChild(el);
+
+    /* SR and up. Without an observer (no IntersectionObserver at all) the field
+       simply goes on and stays on — the effect is the point, and the bound is
+       the optimisation. */
+    const field = starFieldFor(item.card);
+    if (field) {
+      if (starWatcher) { fieldForCard.set(el, field); starWatcher.observe(el); }
+      else el.appendChild(field);
+    }
   }
 
-  /* "Saved in this browser" stays. It is not a statistic — it is the promise the
-     Clear button next to it makes good on, and the only place the player is told
-     where their collection actually lives. */
+  /* "Saved in this browser" came OUT of this line on 2026-08-16 (Ash's call).
+     It used to be defended here as "the only place the player is told where
+     their collection lives", and that was simply not true: the footer says it
+     in prose, on every page, and the privacy policy says it at length. So it
+     was not the promise, it was a third copy of the promise — sitting inside a
+     counter, where the player is reading numbers about their own collection and
+     not asking where files go. The promise is unchanged and still stated where
+     someone would look for it. */
   /* Own numbers only — no set-size denominator (2026-08-03, same day as the
      denominator was added and then narrowed). "10 of 24,251 unique" answered
      the question honestly and revealed something else in the process: the size
@@ -211,7 +341,7 @@ export function renderCollection() {
   const pulled = items.reduce((n, it) => n + (Number(it.count) || 0), 0);
 
   const parts = [];
-  if (items.length) parts.push(`${unique.toLocaleString()} unique`, `${pulled.toLocaleString()} total`, 'saved in this browser');
+  if (items.length) parts.push(`${unique.toLocaleString()} unique`, `${pulled.toLocaleString()} total`);
   collSummary.textContent = parts.join(' · ');
   /* The two empty states answer two different questions, and which one is true
      is decided by the COLLECTION, not by the grid. An empty binder says "pull to
@@ -221,6 +351,27 @@ export function renderCollection() {
   collClear.hidden = items.length === 0;
   collNone.hidden = !items.length || shown.length > 0;
   if (!collNone.hidden) collNone.textContent = emptyMessage();
+
+  /* A team is five DIFFERENT creators, so the gate is unique cards — not total
+     pulled, which a pile of duplicates would satisfy while leaving nothing to
+     field. Counted off `items` (the whole collection) rather than `shown`,
+     because a rarity filter is a way of looking at the binder, not a change to
+     what you own. */
+  /* THE BUTTON IS NEVER DISABLED ANY MORE (2026-08-22). It used to be, below
+     five unique creators, with the reason carried only in a `title` — which is
+     hover-only, so on a phone the entire explanation was "this is grey". The
+     arena has always had the real answer written out (`renderMode`'s "Not
+     enough cards yet" panel) and disabling the button was the one thing making
+     it unreachable.
+
+     The title stays for pointer users, where it costs nothing and arrives
+     sooner. It is now a preview of what the arena will say rather than the only
+     place it is said. */
+  if (battleBtn) {
+    battleBtn.title = unique >= TEAM_SIZE
+      ? 'Build a team of five and fight'
+      : `Needs ${TEAM_SIZE} different creators — you have ${unique}`;
+  }
 
   /* The toolbar is always present now, and so are the two controls a player
      reaches for on purpose: the rarity chips and the search box. Only SORT keeps

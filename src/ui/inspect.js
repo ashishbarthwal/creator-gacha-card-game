@@ -7,6 +7,7 @@
 
 import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
+import { makeStars } from './stars.js';
 
 /* A point somewhere on the card's frame band, as a `background-position` pair.
    `u` walks the perimeter as 0..4 (one unit per edge, clockwise from the top
@@ -52,6 +53,16 @@ export function openInspect(card, meta = {}) {
   lastTrigger = document.activeElement;
   inspectHolder.innerHTML = '';
   const cardEl = renderCard(card, meta);
+  /* SR+ get their star field here too, not just in the pull reveal. Built
+     unconditionally (cheap — a handful of absolutely-positioned dots) and
+     left to CSS to gate: `#inspect .card .stars` only turns visible under
+     `(hover: none)` (styles.css), because a fine-pointer device already gets
+     motion from the tilt + holo shine below (holo.js). Touch never lights
+     `.lit` at all (device-tilt was removed 2026-08-07), so without this a
+     phone's admire screen would just sit there static — the stars are what
+     it gets instead. */
+  const stars = makeStars(card.rarity);
+  if (stars) cardEl.appendChild(stars);
   /* The travelling edge light (styles.css, `.gem-edge`) needs a real element:
      it ROTATES, and both of the card's own pseudo-elements are already spoken
      for by layers that must stay put. Added here rather than in card.js so the
@@ -100,6 +111,31 @@ export function openInspect(card, meta = {}) {
   inspectEl.hidden = false;
   inspectClose.focus();
 }
+
+/* ── THE OPT-OUT CAME OFF THIS SCREEN (2026-08-22, Ash's call) ─────────────
+   It shipped here on 2026-08-17, one line under the card, pre-addressed with
+   the channel title and UC id so a creator who found their own card could ask
+   to be removed without describing which of 22,720 it was. The reasoning was
+   sound and is unchanged: the cheapest version of this project's worst day is a
+   working button in the place the objection actually forms.
+
+   What that reasoning did not price is WHO ELSE finds it. Every visitor opens
+   this screen — it is the admire screen, the thing you click a card to do — so
+   a one-tap, pre-filled removal request sat in front of the whole audience,
+   not in front of the creator. Ash's concern is the obvious one and it is
+   correct: that is a prank button. A takedown honoured with no identity check
+   is defensible when the cost of abuse is a person having to go looking for the
+   link; it is not defensible when the cost of abuse is a click on the most-used
+   screen in the game.
+
+   THE PROMISE IS NOT WEAKENED, ONLY THE PLACEMENT. The footer link has carried
+   it since WP7a, index.html still says "Ask to be removed — no questions asked,
+   and you'll be out of every set within 7 days", and terms.html and
+   privacy.html both still document it. A creator who wants out still gets out
+   within seven days; they just have to reach the footer, which is the friction
+   that makes the no-identity-check policy affordable in the first place.
+
+   `.inspect-optout` came out of styles.css with it. */
 
 /* The reveal overlay can sit underneath this one, and both answer Escape — so
    it needs to be able to ask whether it is the top overlay before acting. */

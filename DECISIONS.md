@@ -3155,3 +3155,1502 @@ weight, not just by being "more pink." The ember keyframe was renamed `ur-ember`
 ember` to match. 425 tests pass unchanged — none of this touched engine logic, weights, or mults.
 
 </details>
+
+## Two windows fight by passing a code, because they share nothing else (2026-08-08)
+
+The arena moved out of `prototype/` and into the app: a Battle button on the collection
+panel, a team builder over your own cards, and three ways to fight — a matched AI, a
+challenge you hand out, and a challenge you accept. The AI path is the one that always
+works; the other two are the reason this entry exists.
+
+**The problem is not networking, it is that there is nothing to network with.** The ask was
+a 1v1 between a normal window and an incognito window on the same machine. Those two are
+**storage-partitioned by design** — localStorage, IndexedDB, cookies, SharedWorker and
+BroadcastChannel are all isolated between them, and that isolation is the entire point of a
+private window. There is no same-machine shortcut hiding in the platform. Locked decision 3
+(client-side only, static host) rules out the obvious answer of a room on a server, and it
+also quietly rules out WebRTC: a data channel needs signalling, and a signalling service is
+the backend again wearing a hat.
+
+So the channel between the two windows is **the player**. They copy a string out of one and
+paste it into the other.
+
+**What makes that a real fight rather than two simulations** is a property the engine already
+had, from a decision taken for a completely different reason: `engine/battle.js` takes its
+randomness as an injected `rng` and `engine/battle-stats.js` takes its clock as an injected
+`now`, both so the balance tests could assert distributions over thousands of seeded runs.
+Feed two windows the same teams, the same seed and the same `now` and they do not merely
+agree about who won — they replay the identical fight, hit for hit, crit for crit. Verified
+against the live 15,831-card deck: two independently decoded sides produced byte-identical
+53-attack logs.
+
+That is why all three travel in the code, and why `now` is **pinned rather than read locally
+on arrival**. Channel age drives three of the five battle axes (maturity directly, cadence
+and velocity through their per-year denominators), so two windows opening the same code a
+day apart would otherwise compute two different fights from the same five cards — a bug that
+would surface as "we saw different winners" long after anyone could trace it.
+
+**The reply carries inputs, not a verdict.** A result code holds the defender's five cards
+and the challenger's window re-resolves the whole fight from them. A claimed outcome would
+have to be taken on trust; a recomputed one cannot be wrong. A short fingerprint of the
+challenger's team rides along and is checked on the way back, so a reply to somebody else's
+challenge — or a code mangled in transit — is caught and named instead of being silently
+fought as a different battle.
+
+**Who commits first is the asymmetry the element wheel needs.** The challenger locks their
+five *and the seed* before they can know what they are up against; the defender pastes the
+code, sees the enemy line-up with matchup badges, and builds against it. Countering an
+opponent you cannot see is just picking your best five again, so somebody has to go first
+and the code is what makes "first" mean something. Trade roles for the rematch and the
+advantage trades with it.
+
+**What this closes off:**
+
+- **No lobby, no matchmaking, no presence.** There is no server to hold a room, so there is
+  no "waiting for opponent" state to build and no way to be matched with a stranger.
+- **No live/turn-based play.** The fight is auto-resolved and handed over in one round trip.
+  A turn-by-turn mode would need a message per turn, which is where a real transport starts
+  being worth its cost.
+- **No anti-cheat, and the code says so out loud.** A player can hand-edit their own five to
+  a billion subscribers before encoding. Detecting that needs a secret, and a secret needs a
+  server. There is no ladder and nothing to win, so the honest move was to write the
+  limitation into `engine/challenge.js` rather than build ceremony that implies otherwise.
+- **The format is versioned and frozen.** Channels pack as positional arrays; appending a
+  field is safe, reordering is not, and `CODE_VERSION` makes a mismatch a sentence a player
+  can act on rather than a corrupt decode.
+
+**One storage change came with it, and it was not cosmetic.** `engine/collection.js` was
+dropping `publishedAt` and `element` from saved cards, so every card a player actually owned
+fought as a dateless Unaligned unit — all matchups neutral, the entire element layer inert
+for exactly the cards the arena is built on. Both fields joined the stored allowlist without
+a `COLLECTION_VERSION` bump: adding optional fields is backward-compatible, bumping would
+discard every existing collection to gain two of them, and `reconcileCollection` already
+refreshes owned cards from the set on load — so old saves heal themselves on the next visit
+with no migration ever written.
+
+## The battle had no decision in it, and it was not the reason we thought (2026-08-08)
+
+The complaint was "picking the highest-subscriber cards wins, so there is nothing to
+decide." Measured against the live 15,831-card deck, the first half of that is false and
+the second half is true — which changed what got fixed.
+
+**Picking by subscriber count was already a bad strategy.** Head-to-head over 120 drawn
+collections, a team of the five biggest channels lost to a team picked on views-per-video
+70.8% of the time, and to a raw-rating pick 90%. That part of the stat design — size buys a
+compressed budget, shape decides where it goes — was working as written.
+
+**What was actually broken: `powerOf` is an accurate predictor, and an accurate predictor
+is a solved game.** "Take the five highest-rated cards" beat every other approach 87-100%
+of the time, so the strategy graph was a strict ladder rather than anything with a choice
+in it — and the optimal play was a button, because Auto-pick computes exactly that number.
+
+Three fixes, and the order matters because the first two are corrections and only the third
+is a design addition.
+
+### 1. Two of the five axes were never de-sized
+
+`punch` and `velocity` are measured as residuals against an Influence trend, so what
+survives is "punches above its weight" rather than "big". `devotion` and `cadence` never
+got that treatment, and it showed: correlation with size ran 0.350 and 0.420 against the
+~0.25 the balance tool flags, while the de-sized pair sat at 0.004 and -0.014. Those two
+feed DEF and SPD, so **every big channel was structurally tankier and faster than every
+small one, on every card, forever.** That is the exact "bigger channel is tankier AND hits
+harder" failure the budget split exists to prevent, arriving through the two axes nobody
+had applied the fix to. Both are now residuals against fitted trends, frozen as constants
+for the same reason PUNCH_TREND is. Measured after: -0.010 and 0.027.
+
+### 2. The five stats were not worth the same at equal budget
+
+Shape is zero-sum — a card spends one budget across five stats — so the design only works
+if a point buys comparable value wherever it goes. Five specialists built from an identical
+budget and fought round-robin came out **HP 83.9% · ATK 82.7% · DEF 39.7% · SPD 20.0% ·
+MOM 4.7%**. A point spent on momentum bought a seventeenth of what it bought on health.
+
+The reason is structural and worth stating, because it will come back: **SPD and MOM do not
+deal damage, they multiply an attack the card already has** — and under a zero-sum budget,
+spending on them means having no attack left to multiply. The momentum specialist ramped to
+2.2x on an attack of 81 while the attack specialist simply carried 253, and the ramp was
+capped at +120%, so the one card built entirely around ramping hit its ceiling exactly where
+the trade should have started paying. MOM's scale and the cap both rose; DEF rose less.
+
+Speed is **partially** fixed and deliberately recorded as such: its payoff saturates by
+construction, because `extraActionChance` is a probability and even a perfect roll buys one
+extra swing. Two swings of a budget attack still lose to one swing of a real one. Closing
+that needs a second thing for speed to buy — evasion, or a genuine multi-action roll — not
+another constant.
+
+### 3. The formation bonus — the part that is new design
+
+A bonus for fielding four (+2.5%) or five (+5%) distinct classes, applied in `makeTeam`.
+
+It has to be a property of the TEAM, because that is the only kind of thing `powerOf`
+cannot see — `powerOf` rates cards. The consequence is the point: Auto-pick, greedy on card
+rating, can no longer see the bonus, so it stops being optimal and becomes a decent baseline
+a thinking player beats. Rewarding diversity rather than punishing duplicates was Ash's
+call; the two are mathematically equivalent and only one of them is a sentence the build
+screen can state.
+
+**The number is smaller than it looks, and the first pass got it wrong by a factor of two.**
+A lift on every stat raises both sides of `powerOf = sqrt(effective health x damage)`, so a
+nominal +14% is roughly +30% of fighting strength — measured, the diverse team then beat the
+raw-power team 89% of the time, which is the same dominance problem wearing the other hat.
+
+### What it cost, and the two things that broke on the way
+
+De-sizing the axes made the remaining size coupling — the **budget** — visible, and the
+wider momentum cap added a new multiplicative term to `powerOf`. Together those dropped
+"small cards out-rating the median giant" from 21.8% to **2.3%**, straight through the 15%
+floor, and two tests failed. `BUDGET_GAIN`'s own comment says to retune it whenever a
+multiplicative term enters `powerOf`, against the tool rather than by argument: 60 -> 25
+puts it back at 22.1%.
+
+The second break was subtler and is a real bug this introduced. The AI picks for variety, so
+it reliably EARNS the formation bonus — but it was aiming at a target computed without it,
+and so overshot by the whole size of the bonus on nearly every build. The even-match win
+rate fell from 45% to ~30%: the matchmaker was promising a fair fight and delivering a
+6%-stronger opponent every time. `matchOpponent` now builds twice, using the first team as a
+probe for the lift it earns and aiming the second at `target / lift`.
+
+### Measured, before and after
+
+| | before | after |
+|---|---|---|
+| a small channel out-rates one 10x bigger | 32.1% | 39.2% |
+| views-per-video pick beats biggest-subscriber pick | 70.8% | 82.4% |
+| corr(subscribers, combat rating) | 0.252 | 0.231 |
+| diverse team vs raw-rating team | — (rating dominant at 87-100%) | ~52% |
+| a Riser earns its slot in a diverse team | — | 86.2% |
+| small cards out-rating the median giant | 21.8% | 22.1% |
+
+**What is closed off:** no new data was needed and none was fetched. "Recent viewership"
+remains unavailable — per-video history is ~33,000 quota units per rebuild against the 488
+the whole build costs — but the two archetypes it would have bought already exist as `punch`
+and `velocity`, so this was a pricing problem, not a sourcing one. Magic Search is untouched.
+
+**What is still open:** a team of five max-velocity cards still loses ~99% of the time. That
+is now partly BY DESIGN — it is a stack, and stacks collect no formation bonus — but the
+honest reading is that momentum remains the weakest place to spend a budget even after the
+repricing, for the multiplier-on-a-sacrificed-base reason above. The card is viable in a
+diverse team (86.2%); the mono-strategy is not. `tools/battle-balance.js` now prints a
+STRATEGY table so neither this nor a future return of the dominant-strategy problem can go
+unnoticed again — every card-level figure in that tool was passing while the game was solved.
+
+**Trimmed the same day: the Assassin opener.** A x1.25 on round one, removed after a lever
+audit. It fired on 4.9% of 78,823 measured attacks while its text rode on the face of every
+Assassin — 24.7% of the deck. A quarter of all cards carried a sentence describing something
+a player would essentially never observe, and a rule you cannot observe is pure cognitive
+cost. Backstab (20.7% of attacks) is the class identity and stays.
+
+**Two things the same audit said to cut, and measurement said to keep.** Aegis looked dead at
+0.3% of attacks — but that figure came from rating-picked teams, which rarely contain a
+Bulwark at all. Re-measured on the diverse teams the formation bonus now rewards, it fires on
+8.4%: 74% of those teams field a Bulwark and it lands in the front rank 74% of the time. It is
+not dead, it is the payoff for the strategy this whole entry exists to create.
+
+The back-rank attack tax was dismissed as "a constant, not a decision" because it applies to
+73% of attacks. That was a shallow read of a high number: it applies to every back-rank
+attacker, and WHICH cards stand in the back is the decision. Remove it and the back rank
+becomes strictly better than the front — safe AND undiminished — which deletes the formation
+trade rather than simplifying it. Both kept.
+
+The general lesson, since it has now happened twice in one session: a lever's FIRING RATE is
+not its importance. A low rate can mean the strategy that triggers it is rare rather than that
+the lever is dead, and a high rate can mean it is attached to something the player chooses
+rather than that it is a constant. Measure the lever in the situation it was designed for.
+
+## Locked decision 3 is amended, not overturned: one endpoint that holds two booleans (2026-08-08)
+
+Ash's call, made explicitly, on a decision marked "do not reopen". What follows is the
+shape of the amendment and — more usefully — why the line lands exactly where it does.
+
+**The want:** an "opponent is ready" light, so two players press start and watch the same
+fight at the same moment instead of one watching minutes before the other. That is a live
+signal between two devices, and the pasted battle codes cannot carry it — they are one-shot
+copy-pastes, not a connection.
+
+**What was rejected on the way.** A third code exchange (a tiny "ready" token sent back)
+works with no server at all, but pays for a light with a third round of copy-paste, which is
+more friction than the light removes. WebRTC using the existing codes as the signalling
+channel is genuinely elegant — decision 3 survives intact — but it grows the codes from
+~1,000 to ~3,500 characters and fails behind symmetric NAT without a paid TURN relay, and a
+ready light that works most of the time is worse than none.
+
+**Where the line is, and why there.** `functions/api/ready/[room].js` receives a room hash
+and the letter `a` or `b`. It is never sent a card, a channel, a statistic, a name, a
+collection or a battle code. That boundary is not squeamishness, it is the whole reason this
+is affordable: **a server that is never sent a statistic has no statistic to store**, and
+stored statistics are what carry YouTube's 30-day cap and the opt-out obligation that this
+project's entire architecture — gitignored sets, deploy-time rebuilds, the 25-day cadence —
+exists to satisfy. Cross that line and every one of those problems arrives at once, which is
+what the "full relay" option (server passes the actual codes, no copy-paste at all) would
+have meant. It was the better UX and it was declined for exactly this reason.
+
+**The room id costs nothing to agree on**, which is what makes presence possible with no
+lobby: both windows already hold the challenger's five and the seed, so both derive
+`fingerprint(teamA)+seed` independently, with no round trip. It identifies a match without
+describing one, and being unguessable without the challenge code it doubles as the only
+access control the endpoint needs.
+
+**It stays optional, and that is a hard requirement rather than defensive habit.** Missing KV
+binding, request failure, offline, blocked by an extension — every path resolves to
+`enabled:false` and the arena falls back to the manual countdown it shipped with. The game
+worked without a server for its whole life and still has to; a fight that cannot start
+because a service is down is a broken game. The endpoint answers 200 with `enabled:false`
+rather than 500 for the same reason: the client treats it as "no presence today" and needs no
+error handling at all.
+
+**Two booleans, ten minutes, and a known race.** KV offers no compare-and-set, so two players
+readying in the same instant can each write a state omitting the other. It self-heals on the
+next poll; the cost is one extra poll interval. A lock needs a Durable Object, which is a paid
+plan and a great deal of machinery to shave a second off a ready check. Recorded as a chosen
+trade rather than left as a lurking surprise.
+
+**What the promises cost.** The privacy policy said "Creator Gacha has no server" and "we do
+not know that you visited", in several places, and those stopped being unqualified the moment
+any request reached us. They are now qualified rather than quietly left standing — the page
+names the endpoint, what it receives, what it cannot deduce, and that single-player battles
+never touch it. The claims that actually mattered survive literally true: the collection is
+still local-only and still never transmitted, the API key still never leaves the page, and
+there are still no accounts, cookies or analytics.
+
+**What is NOT covered by this amendment**, and needs its own decision if ever wanted:
+relaying battle codes, lobbies, matchmaking, accounts, persistence of anything, or any
+endpoint that receives channel data. The amendment is presence and nothing else.
+
+## The presence entry above is out of date, and the correction is the point (2026-08-09)
+
+The section above says the endpoint "is never sent a card, a channel, a statistic, a name, a
+collection or a battle code". That was true of the first cut and stopped being true the same
+day, when the defender's reply code had to reach the challenger without a second copy-paste.
+`CLAUDE.md` and `privacy.html` were both updated; this file was not, so for a day the
+project's decision log contradicted its own running code.
+
+Left standing rather than edited away, because the reasoning above is still the reasoning —
+what changed is one fact inside it. **What the endpoint holds is a room id, two booleans, a
+timestamp and one reply code, for ten minutes.** What it still never receives is an account,
+an identity, or a collection beyond the five cards someone chose to field. The 30-day cap
+objection that originally ruled the code out was simply wrong: the cap is a MAXIMUM AGE and
+ten minutes is comfortably inside it.
+
+## Readiness is something a person does, not something a server infers (2026-08-09)
+
+The bug: two players sat in a lobby, neither had pressed Ready, and both screens reported the
+defender as ready — the challenger saw "they are ready", the defender saw "you are ready".
+
+Nothing was corrupt. The server had one op, `ready`, and it was the only way to upload a
+team, so committing a team flipped a readiness flag as a side effect. The defender was marked
+ready on leaving the builder, before the lobby had rendered. Worse than the wrong lamp: the
+challenger pressing Ready was then enough to stamp `bothAt` and start a fight the defender
+had never agreed to.
+
+**Split into two ops: `team` (here are my five) and `ready` (I am ready to watch).** The
+endpoint header had asserted that "pressing Ready IS committing the team", and that was true
+of the original copy-paste flow — it stopped being true the moment the lobby grew a Ready
+button of its own, and nobody reconciled the two ideas.
+
+`ready` now also gates BOTH sides on a code existing, where it used to gate only the
+challenger. That was half a rule: a defender marked ready with no code on the server is a
+room that is ready and unfightable. And `team` now sets `accepted` too, because committing a
+team implies having accepted — which heals a lost `accept` instead of leaving the challenger
+watching a room that will never flip.
+
+## A dropped request is not a missing lobby (2026-08-09)
+
+Challenging from a phone did not work, and the shape of the failure is worth keeping.
+
+`presence.js` returned one value, `OFFLINE`, for every non-answer: a five-second timeout, an
+aborted fetch, a dead connection, and the server saying "no KV namespace bound". The
+challenger's wait loop read that as settled and **stopped polling permanently**.
+
+Only the challenger has to leave the app — to paste their code into a chat. Mobile browsers
+freeze a backgrounded tab and tear down its in-flight requests, so switching to WhatsApp
+killed the poll, the loop concluded there was no lobby anywhere, and the acceptance arrived
+at a screen that had stopped listening. Phone-as-defender never hit it: they receive the code
+elsewhere and switch INTO the browser. Desktop-as-challenger never hit it: desktop tabs are
+not frozen.
+
+**Two outcomes, not one.** `off` is settled — ask again and the answer is the same, so fall
+back for good. `error` is one request that did not complete, which says nothing about whether
+a lobby exists, so keep trying. One field of difference, and the difference is whether the
+caller gives up.
+
+Both poll loops now survive transient failure, both wake immediately on `visibilitychange`
+rather than waiting out a timer mobile has throttled to once a minute, and `Ready` retries
+once — an unreported Ready is worse than a slow one, because the other side waits forever on
+a player who believes they already pressed.
+
+## Nobody is zero at anything, and crit belongs on punch (2026-08-09)
+
+Two changes to the derivation, both found by playing rather than by reading.
+
+**The floor.** The four residual axes clamped to `[0, 100]`, and an axis that fell off the
+bottom scored a literal 0 — which is a 0% share, which is a stat of 1. Measured: **3.7% of
+the deck sat at punch 0**, roughly 590 real channels walking into a fight with an attack of
+ONE. They could not win, and no amount of speed or crit rescued them, because both multiply
+an attack that has to already exist. Those are real creators — typically the daily grinder
+whose views-per-video is modest precisely BECAUSE they upload constantly. A residual measured
+against a trend means *below average*, not *absent*, so the axes now floor at 12. Small cards
+out-rating the median giant went 22.1% → 29.5%.
+
+**Crit moved from cadence to punch.** It rode on the SPD share, on the theory that a spiky,
+high-cadence profile should occasionally spike. But cadence measures how OFTEN someone posts,
+and that is not what a critical hit is. A critical hit is a video that lands far above this
+channel's normal — the views-per-upload residual. Now `0.05 + 0.95 × punch + 0.20 × spd`,
+capped at 45%. Speed keeps a share, because stripping crit from Assassins entirely leaves
+that class holding only the bonus the balance pass already recorded as saturating.
+
+**The limit, stated rather than implied:** this cannot see variance. "A few bangers and a lot
+of duds" and "uniformly strong uploads" produce identical views-per-video, and separating
+them needs per-video statistics costing ~67x the entire build's quota. It is a proxy for
+spikiness, not a measurement of it.
+
+**The knobs are now exported.** `STAT_TUNING` and `BATTLE_TUNING` are frozen objects listing
+every tunable, and `tools/battle-balance.js` prints them live rather than keeping a copy — a
+tuning report whose numbers have drifted from the engine is a confident lie, consulted
+precisely when someone is about to change one of them. The tool also grew a per-class table,
+because "median ATK 110" describes a card that does not exist; tuning happens per archetype.
+It immediately showed the open problem: **Assassin rates 249 against Carry's 462.**
+
+## The card was lying about itself, and the battle engine was fine (2026-08-09)
+
+Ash asked for the game to stop being "100% deterministic by just seeing higher subs count =
+better card every single time" — and, in the same breath, for the opposite not to be true
+either, because a rare pull that buys nothing punishes good luck. The instruction that framed
+the whole pass was **"do not balance things too hard and make the game sterile."**
+
+The obvious reading is that this is a battle-balance problem. It is not, and the measurement
+that settles it is the first thing worth recording.
+
+**THERE WERE TWO STAT SYSTEMS AND THEY DISAGREED BY 4.4x.**
+
+| | corr with log(subs) | N → RUBY median | can an N out-do a UR? |
+|---|---|---|---|
+| card face (`core.statsFrom`) | **0.897** | **5.22x** | **0.0%** — never, in 15,831 cards |
+| battle (`battle-stats.js`) | 0.187 | 1.19x | 19% clear the median UR/RUBY |
+
+The card face computed `log10(views) × 120 × RARITY[rarity].mult`, the multiplier running 1.0
+at N to 3.0 at RUBY — so rarity was counted twice, once in the band and again in the number
+printed beside it. The battle engine, which decides every fight, had never agreed with any of
+it. The game PLAYED as a contest of shape and matchup and READ as "whoever has more subscribers
+wins", and the card face is the screen a player looks at constantly. **The complaint was about
+the card, not the combat.**
+
+So there is one derivation now. `toCard` returns `{ channel, rarity }` and nothing else, the
+card face asks `battle-stats.js` for its two numbers, and `RARITY.mult` is deleted rather than
+left dangling — `battle-stats.js` already held the opposite position in writing, that rarity
+buys a compressed budget and is otherwise only "how hard this was to pull". Measured after:
+the printed ATK correlates with subscriber count at **0.042**, and an N out-stats a UR/RUBY on
+the face **53.7%** of the time.
+
+**THE BATTLE ENGINE WAS LEFT ALONE, AND THAT IS THE FINDING, NOT THE OMISSION.**
+
+A validated replica of the derivation was built (exact match against the engine on every
+sampled card), 280+ parameter combinations were grid-searched, and the survivors were run
+through real fights. Every direction made something Ash asked for worse:
+
+- **Raising `BUDGET_GAIN` so rarity "counts for more" destroys the thing worth protecting.**
+  Today a top-decile N beats the median UR/RUBY and 19% of N cards clear it, while 0% clear
+  the best one — "your best commons beat a mediocre legendary, nothing beats the best one",
+  which is exactly the shape asked for. At gain 45 that 19% becomes 4.4% and the top-decile N
+  stops clearing it at all.
+- **Evasion, a multi-action speed roll, and rescaling all re-amplify SIZE.** Every stat is
+  budget-scaled and the budget is the only thing size buys, so any mechanic keyed to an
+  absolute stat threshold quietly re-couples power to subscriber count. Small-cards-out-rating-
+  the-median-giant fell 29% → 8% on evasion alone. This is the third time this trap has been
+  hit (see the `SPD_FLOOR` note) and it should be assumed of the next such idea too.
+- **Rescaling also shortens fights to 3-4 rounds and cuts card-to-card variety from 2.83x to
+  1.76x** — measurably the sterility the instruction warned against.
+
+**THE CLASS PANIC WAS A MEASUREMENT ARTIFACT, AND THE TOOL NOW SAYS SO.** The per-class table
+reports Assassin at 249 against Carry's 462, and an all-one-class round robin looks worse still
+— Assassin wins 6.3% of those, a 12.9x spread. Both numbers are real and neither is the
+question, because **nobody fields five Assassins.** Five low-attack cards cannot between them
+kill anything; one Assassin behind four normal cards walks past the wall and removes the
+enemy's biggest hitter. Measured properly — hold four slots, drop in a rating-matched card of
+each class — the spread is **47%-60%, twelve and a half points**, and an Assassin contributes
+more than a Titan. `tools/battle-balance.js` grew a MARGINAL VALUE section that measures this,
+and the rating spread's warning now points at it, because acting on either of the other two
+figures would have cost the size-neutrality the whole stat design exists to protect.
+
+**Music is 47.6% of the element wheel, and that is sourcing, not mapping.** A 500-channel
+hydrate (10 quota units) says 50.6% of the deck carries a `music` topic and 234 of 246 Music
+cards carry a specific GENRE slug — `pop_music`, `rock_music`, `independent_music` — not the
+bare tag. YouTube genuinely thinks half this deck is musicians, which follows from sourcing
+notable people out of Wikidata. `element.js` is reading it correctly. Left alone: a seventh
+element was already rejected on its own merits, and re-mapping cannot fix a population.
+
+What did not change: `BUDGET_GAIN`, `SCALE`, `AXIS_FLOOR`, the crit terms, the momentum cap,
+the element table, and every combat constant. The balance report is byte-identical before and
+after, which is the intended result of a change that was only ever about what the card says.
+
+---
+
+## The cold matchmaker was nine teams and a blind rating (2026-08-15)
+
+TASKS.md had carried "the matchmaker runs cold — 37.2% even-match win rate ... likely cheap:
+the bias is probably in `aimedBuild` or the formation correction" as the second-highest open
+item. Both halves of that were wrong, and they were wrong in ways worth separating, because
+one is a measurement failure and the other is the recurring trap in new clothes.
+
+**THE NUMBER WAS NINE SAMPLES WEARING A BIG ONE.** `battle-balance.js` spent its fight budget
+as `fights / 40` player teams, each re-fought 40 times under different rng. Those 40 re-rolls
+vary the damage variance and nothing else — they sharpen the estimate of how *that* matchup
+resolves while saying nothing new about matchmaking in general. So "37.2% over 360 fights" was
+**9 matchups**, and measured per-matchup they ran from 17.5% to 85% purely on which nine the
+stride happened to draw. The player teams were also five *consecutive* cards from a deck
+sorted by channel id, which is not a random team.
+
+Fixed by spending the same budget the other way round: `fights / 6` distinct matchups, drawn
+from a seeded rng so the file stays reproducible, six rolls each. The tool now prints a
+confidence interval computed on **matchups**, because that is the sample size that exists.
+Re-measured: **33.2% +/- 4.1** over 500 matchups. The old figure was not far off — but nothing
+about the old method could have told anyone that, and "37.2%" and "37.2% +/- 14" are different
+claims.
+
+**THE AIM WAS NEVER OFF.** Mean AI power drift against the player's team is **+1.7%**;
+`aimedBuild`'s two-pass lift correction does exactly what its comment says. Chasing it would
+have been a session spent tuning a component that was already correct.
+
+**THE CAUSE IS A RATING THAT CANNOT SEE THE MECHANIC IT IS PRICING.** `pickForSlot` scores
+class variety, so the AI reliably fields **4.36** distinct classes; a random player team fields
+**3.00**. `aimedBuild` corrects the AI's *power* for the formation lift it earns — but the lift
+is 2.5–5% of stats, and that is not what diversity is worth in a fight. Diversity also buys
+class *verbs*: an Aegis to shelter behind, a Titan to soak a rank, a Backstab that reaches past
+both. `powerOf` cannot see a verb. Bucketed by the gap, the whole effect is legible:
+
+| player classes − AI classes | matchups | player wins |
+|---|---|---|
+| −3 | 54 | 22.2% |
+| −2 | 186 | 25.6% |
+| −1 | 160 | 39.5% |
+| **0** | **78** | **47.0%** |
+
+**Level on diversity, the fight is fair.** Each spare class the AI holds is worth roughly ten
+points of win rate.
+
+This is **the recurring trap in new clothes** — CLAUDE.md states it as "any mechanic keyed to
+an ABSOLUTE stat threshold silently re-couples power to subscriber count", and the general
+shape is *a rating used to price a team that depends on something the rating cannot observe*.
+Worth generalising the warning, because it has now bitten in two different layers.
+
+**WHAT WAS DELIBERATELY NOT CHANGED.** Making `matchOpponent` mirror the player's class count
+would close the gap immediately, and it is not obviously right: the AI is playing the exact
+strategy the formation layer was built to reward, and `battle.js` says in writing that
+Auto-pick "stops being the optimal play and becomes a decent baseline a thinking player beats.
+That is the whole point." An AI that deliberately builds worse to keep the rating honest is a
+different game. That call is Ash's and stays open.
+
+What shipped instead is the honest half. The team builder compares your class count against
+the enemy's once five cards are down, because the ratings above it read "even" while a 3-vs-5
+matchup is about 25% — and the arena stating a fair fight while delivering a lopsided one is
+the same defect as a checklist that disagrees with the deploy log. Same argument as the
+element wheel: information pointing at the OPPONENT is what turns picking into deciding.
+
+## The set format stopped restating its own defaults (2026-08-15)
+
+`sets/built/core.json` is 7.29 MB and every player parses it before their first pull. Two
+fields were measured as pure redundancy across all 15,831 cards:
+
+- **`hiddenSubscriberCount` was `false` on every single one** — 0.46 MB spent stating a
+  default. Now written only when true, exactly as `subscriberCount` is written only when
+  present. No reader changed: `data/sets.js` already coerced with `Boolean()`, so absence
+  read as false before this and still does.
+- **`avatarUrl` was 28.4% of the file and mostly template.** The host `https://yt3.ggpht.com/`
+  and the size spec `=s800-c-k-c0x00ffffff-no-rj` — the one the live adapter asks for so a
+  face is not soft at card size — were byte-identical on **15,828 of 15,831**. Only the
+  variable middle ships now, under an `avatar` key.
+
+A third followed from measuring the first two: **the file was pretty-printed with a 2-space
+indent**, which is 1.43 MB of whitespace in a 15,831-record generated file that no human ever
+opens. `sets/built/` is gitignored, so there was not even a diff to keep legible. Written
+compact now; `index.json`, which people do read, stays indented.
+
+Together **7.29 MB -> 4.57 MB, a 37% cut.**
+
+**THE HONEST PART: THIS IS A PARSE WIN, NOT A DOWNLOAD WIN.** Measured through brotli, all
+three changes together are worth about **30 KB on the wire** — 1.65 MB to 1.62 MB — because
+compression already sees through both whitespace and a repeated template. What does not
+compress away is `JSON.parse` building 7.29 MB of string on a phone's main thread before the
+first pull. Worth stating in this much detail because the tempting version of this entry
+claims a 37% smaller download, and that claim is false.
+
+**IT DEGRADES TO VERBATIM, and that is what makes it safe.** A URL that does not match the
+template is written whole into `avatarUrl` as before, and the reader accepts either key. If
+Google serves a new avatar shape tomorrow, the set gets bigger; no card loses its face. Sets
+built before this still load unchanged.
+
+**THE SEAM IS WHY THIS IS ALLOWED AT ALL.** Sets are the only source that packs; demo and live
+emit whole URLs and always have. Because `parseSet` hands on an identical Channel shape either
+way, nothing downstream can tell — which is the guarantee the seam exists to provide, and the
+reason a storage-format change does not become a change to the game. Pinned by a round trip
+through both real functions in `test/sets.test.js`, so the two copies of the template cannot
+drift apart without a test going red.
+
+**Three cards were shipping `http://` avatars**, which a browser blocks as mixed content on an
+https page. Found while measuring the template and fixed at pack time rather than in the
+renderer, so every reader of the set gets it rather than the one view that might have patched
+around it.
+
+---
+
+## Subscribers become the dominant term — a deliberate reversal, not a regression (2026-08-15)
+
+Ash handed over a 40-item brief titled "Final Balance, Auto Select & Fair Battle System"
+(kept verbatim at [REBALANCE-BRIEF-2026-08-15.md](REBALANCE-BRIEF-2026-08-15.md)) and said to
+mold the game to it. Item 1 is the one with the biggest engine consequence, and it is worth
+stating exactly how it relates to the work six days earlier: **it asks for the opposite of
+what 2026-08-09's rebalance delivered, on purpose, from the same person.**
+
+2026-08-09 built toward "rarity must not decide the fight" — a top-decile N beating the median
+UR/RUBY 19% of the time was the stated, measured, celebrated result. 2026-08-15's brief opens
+with a different core philosophy: "a substantially more popular creator should generally be a
+substantially stronger card." Read together these are not a contradiction to resolve, they are
+two different instructions from the game's owner, six days apart, and the second supersedes the
+first exactly as far as it says to. CLAUDE.md's "Battle balance" section now states this
+explicitly at the top, because a file that quietly kept describing the old goal while the code
+pursued a new one is the exact "confident document that disagrees with its own code" this repo
+has flagged as its own worst failure mode before.
+
+**WHAT ACTUALLY MOVED.** One knob, `BUDGET_GAIN` in `battle-stats.js`, 25 -> 170. The rest of
+the formula — shape, the five axes, the residual trend lines, all of `battle.js`'s combat layer
+(elements, rows, class verbs, formation bonus) — is untouched, per the brief's own item 7
+("keep class and element strategy simple... these bonuses should stay relatively small").
+Subscriber count already only ever touched the BUDGET, never shape; moving the gain further
+along the same axis was the whole change, not a redesign.
+
+**WHY 170 AND NOT SOMETHING ELSE.** Tried 260 first: power median ratio (giant/small) hit 2.20,
+"small cards out-rating the median giant" hit exactly 0.0%, and the STRATEGY table's "biggest
+subs" pick averaged 75.3% against every alternative. That felt like it had gone further than
+"generally stronger" into "always stronger", so it was dialled back. At 170: power ratio 1.76,
+same 0.0% overlap (this did not meaningfully change between 170 and 260 — see below), "biggest
+subs"/"highest rating" both land around 71-75% average against the other picking strategies,
+comfortably dominant without either one winning literally every matchup. Chosen over 260
+because it leaves the SAME headroom to push further if Ash wants it stronger still, and because
+attack's giant/small ratio (1.20) stays inside the OLD 0.74-1.35 band by coincidence, which was
+a mildly reassuring sanity check even though that band no longer describes the goal.
+
+**THE 0.0% RATING-OVERLAP NUMBER IS REAL BUT INCOMPLETE, AND THE GAP MATTERS.** No small card
+in the fixture, however well-shaped, out-rates the median giant any more — a full reversal of
+2026-08-09's headline claim. Taken alone this reads as "upsets are now impossible", which is
+NOT what the brief asks for: item 1 explicitly keeps a smaller creator's path to victory open,
+just relocates it from raw stat variance to TACTICS — "element advantage, class abilities,
+formation, speed, momentum, or luck." So the rating was never the right thing to protect an
+upset rate on; the fight is. A throwaway probe (not checked in, reasoning preserved here) built
+a small team by hand-picking for class diversity and elemental counters against a
+`arrangeFormation`d "typical" (median-ish) giant team pulled from the live 15,890-card deck,
+and fought it over 500 seeds: **9.6% win rate**. Rare, real, entirely attributable to the
+tactical layer rather than to shape luck. That is the number that actually answers the brief's
+"does not guarantee victory... can still win" — not the 0.0% rating overlap, which answers a
+question 2026-08-09 cared about and 2026-08-15 does not.
+
+**THE SYNTHETIC TEST FIXTURE COULD NOT REPRODUCE THAT 9.6%, AND CHASING IT WAS ABANDONED
+DELIBERATELY.** `test/battle.test.js`'s `syntheticDeck` — quantile-fit to the live deck back
+when the design goal was compression — put its own "typical top-band team" harder to crack
+than the real deck's: a tactically-built small team lost 5000/5000 trials against it, even at
+matchups with the same ~0.90 power ratio that produced the 9.6% figure on real data. The
+fixture's own header already documents two prior recalibrations for exactly this failure mode
+(a quantile shape that stops matching the live deck once something about the deck's use
+changes). A third recalibration, done blind against one probabilistic test, was judged not
+worth the time against the rest of the brief still waiting. The test that used to assert an
+outright win now asserts the weaker, still-true, fixture-proof claim instead: that variance
+still produces different outcomes (survivor counts vary across seeds) even in a matchup the
+small side is expected to lose — luck still has bite, exactly as item 36 asks, without leaning
+on a specific win-rate number this fixture cannot currently produce.
+
+**THE SUBSCRIBER POWER FLOOR (item 3).** A genuinely new mechanism, not a knob. The failure
+item 3 names — "I pulled one of the biggest creators... somehow this card is garbage" — was
+never a budget problem: a card's total budget is a pure function of influence, and shape always
+sums to 1, so a giant's full budget is spent no matter how badly shaped. The actual risk is
+allocation: a giant whose shape dumps its budget into SPD/MOM (multiplier stats, capped, and
+weak relative to a direct HP/ATK/DEF allocation) can rate far below what its size implies even
+though nothing was technically wasted. Fixed by rating a HYPOTHETICAL even-shaped card of the
+same budget (which `classFrom` would itself call Balanced, so it correctly gets the Balanced
+lift) and flooring the real card at 82% of that reference. The scale-up is solved by bisection
+rather than a closed-form guess, because `ratingOf` is not linear in a uniform stat multiplier
+(the mitigation and momentum terms both grow faster than linear) — a closed-form approximation
+would either over- or under-correct depending on where in the budget range a card sits.
+Verified directly with an engineered worst-case (a brand-new 250M-subscriber channel posting
+80,000 clips, crushing punch/devotion/cadence toward the floor and maturity toward zero): raw
+ATK before the floor was ~47; after, 310 — enough to keep the card's overall rating (841)
+competitive with a real UR rather than languishing near N-tier.
+
+**REQUIRED REWRITING test/battle.test.js's WHOLE BALANCE BLOCK, AND THAT IS EXPECTED, NOT A
+SIGN SOMETHING WENT WRONG.** Four assertions inverted their own thresholds (attack-flat-with-
+size became attack-scales-with-size; median-giant-only-marginally-stronger became median-
+giant-substantially-stronger; large-share-of-small-cards-overlap became small-fringe-at-most).
+This is the same class of update CLAUDE.md's own header warns future sessions to expect when a
+design goal changes on instruction — the tests encode TODAY's goal, not a permanent law, and a
+design brief from the game's owner is exactly the kind of "new measurement" that is allowed to
+move them.
+
+## Auto Select gets an explicit hierarchy instead of an emergent one (2026-08-15)
+
+Items 4-6 of the same brief: Auto Select must never bench a UR for "marginally better
+calculated synergy" — "the strongest, coolest, most obviously valuable five cards, then make
+sensible adjustments," not a search for a perfect meta team.
+
+**`bestTeamFrom` (opponent.js) was already pure top-5-by-`powerOf`, with zero synergy-awareness
+at all** — so on the letter of the brief nothing was currently broken; there was no diversity
+optimizer to accidentally bench a UR. But that also meant the "hierarchy" the brief describes
+(power, rarity, subscriber power, class diversity, elemental advantage, formation, in that
+order) was emergent at best — true only because `powerOf` happens to correlate with rarity, not
+because anything enforced it. Given the subscriber rebalance above makes that correlation much
+stronger than it used to be, this was the right moment to make the hierarchy an actual
+mechanism rather than a coincidence.
+
+**THE MECHANISM: a narrow tolerance window, not a scored multi-factor rank.** `pickBestTeam`
+fills five slots greedily. At each slot it takes the single strongest remaining card UNLESS
+something within 8% of that card's power (`SYNERGY_TOLERANCE`) would add a class the team does
+not have yet, or — when an opponent is known (accept-a-challenge mode, via a new optional
+`enemy` parameter on `bestTeamFrom`) — an element that counters them. Outside that 8% window,
+power always wins outright; nothing about class or element can be scored highly enough to
+override it. This is deliberately NOT a weighted-sum scoring function (power times 0.6 plus
+diversity times 0.3 plus ...) — a sum lets enough small bonuses stack to overturn a real power
+gap, which is precisely the "why the hell did it bench my UR" outcome item 4 rules out by name.
+A hard window with power as the tie-break inside it cannot do that by construction.
+
+**8% WAS CHOSEN TO CATCH THE BRIEF'S OWN WORKED EXAMPLE AND NOTHING WIDER.** Item 4 describes
+"SSR + neutral element... preferable to R/N + favorable element unless the difference is
+genuinely substantial" — two cards close enough that a reasonable player could see it either
+way. It does not describe a UR losing a slot to an N. Tested directly: a UR built to be a clean
+outlier above five N-band filler cards always keeps its slot in `bestTeamFrom`'s output,
+deterministic (the algorithm has no randomness in it at all — same input always produces the
+same team); a pair of near-twin N cards engineered to land inside the 8% window and differ in
+class DOES let the diversity tie-break fire. Both are asserted directly in
+`test/battle.test.js`'s "Auto Select must respect the power/rarity hierarchy" block, built by
+hand rather than hunted for in a random deck, because the scenario the brief describes is rare
+enough that a random fixture might never produce it.
+
+**A SIDE EFFECT WORTH NAMING: `draftPower`'s "ceiling" now more often collects the formation
+bonus.** `bestTeamFrom` also backs `draftPower` (the AI's target-power calculation in draft
+mode) — unchanged in signature, but now actively prefers a fourth or fifth distinct class within
+its tolerance window, so its output hits 4-5 classes far more reliably than the old pure-power
+sort did. `makeTeam` applies the formation lift for any team that clears that threshold, and one
+existing test (`draftOpponent`'s "aims at what the player's draft could field") had computed its
+own comparison figure WITHOUT going through `makeTeam`, so it had been silently relying on the
+old sort rarely triggering the bonus by accident. Fixed to route through `makeTeam` like
+`draftPower` itself does — not a weakened test, a corrected one; it now asserts what the
+function has always been documented to do.
+
+## Collection-size fairness: a new pure engine, not yet reachable from the app (2026-08-15)
+
+Items 15-27 and 33-35 of the brief describe a real problem this project had not addressed: two
+players in a 1v1 can own collections that differ by two orders of magnitude, and an unbounded
+larger collection turns "I've played a while" into "I can search for the mathematically perfect
+five," which crowds out a new player's five genuine choices without the large collection doing
+anything wrong on its own. The fix is a TEMPORARY, PER-BATTLE cap — never a change to what
+anyone owns — and it now exists as `src/engine/fairness.js`, pure and fully tested
+(`test/fairness.test.js`, 26 tests), but **nothing in the app calls it yet**. This entry records
+the design so the wiring work (next session) does not have to re-derive it.
+
+**THE RULE, EXACTLY AS SPECIFIED.** `needsShedding`/`eligibleSizes`: the larger side may keep
+at most 1.5x the smaller side's size, rounded to a whole card; strictly inside that ratio,
+nothing happens. Every worked example in the brief (10v12, 10v15, 40v48, 40v60 -> no shed;
+10v150 -> 15; 40v100 -> 60; 40v55, 80v100 -> no shed) is pinned verbatim as a test case.
+
+**`eligibleSizes` TAKES BOTH SIZES IN EITHER ORDER AND RETURNS BOTH CAPS**, which is not what
+the first draft did. The first draft's `eligibleSize(smallerSize, largerSize)` required the
+CALLER to already know which side was bigger — a real footgun, since a live caller has "my
+size" and "their size" with no guarantee about which is which, and passing them backwards would
+have silently capped the wrong side. Caught by the test file's own symmetry check
+(`eligibleSize(b, a)` did not equal `eligibleSize(a, b)` when the args were swapped, which is
+exactly the bug a real call site would have hit) before it ever reached the UI. Renamed and
+reshaped to take two arbitrary sizes and return `{ a, b }` — the caller's own two values, each
+correctly capped, regardless of which arrived in which position.
+
+**RARITY-WEIGHTED SHEDDING, PROTECTED SLOTS FIRST.** UR/SSR/SR each get one guaranteed slot
+when the player owns at least one (never invented if they do not — a player with 3 UR, 10 R,
+20 N gets exactly one guaranteed UR, nothing for SSR/SR). The rest of the target is filled by a
+weighted random draw without replacement, weight bottom-heavy across all six rarities
+(`KEEP_WEIGHT`: N 1, R 3, SR 8, SSR 20, UR 50, RUBY 12).
+
+**RUBY'S WEIGHT WAS WRONG THE FIRST TIME, AND THE FAILURE IS WORTH RECORDING.** Item 25 asks
+for RUBY to have no guaranteed slot but still shed less than an N or R — "powerful enough that
+it can remain vulnerable." First attempt: 30, just under UR's 50. Measured against a 41-card
+pool (1 RUBY, 40 N) shedding to 10: RUBY survived roughly 99.7% of 100 trial seeds. "Can be
+shed" was true in the sense that the code path existed and could theoretically fire, and false
+in the sense a player would ever experience it — a mechanism a player can never observe is not
+a mechanism, it is decoration. Lowered to 12 (just above SR's 8, well below SSR's 20): the same
+scenario now drops RUBY on a real, observable fraction of seeds while still leaving it clearly
+better protected than a common. The lesson generalizes past this one constant — "does the math
+allow X" and "will a player ever actually see X happen" are different questions, and item 26's
+own "do not make the exact probabilities unnecessarily complicated" only holds if someone also
+checks the complicated-looking case (a rare tier in a large pool of commons) empirically rather
+than trusting the ordering of the weights to imply the right magnitude.
+
+**NOTHING RETURNED IS EVER A COPY.** `shedCollection` hands back references to the exact
+channel objects passed in — no clone, no recomputed stat, no touched rarity — which is what
+makes item 35 ("shedding must not modify ATK/DEF/HP/SPD/MOM/rarity/subscriber count") true by
+construction rather than by discipline elsewhere in the codebase remembering not to break it.
+Pinned by a reference-equality test, not a deep-equality one, since a clone that happened to
+have identical values would pass a deep-equality check and still violate the intent.
+
+**WHAT COMES NEXT, AND WHY IT DID NOT HAPPEN TODAY.** Showing the "your collection is more than
+1.5x theirs" screen requires knowing the OPPONENT's collection size, which nothing in the app
+currently transmits — solved at the wire-protocol layer (see the CODE_VERSION 2 entry below)
+but not yet consumed anywhere. Wiring it in belongs at the same moment the challenge-flow
+rework lands, since the brief places the fairness check inside the new shared build phase
+(item 32's flow diagram: accept, compare sizes, shed if needed, CONTINUE/CHICKEN OUT, THEN both
+enter team building) — building the fairness screen against the OLD asymmetric flow would mean
+rebuilding its placement again the moment the flow changes underneath it.
+
+## Challenge code bumped to CODE_VERSION 2: optional team, a travelling collection size (2026-08-15)
+
+Two wire-format additions, both prerequisites for the challenge-flow rework rather than the
+rework itself.
+
+**A CHALLENGE MAY NOW CARRY NO TEAM.** Item 9: "A player should be able to generate and send a
+challenge without building their team first." Every challenge code since this feature shipped
+had required exactly `TEAM_SIZE` rows — the challenger committing first was the whole point of
+the original design (see this file's earlier "the code carries inputs, not a verdict" entry).
+That commitment is still allowed (item 10's "cocky" path is explicitly kept), just no longer
+required: `teamA` on a challenge now decodes to `null` when zero rows were sent, and a decoded
+`null` is distinguished from an empty array so a caller can use a bare truthiness check rather
+than a length comparison everywhere this matters. A RESULT code's teams are unaffected — a
+reply always carries two real, committed five-card teams, exactly as before; only the CHALLENGE
+side of the protocol gained the "not yet decided" state.
+
+**`makeResult` NOW REJECTS A REPLY TO A CHALLENGE WHOSE TEAM WAS NEVER COMMITTED**, and had to
+become `async` to do it as a proper rejection rather than a synchronous throw (matching
+`encodeCode`/`decodeCode`, which every caller already awaits inside a try/catch). This is not a
+speculative guard: a bare challenge's team only ever gets decided through the live shared build
+phase the next piece of work adds, and there is no second code exchange that could carry it back
+into `makeResult` if that phase never ran. Reached, this is a caller bug — the UI must require a
+live room (and therefore a real committed team) before ever calling `makeResult`, or prompt the
+challenger to resend a pre-built challenge when no room is available. Throwing here converts a
+silent "five-slot team array with a hole in it, fights wrong" failure into an immediate, named
+one.
+
+**EVERY CODE NOW CARRIES A `collectionSize` INTEGER, NEVER CARD DATA.** The other half of what
+the fairness check (previous entry) needs: each side has to learn how many distinct cards the
+OTHER owns, and the only channel that exists is the same one a team already travels through.
+One number — "I own 47 cards" — not which 47, so this carries no more information than the
+existing `subscriberCount`-shaped fields already do, and nothing about decision 3's "no
+account, no identity, no collection beyond the five fielded cards" promise is stretched by it: a
+bare integer is not an identity and describes nothing about WHICH cards exist. Absent (older
+codes, or a sender that omitted it) decodes to `null` rather than `0`, so a caller can never
+mistake "this code predates the field" for "this player owns nothing" — the latter would
+wrongly trip the fairness check for no reason.
+
+## The challenge flow rework ships: `lock` replaces `team`+`ready`, nobody scouts anybody (2026-08-15)
+
+The piece the previous two entries deferred — "wiring it in belongs at the same moment the
+challenge-flow rework lands" — landed the same day, in a follow-up pass. Brief items 8-14, 32,
+37, verbatim in REBALANCE-BRIEF-2026-08-15.md.
+
+**THE CORE CALL: v1's asymmetry was not incidental, it was load-bearing, so removing it meant
+removing the mechanism that produced it, not patching around it.** v1's challenger committed a
+team before the defender could see the challenge at all, and the defender always built LAST,
+against a visible enemy. That was real strategic value handed to whoever accepted, and the
+brief's item 11 ("neither player is disadvantaged") rules it out directly. The fix is not
+"let the challenger see the defender's team too" (that would just move the asymmetry, not
+remove it) — it is that NEITHER side sees the other's picks during building, live or not. Both
+land on the same screen the moment acceptance is confirmed and build blind.
+
+**A PRE-BUILT ("COCKY") TEAM DOES NOT GET SHOWN TO THE DEFENDER EARLY, EVEN THOUGH IT
+TECHNICALLY COULD BE.** The challenge code is a plaintext paste — there is no server secret
+hiding a pre-built team from a defender curious enough to decode the code by hand. The UI could
+have displayed it as a "scout" panel the way v1 did. It deliberately does not: item 10 says the
+challenger's prepared team "remains editable until READY", which means what the defender COULD
+see by decoding is not necessarily what the challenger ends up fielding — displaying it would be
+showing a stale, possibly-wrong picture and reintroducing the exact one-sided-information shape
+item 11 rules out. So the shared build screen never sets `ui.enemy` on the live path, full stop,
+independent of which sub-choice the challenger took.
+
+**THE PROTOCOL WAS REWRITTEN, NOT EXTENDED.** v1's `functions/api/ready/[room].js` had three
+ops — `accept`, `team`, `ready` — because v1 needed to distinguish "here is my team" from "I am
+ready" for the DEFENDER specifically (conflating them once caused a fight to start before a
+player had agreed to it — see the `team`/`ready` split entry above this one). That distinction
+stops meaning anything once nobody scouts anybody: there is no reason to upload a team before
+locking it, because there is nothing to show early. So `team`+`ready` collapsed into one `lock`
+op that does both at once, for either side. `accept` gained a `cs` field (the defender's
+collection size — the challenger's already travels inside the challenge code itself) and now
+stamps a server-side `buildStartAt` the moment it fires, which both clients count their 30-second
+window down against using the same clock-skew-correction trick `bothAt` already used for the old
+launch countdown. Teams travel as plain channel-shaped JSON, not `engine/challenge.js`'s packed
+copy-paste codec — this is a fetch body a machine reads once, not a string a human re-types, so
+packing complexity would have bought nothing.
+
+**THE MANUAL FALLBACK IS UNTOUCHED ON PURPOSE, AND THAT MEANT ACCEPTING AN ASYMMETRY THE LIVE
+PATH JUST REMOVED.** Two people passing a string by hand have no live channel to build over
+simultaneously — there is no way to make the manual path fair in the new sense without a server,
+and the whole point of the manual path is that it does not need one. So `fightAsDefender`,
+`renderHandoff`, `renderReady` and `runCountdown` are byte-for-byte what they were: the
+challenger commits first, the defender scouts and builds against a visible enemy, exactly v1's
+shape. This is a genuine, accepted trade: a challenge sent over a working live room gets the new
+fair-and-simultaneous flow; a challenge that falls back to copy-paste gets the old asymmetric
+one. The alternative — refusing to fall back at all — would mean a broken KV binding takes the
+whole challenge feature down with it, which locked decision 3 already rules out for exactly this
+reason.
+
+**A BARE (TEAM-LESS) CHALLENGE HAS NO MANUAL FALLBACK, AND SAYS SO RATHER THAN HANGING.** The
+"send now" playstyle (item 10) only works because the live room can bring both sides together
+later; a defender who accepts a bare challenge with no live room has nothing to build against —
+there is no reply a person could hand-write back, because there is no committed challenger team
+to reply to. Both `renderAcceptPaste` and `renderChallengeOut`'s poll detect this specific
+combination (bare team + presence settled off) and tell the player to go back, build a team, and
+resend, rather than leaving them on a screen that can never progress.
+
+**CHICKEN OUT SENDS NO SIGNAL TO THE ROOM, AND THAT IS A KNOWN GAP, NOT AN OVERSIGHT.** The
+server has no operation for "cancel" — adding one for a single edge case (the larger player
+declining a fairness-gated match) would be new protocol surface for a rarely-taken exit, and the
+room's own 10-minute TTL and the opponent's 30-second build timer already bound how long anyone
+is left waiting. The opponent's screen simply keeps counting down and auto-locks on schedule;
+the fight never starts because the side that chickened out never locks. Recorded here rather
+than fixed because it is a real, if minor, incompleteness worth a future session's attention
+rather than a silent gap.
+
+**NOT VERIFIED WITH TWO LIVE BROWSERS.** This project's stated preference is manual visual
+testing over installing a headless browser driver, and `src/ui/battle.js` carries no automated
+tests by design (DOM wiring, not logic — the logic it wires is what `engine/` tests). 562 tests
+pass, all of them in `engine/`, none of them touching this file. The shared-build timer, the
+lock race, and the fairness gate were built and reasoned through carefully rather than watched
+running; TASKS.md carries an explicit two-window checklist for the next session to run before
+trusting this in front of real players.
+
+## A 404 from our own lobby is settled, not retryable (2026-08-15)
+
+Small change, and it fixed two screens telling a player two different stories about the same
+fact. `data/presence.js` treated every non-OK response as `error` (retryable) on the reasoning
+recorded in its own comment — "even a 4xx means the server is up and answering, so the room may
+well be fine a moment later". That is true of 400 and 405, which are the only failures our
+endpoint actually emits (bad room, bad body, bad op, bad side, bad team, wrong method). It is
+**not** true of 404, which our Function has no branch for at all: a 404 on this path means the
+Function is not deployed — a plain static host, or a dev server that cannot run Pages Functions.
+
+Left as retryable, the defender (who awaits a single `accept`) correctly reported no live lobby,
+while the challenger (who polls) retried forever and sat on "Waiting for someone to accept…"
+with no path to the message explaining why it would never come. Same server, same answer, two
+different stories — and the challenger's version was unfalsifiable from inside the app.
+
+The asymmetry in the cost is what settles it. Misreading a transient 404 as settled drops both
+players into the copy-paste flow, which works. Misreading a permanent 404 as transient strands
+one of them on a screen that cannot progress. So 404 now returns `OFF`.
+
+**This also made an existing branch reachable for the first time.** `renderChallengeOut`'s "a
+bare challenge has no manual fallback" message was written when the rework landed and could
+never fire, because the only way to reach it was a settled `off` that a 404 never produced.
+Worth noting as its own lesson: a fallback that has never once executed is not a fallback, it is
+an assertion nobody checked.
+
+## Auto-pick, and a default parameter that ate a click event (2026-08-15)
+
+`autoPick()` took no arguments for its whole life, so `onClick: autoPick` — passing the function
+by reference — was correct. Wiring the collection-fairness shed pool through it added a `pool`
+parameter, and that one line turned every existing by-reference handler into a call receiving a
+**MouseEvent** as its pool. `distinctById` then called `.filter` on the event, threw inside the
+click handler, and the button did nothing at all: no error on screen, no visual change, no clue.
+
+Recorded because the failure mode generalises past this button. **Adding a parameter to a
+function is a breaking change to every place that passes it by reference**, and in a DOM event
+handler the breakage is silent by construction — the exception goes to the console and the user
+sees a button that simply does not respond. The fix is the call site; the defensive
+`Array.isArray(poolArg)` normalisation alongside it is there because a silently inert button is
+worth one line to make impossible twice, and it was checked not to swallow a legitimate shed
+pool (which would have quietly reverted the fairness feature it was added for).
+
+## The pack actually opens now, and the summon tells you one secret on purpose (2026-08-15)
+
+Pressing the pack used to cut straight from the banner to a grid of face-down cards. N3TWORK's
+card-reveal choreography breaks a pull into six stages and this app already had five of them —
+the gesture (the pack IS the button), the per-card telegraph (the rarity beam), the reveal apex
+(the escalated flip), the contemplation (click to inspect) and the exit. The missing one was
+stage two, the SUMMON: the moment between pressing and seeing. That article names its absence as
+the first mistake to avoid, because it spends the anticipation a gacha runs on.
+
+`src/ui/packopen.js` fills it with about a second of choreography — the pack travels from the
+banner to centre stage (a FLIP transition off the real button's bounding rect, so it reads as
+the same object rather than a cut to another screen), charges, then bursts into a shockwave and
+a spray of card-shaped streaks while the reveal slides in over the top.
+
+**THE SUMMON DELIBERATELY LEAKS THE BEST RARITY IN THE PULL, AND THAT IS A TRADE AGAINST
+`ui/reveal.js`'S OWN STATED RULE.** That file withholds rarity until a card turns, on purpose.
+The charge here does the opposite: it colours itself from the best card in the pull, shakes
+harder for it, and holds longer before bursting — 240ms for a pull of commons against 820ms for
+a RUBY. The two secrets are not the same secret. "Something good is in here" is what gives the
+flip sequence that follows anything to be tense about; "it is the fourth card" would be what
+actually spoils it, and that is still withheld. Hearthstone's golden pack is the same trade and
+it is the most-copied moment in the genre. Commons get the short, brisk version for the other
+half of the same article's advice: dressing up a bad pull as a big one manufactures a letdown.
+
+**THE PULL IS RESOLVED AND BANKED BEFORE ANY OF THIS RUNS.** `main.js` draws, adds to the
+collection and persists FIRST, then awaits the animation purely to decide when the reveal opens.
+So a player who closes the tab mid-flourish keeps their cards, nothing about the summon can
+influence what came out of it, and `playPackOpen` is written never to reject — reduced motion, a
+missing overlay, a skipped sequence and garbage input all resolve. A decoration must not be able
+to cost someone a pull.
+
+**SKIPPABLE, AND ARMED LATE.** Any input ends it. The listener attaches 220ms in rather than
+immediately, because the press that OPENED the pack is still being dispatched — a keyboard
+activation is `keydown` then `click`, and holding Enter repeats `keydown` throughout, so
+listening straight away let the sequence cancel itself. That reads as broken rather than as
+skipped.
+
+**One cascade trap worth pinning:** the charge shake is a keyframe animation and the burst sets a
+plain `transform`. A running animation outranks a plain declaration whatever the specificity, so
+stacking `is-burst` on top of `is-charging` left the front card jittering in place instead of
+punching forward. The fix is to SWAP the classes, not add — removing `is-charging` ends the
+animation, which is the only thing that reliably hands the transform back.
+
+## Two smaller invitations, same session (2026-08-15)
+
+**The reveal offers the loop.** Its only exit was "Done", which spends the moment a player is
+most likely to want another pull on nothing (the same article's stage six). It now leads with
+"Pull again ×N", labelled per open from `banner.js`'s new `packSize()` getter so it cannot
+promise a size the toggle no longer has, and running the SAME `doPull` the pack runs rather than
+a quieter shortcut. Done stays a real, equal-weight exit — an invitation that becomes the only
+door is a trap, and this project has a locked decision about not doing that sort of thing.
+
+**The empty binder is written as an invitation.** "No cards yet" reported something the visitor
+could already see. It now shows a ghost fan echoing the pack's own silhouette, points at the
+object that fills it, and says what the cards actually are — which is the one genuinely
+interesting fact about this game and was nowhere near the empty state.
+
+## A match is not the arena's lifetime (2026-08-15)
+
+The second live fight of a session was broken in three ways at once, and all three were the
+same mistake: the per-match fields were only ever reset in `openArena`, so a player who
+finished a fight, pressed New opponent and challenged again carried the entire previous match
+forward.
+
+- **`buildDeadline` still held the FIRST match's end time**, by then minutes in the past. The
+  shared build countdown opened at `00:00` and auto-locked instantly for whichever side got
+  there first, while the other side never got a window at all. This is the frozen-countdown bug
+  wearing new clothes — state that describes one moment being read at another — which is why it
+  is worth recording twice.
+- **The tray came back pre-populated**, because `renderSharedBuildScreen` called
+  `restoreLineup`. In a phase whose entire premise is that both sides build fresh and blind,
+  one side opened holding a team and the other holding nothing. It was frequently the wrong
+  team too: the previous match's five, or cards the fairness shed had just made ineligible.
+- **`eligiblePool`, `locked`, `room` and `side` all pointed at a finished match.**
+
+So there is now one `resetMatch()` that says what a match owns, and every entry into a new one
+goes through it — mode-select, both Back buttons, CHICKEN OUT, the resend path, and `openArena`
+itself, which no longer keeps a second hand-maintained copy of the field list. Keeping two lists
+is precisely how `buildDeadline` came to be cleared on open and nowhere else.
+
+**The tray now starts empty on both sides, every time — Ash's call, and it survives the tension
+with brief item 10.** The "cocky" pre-build still does its real remaining job: it produces a
+challenge code carrying a committed team, which is the only kind that has a manual fallback when
+the lobby is unreachable. What it no longer does is seed the shared builder, because a phase
+built to be symmetric should not open asymmetrically. The saved deck itself is untouched — this
+only declines to LOAD it there, and Quick battle still restores it.
+
+**"Rebuild and fight again" is gone, and removing it was the fix rather than a simplification.**
+It dropped the player back into the builder with the finished match still loaded — same room id,
+same seed, same side, a lobby the server had already seen both locks for. Committing from there
+re-entered a dead match nobody was coming back to, and the timing state it preserved was the very
+thing that opened the next countdown at zero. It was a shortcut past the only place a new match
+can legitimately begin.
+
+**No server reset is needed, and that was worth checking rather than assuming.** A room id is
+`hash(fingerprint(teamA), seed)` and every challenge draws a fresh uint32 seed, so a new match
+cannot inherit an old room: 2,000 simulated sends produced 2,000 distinct rooms for both the
+pre-built and the bare shapes. Abandoned rooms simply expire on their ten-minute TTL. The bug was
+entirely client-side.
+
+## The coffee link is gone — locked decision 2 withdrawn (2026-08-15)
+
+Ash's call: remove the Buy Me a Coffee link from the site and everywhere else. Done —
+`index.html`'s footer paragraph, its `.footer-coffee`/`.coffee-link` styles in `styles.css`,
+and the `terms.html` paragraph that described it, which now says plainly that there is **no way
+to give the author money at all**.
+
+This is recorded as a reversal rather than a tidy-up because it edits a "do not reopen" entry.
+Two things make that legitimate rather than a violation:
+
+**It moves in the safe direction.** Locked decision 1 is "no monetization inside the game", and
+decision 2 was the single carve-out from it. Removing the carve-out does not reopen decision 1,
+it closes it further — the project now has no donation link, tip jar, sponsor button or payment
+path of any kind. The hard rule attached to the old link (the coffee buys a coffee, it never
+unlocks anything) now holds trivially, because there is no coffee.
+
+**The reasoning behind the rule survives the removal of the thing it governed.** The reason the
+carve-out was written so narrowly — the moment a donation grants in-game value, every IP and
+legal problem comes back — is still the reason to be careful if the question ever returns. So
+decision 2 keeps that sentence while stating that the exception is withdrawn, rather than being
+deleted outright and leaving a future reader to rediscover why it was ever hedged.
+
+Adding a payment path back is a **fresh decision**, not a restoration.
+
+The two earlier entries in this file that describe the link being chosen and published are left
+as-is, annotated by this one — same rule the `WPn` tags and the 37.2% matchmaker figure follow:
+the record says what was true when it was written, and later entries say what changed.
+
+## The lobby: acceptance no longer means "start building" (2026-08-15)
+
+The last asymmetry in the challenge flow, and it was structural rather than a slip. Only ONE side
+can ever face the collection-fairness gate — by construction, since only one collection can be
+the larger. Acceptance dropped both sides straight into the build phase, so while the larger
+player read CONTINUE/CHICKEN OUT and decided, their opponent was already picking cards against a
+running thirty-second clock. Measured against the reported case (a 7-second deliberation), the
+smaller side got the full 30s and the larger side got 23 — **the player with a decision to make
+was the player penalised for making it**, which is precisely the unfairness the rework existed to
+remove.
+
+Acceptance now opens a ten-second LOBBY that both sides sit in and neither can build during. The
+larger side sees the fairness screen; the other is told a decision is being made and gets a
+button of their own, so both are doing the same thing rather than one waiting blankly. Both watch
+the same countdown. Anyone who has not pressed by zero is entered automatically, so an absent
+player cannot stall a match — the same principle as the build phase's auto-lock, and the same
+default: when someone does not answer, choose the outcome that lets the fight happen.
+
+**The mechanism is where the build clock is stamped.** `accept` now sets `lobbyAt`, and
+`buildStartAt` is set by the server on the SECOND `enter`. That one move is the whole guarantee:
+the thirty seconds cannot begin until both sides are through, so there is no arrangement of
+timings in which one player builds while the other decides. Verified end to end — `buildStartAt`
+stays null after one `enter` and is stamped on the second.
+
+**CHICKEN OUT now reaches the room.** It was previously a purely local retreat, documented as a
+known limitation: the opponent kept waiting on someone who had already left. That was tolerable
+when nobody was watching for it and indefensible once the lobby's entire purpose is one side
+waiting on the other's decision, so there is a `bail` op and the waiting side is told the match is
+off instead of building alone and locking into a fight that will never resolve.
+
+**What the smaller side is told, and what it is not.** It learns its opponent has a decision to
+make; it is never told what the decision is about. Brief item 21 asks that the smaller player not
+be made to think about invisible balancing rules, and "they are confirming whether to go ahead"
+honours that while still explaining the pause — which the alternative, an unexplained ten-second
+wait, does not.
+
+The shed itself moved to the moment both sides are through the lobby, rather than firing when
+CONTINUE was pressed: the eligible pool is now decided once, immediately before the builder that
+reads it, and never for a match somebody backed out of.
+
+## "Build my team first" removed, and what it costs (2026-08-15)
+
+Brief item 10 asked for a "cocky" path: build five, then send the challenge. It shipped, and it
+is now gone — Ash's call, and the right one. Every other change in this pass exists to put both
+sides in front of the same clock with the same information, and a challenger who has already
+chosen is not doing the same thing as the person opposite them, however editable their picks
+nominally remain. Keeping the option would have left a button whose whole effect was to undo the
+symmetry the lobby, the blind build and the shared countdown were built to create.
+
+Removing it made a chain of things dead, and they were deleted rather than left as traps:
+`createChallenge` (the only sender that folded a team into a code), the builder's name field
+(the send screen owns it), `fightLabel`'s challenge branch, `onCommit`'s challenge route,
+`onReply` and the paste-a-reply box on the challenger's screen, `ui.sentTeam`, and the
+`echoMatches` import. A challenge is now sent from one screen, by one button, carrying no team.
+
+**THE COST, STATED PLAINLY: A CROSS-DEVICE CHALLENGE NOW REQUIRES THE LOBBY.** This narrows
+locked decision 3, which promises that "if the KV binding is missing or the request fails, the
+arena falls back to the manual countdown it shipped with". That fallback worked by having the
+challenger commit a team the defender could scout and answer by hand — it was irreducibly
+asymmetric, which is precisely why it cannot survive this change. A challenge that carries no
+team has nothing for a manual reply to answer.
+
+What decision 3 actually protects still holds: **the game works with no server.** Quick battle
+is untouched, needs nothing, and is now a better fight than it was (below). What is lost is the
+copy-paste cross-device duel, and the UI says so rather than failing quietly — the send screen
+probes for a lobby before offering the button, and the waiting screen names Quick battle as the
+way on. The DEFENDER's manual path is left intact for a code that does carry a team, since older
+codes exist and decoding still supports them.
+
+## The AI gets a collection instead of a target (2026-08-15)
+
+Quick battle built its opponent with `matchOpponent`: a team aimed at the player's own rating,
+assembled from the whole 15,890-card set. That is even by construction, and it is the wrong kind
+of even — **the AI was never a player, it was a difficulty setting wearing five cards.** Nothing
+it fielded had anything to do with luck, a collection, or the odds the player pulls on, so
+"I finally pulled a RUBY" changed nothing about the fight it walked into: the opponent was
+rebuilt to the new rating either way.
+
+So the AI now rolls a COLLECTION — the same number of distinct cards the player owns, drawn on
+the same band-first weighted odds from the same set — and builds its best five out of it with the
+same Auto Select the player has. Same rules both sides of the table, which is the model a live
+1v1 already runs on, so Quick battle stops being a different game from the one the arena teaches.
+It draws straight through `pullOne` rather than replaying x10s: no dupe bookkeeping, no reveal,
+nothing the player sees. The only property that must survive is the drop curve, and
+`bandsFrom`/`pullOne` ARE that curve — the same two functions the real pull screen uses, so the
+AI's odds cannot drift from the player's without the player's drifting too.
+
+**A bug worth recording, because the fix is the interesting part.** The first implementation drew
+against the whole pool and discarded duplicates under a fixed try-cap. That looks obviously
+correct and cannot finish: RUBY is 0.1% of the weight, so on a pool holding two of them the
+chance of never rolling a specific one across a thousand draws is better than even — measured at
+**0.571**. Under a cap, the AI silently ended up with FEWER distinct cards than the player, which
+is the exact unfairness this change exists to remove, reintroduced by the sampler. A run of
+duplicates is now treated as evidence the pool is picked over, and the bands are rebuilt from
+what is genuinely left — weighted sampling WITHOUT replacement, rather than a uniform mop-up that
+would flatten the odds at the tail. Verified over 500 seeds including the pathological
+twelve-card pool; 0.27ms per opponent.
+
+`matchOpponent`, `matchQuality` and the difficulty dial remain in `opponent.js`, tested and
+unused by the UI — they are a real capability (a power-matched opponent at even/uphill/favoured)
+and the obvious raw material for a difficulty setting later.
+
+## One defender per challenge, and a lobby that can fail (2026-08-16)
+
+Reported live, twice: both windows sat on `LOBBY — 00:00 / Waiting for them…` until the room
+expired. The first pass read it as the KV write race and shipped the `enter` re-assert that
+repairs it (5889d0e). That race is real and the repair works — verified against the live endpoint,
+two clients writing at the same instant, recovered in one poll — but it was not this.
+
+**The seat was taken twice.** A challenge code is a STRING. Anyone holding it can accept, and two
+acceptances were indistinguishable from one: both browsers took seat B, `enteredA` was therefore
+never set, and `buildStartAt` is stamped only once BOTH sides are through the lobby. The two of
+them then waited on a challenger who did not exist. What made it unrecoverable rather than merely
+slow is that each side could see its OWN `enteredB` was true, so the re-assert repair had nothing
+to repair and stayed silent — the exact repair added for the previous diagnosis could not fire.
+
+The screenshots proved it before the code did. In a real A↔B pairing one side's "Your collection"
+is the other's "Opponent collection", so the two windows cannot print the same pair of numbers.
+Both printed `Your 40 / Opponent 10` — both were reading the same challenge code's
+`collectionSize` as their opponent, which only happens if both are seat B.
+
+So `accept` now carries a **random per-match nonce** and the room records which browser holds the
+defender's seat. First accept wins; a second one is answered `seatTaken` WITHOUT a write, so the
+match already running in that room is not disturbed, and the person who pasted a used code is told
+that rather than dropped into a lobby that can never start. Re-sending your own accept (a
+double-click, a retry after a dropped request) carries the same nonce and is not a second person.
+A claimless accept — the client that shipped before this field existed — is let through unchanged.
+
+**This touches what the endpoint may receive, so it is stated plainly:** the nonce identifies a
+SEAT for ten minutes, not a person. Nothing is behind it to look up, it is generated and discarded
+in the browser, and it is deliberately absent from the view the room sends back, so the other
+player never receives it either. That is inside the promise in locked decision 3 — no account, no
+identity, no collection beyond the five cards someone chose to field.
+
+**The second half is the one that matters more, because it is not specific to this cause.** A
+lobby had no way to fail. Entering is only half of what starts a build, so a side can be perfectly
+correct, perfectly entered, and still waiting on someone who closed the tab, never came back to a
+backgrounded window, or is holding a code for another room — and the screen it gets is a frozen
+00:00 that never explains itself. Worse, `enterNow` disabled every button in its row, CHICKEN OUT
+included, so pressing CONTINUE removed the only way off the screen short of reloading the page.
+Committing to a fight is not forfeiting the right to leave it.
+
+Now: CHICKEN OUT stays live once entered, and about twelve seconds past the lobby's own deadline
+(measured from the DEADLINE, not from this side's entry — entering early is normal) the screen
+says the opponent never came through and offers the way out, while still polling, so a phone that
+thaws its tab late still starts the match. The same dead end one phase later — presence going
+settled-off mid-build, which used to `return` out of the poll in silence — now says so too.
+
+**The general rule this leaves behind: every screen that waits has to be able to stop waiting.**
+Three of them in this flow were written as if the other player always arrives.
+
+**One more, found while reading and fixed here:** the fairness verdict was computed at the lobby
+and computed AGAIN in `beginSharedBuild`, from `ui.roomState.csB` — a field a room write built on
+a stale read can drop. The second answer could differ from the screen the player just agreed to,
+in either direction: a promised shed that never happened, or a shed nobody was shown. It is
+latched once now, in `ui.gate`, the same discipline the two deadlines already follow.
+
+## More chaos, measured rather than argued (2026-08-16)
+
+Ash, after watching a rating-even fight end as a wipe: make it "a lil bit more chaotic — crit
+damage and all boosted a bit... Not punishing, just fun and little more non-deterministic."
+
+The engine has a rule attached to it — retune only against `tools/battle-balance.js`, never by
+argument — and the first thing that rule produced was an obstacle: **the tool could not see the
+thing being asked for.** Every figure it printed measured whether the RIGHT TEAM wins. None of
+them measured how much the dice are worth, so "turn the dice up" had nothing to check itself
+against. So a CHAOS block went in first, and it prints two numbers because chaos has two halves
+a player feels separately:
+
+- **roll-flip rate** — the share of matchups whose six damage rolls did not all agree on the
+  winner. Non-determinism where it counts: the same five against the same five, decided
+  differently by luck alone.
+- **hit spread / crit share** — what ONE swing looks like. This half can move a long way while
+  the first does not move at all, which is exactly what `battle.js`'s header already recorded:
+  a 5v5 runs ~25 attacks and independent noise averages out, so widening per-hit variance from
+  0.12 to 0.50 once changed outcomes not at all.
+
+**What shipped:** `VARIANCE` 0.25 -> 0.35, `CRIT_BASE` 0.05 -> 0.09, `CRIT_MULTIPLIER` 1.6 ->
+1.75. Measured on the live 20,739-card deck at 3,000 fights:
+
+| | before | after |
+|---|---|---|
+| roll-flip rate | 44.0% | **49.8%** |
+| crit share | 27.3% | **31.2%** |
+| one swing, p95/median | 2.94x | **3.11x** |
+| power ratio (RUBY vs N) | 1.77 | 1.77 |
+| small cards out-rating a giant | 0.0% | 0.0% |
+| even-match win rate | 39.3% | 38.1% |
+| fight length | 6 rounds (p95 9) | 6 rounds (p95 8) |
+| class marginal spread | 14.6 pts | 10.8 pts |
+
+The SIZE block came out byte-identical and every picking strategy moved under half a point, so
+the 2026-08-15 philosophy is untouched: subscriber count still generally decides, upsets are
+still tactical rather than free. "Not punishing" is the same claim read from the other side —
+the favourite still wins as often as it did; it just wins less predictably.
+
+**THE KNOBS ARE NOT INTERCHANGEABLE, and that is the finding worth keeping.** `VARIANCE` is
+free: it is not in `ratingOf` at all, the noise is symmetric, and the averaging that makes it
+safe to widen is the same property that stops it ever overturning a well-built team.
+`CRIT_MULTIPLIER` is not free — it prices every card as well as resolving every hit, and it
+AMPLIFIES the crit spread that already exists between classes (Assassin 22%, Carry 37%). Raise
+it and a rating-matched Carry must be a smaller card to sit level, which quietly makes low-crit
+classes the bargain. 1.9 was tried and backed away from. `CRIT_BASE` sits in between: it feeds
+the rating too, but as a flat term it lifts every card equally, which is why the frequency half
+of "more crits" was bought there rather than with the multiplier.
+
+**A measurement was wrong and is now fixed, which is the more valuable half of this entry.**
+MARGINAL VALUE — the class figure CLAUDE.md tells you to trust — ran 26 team shapes x 12
+re-rolls and reported a 4.2-point spread. That is this tool's OWN headline mistake, repeated one
+section below where it was diagnosed: re-rolls are near-duplicates, so 312 battles carried 26
+shapes' worth of information. It was caught by the only symptom that cannot be talked away —
+the worst class changed IDENTITY between two adjacent settings of the same knob (Titan 51.9% at
+1.9, Assassin 50.3% at 1.75). A real effect does not do that. At 120 shapes x 4 rolls, for about
+the same cost, the shipped engine's spread was **14.6 points all along**. Nothing regressed; a
+number that had never been true stopped being printed.
+
+Tuning against the broken figure would have concluded that a modest crit bump wrecked class
+balance, and the change would have been abandoned for a reason that did not exist.
+
+## The pull BUTTON gets simpler, and a scope mistake worth recording (2026-08-16)
+
+Ash: "the card pulling animation is laggy on mobile and a lil bit on pc as well. Strip it down,
+it's fine. Don't need it to be fancy. But keep the color showing the highest card pulled in
+this turn."
+
+**What shipped is the summon only** — `ui/packopen.js`, the beat between pressing the pack and
+seeing the cards. Ten card-shaped streaks thrown outward on their own transforms are gone, and
+the charge holds are roughly halved (N 240 -> 140ms, RUBY 820 -> 420ms). The streaks were the
+most expensive thing in that beat, and they animated in exactly the frames the reveal behind
+them was building its own ten cards, so the two heaviest moments in a pull were the same moment.
+The curve is untouched: a RUBY still holds three times as long as an N.
+
+The colour Ash named is kept and is now the load-bearing part of that file — the charge takes
+the tint of the BEST card in the pull, while which of the ten it is stays hidden until the card
+turns.
+
+**THE FIRST ATTEMPT STRIPPED THE WRONG THING, and the correction is the reason this entry
+exists.** "The card pulling animation" was read as the whole pull, so the first pass also gutted
+`ui/reveal.js`: the per-card beams, the specular sweep, the twinkling stars on every SR+ card,
+and the ignition ring, bloom and aura on UR/RUBY — plus the reveal overlay's backdrop blur and
+its pointer tilt. It reached production before Ash saw it. Reverted the same day: `reveal.js`
+and every card effect in `styles.css` are byte-identical to what they were before the pass, and
+only the summon block differs.
+
+**The lesson is about scope, not about performance.** The performance reasoning in that first
+pass was sound and is still true — hundreds of simultaneously animating layers cost a phone
+frames however cheap each one is, and a full-screen `backdrop-filter` on a scrolling overlay is
+charged per frame. None of that made it the right change. A request to simplify ONE animation is
+not a licence to audit every animation near it, and "strip it down, it's fine" was about the
+thing Ash named, not permission to redesign the reveal. The cards are the product; the button is
+a button.
+
+If the card effects ever do need to come down for real, they are a separate decision made on
+measured evidence from a real phone — not a side effect of a fix to something else.
+
+## The lobby is faster than KV can be (2026-08-16)
+
+Reported: 1v1 between two windows on one PC works every time; PC against a phone freezes before
+the team-building screen, with the challenger stuck on "Waiting for someone to accept…" while
+the defender sat in the lobby.
+
+**It is not the lobby logic. It is the store.** Workers KV gives each Cloudflare edge location
+its own cached view of a key, and the cache TTL has a floor of 60 seconds that cannot be
+lowered. A phone on mobile data and a PC on WiFi reach different locations, so one of them can
+read a room up to a minute out of date — and the whole handshake this arena runs on (accept ->
+both enter -> build clock starts) is supposed to complete in ten. **The lobby is faster than the
+thing it is built on.** Two windows on one machine share an edge location, which is why every
+local test passed and why the failure looked device-specific rather than network-specific.
+
+No client change fixes this. The staleness is on the READ path, so polling harder reads the same
+cached answer, and writing from a stale read is worse than useless — it would erase the other
+side's move.
+
+**What shipped is patience and honesty, not a cure:**
+
+- `STALL_MS` 12s -> 75s. At twelve seconds the lobby was declaring a dead match and offering the
+  way out roughly 48 seconds before it would have started ON ITS OWN. Telling a player to quit
+  something that is merely slow is worse than making them wait.
+- The stall copy stops saying "they never entered the lobby" and says the match will start by
+  itself when they arrive, naming different networks as the likely reason.
+- The challenger's waiting screen grows a note after 15s explaining that an acceptance on
+  another network can take a minute to reach it. That screen was the one that looked broken,
+  because nothing on it ever changed.
+- `MIN_GATE_MS` (6s) floors the lobby window for a side that arrives late. Without it, a player
+  joining 50 seconds after `lobbyAt` opens the lobby already at 00:00 and is auto-entered on the
+  spot — which, if they are the one being asked about collection size, means the gate flashes
+  past unread.
+
+**The real fix is a Durable Object** — strongly consistent, one instance per room, no edge cache
+between the two players. That reopens locked decision 3's "one piece of server-side code" clause
+and is Ash's call, not something to slip in under a bug fix. Recorded here so the choice is
+visible rather than discovered later by whoever next wonders why a lobby is slow.
+
+## The Live API mode and the demo set are removed (2026-08-16)
+
+Ash, pre-launch: "remove Live API option. Don't need it. Get rid of the demo set as well, only
+core set lives so don't need that dropdown as well."
+
+**LIVE MODE** was this app's original premise — bring your own YouTube API key, pull any channel
+— and sets made it vestigial. It asked a player for a Google Cloud API key to reach a thinner
+version of what the front page already does with 20,739 cards and no setup: a wall in front of
+the game rather than a feature. It went dev-only on 2026-08-03 behind `?dev=1`; that was a
+demotion, and the note attached to it argued that "removing a working feature to tidy a screen
+is the wrong trade". This is not that trade. The feature was not tidied away, it was
+outgrown — and a dev-only mode nobody exercises is a claim about working code that nothing
+checks.
+
+**THE IN-PAGE MAGIC SEARCH went with it**, because it lived inside the Live controls and needs
+the key field. Nothing is lost: `tools/magic-search.js` is the same search from the command
+line, and the Wikidata sweep has been the default sourcing route for far longer. A browser is a
+worse place to spend quota than a terminal is.
+
+**THE SET PICKER** offered one real set. Core Set IS the deck, and with the demo gone the
+dropdown could only ever be set to what it already was.
+
+**THE DEMO SET is the one removal with a real cost, and it is stated rather than glossed.** It
+was eight bundled fictional channels that loaded from memory — which made the first paint
+instant and, more importantly, meant the app could be pulled from **with no network at all**.
+That property is gone. A cold load with no connection now shows an error and a Retry instead of
+eight fake creators. The trade is deliberate: pulling invented channels into a permanent
+collection was never what a visitor came for, so "works offline" was buying a fiction rather
+than the game. The data survives as `test/fixtures/demo-set.js`, which is what it had already
+quietly become — the fixture `sets.test.js` parses end to end and `emblem.test.js` walks for
+avatar coverage.
+
+**WHAT DELIBERATELY DID NOT CHANGE: `src/data/youtube.js`.** The live ADAPTER is still shipped
+and still exported from the seam, because `tools/add-candidates.js` imports it — it is pipeline
+code, not UI. The seam went from three sources to two; the UI went from offering one to
+offering none, which is the distinction CLAUDE.md's architecture section has always drawn and
+the reason this removal is small rather than structural.
+
+Also removed: `state.mode`, `state.apiKey`, `state.livePool` (`currentPool()` returns the one
+pool), the banner chips that enumerated a hand-built live pool, and ~120 lines of CSS for
+controls that no longer exist. `banner.js` went from 433 lines to ~230 and now does one thing:
+load the set, then own the pack.
+
+**The new failure path is worth knowing before it is hit.** With no bundled fallback, the set
+fetch is the only way the game gets cards. `loadTheSet` therefore ends in a real error, a
+disabled pack and a Retry button rather than an empty stage — the one screen where silence
+would read as "this site is broken" and be right.
+
+---
+
+## Battle a stranger: a queue, and the third amendment to decision 3 (2026-08-22)
+
+Ash: *"currently we have a battle vs AI and a battle against a friend with a code but not a
+battle a random player... lets implement that before launch."*
+
+**THIS REOPENS LOCKED DECISION 3 FOR THE THIRD TIME, ON ASH'S CALL, AND THE ENTRY IS HERE
+RATHER THAN IN A COMMENT BECAUSE CLAUDE.md SAYS IT SHOULD NOT HAPPEN.** That file's own words
+are "Anything FURTHER added here reopens decision 3 again, so nothing should be." A random
+matchmaking queue is a second server-side capability on a project whose defining constraint is
+that it has approximately none, and pretending otherwise by filing it as an implementation
+detail of the existing lobby would be exactly the kind of quiet scope drift the locked-decisions
+list exists to prevent.
+
+What makes it payable is that it is genuinely the same amendment rather than a new one. The
+endpoint holds no account, no identity and no collection; it holds a nonce, an integer and two
+timestamps, for under half a minute. It is optional in the same way the room is — a missing
+binding disables the button and the arena says so. And Quick battle still needs no server at
+all, which is the promise decision 3 actually protects.
+
+**IT COST NO NEW DEPLOYABLE, AND THAT IS THE POINT.** The second Worker this project gave up on
+2026-08-17 was the price of a Pages project being unable to declare a Durable Object class *at
+all* — it was never a price per class. `MatchQueue` is a second class in the Worker that already
+exists: one binding, one migration tag, no new deploy step, no new route to remember. The
+directory count did not move.
+
+### What the feature actually needed, which was less than expected
+
+Two browsers running a friend match agree on four things before either of them talks to a
+server, and they agree by both reading the same code string:
+
+| | friend match | random match |
+|---|---|---|
+| room id | `roomFor(fingerprint, seed)`, derived by both | nobody can derive it |
+| seed | minted by the challenger in `makeChallenge` | there is no challenger |
+| pinned clock | `now`, carried inside the code | there is no code |
+| seats | seed-minter is 'a', paster is 'b' | nobody pasted anything |
+
+**That is the whole problem.** Supply those four and both players stand exactly where a friend
+match stands the instant a code is pasted — so the lobby, the collection-fairness gate, the
+shared blind build, the independent locks and the face-off beat are all reached unmodified. The
+queue is therefore not a matchmaker in the game sense and deliberately never becomes one: it
+does not rate players, balance teams or sort by skill. `engine/fairness.js` already handles the
+only imbalance this game has a rule about, after pairing, on both sides.
+
+**The seat mapping is what kept the diff small.** The waiter takes seat 'a' and the joiner takes
+seat 'b'. Seat 'b' is the DEFENDER's seat — the one that sends `accept` — and the joiner is the
+side that is present and acting right now, exactly like somebody pasting a code. So the joiner
+does what a defender already does and the waiter does what a challenger already does, and
+**the room protocol needed no new op and no new field.** `workers/match-room/src/index.js` is
+untouched.
+
+### The one hole, and why the queue is the right place to plug it
+
+The room carries `csB` and nothing else. A challenger's collection size reaches the defender
+*inside the code* (`collectionSize`, CODE_VERSION 2), so with no code there is no channel for
+it — and `fairnessFor` reads `ui.roomState.csB` for side 'a' but `ui.challenge.collectionSize`
+for side 'b'. Adding `csA` to the room was the obvious fix and is the worse one: it puts a field
+on the match protocol to serve one entry path into it.
+
+The queue knows both sizes at the moment it pairs, so it hands each side the other's. Side 'b'
+parks it on a challenge-shaped object and is then in literally the position a decoded challenge
+leaves it in. Neither `fairnessFor` nor `renderLockedFaceoff` grew a branch.
+
+### The server mints the seed and the clock — for agreement, not fairness
+
+`engine/battle.js` is pure and seed-deterministic, `battleStatsFrom` takes its clock as a
+parameter, and neither path ever carries a result. Both browsers resolve the same fight from the
+same inputs. A seed either side minted locally would be a seed the other has to be told about
+and could disagree about, and disagreement here means two players watching one battle and being
+shown different winners — which `ui/battle.js`'s own header calls "the worst failure available
+here". One authority, one value, handed to both in the same response, is the only shape that
+cannot drift. It also preserves the friend flow's fairness ordering for free: the seed is fixed
+before either side can see the other's team.
+
+### One instance, not shards — the inversion worth writing down
+
+Every request routes to `idFromName('lobby-v1')`. That looks like the thing you are supposed to
+shard and it is the exact opposite: a queue's entire job is to be the one place two people can
+find each other, and a sharded queue holding one player per shard matches nobody. Serialization
+is the feature. If this ever needs to scale, the fix is a shard KEY people can agree on — a
+region, a mode — never a random spread.
+
+**And there is no KV fallback here, deliberately, where the room still has one.** A queue is the
+one thing on this project that cannot be built on a cached store: pairing is a read-modify-write
+on a single shared key, so two players joining at once against two edge caches would each read
+an empty queue, each park themselves, and never learn about each other. That is not a rare race
+— with two players in the world it is the ordinary case. The room's KV path survives only
+because it predates the Durable Object.
+
+### An empty queue is the real risk, and the honest answer shipped
+
+Measured before launch, real player traffic on this site is approximately zero (TASKS.md item
+0b: 3,333 Pages Function invocations in thirty days, essentially all of it development). So the
+overwhelmingly likely outcome of any given search is that nobody else is searching, and a
+matchmaking button that spins forever reads as broken rather than as quiet.
+
+Ash's call, chosen over an AI backfill: **search honestly, and after 30 seconds say so and offer
+a Quick battle** — while continuing to search, because quietly cancelling on somebody who is
+still watching is the same lie in the other direction. The backfill option was to pair an
+unmatched searcher with an AI; it was set aside rather than ruled out, and if it is ever built
+the constraint is absolute: **a bot must be labelled as a bot on the face-off screen.** A silent
+one would make every real win unverifiable, which is a worse thing to own than an empty queue.
+
+### Names: derived, never typed
+
+The friend flow carries a display name because somebody typed it about themselves. Asking a
+stranger to type one renders their free text on your screen, which is a moderation surface this
+project has no way to police and no appetite for.
+
+So the handle is FNV-1a over the room id and the seat — `Duelist 4F2A`. Both browsers already
+know both values, so the two sides compute the same two handles with nothing extra crossing the
+wire, and it is safe by construction rather than by policy. It cannot become an identity: it is
+a function of a room id that is deleted after ten minutes, so the same person searching twice is
+a different handle both times. Side 'a' now sees a name for its opponent for the first time in
+this game's history — a sent challenge carries the challenger's name outward, so a challenger
+has never learned anything about who took it up.
+
+### What was built
+
+`workers/match-room/src/queue.js` (the object), `functions/api/queue.js` (the public door),
+the `QUEUE` binding and migration tag `v2` in `wrangler.jsonc`, `joinQueue`/`pollQueue`/
+`leaveQueue`/`queueAvailable` in `src/data/presence.js`, and `renderFindOpponent` plus a fourth
+mode card in `src/ui/battle.js`. 22 tests in `test/queue.test.js`, including a handoff suite
+that drives a whole random match through the queue AND the room with no client in between —
+because the claim that ties the two objects together (the seat the queue assigns is the seat the
+room expects) is invisible in either file alone, and getting it wrong throws nothing. It just
+means the lobby never opens, which is the exact failure this project has now shipped twice.
+
+**A real bug the tests caught before it ran once.** `EMPTY = { waiting: null, pairs: {} }` shared
+one `pairs` object across every instance, because a spread is shallow — so a queue that had
+never been joined answered `matched` and handed out a stranger's collection size. The room next
+door survives the identical pattern only because every field on its `EMPTY` is a primitive. In
+production it would have been quieter and worse: pairings accumulating in the template,
+outliving both the sweep and the object. It is a factory now.

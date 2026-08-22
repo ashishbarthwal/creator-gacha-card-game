@@ -55,6 +55,30 @@ describe('serializeCollection', () => {
     expect(JSON.stringify(out)).not.toMatch(/country|"US"/);
   });
 
+  it('persists publishedAt and element when the channel carries them', () => {
+    /* Both are battle inputs, not decoration: age drives three of the five
+       battle axes and element decides every matchup. A collection that dropped
+       them fought as dateless Unaligned units, which silently deletes the whole
+       element layer for exactly the cards a player owns. */
+    const out = serializeCollection(
+      new Map([owned(channel({ publishedAt: '2010-05-20T12:44:01Z', element: 'Gaming' }))]),
+      { now: NOW },
+    );
+    expect(out.entries[0].channel.publishedAt).toBe('2010-05-20T12:44:01Z');
+    expect(out.entries[0].channel.element).toBe('Gaming');
+    /* Still an allowlist — the two new fields joined it, they did not open it. */
+    expect(JSON.stringify(out)).not.toMatch(/country|"US"/);
+  });
+
+  it('omits publishedAt and element rather than storing them empty', () => {
+    /* An absent date and an empty one behave identically downstream, so the
+       choice is about whether a stored card is honest about what is known. The
+       bundled demo set genuinely has neither. */
+    const out = serializeCollection(new Map([owned(channel())]), { now: NOW });
+    expect(out.entries[0].channel).not.toHaveProperty('publishedAt');
+    expect(out.entries[0].channel).not.toHaveProperty('element');
+  });
+
   it('cannot carry an API key, whatever is hung off the state object', () => {
     /* The structural guarantee: storage.js only ever receives a collection, and
        a collection only ever yields channel fields and counts. */
@@ -86,7 +110,21 @@ describe('parseCollection — every failure is recoverable', () => {
     const after = parseCollection(serializeCollection(before, { now: NOW }));
     expect(after.get('UC_a').count).toBe(4);
     expect(after.get('UC_a').card.rarity).toBe(before.get('UC_a').card.rarity);
-    expect(after.get('UC_a').card.atk).toBe(before.get('UC_a').card.atk);
+    /* Was `card.atk` — which silently became undefined === undefined, and so
+       passed while asserting nothing, when cards stopped carrying numbers
+       (2026-08-09). Compare the CHANNEL instead: that is what a collection
+       actually stores, and every number is re-derived from it on read.
+
+       Field by field rather than a whole-object equality, because the stored
+       shape is a deliberate ALLOWLIST — `country` is dropped on the way in and
+       must stay dropped. Asserting the two objects equal would fail for the
+       right reason and read like a bug; this asserts what is actually promised. */
+    const stored = after.get('UC_a').card.channel;
+    const original = before.get('UC_a').card.channel;
+    for (const key of ['id', 'title', 'handle', 'avatarUrl', 'subscriberCount', 'viewCount', 'videoCount']) {
+      expect(stored[key]).toBe(original[key]);
+    }
+    expect('country' in stored).toBe(false);
   });
 
   it('re-derives rarity rather than trusting anything stored', () => {

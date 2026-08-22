@@ -8605,3 +8605,20 @@ UC9yK9mxYwkI0ntmjrtVrjbg  # OVERSHOOT | Shrink Toward Abundance [3K] — nonprof
 UCP1ajqCAhJqstCumgZ3q9Gg  # Orpheus Chamber Orchestra [3K] — nonprofit organization
 UC23rMR1pSQRakD6rjCv14MQ  # Buffalo Philharmonic Orchestra [2K] — nonprofit organization
 UCS7ecM1ixLFfnRSc0AdbdZg  # Shine Louise Houston [1K] — business
+
+# ── TOP-BAND BRAND CHANNELS, 2026-08-17 ──────────────────────────────────────
+# Held out under the settled rule this file already enforces 8,500 times over:
+# a person gets a card, an institution does not. These five reached the top of
+# the deck because the P31 screen in tools/wikidata-sweep.js accepts "YouTube
+# channel" as a performer type — which it must, or every band and duo in the
+# game goes with it — and a corporate content brand is typed exactly the same
+# way. Verified against Wikidata: all five come back "YouTube channel", none
+# has a person behind it.
+#
+# Reviewed by hand rather than swept, because at 31 cards the top two bands are
+# small enough to read, and these are the cards players actually chase.
+UCbCmjCuTUZos6Inko4u57UQ  # CoComelon - Nursery Rhymes [202M] — Moonbug Entertainment brand, animated, no person
+UCgFXm4TI8htWmCyJ6cVPG_A  # Toys and Colors [83M] — kids-content brand
+UC295-Dw_tDNtZXFeAPAW6Aw  # 5-Minute Crafts [81M] — TheSoul Publishing, a company
+UC4NALVCmcmL5ntpV0thoH6w  # LooLoo Kids - Nursery Rhymes [62M] — kids-content brand
+UCRx3mKNUdl8QE06nEug7p6Q  # Billion Surprise Toys [58M] — kids-content brand, typed "songwriting team"

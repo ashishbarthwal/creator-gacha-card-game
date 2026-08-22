@@ -5,15 +5,22 @@
    and the channel initial sits behind it as a faint monogram. */
 
 import { toCount } from '../engine/core.js';
+import { battleStatsFrom } from '../engine/battle-stats.js';
 import { emblemFor, emblemAccent } from '../engine/emblem.js';
 import { USE_EMBLEMS } from '../config.js';
 import { escapeHtml, formatCount } from './util.js';
+import { makeEdgeTwinkles, makeFrameTwinkles } from './stars.js';
 
 /* The one place the avatar-source switch is read. Everything downstream — the
    ring, the tilt, the reveal, the 403 fallback — is handed a URL and stays
    ignorant of where it came from, which is what keeps this a flag rather than a
-   second rendering path. An emblem is a data URI, so it makes no request. */
-function avatarUrlFor(channel) {
+   second rendering path. An emblem is a data URI, so it makes no request.
+
+   Exported for ui/battle-card.js, which draws the same creator from a different
+   side and must obey the same switch. A second reader of USE_EMBLEMS would be a
+   second place for `?avatars=emblem` to be forgotten — and the whole value of
+   that flag is that exercising it proves it still works everywhere. */
+export function avatarUrlFor(channel) {
   return USE_EMBLEMS ? emblemFor(channel) : channel.avatarUrl;
 }
 
@@ -96,7 +103,7 @@ function accentFor(channel) {
    in silver-plated metal — is 100M (RUBY's band). PewDiePie nicknamed his 50M
    trophy "Ruby" on camera and it stuck. The badge chip still shows the short
    code (UR/RUBY); this is only the full name under it. */
-const TIER_NAME = {
+export const TIER_NAME = {
   N:    'Graphite',
   R:    'Silver',
   SR:   'Gold',
@@ -105,8 +112,36 @@ const TIER_NAME = {
   RUBY: 'Red Diamond Play Button',
 };
 
+/* The same ladder, short enough for a battle card's one-line subtitle, where
+   "Red Diamond Play Button" would wrap and crowd out the subscriber count.
+   Kept beside the full names rather than in ui/battle-card.js so the two can
+   only ever be edited together — the award names moved once already
+   (2026-08-07, when they were corrected against the real thresholds) and a
+   second table one folder over would have been missed. */
+export const TIER_NAME_SHORT = {
+  N: 'Graphite', R: 'Silver', SR: 'Gold', SSR: 'Diamond', UR: 'Ruby', RUBY: 'Red Diamond',
+};
+
+/* THE TWO NUMBERS ON THE CARD ARE THE NUMBERS IT FIGHTS WITH (2026-08-09).
+
+   They used to come from `core.statsFrom`, which multiplied a raw view count by
+   a rarity multiplier — so the printed ATK correlated with subscriber count at
+   0.897 and no N card could ever out-stat a UR. The battle engine never agreed
+   with any of that. See the header of engine/core.js for the measurements.
+
+   ATK and DEF, not all five, and no bars: the battle card
+   (ui/battle-card.js) exists precisely so this one does not have to answer
+   "what does this do in a fight". This card shows a creator and is an object to
+   want. What changed is only that its two numbers stopped being fiction — a
+   card whose ATK reads 168 really does hit for 168, and the small channel that
+   out-punches a giant now says so on its face.
+
+   The class name rides along in the subs line, because without it a low ATK
+   reads as "bad card" rather than "this one is built out of something else".
+   It costs one word and no layout: `.subs-line` is already a two-child flex. */
 export function renderCard(card, { isNew = false, count = 0 } = {}) {
-  const { channel, rarity, atk, def } = card;
+  const { channel, rarity } = card;
+  const { atk, def, class: klass } = battleStatsFrom(channel);
   const el = document.createElement('article');
   el.className = `card r-${rarity}`;
   const initial = [...channel.title][0]?.toUpperCase() ?? '?';
@@ -134,7 +169,7 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
         ${isNew ? '<span class="new-badge">NEW</span>' : ''}
       </div>
       <div class="card-bottom">
-        <div class="subs-line"><span>${escapeHtml(subsLabel)}</span></div>
+        <div class="subs-line"><span>${escapeHtml(subsLabel)}</span><span class="card-class">${escapeHtml(klass)}</span></div>
         <div class="stats">
           <div class="stat atk"><em>ATK</em><b>${atk}</b></div>
           <div class="stat def"><em>DEF</em><b>${def}</b></div>
@@ -149,6 +184,24 @@ export function renderCard(card, { isNew = false, count = 0 } = {}) {
   const avatar = el.querySelector('.avatar');
   if (!avatarUrl) avatar.remove();
   else avatar.addEventListener('error', () => avatar.remove(), { once: true });
+  /* THE TWO TOP TIERS GET THE POINT TWINKLE, and it is built HERE rather than
+     in the reveal so it belongs to the card instead of to a moment — one of
+     these sitting in the binder keeps catching light, which is the whole of
+     what Ash asked for. Appended inside `.card-inner` so its
+     `overflow: hidden` clips the points to the rounded face and none can ever
+     sit on the metal bevel. RUBY runs a lower count than UR on purpose — see
+     the comment above `makeEdgeTwinkles` in stars.js: RUBY's own principle
+     everywhere else is fewer, larger, slower, and this is no exception. */
+  if (rarity === 'UR') el.querySelector('.card-inner').append(makeEdgeTwinkles(8));
+  if (rarity === 'RUBY') el.querySelector('.card-inner').append(makeEdgeTwinkles(5));
+  /* UR ALONE also gets the frame twinkle — RUBY's own frame already catches
+     light (the `::after` glints + the inspector's travelling `.gem-edge`), so
+     this is what closes the same gap on UR's side. A sibling of `.card-inner`,
+     not a child of it: the bevel band is `.card`'s own background, outside
+     `.card-inner`'s box entirely, so appending here needs no clipping and no
+     z-index trick. See `makeFrameTwinkles` in stars.js for why the shape stays
+     a point rather than borrowing RUBY's crossed-ellipse glint. */
+  if (rarity === 'UR') el.append(makeFrameTwinkles());
   accentFor(channel).then(color => el.style.setProperty('--accent', color));
   return el;
 }
