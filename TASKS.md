@@ -232,18 +232,21 @@ commitment, or take the consult first. Decide it rather than letting launch day 
          stays either way, because a silent fallback must not hinge on an unprintable character,
          and `test/room.test.js` pins that.
 
-   - [ ] **THE ARENA'S TIMINGS ARE NOW SIZED FOR A CONSTRAINT THAT NO LONGER EXISTS.** `STALL_MS`
-         (75s), `CROSS_NETWORK_MS` (65s) and the challenger screen's 1.2s -> 3s -> 5s backoff were
-         all measured against KV's 60-second edge cache. A Durable Object read is immediate, so
-         the honest worst case is a round trip and every one of those numbers is roughly six times
-         longer than it needs to be — a genuinely dead lobby currently takes 75 seconds to say so.
-
-         **Deliberately NOT retuned in the deletion pass**, because that would have changed the
-         timing of the exact flow that had just been confirmed working cross-device, with no way
-         to tell a regression from the retune. The asymmetry says which way to err meanwhile: too
-         long is a slow message on a broken match, too short is the 12s bug over again, which was
-         a WORKING match being called dead. Do it as its own step, with the two-window checklist
-         below run before and after.
+   - [x] **The arena's timings were resized for the Durable Object (2026-08-22).** They had all
+         been measured against KV's 60-second edge cache, which no longer exists.
+         `STALL_MS` **75s -> 20s** (if the other side had entered, the next poll says so in 1.2s;
+         20 covers a couple of retried requests at the 5s fetch timeout, and the message is
+         advisory rather than terminal - `checkStall` un-stalls itself the moment they appear).
+         `CROSS_NETWORK_MS` **deleted** - it existed only to size copy about a mechanism that is
+         gone, so the copy was rewritten rather than the number shrunk: the stall panel and the
+         challenger's waiting note no longer tell players about a minute-long cross-network hold
+         that cannot happen, and now say the one true remaining thing, which is that the other
+         person has not opened it yet. The challenger's poll stays brisk for **60s** instead of
+         20 before backing off, because every poll now genuinely buys latency where before it
+         bought nothing - costed at ~190 requests for a full ten-minute wait against ~140 before.
+         `MIN_GATE_MS` (6s) stays: its ORIGINAL reason was KV staleness, and the ordinary ones
+         never depended on it.
+         **Not covered by tests** - run the two-window checklist below before trusting it.
 
    *For reference, what the migration took:* a token permission (**Account · Workers Scripts ·
    Edit**), `npm run deploy:room`, a dashboard **Durable Object** binding on Production, and a

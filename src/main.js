@@ -5,7 +5,7 @@ import { pull } from './engine/gacha.js';
 import { RARITY_ORDER } from './engine/core.js';
 import { currentPool, addToCollection, persistCollection } from './state.js';
 import { initBanner, packSize } from './ui/banner.js';
-import { renderCollection, notePulled } from './ui/collection.js';
+import { renderCollection, notePulled, showBinder } from './ui/collection.js';
 import { openReveal, initReveal } from './ui/reveal.js';
 import { playPackOpen } from './ui/packopen.js';
 import { openArena } from './ui/battle.js';
@@ -66,7 +66,10 @@ initBanner({ onPull: doPull, onDevPull: doDevPull, onSetLoaded: renderCollection
    reveal and all — rather than a quieter shortcut, so the loop a player falls
    into is the loop the game was designed around. `packSize` is passed as the
    getter banner.js exports so the button can name the size actually selected. */
-initReveal({ onPullAgain: () => doPull(packSize()), packSize });
+/* `onDismiss` fires when the player is FINISHED with the reveal — Done, the
+   backdrop, Escape — and deliberately not when "Pull again" takes the overlay
+   down on its way to another pack. See the note above `closeReveal`. */
+initReveal({ onPullAgain: () => doPull(packSize()), packSize, onDismiss: showBinder });
 
 /* The arena's own enabled state is maintained by ui/collection.js (it is the
    module that knows how many different creators are owned); introducing the two

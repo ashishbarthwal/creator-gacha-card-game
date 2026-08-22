@@ -196,6 +196,34 @@ function renderFilters() {
     ).join('');
 }
 
+/* ── POINT AT THE CARDS THEY JUST PULLED (2026-08-22) ──────────────────────
+   The reveal closes and returns the player to the pack, while the cards it just
+   showed them sit below the fold wearing NEW badges nobody scrolls down to see.
+   The loop was pull -> see -> nothing; this makes it pull -> see -> own.
+
+   IT DECLINES TO SCROLL WHEN THE BINDER IS ALREADY THERE, which is what keeps
+   it from being irritating rather than helpful. Someone who has scrolled down
+   to their collection and is pulling from there does not want the page jumping
+   under them on every close, and after the first scroll that is exactly the
+   state they are in — so this fires roughly once per session, at the moment it
+   is the only useful thing to do.
+
+   Wired through `initReveal`'s `onDismiss` rather than reached for directly,
+   for two reasons. reveal.js already imports from this module's neighbours and
+   a second cross-import is how cycles start; and DISMISSAL is not the same
+   event as "the overlay closed" — "Pull again" closes it too, and scrolling
+   there would drag the player away from the pack they are about to open. */
+export function showBinder() {
+  const panel = collGrid?.closest('.panel');
+  if (!panel) return;
+  const { top } = panel.getBoundingClientRect();
+  /* Already looking at it: anything from just above the fold to the top half of
+     the viewport counts as "there", so a near-miss does not trigger a nudge. */
+  if (top > -panel.offsetHeight && top < window.innerHeight * 0.5) return;
+  const still = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  panel.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+}
+
 /* ── THE BINDER TWINKLES TOO (2026-08-17) ──────────────────────────────────
    Ash: "the twinkling effects and stars should be in mobile as well... in the
    collection tray as well. it's cheap and pretty so lets keep it."

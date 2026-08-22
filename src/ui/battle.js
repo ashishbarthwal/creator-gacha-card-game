@@ -258,10 +258,10 @@ const later = (fn, ms) => ui.timers.push(setTimeout(fn, ms));
       `onReturn` below resumes on the frame the tab comes back. Nothing is
       missed: the next read after returning has the current state.
 
-   3. THE CALLER PICKS THE INTERVAL. Not every screen deserves 1.2s — see
-      `waitInterval` on the challenger's screen, where the room is cross-network
-      and cannot answer faster than KV's own 60s cache no matter how often it
-      is asked.
+   3. THE CALLER PICKS THE INTERVAL. Not every screen deserves 1.2s forever —
+      see `waitInterval` on the challenger's screen, which stays brisk for the
+      first minute and then backs off, because a room nobody is coming to should
+      not be polled five hundred times.
 
    The lifetime is deliberately a client-side constant rather than something the
    room reports: it is a spending limit, not a fact about the room, and a server
@@ -758,7 +758,7 @@ function renderFindOpponent() {
      PAIRING A BACKGROUNDED TAB IS SURVIVABLE, which is what makes this safe:
      the pairing stays readable for `PAIR_TTL_MS`, and the lobby on the other
      side of it already handles an opponent who never arrives (see `STALL_MS`
-     and the "never came through" panel). A short wait for someone who tabbed
+     and the "never came through" panel), and now says so in 20s rather than 75. A short wait for someone who tabbed
      away beats never matching anybody. */
   let stopped = false;
   let mustRejoin = false;
@@ -1638,9 +1638,8 @@ function renderLobbyGate() {
     stalled = true;
     status.textContent = 'Still waiting on them.';
     stall.innerHTML = `
-      <p>This is taking longer than it should. Their window may be closed — or
-         you may simply be on different networks, which can hold a match up for
-         about a minute before it comes through.</p>
+      <p>This is taking longer than it should. Their window is probably closed,
+         or they have not pressed anything yet.</p>
       <p><b>Leave this open and it will start on its own the moment they
          arrive.</b> Nothing is lost either way: this match has not begun and
          your collection is untouched.</p>`;
@@ -2083,8 +2082,10 @@ const GATE_MS_FALLBACK = 10000;
 
 /* A FLOOR UNDER THE LOBBY, for the side that arrives late (2026-08-16).
    `lobbyAt` is a shared clock, and sharing it is the whole point — but a side
-   can now legitimately reach this screen well after the stamp, because a
-   cross-network room read can be up to a minute stale (see CROSS_NETWORK_MS).
+   can still reach this screen well after the stamp. The ORIGINAL reason was
+   KV's minute of edge staleness; that is gone, and the floor stays because the
+   ordinary reasons never depended on it — a phone unfreezing a backgrounded
+   tab, a request that had to be retried, or simply a slow hand on Accept.
    Without a floor that side opens the lobby already at 00:00, is auto-entered
    on the spot, and never gets to read the COLLECTION SIZE gate it was the one
    being asked about. Six seconds is not the fair ten, but it is a decision
@@ -2147,26 +2148,27 @@ const POLL_MS = 1200;
    patience now outlasts the staleness. Two windows on one machine share an edge
    location and never see any of this, which is exactly why it survived testing.
 
-   ── THIS NUMBER IS NOW CONSERVATIVE, ON PURPOSE (2026-08-22) ──────────────
-   The staleness it was sized against is GONE: the room is a Durable Object,
-   strongly consistent, one instance per room id, and the KV implementation was
-   deleted. A cross-network read is now immediate, so the honest worst case is a
-   round trip rather than a minute — and 75s is roughly six times longer than it
-   needs to be before a genuinely dead lobby admits it.
+   ── RESIZED FOR THE DURABLE OBJECT: 75s -> 20s (2026-08-22) ─────────────────
+   Everything above is history now. The staleness this was sized against is
+   GONE: the room is a Durable Object, strongly consistent, one instance per
+   room id, and the KV implementation is deleted. A cross-network read is
+   immediate, so if the other side had entered, the very next poll would say so
+   — 1.2 seconds, not a minute. Seventy-five seconds of silence in front of a
+   player was buying nothing.
 
-   Left alone anyway, and deliberately. Retuning the lobby's patience in the
-   same pass that deleted its old backend would be changing the timing of the
-   exact flow that had just been confirmed working cross-device, with no way to
-   tell a regression from the retune. Too long is a slow message on a broken
-   match; too short is the 12s bug over again, which was a WORKING match being
-   called dead. The asymmetry says which way to err while the numbers are
-   untested. TASKS.md carries it as its own step. */
-const STALL_MS = 75000;
+   TWENTY, NOT THE ORIGINAL TWELVE, and not because twelve is unsafe any more.
+   It covers the one lag the object cannot remove: a request that fails and is
+   retried. The fetch timeout is 5s, so two dropped polls is already ten
+   seconds of honest waiting, and 20 leaves room for a third.
 
-/* How long a cross-network room can lag, for copy that has to explain a wait
-   without lying about it. Sized on KV's 60s edge cache; see STALL_MS above for
-   why a number describing a deleted backend is still sitting here. */
-const CROSS_NETWORK_MS = 65000;
+   WHAT MAKES THIS SAFE TO SHORTEN AT ALL is that the message is advisory, not
+   terminal. `checkStall` above un-stalls itself the moment the other side
+   appears — the panel disappears, the status returns to "Both in — starting…",
+   and the match proceeds. So a false positive costs a sentence somebody reads
+   and then watches go away, where the old value cost a real player 75 seconds
+   of wondering whether the game was broken. Those are not symmetric, which is
+   what changed the answer. */
+const STALL_MS = 20000;
 
 /* Bumped every time the ready screen is built or torn down. Presence work is
    asynchronous, so a reply that arrives after the player has navigated away
@@ -2332,12 +2334,16 @@ function renderChallengeOut(code) {
   waiting.textContent = 'Waiting for someone to accept…';
   panel.append(waiting);
 
-  /* THE SLOW-NETWORK NOTE, and it exists because this screen was the one that
-     looked broken. The challenger reads the match room to learn it was
-     accepted, and across two networks that read can be up to a minute stale
-     (see CROSS_NETWORK_MS) — so the defender can be sitting in the lobby while
-     this screen still says nobody has taken it up. Nothing is wrong and there
-     is nothing to press; the only thing missing was anybody saying so.
+  /* THE WAITING NOTE. It used to explain KV's edge staleness — an acceptance
+     on another network could take a minute to become visible here, so this
+     screen said nobody had taken the challenge up while the defender was
+     already sitting in the lobby. THAT CANNOT HAPPEN NOW: the room is a Durable
+     Object, so an acceptance is visible on the next poll.
+
+     Which leaves exactly one honest explanation for a long wait, and it is a
+     more useful one than the old note ever was — they have not opened it yet.
+     So this stops apologising for the plumbing and says the thing the player
+     can actually act on: go and nudge them.
 
      Held back until the wait is already unusual, so a challenge accepted in
      three seconds never shows it. */
@@ -2345,11 +2351,11 @@ function renderChallengeOut(code) {
   patience.className = 'ar-fairness';
   patience.hidden = true;
   patience.innerHTML = `
-    <p>If they have already accepted on a different network — their phone on
-       mobile data, say — it can take up to a minute to reach this screen.
-       Leave it open; it moves on by itself.</p>`;
+    <p>Nothing is stuck — they simply have not opened the code yet. This screen
+       moves on by itself the moment they do, so leave it open and give them a
+       nudge.</p>`;
   panel.append(patience);
-  later(() => { if (gen === readyGen) patience.hidden = false; }, 15000);
+  later(() => { if (gen === readyGen) patience.hidden = false; }, 20000);
 
   bodyEl.append(panel);
 
@@ -2404,22 +2410,24 @@ function renderChallengeOut(code) {
 
   /* HOW OFTEN TO ASK. Written when an acceptance from another network could
      take up to a minute to become visible here — KV's edge cache, not the
-     network — so polling every 1.2s for ten minutes bought nothing and spent
+     network — so polling briskly bought nothing and a ten-minute wait spent
      ~500 reads of a 100,000/day budget per abandoned tab.
 
-     THAT CACHE IS GONE (the room is a Durable Object as of 2026-08-17, and the
-     KV path was deleted on 2026-08-22), so the backoff no longer buys latency
-     back — it only spends fewer requests. The second reason still holds and is
-     reason enough on its own: an abandoned tab should not poll a dead room 500
-     times. What changed is that the backoff is now a QUOTA choice rather than a
-     concession to a substrate, which means it can be shortened whenever
-     somebody wants a snappier accept and is willing to pay for it. See STALL_MS
-     for why the arena's timings were not retuned in the deletion pass. */
+     THAT CACHE IS GONE, so the trade inverted: every poll now genuinely buys
+     latency, because the answer is already sitting there waiting to be read.
+     The brisk window therefore stretches from 20s to a full minute — which is
+     where essentially every real acceptance lands — and the backoff past that
+     keeps doing the one job that still matters, which is not polling a room
+     nobody is coming to five hundred times.
+
+     Costed before changing: ~190 requests for a full ten-minute wait, against
+     ~140 before and ~500 with no backoff at all. Paying fifty requests for a
+     minute of snappier acceptance is the right side of that trade. */
   const openedAt = Date.now();
   function waitInterval() {
     const waited = Date.now() - openedAt;
-    if (waited < 20000) return POLL_MS;
-    if (waited < 60000) return 3000;
+    if (waited < 60000) return POLL_MS;
+    if (waited < 180000) return 3000;
     return 5000;
   }
 

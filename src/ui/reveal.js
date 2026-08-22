@@ -42,10 +42,12 @@ const revealAgain = document.getElementById('reveal-again');
    Left null until wired, and the button hides itself in that case rather than
    sitting there dead. */
 let againAction = null;
+let dismissAction = null;
 let againSize = null;
 
-export function initReveal({ onPullAgain = null, packSize = null } = {}) {
+export function initReveal({ onPullAgain = null, packSize = null, onDismiss = null } = {}) {
   againAction = onPullAgain;
+  dismissAction = onDismiss;
   againSize = packSize;
   if (revealAgain) revealAgain.hidden = !onPullAgain;
 }
@@ -388,10 +390,24 @@ if ('onscrollsnapchange' in revealEl) {
   });
 }
 
-export function closeReveal() {
+function hideReveal() {
   revealTimers.forEach(clearTimeout);
   revealTimers = [];
   revealEl.hidden = true;
+}
+
+/* DISMISSING THE REVEAL IS NOT THE SAME AS CLOSING IT, and conflating the two
+   is the trap here. "Pull again" also has to take this overlay down — see the
+   note on that handler — so anything hung on "the reveal closed" fires on the
+   one path where it is exactly wrong: the player is about to watch another pack
+   open, and would be scrolled away from it first.
+
+   So the callback is on DISMISSAL — Done, the backdrop, Escape — which is the
+   player saying they are finished looking. `hideReveal` is the mechanical half
+   and is what "Pull again" uses. */
+export function closeReveal() {
+  hideReveal();
+  dismissAction?.();
 }
 
 revealDone.addEventListener('click', closeReveal);
@@ -402,7 +418,7 @@ revealEl.addEventListener('click', e => { if (e.target === revealEl) closeReveal
    behind a screen still showing the previous pull's cards. */
 revealAgain?.addEventListener('click', () => {
   if (!againAction) return;
-  closeReveal();
+  hideReveal();          // not closeReveal: this is a continuation, not a dismissal
   againAction();
 });
 
