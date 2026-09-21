@@ -360,8 +360,9 @@ into a tested, modular, deployable project in dependency order (full detail in
 - [x] **WP-V2 UI Overhaul — the first pull now sells the game.** A neutral editorial shell,
       four clickable chase cards for a new player, collection-ranked top cards after the first
       pull, a compact interactive pack, and a bounded reveal replace the old generic landing
-      treatment. Desktop and touch now share the same premium star fields; UR gets a delayed
-      edge sheen in admire mode, and the phone keeps its scroll position when results close.
+      treatment. Desktop and touch now share consistent premium star visibility; UR gets a
+      denser field and delayed corner sheen in admire mode, and the phone keeps its scroll
+      position when results close.
       Architecture, maintenance notes, and verification are recorded in
       [`WP-V2-UI-OVERHAUL.md`](WP-V2-UI-OVERHAUL.md).
 - [ ] **Next.** SSR-band depth (the binding constraint, in lower walls), a difficulty setting

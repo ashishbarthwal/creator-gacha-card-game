@@ -45,26 +45,44 @@ const inspectHolder = document.getElementById('inspect-holder');
 const inspectClose = document.getElementById('inspect-close');
 let lastTrigger = null;
 let urSheenTimer = null;
+let urCornerQueue = [];
 
 function stopUrSheen() {
   clearTimeout(urSheenTimer);
   urSheenTimer = null;
 }
 
+function nextUrCorner() {
+  if (!urCornerQueue.length) {
+    urCornerQueue = [
+      ['0%', '0%'], ['100%', '0%'], ['100%', '100%'], ['0%', '100%'],
+    ];
+    for (let i = urCornerQueue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [urCornerQueue[i], urCornerQueue[j]] = [urCornerQueue[j], urCornerQueue[i]];
+    }
+  }
+  return urCornerQueue.pop();
+}
+
 /* Admire mode gets a deliberately timed UR frame catch: the first pass waits
    300ms so the overlay and card have settled, then each following pass starts
-   after a fresh 2–3 second interval. Restarting one short CSS animation keeps
-   the work compositor-only and gives every pass the full frame traversal. */
+   after a fresh 1–2 second interval. A shuffled four-corner bag gives every
+   corner a turn before any repeats, while keeping the order unpredictable. */
 function playUrSheen(cardEl) {
   if (!cardEl.isConnected || inspectEl.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const [x, y] = nextUrCorner();
+  cardEl.style.setProperty('--ur-sheen-x', x);
+  cardEl.style.setProperty('--ur-sheen-y', y);
   cardEl.classList.remove('ur-edge-admire');
   void cardEl.offsetWidth;
   cardEl.classList.add('ur-edge-admire');
-  urSheenTimer = setTimeout(() => playUrSheen(cardEl), 2000 + Math.random() * 1000);
+  urSheenTimer = setTimeout(() => playUrSheen(cardEl), 1000 + Math.random() * 1000);
 }
 
 function startUrSheen(cardEl) {
   stopUrSheen();
+  urCornerQueue = [];
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   urSheenTimer = setTimeout(() => playUrSheen(cardEl), 300);
 }

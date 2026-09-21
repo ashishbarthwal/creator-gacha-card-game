@@ -13,7 +13,6 @@ const again = document.getElementById('reveal-again');
 const skip = document.getElementById('reveal-skip');
 const progress = document.getElementById('reveal-progress');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-const colors = ['#9aa3b2', '#cdd8ea', '#ffcf6b', '#7fe7ff', '#65d1b5', '#ef695d'];
 let onAgain = null, onDismiss = null, size = null;
 let timers = [], cells = [], revealed = 0;
 const resultsByCell = new WeakMap();
@@ -65,8 +64,7 @@ export function openReveal(results) {
     cell.tabIndex = 0;
     cell.setAttribute('role', 'button');
     cell.setAttribute('aria-label', `Reveal card ${index + 1}`);
-    cell.style.setProperty('--beam-color', colors[RARITY_ORDER.indexOf(result.card.rarity)]);
-    cell.innerHTML = '<div class="beam" aria-hidden="true"></div><div class="flip"><div class="flip-inner"><div class="face back card-back" aria-hidden="true"><div class="back-play">CG&#8599;</div><div class="back-word">CREATOR GACHA</div><div class="back-edition">CORE SET / 01</div></div><div class="face front" aria-hidden="true"></div></div></div>';
+    cell.innerHTML = '<div class="flip"><div class="flip-inner"><div class="face back card-back" aria-hidden="true"><div class="back-play">CG&#8599;</div><div class="back-word">CREATOR GACHA</div><div class="back-edition">CORE SET / 01</div></div><div class="face front" aria-hidden="true"></div></div></div>';
     const front = cell.querySelector('.front');
     front.append(renderCard(result.card, { isNew: result.isNew, eager: index < 5 }));
     // The configured scattered field belongs to the card finish, not to the
@@ -89,8 +87,7 @@ export function openReveal(results) {
       if (cell.classList.contains('flipped')) return;
       const rect = cell.getBoundingClientRect();
       if (document.hidden || rect.top >= innerHeight || rect.bottom <= 0) return flip(cell, false);
-      cell.classList.add('beaming');
-      later(() => flip(cell), 160);
+      flip(cell);
     }, 100 + index * 180);
   });
 }

@@ -9,8 +9,8 @@
    (styles.css, `.star`), so there's no per-frame JS. */
 
 /* Twinkling star fields for the premium tiers. Ranges are [min, max] — count,
-   dot size (px), twinkle period (s). UR deliberately shares RUBY's restrained
-   nine-star geometry and timing; only the tier tint changes in CSS. */
+   dot size (px), twinkle period (s). UR uses the same four-point geometry as
+   RUBY at twice the density; only the tier tint changes in CSS. */
 export const STARS = {
   SR:   { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
   SSR:  { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
@@ -20,7 +20,7 @@ export const STARS = {
      reflections, and a dense field of small ones is what costume jewellery
      looks like. Fewer, larger, slower — and rendered as four-point sparkles
      rather than round dots (`.glow-RUBY .star` in styles.css). */
-  UR:   { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
+  UR:   { count: 18, size: [4.5, 8.5], tw: [2.6, 5.0] },
   RUBY: { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
 };
 

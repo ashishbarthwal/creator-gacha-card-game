@@ -2616,9 +2616,10 @@
     #inspect .card .stars { animation: stars-in 0.5s ease-out both; }
   }
 
-  /* UR and RUBY use the same restrained nine-star field everywhere they can be
-     viewed. Hero cards and desktop admire mode do not pass through the
-     reveal/collection visibility rules, so opt both tiers in explicitly. */
+  /* UR and RUBY use the same four-point star language everywhere they can be
+     viewed; UR now carries twice the density. Hero cards and desktop admire
+     mode do not pass through the reveal/collection visibility rules, so opt
+     both tiers in explicitly. */
   .hero-library .card:is(.r-UR, .r-RUBY) > .stars,
   #inspect .card:is(.r-UR, .r-RUBY) > .stars {
     animation: stars-in 0.5s ease-out both;
@@ -3285,6 +3286,12 @@
     .card.r-UR::after { animation: ur-edge-glint 7.4s cubic-bezier(.4, 0, .2, 1) infinite; }
     #inspect .card.r-UR::after { animation: none; }
     #inspect .card.r-UR.ur-edge-admire::after {
+      background: radial-gradient(circle at var(--ur-sheen-x, 0%) var(--ur-sheen-y, 0%),
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(225, 186, 255, 0.76) 8%,
+        rgba(177, 91, 255, 0.28) 19%,
+        transparent 34%);
+      background-size: 100% 100%;
       animation: ur-edge-admire 0.82s cubic-bezier(.35, 0, .2, 1) both;
     }
   }
@@ -3297,10 +3304,10 @@
   }
 
   @keyframes ur-edge-admire {
-    0%   { opacity: 0; background-position: 155% 0; }
-    28%  { opacity: 0.2; }
-    54%  { opacity: 0.78; }
-    100% { opacity: 0; background-position: -55% 0; }
+    0%   { opacity: 0; }
+    28%  { opacity: 0.24; }
+    54%  { opacity: 0.82; }
+    100% { opacity: 0; }
   }
 
   /* Red Diamond's sheen runs near-black into deep blood-red rather than

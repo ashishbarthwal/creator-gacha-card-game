@@ -13,10 +13,10 @@ Creator Gacha V2 replaces the generic purple landing page with a quieter editori
 - Replaced the original landing copy with a first-visit showcase: MrBeast (RUBY), Cristiano Ronaldo (UR), Rihanna (SSR), and Austin Evans (SR). All four cards open in admire mode.
 - After the first pull, replaced the showcase with **Your top cards**, split into **Most followed** and **Battle leaders** rows derived from the local collection.
 - Rebuilt the pack control as a compact three-card stack with the pull action in its centre. Hover fans the stack; tapping the centre opens the selected one-card or ten-card pull.
-- Shortened and simplified the reveal sequence while retaining rarity order, the colored outline cue, card arrival, and card-specific finishes. Removed an obsolete blurred cone layer that appeared behind RUBY reveals.
+- Shortened and simplified the reveal sequence while retaining rarity order, card arrival, and card-specific finishes. The pre-reveal shine/outline cue and its obsolete blurred cone layer were removed from desktop and phone.
 - Added empty-space dismissal after a completed reveal. On phones this returns to the same scroll position, keeping repeated pulls convenient.
-- Preserved and normalized premium finishes across surfaces. RUBY keeps its brighter gem treatment and thinner standard frame. UR and RUBY now share the same sparse nine-star field on desktop and touch views.
-- Added a subtle UR ultraviolet edge sheen. In admire mode its first pass starts 300 ms after opening, then repeats at randomized two-to-three-second intervals. Reduced-motion mode disables it.
+- Preserved and normalized premium finishes across surfaces. RUBY keeps its brighter gem treatment and thinner standard frame. UR and RUBY share the same four-point star language on desktop and touch; UR uses an eighteen-star field and RUBY uses nine.
+- Added a subtle UR ultraviolet corner sheen. In admire mode its first pass starts 300 ms after opening, then visits shuffled corners at randomized one-to-two-second intervals. Reduced-motion mode disables it.
 - Kept touch cards on the same dark resting face as desktop instead of applying a static holo wash.
 - Added reusable dialog focus handling, keyboard activation for showcase cards, responsive layouts, and reduced-motion fallbacks.
 - Added repeatable development and marketing pulls plus the supplied marketing screenshots.
