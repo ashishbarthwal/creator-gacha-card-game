@@ -47,6 +47,7 @@ const packBtn = document.getElementById('pack-open');
 const countBtn1 = document.getElementById('pull-1');
 const countBtn10 = document.getElementById('pull-10');
 const pullBtnDev = document.getElementById('pull-dev');
+const pullBtnMarketing = document.getElementById('pull-marketing');
 
 let statusTimer = null;
 
@@ -93,7 +94,7 @@ function showStatus(message, { error = false, sticky = false } = {}) {
 function renderPool() {
   const pool = currentPool();
   const ready = pool.length > 0;
-  packBtn.disabled = pullBtnDev.disabled = !ready;
+  packBtn.disabled = pullBtnDev.disabled = pullBtnMarketing.disabled = !ready;
   packBtn.classList.toggle('is-ready', ready);
   renderSetCount(pool);
 }
@@ -191,7 +192,7 @@ function failed(message) {
   statusEl.after(retry);
 }
 
-export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
+export function initBanner({ onPull, onDevPull, onMarketingPull, onSetLoaded = () => {} }) {
   /* Announced rather than imported: banner.js has no business reaching into the
      collection view, and the callback shape is already how this module talks to
      the app. Held in a module-local so loadTheSet can reach it. */
@@ -204,6 +205,7 @@ export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
   for (const [count, button] of [[1, countBtn1], [10, countBtn10]]) {
     button.addEventListener('click', () => {
       packCount = count;
+      packBtn.setAttribute('aria-label', `Open ${count} card${count === 1 ? '' : 's'}`);
       for (const other of [countBtn1, countBtn10]) {
         const on = other === button;
         other.classList.toggle('on', on);
@@ -212,10 +214,11 @@ export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
     });
   }
   pullBtnDev.addEventListener('click', () => onDevPull());
+  pullBtnMarketing.addEventListener('click', () => onMarketingPull());
 
   /* Nothing to pull from until the set lands, and the pack must not invite a
      press it cannot answer. `loadTheSet` re-enables it, or explains why not. */
-  packBtn.disabled = pullBtnDev.disabled = true;
+  packBtn.disabled = pullBtnDev.disabled = pullBtnMarketing.disabled = true;
   loadTheSet();
 
   /* WP8: dev affordances are hidden outside dev. Dev Pull forces one card of
@@ -227,5 +230,9 @@ export function initBanner({ onPull, onDevPull, onSetLoaded = () => {} }) {
      The Magic Search and Live-mode gating that used to sit here went with the
      controls themselves on 2026-08-16 — see this file's header. */
   gateDevElement(pullBtnDev);
+  /* Marketing Pull hides outside dev for exactly Dev Pull's reason — it forces a
+     fixed ten and ignores the weights, so it is an operator's control, not a
+     player's. `?dev=1` reveals it when a screenshot is being taken. */
+  gateDevElement(pullBtnMarketing);
   gateDevElement(setCount);
 }

@@ -8,21 +8,19 @@
    they dodge the avatar circle; the twinkle itself is a CSS animation
    (styles.css, `.star`), so there's no per-frame JS. */
 
-/* Twinkling stars, starting at SR: a sparse small shimmer there, the dense
-   quick field at SSR, a little denser again at UR, denser still at RUBY.
-   Ranges are [min, max] — count, dot size (px), twinkle period (s). Tint is
-   per-tier in CSS and follows the frame, so SR reads gold, SSR cold diamond,
-   UR electric violet, RUBY cold diamond-white with a red cast. */
+/* Twinkling star fields for the premium tiers. Ranges are [min, max] — count,
+   dot size (px), twinkle period (s). UR deliberately shares RUBY's restrained
+   nine-star geometry and timing; only the tier tint changes in CSS. */
 export const STARS = {
   SR:   { count: 18, size: [1.8, 3.4], tw: [1.8, 4.2] },
   SSR:  { count: 22, size: [2.2, 5.2], tw: [1.1, 2.8] },
-  UR:   { count: 26, size: [2.0, 4.4], tw: [1.1, 2.8] },
   /* RUBY goes DOWN, against the escalation every other row follows, and that
      inversion is the point. Up to UR the ladder buys drama with density. The
      gem cut buys it with restraint: a cut stone throws a few big, deliberate
      reflections, and a dense field of small ones is what costume jewellery
      looks like. Fewer, larger, slower — and rendered as four-point sparkles
      rather than round dots (`.glow-RUBY .star` in styles.css). */
+  UR:   { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
   RUBY: { count: 9,  size: [4.5, 8.5], tw: [2.6, 5.0] },
 };
 
@@ -84,7 +82,7 @@ export function makeStars(rarity) {
    binder without becoming something you have to read past.
 
    WHY IT IS CHEAP, stated because the pack-opening lag pass on this same day
-   was caused by forgetting it: eight 2px elements animating `opacity` and
+   was caused by forgetting it: six 2px elements animating `opacity` and
    `transform` only. No mask, no clip, no filter, no blur, nothing that forces
    a rasterisation — the three things that actually cost frames. Positions are
    written once as inline styles at build time, so there is no per-frame JS at
@@ -96,9 +94,9 @@ export function makeStars(rarity) {
    is lit for roughly a quarter of a second and absent for the rest. Negative
    delays start each one mid-cycle so they never fire in unison — the same
    desync trick `makeStars` uses one function up. */
-const EDGE_TWINKLES = 8;                 // UR's own count, the default below
+const EDGE_TWINKLES = 6;                 // three sparse points per side on UR
 const EDGE_BAND = [0.025, 0.075];        // how far in from an edge a point may sit
-const EDGE_SPAN = [0.10, 0.90];          // vertical range, keeping clear of the corners
+const EDGE_SPAN = [0.07, 0.93];          // use nearly the full height for wider spacing
 
 export function makeEdgeTwinkles(count = EDGE_TWINKLES) {
   const span = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -107,14 +105,14 @@ export function makeEdgeTwinkles(count = EDGE_TWINKLES) {
   for (let i = 0; i < count; i++) {
     const dot = document.createElement('i');
     dot.className = 'pt-twinkle';
-    /* Alternating rather than randomised sides, so a low count cannot happen
-       to land seven points on one edge and one on the other. */
+    /* Alternating rather than randomised sides, so a low count cannot bunch
+       every point against one edge and leave the other bare. */
     const inset = span(...EDGE_BAND);
     dot.style.left = ((i % 2 === 0 ? inset : 1 - inset) * 100).toFixed(1) + '%';
     dot.style.top = (span(...EDGE_SPAN) * 100).toFixed(1) + '%';
     dot.style.setProperty('--tw-size', span(1.5, 3).toFixed(1) + 'px');
-    dot.style.setProperty('--tw-dur', span(1, 3).toFixed(2) + 's');
-    dot.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's';
+    dot.style.setProperty('--tw-dur', span(1.8, 4.2).toFixed(2) + 's');
+    dot.style.animationDelay = (-Math.random() * 4.2).toFixed(2) + 's';
     wrap.appendChild(dot);
   }
   return wrap;
@@ -152,7 +150,7 @@ export function makeEdgeTwinkles(count = EDGE_TWINKLES) {
    `.card-inner`, never a child of it — `.card-inner` is inset by the padding
    and has nothing painted in the band this walks, so no z-index game is
    needed the way RUBY's ::after needs one to stay under its own face. */
-const FRAME_TWINKLES = 6;
+const FRAME_TWINKLES = 4;
 const FRAME_INSET = 1.6;   // % from the card's own edge — inside the bevel, never past it
 
 /* Walks the perimeter clockwise from the top-left corner as t: 0..1, holding a
@@ -183,8 +181,8 @@ export function makeFrameTwinkles(count = FRAME_TWINKLES) {
     dot.style.left = x.toFixed(1) + '%';
     dot.style.top = y.toFixed(1) + '%';
     dot.style.setProperty('--tw-size', span(1.3, 2.6).toFixed(1) + 'px');
-    dot.style.setProperty('--tw-dur', span(1, 3).toFixed(2) + 's');
-    dot.style.animationDelay = (-Math.random() * 3).toFixed(2) + 's';
+    dot.style.setProperty('--tw-dur', span(1.8, 4.2).toFixed(2) + 's');
+    dot.style.animationDelay = (-Math.random() * 4.2).toFixed(2) + 's';
     wrap.appendChild(dot);
   }
   return wrap;

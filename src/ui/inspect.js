@@ -44,23 +44,43 @@ const inspectEl = document.getElementById('inspect');
 const inspectHolder = document.getElementById('inspect-holder');
 const inspectClose = document.getElementById('inspect-close');
 let lastTrigger = null;
+let urSheenTimer = null;
+
+function stopUrSheen() {
+  clearTimeout(urSheenTimer);
+  urSheenTimer = null;
+}
+
+/* Admire mode gets a deliberately timed UR frame catch: the first pass waits
+   300ms so the overlay and card have settled, then each following pass starts
+   after a fresh 2–3 second interval. Restarting one short CSS animation keeps
+   the work compositor-only and gives every pass the full frame traversal. */
+function playUrSheen(cardEl) {
+  if (!cardEl.isConnected || inspectEl.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  cardEl.classList.remove('ur-edge-admire');
+  void cardEl.offsetWidth;
+  cardEl.classList.add('ur-edge-admire');
+  urSheenTimer = setTimeout(() => playUrSheen(cardEl), 2000 + Math.random() * 1000);
+}
+
+function startUrSheen(cardEl) {
+  stopUrSheen();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  urSheenTimer = setTimeout(() => playUrSheen(cardEl), 300);
+}
 
 /* Delegated on the persistent holder, so it keeps working as the card inside
    is swapped out on each open. */
 enableCardTilt(inspectHolder);
 
 export function openInspect(card, meta = {}) {
+  stopUrSheen();
   lastTrigger = document.activeElement;
   inspectHolder.innerHTML = '';
   const cardEl = renderCard(card, meta);
-  /* SR+ get their star field here too, not just in the pull reveal. Built
-     unconditionally (cheap — a handful of absolutely-positioned dots) and
-     left to CSS to gate: `#inspect .card .stars` only turns visible under
-     `(hover: none)` (styles.css), because a fine-pointer device already gets
-     motion from the tilt + holo shine below (holo.js). Touch never lights
-     `.lit` at all (device-tilt was removed 2026-08-07), so without this a
-     phone's admire screen would just sit there static — the stars are what
-     it gets instead. */
+  /* Tiers with a scattered field get it here too, not just in the pull reveal.
+     CSS keeps UR's RUBY-style field visible on every device. Other fields stay
+     touch-only here because fine pointers already get tilt and holo shine. */
   const stars = makeStars(card.rarity);
   if (stars) cardEl.appendChild(stars);
   /* The travelling edge light (styles.css, `.gem-edge`) needs a real element:
@@ -109,6 +129,7 @@ export function openInspect(card, meta = {}) {
      replay. */
   inspectEl.classList.toggle('ruby-entrance', card.rarity === 'RUBY');
   inspectEl.hidden = false;
+  if (card.rarity === 'UR') startUrSheen(cardEl);
   inspectClose.focus();
 }
 
@@ -144,6 +165,7 @@ export function isInspectOpen() {
 }
 
 export function closeInspect() {
+  stopUrSheen();
   inspectEl.hidden = true;
   inspectHolder.innerHTML = '';
   if (lastTrigger?.focus) lastTrigger.focus();

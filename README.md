@@ -357,6 +357,13 @@ into a tested, modular, deployable project in dependency order (full detail in
       the 4.2 that had been reported.
 - [x] **WP-One Deck — three controls removed.** Live API mode, the bundled demo set and the set
       picker are gone from the page; Core Set is the deck. See *Run it* above for what each cost.
+- [x] **WP-V2 UI Overhaul — the first pull now sells the game.** A neutral editorial shell,
+      four clickable chase cards for a new player, collection-ranked top cards after the first
+      pull, a compact interactive pack, and a bounded reveal replace the old generic landing
+      treatment. Desktop and touch now share the same premium star fields; UR gets a delayed
+      edge sheen in admire mode, and the phone keeps its scroll position when results close.
+      Architecture, maintenance notes, and verification are recorded in
+      [`WP-V2-UI-OVERHAUL.md`](WP-V2-UI-OVERHAUL.md).
 - [ ] **Next.** SSR-band depth (the binding constraint, in lower walls), a difficulty setting
       (`matchOpponent` and the `DIFFICULTY` dial are built and tested but unreached by any
       screen), Bulwark/Riser scarcity at ~5% of the deck each, and procedural creator emblems to

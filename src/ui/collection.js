@@ -25,6 +25,15 @@ const collSearch = document.getElementById('coll-search');
 const collFilters = document.getElementById('coll-filters');
 const collSort = document.getElementById('coll-sort');
 const collSortBox = document.querySelector('.tool-sort');
+let notifyCollectionChange = () => {};
+
+/* Collection mutations normally happen in main.js, which can repaint every
+   dependent surface directly. Clear lives here because this module owns its
+   confirmation flow, so it reports that one mutation through a callback rather
+   than importing the hero and creating a UI-to-UI dependency. */
+export function initCollection({ onCollectionChange = () => {} } = {}) {
+  notifyCollectionChange = onCollectionChange;
+}
 
 /* Below this SORT is furniture: ordering only becomes a question once the binder
    is too big to take in at a glance. Search and the rarity chips used to sit
@@ -32,6 +41,19 @@ const collSortBox = document.querySelector('.tool-sort');
    through a session reads as the UI changing shape under the player, and both of
    those answer questions worth asking at any size. */
 const TOOLS_AT = 12;
+const PAGE_SIZE = 40;
+let visibleLimit = PAGE_SIZE;
+const more = document.createElement('button');
+more.type = 'button';
+more.className = 'btn ghost collection-more';
+more.hidden = true;
+collGrid.after(more);
+more.addEventListener('click', () => {
+  const previous = visibleLimit;
+  visibleLimit += PAGE_SIZE;
+  renderCollection();
+  collGrid.children[previous]?.focus({ preventScroll: true });
+});
 
 /* How the player is currently looking at their own collection. Deliberately not
    persisted: a filter is a momentary question ("what URs do I have?"), and
@@ -72,6 +94,7 @@ collClear.addEventListener('click', () => {
   pulledAt.clear();
   newThisSession.clear();
   renderCollection();
+  notifyCollectionChange();
 });
 
 /* Delegated once on the persistent grid, so it keeps working across the
@@ -98,17 +121,23 @@ let searchTimer = null;
 collSearch.addEventListener('input', () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
+    visibleLimit = PAGE_SIZE;
     view.q = collSearch.value.trim().toLowerCase();
     renderCollection();
   }, 120);
 });
 
-collSort.addEventListener('change', () => { view.sort = collSort.value; renderCollection(); });
+collSort.addEventListener('change', () => {
+  visibleLimit = PAGE_SIZE;
+  view.sort = collSort.value;
+  renderCollection();
+});
 
 collFilters.addEventListener('click', e => {
   const btn = e.target.closest('.filter-chip');
   if (!btn) return;
   const { rarity } = btn.dataset;
+  visibleLimit = PAGE_SIZE;
   view.rarity = rarity === 'all' ? null : rarity;
   renderCollection();
 });
@@ -228,9 +257,9 @@ export function showBinder() {
    Ash: "the twinkling effects and stars should be in mobile as well... in the
    collection tray as well. it's cheap and pretty so lets keep it."
 
-   The UR/RUBY point twinkles were already here — `renderCard` appends those on
-   every surface and has never gated them by device. What was missing is the
-   SCATTER field (`makeStars`, SR and up), which only the pull reveal and the
+   RUBY's point twinkles were already here — `renderCard` appends those on every
+   surface and has never gated them by device. The SCATTER field (`makeStars`,
+   configured for SR, SSR, UR, and RUBY) was what only the pull reveal and the
    admire screen ever built. This adds it to the binder.
 
    ── WHY AN OBSERVER, WHEN NOTHING ELSE THAT USES makeStars NEEDS ONE ───────
@@ -300,7 +329,7 @@ export function renderCollection() {
   starWatcher?.disconnect();
 
   collGrid.innerHTML = '';
-  for (const item of shown) {
+  for (const item of shown.slice(0, visibleLimit)) {
     const el = renderCard(item.card, { count: item.count, isNew: newThisSession.has(item.card.channel.id) });
     el.dataset.channelId = item.card.channel.id;
     el.tabIndex = 0;
@@ -317,6 +346,9 @@ export function renderCollection() {
       else el.appendChild(field);
     }
   }
+
+  more.hidden = shown.length <= visibleLimit;
+  more.textContent = `Show more (${(shown.length - visibleLimit).toLocaleString()} remaining)`;
 
   /* "Saved in this browser" came OUT of this line on 2026-08-16 (Ash's call).
      It used to be defended here as "the only place the player is told where

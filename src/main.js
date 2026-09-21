@@ -2,13 +2,45 @@
    seam and the UI modules; holds nothing of its own but the pull glue. */
 
 import { pull } from './engine/gacha.js';
+import { marketingPull } from './engine/marketing-pull.js';
 import { RARITY_ORDER } from './engine/core.js';
 import { currentPool, addToCollection, persistCollection } from './state.js';
 import { initBanner, packSize } from './ui/banner.js';
-import { renderCollection, notePulled, showBinder } from './ui/collection.js';
+import { initCollection, renderCollection, notePulled, showBinder } from './ui/collection.js';
 import { openReveal, initReveal } from './ui/reveal.js';
 import { playPackOpen } from './ui/packopen.js';
 import { openArena } from './ui/battle.js';
+import { renderHeroShowcase } from './ui/hero-showcase.js';
+
+let pullBusy = false;
+let collectionDirty = false;
+async function presentPull(results) {
+  pullBusy = true;
+  const controls = ['pack-open', 'pull-dev', 'pull-marketing'];
+  controls.forEach(id => { document.getElementById(id).disabled = true; });
+  document.getElementById('status').textContent = 'Opening your pack...';
+  try {
+    persistCollection(); // Bank once, before any animation.
+    notePulled(results);
+    /* The first-pull showcase is collection state, not animation state. Remove
+       it as soon as the banked result exists, before the pack flourish starts. */
+    renderHeroShowcase();
+    collectionDirty = true;
+    await playPackOpen(results);
+    openReveal(results);
+  } finally {
+    pullBusy = false;
+    controls.forEach(id => { document.getElementById(id).disabled = false; });
+    document.getElementById('status').textContent = '';
+  }
+}
+function finishPull() {
+  if (collectionDirty) { renderCollection(); collectionDirty = false; }
+  /* Keep a phone exactly where the pull began when the results close. Repeated
+     pulls live in the hero, and auto-scrolling to the binder made that loop
+     needlessly costly. Wider screens retain the existing collection nudge. */
+  if (!matchMedia('(max-width: 600px)').matches) showBinder();
+}
 
 /* THE PULL IS RESOLVED AND BANKED BEFORE THE ANIMATION RUNS, and the ordering
    is deliberate rather than incidental. `playPackOpen` is a decoration in front
@@ -22,13 +54,9 @@ import { openArena } from './ui/battle.js';
    where a broken animation costs someone their cards. */
 async function doPull(count) {
   const pool = currentPool();
-  if (!pool.length) return;
+  if (pullBusy || !pool.length) return;
   const results = pull(pool, count).map(addToCollection);
-  persistCollection();          // once per pull, not once per card
-  notePulled(results);          // session order + NEW flags, for the collection view
-  renderCollection();
-  await playPackOpen(results);
-  openReveal(results);
+  await presentPull(results);
 }
 
 /* Dev-only: a 10-pull seeded with one card of every rarity present in the pool,
@@ -47,20 +75,39 @@ function pickRandom(cards) {
 
 async function doDevPull() {
   const pool = currentPool();
-  if (!pool.length) return;
+  if (pullBusy || !pool.length) return;
   const oneEach = RARITY_ORDER
     .map(rarity => pickRandom(pool.filter(card => card.rarity === rarity)))
     .filter(Boolean);
   const fill = pull(pool, Math.max(0, 10 - oneEach.length));
   const results = [...oneEach, ...fill].slice(0, 10).map(addToCollection);
-  persistCollection();
-  notePulled(results);
-  renderCollection();
-  await playPackOpen(results);
-  openReveal(results);
+  await presentPull(results);
 }
 
-initBanner({ onPull: doPull, onDevPull: doDevPull, onSetLoaded: renderCollection });
+/* Marketing-only: a fixed, repeatable ten for screenshots. Same banking order
+   as every other pull — resolved and persisted before the animation — so it is
+   a real pull that happens to be cast rather than drawn. The roster and the
+   reasoning live in engine/marketing-pull.js; the button is dev-gated. */
+async function doMarketingPull() {
+  const pool = currentPool();
+  if (pullBusy || !pool.length) return;
+  const results = marketingPull(pool).map(addToCollection);
+  await presentPull(results);
+}
+
+function renderCollectionSurfaces() {
+  renderCollection();
+  renderHeroShowcase();
+}
+
+initCollection({ onCollectionChange: renderHeroShowcase });
+
+initBanner({
+  onPull: doPull,
+  onDevPull: doDevPull,
+  onMarketingPull: doMarketingPull,
+  onSetLoaded: renderCollectionSurfaces,
+});
 
 /* The reveal's "pull again" runs the SAME doPull the pack runs — summon,
    reveal and all — rather than a quieter shortcut, so the loop a player falls
@@ -69,11 +116,11 @@ initBanner({ onPull: doPull, onDevPull: doDevPull, onSetLoaded: renderCollection
 /* `onDismiss` fires when the player is FINISHED with the reveal — Done, the
    backdrop, Escape — and deliberately not when "Pull again" takes the overlay
    down on its way to another pack. See the note above `closeReveal`. */
-initReveal({ onPullAgain: () => doPull(packSize()), packSize, onDismiss: showBinder });
+initReveal({ onPullAgain: () => doPull(packSize()), packSize, onDismiss: finishPull });
 
 /* The arena's own enabled state is maintained by ui/collection.js (it is the
    module that knows how many different creators are owned); introducing the two
    is main's job, which is the whole of what this file is for. */
 document.getElementById('battle-open').addEventListener('click', openArena);
 
-renderCollection();
+renderCollectionSurfaces();

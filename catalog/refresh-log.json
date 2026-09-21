@@ -462,6 +462,27 @@
       "slug": "core",
       "cards": 22720,
       "snapshotDate": "2026-08-17"
+    },
+    {
+      "at": "2026-09-20T14:24:07.518Z",
+      "event": "build",
+      "slug": "core",
+      "cards": 22697,
+      "snapshotDate": "2026-09-20"
+    },
+    {
+      "at": "2026-09-20T14:24:38.324Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 22697,
+      "snapshotDate": "2026-09-20"
+    },
+    {
+      "at": "2026-09-20T14:37:50.772Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 22697,
+      "snapshotDate": "2026-09-20"
     }
   ]
 }

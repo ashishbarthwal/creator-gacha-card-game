@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-08-17",
+  "updated": "2026-09-20",
   "note": "Channel IDs and our own tags only — never channel data. See src/engine/candidates.js.",
   "candidates": [
     {
@@ -1680,7 +1680,7 @@
     },
     {
       "id": "UC-h4JTKh9fXvY3FC2Bsrl7w",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -5451,7 +5451,7 @@
     },
     {
       "id": "UC1ELCcNrrOZfcTMg71MBdtA",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -15794,7 +15794,7 @@
     },
     {
       "id": "UC5Ti6pxP1Z-RlBJzXcgOL7A",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-16"
     },
     {
@@ -24799,7 +24799,7 @@
     },
     {
       "id": "UC9BqwHQ9cbsSULb1kmwvY8A",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -31332,7 +31332,7 @@
     },
     {
       "id": "UCBpE9yJl3l7SP_jIi1Deadw",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -35099,7 +35099,7 @@
     },
     {
       "id": "UCDPvdKoBCUL9qfBUNY2YrsQ",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -40085,7 +40085,7 @@
     },
     {
       "id": "UCFN4JkGP_bVhAdBsoV9xftA",
-      "pool": "majority",
+      "pool": "legends",
       "firstSeen": "2026-08-02"
     },
     {
@@ -40180,7 +40180,7 @@
     },
     {
       "id": "UCFOsEsO16Yd6ADfgaTA25Ww",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-15"
     },
     {
@@ -56993,7 +56993,7 @@
     },
     {
       "id": "UCMEBa87X1_87s_7tLiMut1A",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-03"
     },
     {
@@ -65679,7 +65679,7 @@
     },
     {
       "id": "UCPszuZ3hR89D4NqFd7g3mDQ",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -77185,7 +77185,7 @@
     },
     {
       "id": "UCUc_CFLrDIWFDz_tsAfw0NQ",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -81100,7 +81100,7 @@
     },
     {
       "id": "UCWHwLgapQJ-znRz1-7A3kRg",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-01"
     },
     {
@@ -93213,7 +93213,7 @@
     },
     {
       "id": "UCaHCKgMF-3eq1iyR__JZo3A",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-01"
     },
     {
@@ -103025,7 +103025,7 @@
     },
     {
       "id": "UCeD1sBBnobjjo1SJgMN0yCg",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -112678,7 +112678,7 @@
     },
     {
       "id": "UCi4UjmN8HSi16sAhh_iEb6w",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -116994,7 +116994,7 @@
     },
     {
       "id": "UCjoozf2c1N1ZRE2ecRoASjQ",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -122315,7 +122315,7 @@
     },
     {
       "id": "UClzFOfDcyM2Ax5tOBUVpuzQ",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-16"
     },
     {
@@ -125841,7 +125841,7 @@
     },
     {
       "id": "UCnOrrqH7goNaJPgj6IEa4xw",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-15"
     },
     {
@@ -126926,7 +126926,7 @@
     },
     {
       "id": "UCno_QBVuh4k0TIdxhRiA-EA",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -131084,7 +131084,7 @@
     },
     {
       "id": "UCpTGE20josA6RVf-eNZAOCA",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-16"
     },
     {
@@ -142604,7 +142604,7 @@
     },
     {
       "id": "UCuC1X-0St4gmOFWc9js1ihw",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -146220,7 +146220,7 @@
     },
     {
       "id": "UCvgMH5bd8JU_3KZ0BnBL4Vg",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-15"
     },
     {
@@ -151456,7 +151456,7 @@
     },
     {
       "id": "UCxrCHd_GuzM4bdudM-QJ_PA",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -152686,7 +152686,7 @@
     },
     {
       "id": "UCyMJCUxEJGZJSBtw7QKC_lw",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {
@@ -154892,7 +154892,7 @@
     },
     {
       "id": "UCzGCgVRDIuciDCIojBkGlTg",
-      "pool": "wildcards",
+      "pool": "majority",
       "firstSeen": "2026-08-02"
     },
     {

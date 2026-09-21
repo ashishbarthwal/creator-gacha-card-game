@@ -1,436 +1,128 @@
-/* ui/reveal — the pull reveal overlay: a rarity-escalated flip sequence.
-   Common cards resolve fast; rarer cards come LAST, each preceded by a
-   colour-coded beam — THE SPOILER, and the one piece of theatre this screen is
-   actually built around. It tells you something good is coming before you can
-   see what, which is the entire suspense mechanism. A seam glow lights up around
-   each card as it lands, and SR+ carry twinkling stars placed to avoid the
-   avatar circle.
-
-   THAT IS NOW THE WHOLE OF IT, ON EVERY DEVICE (2026-08-17). This file used to
-   run a specular sweep, and a three-beat top-tier finish — ignition, discharge,
-   and a breathing aura shedding fifty motes per card — with a phone/desktop
-   split deciding who saw them. Ash removed the lot: "simplify the card pull
-   animation in both phone and pc. Keep the colour spoiler thing." See the note
-   above the FX table for what came out and why the holds moved with it.
-
-   The header used to boast "all CSS, zero dependencies, no per-frame JS, so
-   nothing to lag on", and that was the mistake this file kept being measured
-   against: compositing several hundred simultaneously animating layers is
-   per-frame work whoever schedules it. The lesson generalised past the phone —
-   a pull you sit through is worse on a fast machine, because there is nothing
-   to blame it on.
-
-   Reduced motion collapses it to an instant, calm reveal on any device.
-   Self-contained: owns its close wiring; main just calls openReveal(results). */
-
+/* A bounded reveal: rarity cue, short arrival, then a completely idle grid.
+   Results are sorted before rendering so visual and keyboard order agree. */
+import { RARITY_ORDER } from '../engine/core.js';
 import { renderCard } from './card.js';
 import { openInspect, isInspectOpen } from './inspect.js';
-import { enableCardTilt } from './holo.js';
+import { activateDialog, deactivateDialog } from './dialog.js';
 import { STARS, makeStars } from './stars.js';
 
-const revealEl = document.getElementById('reveal');
-const revealGrid = document.getElementById('reveal-grid');
-const revealDone = document.getElementById('reveal-done');
-const revealAgain = document.getElementById('reveal-again');
+const el = document.getElementById('reveal');
+const grid = document.getElementById('reveal-grid');
+const done = document.getElementById('reveal-done');
+const again = document.getElementById('reveal-again');
+const skip = document.getElementById('reveal-skip');
+const progress = document.getElementById('reveal-progress');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const colors = ['#9aa3b2', '#cdd8ea', '#ffcf6b', '#7fe7ff', '#65d1b5', '#ef695d'];
+let onAgain = null, onDismiss = null, size = null;
+let timers = [], cells = [], revealed = 0;
+const resultsByCell = new WeakMap();
+const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
 
-/* THE LOOP, wired by main rather than reached for. The reveal is the moment a
-   player is most likely to want another pull, and a screen whose only exit is
-   "Done" spends that on nothing — but this module has no business knowing what
-   a pull IS, so it takes the action and the size as callbacks from the
-   composition root, exactly as ui/banner.js takes `onPull`.
-
-   Left null until wired, and the button hides itself in that case rather than
-   sitting there dead. */
-let againAction = null;
-let dismissAction = null;
-let againSize = null;
-
-export function initReveal({ onPullAgain = null, packSize = null, onDismiss = null } = {}) {
-  againAction = onPullAgain;
-  dismissAction = onDismiss;
-  againSize = packSize;
-  if (revealAgain) revealAgain.hidden = !onPullAgain;
+export function initReveal({ onPullAgain = null, packSize = null, onDismiss: dismiss = null } = {}) {
+  onAgain = onPullAgain; onDismiss = dismiss; size = packSize;
+  again.hidden = !onAgain;
 }
-
-/* Pointer-tilt on a fine-pointer device (was previously only wired up in the
-   collection grid and the inspector — the reveal screen itself had none, on
-   any platform). Delegated on the persistent grid, like the others. */
-enableCardTilt(revealGrid);
-
-let revealTimers = [];
-
-/* Which pull result a cell is showing, so a click can open that card in the
-   inspector. A WeakMap rather than a dataset id: there is no keyed store to look
-   the result back up in (unlike the collection grid, which has state.collection),
-   and the entries fall away on their own when the grid is cleared. */
-const cellResults = new WeakMap();
-
-const CARD_BACK_HTML =
-  '<div class="back-rings"></div><div class="back-play"></div><div class="back-word">CREATOR GACHA</div>';
-
-/* Per-rarity theatre. rank orders the sequence (rarer flips later, for a
-   crescendo); beam is the pre-flip telegraph time (ms); hold is the pause after
-   this card lands. Sweep, seam glow and stars are gated per rarity downstream. */
-/* Beams keep their escalation — that is the colour spoiler and it is the point.
-   The HOLDS came down (UR 700 -> 320, RUBY 900 -> 400) because they existed to
-   give the ignition/bloom/aura finale room to play, and the finale is gone: what
-   was a pause is now a player waiting at a card that already landed. */
-const FX = {
-  N:    { rank: 0, beam: 0,    hold: 0   },
-  R:    { rank: 1, beam: 190,  hold: 40  },
-  SR:   { rank: 2, beam: 320,  hold: 130 },
-  SSR:  { rank: 3, beam: 480,  hold: 220 },
-  UR:   { rank: 4, beam: 700,  hold: 320 },
-  RUBY: { rank: 5, beam: 850,  hold: 400 },
-};
-
-/* Gap between consecutive commons — the cadence knob, and the one that decides
-   whether an N run reads as a sequence or as a machine-gun. At 115ms it was the
-   latter: the flip animation itself runs far longer than the gap, so five cards
-   were mid-turn at once and no single card had a beat of its own. Widened so a
-   common still lands briskly but finishes most of its turn before the next
-   starts. The rarer tiers are spaced by their own beam + hold on top of this. */
-const BASE_GAP = 200;
-const OPENING_BEAT = 300;  // let the overlay settle before the first flip
-
-/* SWEPT and TOP_TIER went with the layers they gated (2026-08-17) — the
-   specular sweep, and the ignition/bloom/aura finale. Nothing selects a rarity
-   for extra choreography any more; rarity is expressed by the beam, the order
-   and the card itself. */
-
-const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
-
-/* ── EVERY DEVICE GETS THE PLAIN REVEAL (2026-08-17) ───────────────────────
-   Ash: "simplify the card pull animation in both phone and pc. Keep the colour
-   spoiler thing but SIMPLIFY the pull animation."
-
-   So the device split below is GONE, and with it the idea that a desktop should
-   be shown more because it can survive more. The 2026-08-16 pass had cut these
-   layers on phones only, on the theory that the desktop reveal was fine because
-   it did not drop frames. Dropping frames was never the complaint — the reveal
-   was simply doing too much, and a pull you sit through is worse on a fast
-   machine than on a slow one, because there is nothing to blame it on.
-
-   WHAT IS KEPT, and the first of these is the one that was named:
-     - THE COLOUR SPOILER. The pre-flip beam, still escalating by rarity, still
-       the thing that tells you something good is coming before you can see it.
-       That is the whole suspense mechanism and it survives untouched.
-     - The flip, and rarest-last ordering, so a pull still builds.
-     - The seam glow that lights up around a card as it lands.
-     - The twinkling stars (Ash, earlier the same day: "it's cheap and pretty so
-       lets keep it") — they live on the CARD, in the binder and the inspector
-       too, so they are not really part of this choreography at all.
-
-   WHAT IS GONE, on every device: the specular sweep, and the top-tier trio of
-   ignition ring, discharge bloom and breathing aura — that last one shedding
-   fifty motes per card, looping for as long as the overlay stayed open.
-
-   THE HOLDS CAME DOWN AS A CONSEQUENCE, NOT AS A SEPARATE DECISION. UR held for
-   700ms and RUBY for 900 to give the finale room to play. With no finale that
-   is not a pause, it is dead air — the card has already landed and the player is
-   waiting at a finished screen. Beams keep their escalation; the holds are
-   trimmed to what a beat needs.
-
-   The `.sweep` / `.fuse` / `.bloom` / `.aura` / `.mote` rules in styles.css are
-   now inert — nothing builds those elements. Left in place rather than swept out
-   in the same pass, because deleting a few hundred lines of CSS by eye is how a
-   working card frame gets broken; see TASKS.md.
-
-   ── WHY THE STARS STAYED WHEN THE REST WENT ───────────────────────────────
-   Ash, earlier the same day: "the twinkling effects and stars should be in
-   mobile as well... it's cheap and pretty so lets keep it." Both instructions
-   hold together, and the line between them is COST PER CARD, not taste.
-
-   A star field is 18-26 absolutely-positioned dots animating `opacity` and
-   `transform` only — compositor work, no repaint (see `@keyframes twinkle`) —
-   and it lives on the CARD, so it is equally present in the binder and the
-   inspector where there is no choreography at all. The aura was fifty motes
-   PLUS a blurred, masked field that forces rasterisation, per card, for as long
-   as the overlay stayed open, and it existed nowhere but here. Removing the
-   pull's theatre and keeping the card's finish are not in tension. */
-
-/* ── A tick in the hand when a row lands ───────────────────────────────────
-   The scroll snap already announces that a row arrived, but it announces it to
-   the eye only — and on a phone the thumb is the thing doing the work. 10ms is
-   a tick rather than a buzz; anything longer stops reading as a detent and
-   starts reading as a notification.
-
-   This is progressive enhancement in the strict sense: where it is unavailable
-   nothing is lost and nothing is substituted. Three gates, none optional:
-
-   - `navigator.vibrate` does not exist on iOS in any browser, and exists but
-     does nothing on desktop. Optional-called, so the platform decides and we
-     never branch on a user-agent string.
-   - `prefers-reduced-motion: reduce` is honoured. A haptic is unrequested
-     sensory feedback, which is squarely what that setting is about, and this
-     overlay already collapses its entire animation under it — a buzz that
-     survived that would be the one inconsistent thing left.
-   - Chrome requires sticky user activation before it will vibrate at all. Not
-     a constraint here, since the overlay is unreachable without tapping the
-     pack, but it is why this can never fire on a cold page load. */
-const SNAP_TICK_MS = 10;
-
-/* Armed by the user's input, never by ours. `openReveal` resets scrollTop to 0,
-   and a programmatic scroll changes the snap target exactly as a finger does —
-   without this the overlay would tick once on open, which is not what was asked
-   for and would read as a glitch rather than a detent. */
-let snapArmed = false;
-
-function snapTick() {
-  if (!snapArmed || REDUCE_MOTION.matches) return;
-  navigator.vibrate?.(SNAP_TICK_MS);
+function columns() {
+  const cap = innerWidth <= 560 ? 2 : innerWidth <= 899 ? 3 : 5;
+  grid.style.setProperty('--reveal-cols', Math.max(1, Math.min(cells.length, cap)));
 }
-
-/* How many columns this viewport can show a READABLE card in.
-
-   The count is pinned here rather than left to CSS `auto-fit` for the reason it
-   always was — auto-fit would strand a x1's single card in a five-track grid —
-   but the cap is now viewport-aware, because a fixed 5 was only ever right for
-   a desktop. Five columns inside a 700px tablet works out to 107px per card,
-   which is worse than the 138px phone case that started this. The overlay
-   scrolls now, so rows are cheap and width is not: prefer fewer, bigger cards
-   and let the user scroll.
-
-   Kept in step with the breakpoint in styles.css, which sets the per-track cap
-   and the gaps for the same two tiers. */
-function columnCap() {
-  const w = window.innerWidth;
-  if (w <= 560) return 2;     // phones — Ash's rule: two per row
-  if (w <= 899) return 3;     // tablets and small windows
-  return 5;                   // desktop: a x10 reads as two rows of five
+function updateProgress() {
+  // Keep the skip control in the tab order, in place, even after completion.
+  skip.disabled = revealed === cells.length;
+  skip.textContent = skip.disabled ? 'All revealed' : 'Reveal all';
+  progress.textContent = `${revealed} / ${cells.length} revealed`;
 }
-
-function applyColumns(count) {
-  revealGrid.style.setProperty('--reveal-cols', Math.min(count, columnCap()));
-}
-
-export function openReveal(results) {
-  revealTimers.forEach(clearTimeout);
-  revealTimers = [];
-  revealGrid.innerHTML = '';
-  applyColumns(results.length);
-
-  const cells = results.map(result => buildCell(result));
-
-  /* Labelled per open, because the size toggle can change between pulls and a
-     button that promises ×10 while the banner is set to ×1 is a lie the player
-     only finds out about by pressing it. */
-  if (revealAgain && againSize) {
-    const n = againSize();
-    revealAgain.textContent = Number.isFinite(n) && n > 1 ? `Pull again ×${n}` : 'Pull again';
-  }
-
-  snapArmed = false;
-  revealEl.hidden = false;
-  /* A reopened overlay must start at the top. The scroll position survives
-     `hidden`, so without this a second x10 would open halfway down its own
-     results — with the first row, the one the whole sequence builds toward,
-     already scrolled past. */
-  revealEl.scrollTop = 0;
-  revealDone.focus({ preventScroll: true });
-
-  /* Reduced motion: every card is already face-up, so there is no sequence to
-     run. Routed through flip() rather than setting .flipped directly so these
-     cards still pick up the focusability and label it applies — the inspector
-     is reachable here too, since the click/keyboard handlers are delegated on
-     the persistent grid rather than bound per cell in the animated path. */
-  if (REDUCE_MOTION.matches) {
-    cells.forEach(({ cell }) => flip(cell));
-    return;
-  }
-
-  /* Schedule by rarity rank: commons first and fast, rares last and dramatic.
-     Ties keep pull order so a given seed is otherwise stable. */
-  const order = cells
-    .map((c, i) => ({ ...c, i }))
-    .sort((a, b) => FX[a.rarity].rank - FX[b.rarity].rank || a.i - b.i);
-
-  let cursor = OPENING_BEAT;
-  for (const { cell, rarity } of order) {
-    const fx = FX[rarity];
-    if (fx.beam) {
-      const at = cursor;
-      revealTimers.push(setTimeout(() => {
-        /* A card can be turned early by clicking it, and the beam is a separate
-           timer from the flip — so by the time this fires the card may already
-           be face-up. Lighting a telegraph for a card that has landed is not
-           just pointless: the beam animation is `forwards`, and nothing removes
-           `beaming` after the flip, so it would strand a cone of light above the
-           card for as long as the overlay is open. */
-        if (cell.classList.contains('flipped')) return;
-        cell.style.setProperty('--beam-ms', fx.beam + 'ms');
-        cell.classList.add('beaming');
-      }, at));
-    }
-    revealTimers.push(setTimeout(() => flip(cell), cursor + fx.beam));
-    cursor += fx.beam + BASE_GAP + fx.hold;
-  }
-}
-
-/* UR aftermath — a breathing aura behind the card that sheds small motes.
-   The aura sits BEHIND the card, so both it and everything it emits are only
-   ever visible in the margin: the motes can't crowd the stars on the face (the
-   earlier rising-embers version did, which is what made the two dot-fields read
-   as noise) and nothing drifts across the avatar. Motes spawn on the card's
-   perimeter and drift outward along their own angle, so they look shed by the
-   card rather than sprinkled around it. */
-function buildCell(result) {
-  const rarity = result.card.rarity;
-  const cell = document.createElement('div');
-  cell.className = `reveal-cell glow-${rarity}`;
-
-  const beam = document.createElement('div');
-  beam.className = 'beam';
-  cell.appendChild(beam);
-
-  const flipEl = document.createElement('div');
-  flipEl.className = 'flip';
-  const inner = document.createElement('div');
-  inner.className = 'flip-inner';
-  const back = document.createElement('div');
-  back.className = 'face back card-back';
-  back.innerHTML = CARD_BACK_HTML;
-  const front = document.createElement('div');
-  front.className = 'face front';
-  front.appendChild(renderCard(result.card, { isNew: result.isNew }));
-  /* THE ONLY LAYER LEFT ON THE FACE. The sweep, ignition, bloom and aura were
-     removed on 2026-08-17 (see the header) — the star field stays because it is
-     the card's own finish rather than the pull's theatre, and it is on this card
-     in the binder and the inspector too. Built rather than hidden in CSS, on the
-     principle the removed layers were judged by: an element that is never made
-     costs no DOM, no style resolution and no compositor layer. */
-  if (STARS[rarity]) front.appendChild(makeStars(rarity));
-  inner.append(back, front);
-  flipEl.appendChild(inner);
-  cell.appendChild(flipEl);
-
-  cellResults.set(cell, result);
-  revealGrid.appendChild(cell);
-  return { cell, rarity };
-}
-
-/* Turn one card. The sweep, seam glow and stars all live in the front face /
-   CSS on .flipped; here we only flip. The guard makes a later scheduled flip
-   (after an early click) a no-op.
-
-   The turn is also what makes a cell an inspectable thing, so the button
-   semantics are granted here rather than at build time: face-down, the card has
-   no identity to announce and naming it would hand a screen-reader user the
-   rarity the flip exists to withhold. */
-function flip(cell) {
+function flip(cell, animate = true) {
   if (cell.classList.contains('flipped')) return;
   cell.classList.remove('beaming');
   cell.classList.add('flipped');
-
-  const title = cellResults.get(cell)?.card.channel.title;
-  if (!title) return;
-  cell.tabIndex = 0;
-  cell.setAttribute('role', 'button');
-  cell.setAttribute('aria-label', `View ${title} up close`);
-}
-
-/* A click means one of two things depending on where the card is in its turn,
-   and both are wanted: face-down it skips the wait, face-up it opens the card
-   large. Delegated on the persistent grid — like the collection's — so it
-   survives the innerHTML wipe at the top of openReveal and covers the
-   reduced-motion path without a second binding. */
-function inspectFromEvent(e) {
-  const cell = e.target.closest?.('.reveal-cell');
-  if (!cell || !revealGrid.contains(cell)) return;
-  if (!cell.classList.contains('flipped')) {
-    flip(cell);
-    return;
+  const result = resultsByCell.get(cell);
+  cell.setAttribute('aria-label', `View ${result.card.channel.title} up close`);
+  cell.querySelector('.front').removeAttribute('aria-hidden');
+  if (animate && !reduced.matches) {
+    cell.classList.add('revealing');
+    later(() => cell.classList.remove('revealing'), 240);
   }
-  const result = cellResults.get(cell);
-  if (result) openInspect(result.card, { isNew: result.isNew });
+  revealed++;
+  updateProgress();
 }
-
-revealGrid.addEventListener('click', inspectFromEvent);
-revealGrid.addEventListener('keydown', e => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectFromEvent(e); }
-});
-
-/* Rotating a phone crosses the 560px breakpoint in one gesture, and the overlay
-   is very much open while it happens. The cell count is read back off the grid
-   rather than remembered, so there is no second copy of it to drift. */
-addEventListener('resize', () => {
-  if (!revealEl.hidden) applyColumns(revealGrid.children.length);
-});
-
-/* Anything that could be a scroll the user meant arms the tick. Passive, so
-   none of these can delay the scroll they are listening for. */
-for (const evt of ['touchstart', 'wheel', 'keydown']) {
-  revealEl.addEventListener(evt, () => { snapArmed = true; }, { passive: true });
+function revealAll() {
+  clearTimers();
+  for (const cell of cells) {
+    cell.classList.remove('revealing');
+    flip(cell, false);
+  }
+  if (document.activeElement === skip) done.focus({ preventScroll: true });
 }
-
-/* `scrollsnapchange` is the event this feature is actually asking for: it fires
-   once the scroll has settled on a NEW snap target, so there is no fling to
-   guess the end of and no polling. Chrome has had it since 129, which covers
-   every browser that also has a vibrator worth speaking of.
-
-   Firefox has `scrollend` but not `scrollsnapchange`, so it gets the same answer
-   a beat later by asking which row is parked at the top and comparing. Nothing
-   else needs a fallback: a browser with neither event has no `navigator.vibrate`
-   either, and the whole path costs nothing there. */
-if ('onscrollsnapchange' in revealEl) {
-  revealEl.addEventListener('scrollsnapchange', snapTick);
-} else if ('onscrollend' in revealEl) {
-  let lastSnapped = null;
-  revealEl.addEventListener('scrollend', () => {
-    /* Cells in one row share an offsetTop, and ties resolve to the first, so
-       this identifies a ROW stably rather than flickering between its two
-       cards. `#reveal` is the offsetParent — it is the only positioned ancestor
-       — which is what makes offsetTop directly comparable to its scrollTop. */
-    let best = null, bestGap = Infinity;
-    for (const cell of revealGrid.children) {
-      const gap = Math.abs(cell.offsetTop - revealEl.scrollTop);
-      if (gap < bestGap) { bestGap = gap; best = cell; }
-    }
-    if (best && best !== lastSnapped) { lastSnapped = best; snapTick(); }
+export function openReveal(results) {
+  clearTimers(); revealed = 0;
+  const sorted = [...results].sort((a,b) => RARITY_ORDER.indexOf(a.card.rarity) - RARITY_ORDER.indexOf(b.card.rarity));
+  cells = sorted.map((result, index) => {
+    const cell = document.createElement('div');
+    cell.className = 'reveal-cell';
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', `Reveal card ${index + 1}`);
+    cell.style.setProperty('--beam-color', colors[RARITY_ORDER.indexOf(result.card.rarity)]);
+    cell.innerHTML = '<div class="beam" aria-hidden="true"></div><div class="flip"><div class="flip-inner"><div class="face back card-back" aria-hidden="true"><div class="back-play">CG&#8599;</div><div class="back-word">CREATOR GACHA</div><div class="back-edition">CORE SET / 01</div></div><div class="face front" aria-hidden="true"></div></div></div>';
+    const front = cell.querySelector('.front');
+    front.append(renderCard(result.card, { isNew: result.isNew, eager: index < 5 }));
+    // The configured scattered field belongs to the card finish, not to the
+    // shortened timing sequence. UR and RUBY share the restrained field.
+    if (STARS[result.card.rarity]) front.append(makeStars(result.card.rarity));
+    resultsByCell.set(cell, result);
+    return cell;
+  });
+  grid.replaceChildren(...cells);
+  columns(); updateProgress();
+  const n = size?.() ?? results.length;
+  again.textContent = n > 1 ? `Open another ${n}` : 'Open another card';
+  el.hidden = false; el.scrollTop = 0;
+  activateDialog(el, done);
+  if (reduced.matches) return revealAll();
+  // Fixed cadence bounds a ten-card reveal to 2.1s, even with ten top tiers.
+  // Only cards currently visible animate; offscreen results settle directly.
+  cells.forEach((cell, index) => {
+    later(() => {
+      if (cell.classList.contains('flipped')) return;
+      const rect = cell.getBoundingClientRect();
+      if (document.hidden || rect.top >= innerHeight || rect.bottom <= 0) return flip(cell, false);
+      cell.classList.add('beaming');
+      later(() => flip(cell), 160);
+    }, 100 + index * 180);
   });
 }
-
-function hideReveal() {
-  revealTimers.forEach(clearTimeout);
-  revealTimers = [];
-  revealEl.hidden = true;
+function hide(restore = true) {
+  clearTimers();
+  el.hidden = true;
+  deactivateDialog(el, restore);
+  grid.replaceChildren(); cells = [];
 }
-
-/* DISMISSING THE REVEAL IS NOT THE SAME AS CLOSING IT, and conflating the two
-   is the trap here. "Pull again" also has to take this overlay down — see the
-   note on that handler — so anything hung on "the reveal closed" fires on the
-   one path where it is exactly wrong: the player is about to watch another pack
-   open, and would be scrolled away from it first.
-
-   So the callback is on DISMISSAL — Done, the backdrop, Escape — which is the
-   player saying they are finished looking. `hideReveal` is the mechanical half
-   and is what "Pull again" uses. */
-export function closeReveal() {
-  hideReveal();
-  dismissAction?.();
-}
-
-revealDone.addEventListener('click', closeReveal);
-revealEl.addEventListener('click', e => { if (e.target === revealEl) closeReveal(); });
-
-/* Close FIRST, then pull. The next pull opens the summon overlay and then this
-   same reveal again, so leaving the old one up would stack a fresh sequence
-   behind a screen still showing the previous pull's cards. */
-revealAgain?.addEventListener('click', () => {
-  if (!againAction) return;
-  hideReveal();          // not closeReveal: this is a continuation, not a dismissal
-  againAction();
-});
-
-/* Escape closes the TOP overlay only. Now that the inspector can open from the
-   reveal, both are listening on document, and one Escape would otherwise close
-   the inspector AND drop the reveal behind it in a single press.
-   Registered on the CAPTURE phase deliberately: a capture listener on document
-   always runs before a bubble listener on document, whatever order the modules
-   happened to be imported in. So this asks "is the inspector up?" while the
-   answer is still true, instead of racing inspect.js's own handler to it. */
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || revealEl.hidden) return;
-  if (isInspectOpen()) return; // the inspector is on top; that Escape is its own
+export function closeReveal() { hide(); onDismiss?.(); }
+skip.addEventListener('click', revealAll);
+done.addEventListener('click', closeReveal);
+again.addEventListener('click', () => { if (onAgain) { hide(false); onAgain(); } });
+el.addEventListener('click', event => {
+  if (revealed !== cells.length || cells.length === 0 || isInspectOpen()) return;
+  if (event.target.closest?.('.reveal-cell, button, a, input, select, textarea')) return;
   closeReveal();
+});
+function activate(event) {
+  const cell = event.target.closest?.('.reveal-cell');
+  if (!cell || !grid.contains(cell)) return;
+  if (!cell.classList.contains('flipped')) return flip(cell);
+  const result = resultsByCell.get(cell);
+  openInspect(result.card, { isNew: result.isNew });
+}
+grid.addEventListener('click', activate);
+grid.addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(event); }
+});
+addEventListener('resize', () => { if (!el.hidden) columns(); });
+reduced.addEventListener('change', () => { if (reduced.matches && !el.hidden) revealAll(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && !el.hidden) revealAll(); });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !el.hidden && !isInspectOpen()) { event.preventDefault(); closeReveal(); }
 }, true);

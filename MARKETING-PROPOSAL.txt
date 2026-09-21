@@ -1,0 +1,252 @@
+CREATOR GACHA — MARKETING PROPOSAL
+Working document. Not shipped with the site (build-site.js copies an allowlist).
+Written 2026-08-22 against the live build: Core Set, 22,720 cards, snapshot 2026-08-17.
+Live at https://creator-gacha.pages.dev
+
+
+------------------------------------------------------------------------------
+1. THE ONE LINE
+------------------------------------------------------------------------------
+
+  "Pull collectible cards minted from real YouTube channel stats."
+
+That is the shipped tagline and it should stay the shipped tagline. It does the
+whole job in nine words: what you do (pull), what you get (cards), and the thing
+that makes it not a toy (real stats).
+
+Shorter, for a Reddit title or a tweet:
+
+  "I turned 22,720 YouTubers into gacha cards. Their stats are real."
+
+
+------------------------------------------------------------------------------
+2. WHAT IT IS, IN SIXTY SECONDS
+------------------------------------------------------------------------------
+
+Open a browser. Press a pack. Ten cards fan out with a holo tilt and a rarity
+reveal. Every card is a real YouTube channel, and every number on it is derived
+from that channel's actual data:
+
+  subscribers        ->  rarity band  (N / R / SR / SSR / UR / RUBY)
+  views per video    ->  ATK
+  views per sub      ->  DEF
+  channel age        ->  HP
+  upload cadence     ->  SPD
+  subs won per year  ->  MOM
+
+Then you fight with them. Five-card teams, six classes (Titan, Carry, Bulwark,
+Assassin, Riser, Balanced), and a six-way element wheel drawn from what the
+channel is actually about (Gaming, Tech, Knowledge, Music, Comedy, Lifestyle).
+
+Three ways to start a fight:
+  - Quick battle       vs an AI that rolled its own collection on your odds
+  - Friend code        send a string, they paste it, you both build blind
+  - Find an opponent   random matchmaking against a live stranger
+
+No signup. No download. No API key. No ads. No purchases. The collection saves
+to your own browser and nowhere else.
+
+
+------------------------------------------------------------------------------
+3. THE HOOK — WHY ANYONE WOULD SHARE THIS
+------------------------------------------------------------------------------
+
+The marketing asset is not the game loop. It is THE ARGUMENT.
+
+Because the stats are derived and not invented, the cards make claims people
+want to fight about. A creator with 200M subscribers can have mediocre DEF. A
+small channel with one breakout video is a glass cannon. Somebody's favourite
+rates below somebody else's favourite, and the game can show its working.
+
+That is the shareable moment, and it costs nothing to produce: a screenshot of
+one card with a surprising number on it. Not "look at this game" — "look at what
+this game says about MrBeast."
+
+Three repeatable content shapes fall out of that:
+  a) The chase pull.  A UR/RUBY reveal is a three-second video with a payoff.
+  b) The verdict.     One card, one hot stat, one line of copy.
+  c) The matchup.     Two named creators, one fight, an actual winner.
+
+Secondary hook, for a different room: it is a gacha with NOTHING to buy. That
+sentence is genuinely unusual and it lands hard with people tired of the genre.
+
+
+------------------------------------------------------------------------------
+4. WHO IT IS FOR — FOUR AUDIENCES, FOUR PITCHES
+------------------------------------------------------------------------------
+
+A) YOUTUBE-CULTURE FANS   (the primary audience)
+   Pitch: "Your favourite creator is a trading card, and the stats are real."
+   They already argue about creators. This gives the argument a scoreboard.
+   Surfaces: creator-specific subreddits and Discords, commentary and reaction
+   communities, YouTube-culture Twitter.
+   Caution: post it as a fan-made thing, because it is one. Anything that smells
+   like a brand launch gets removed by mods, and deserves to be.
+
+B) GACHA PLAYERS
+   Pitch: "A gacha with no currency, no pity, no paid pulls and no ads. Pull
+   until you're bored."
+   Surfaces: r/gachagaming and equivalents.
+   The rate curve is a selling point to this crowd and should be stated plainly:
+   N 55% / R 27% / SR 12% / SSR 5% / UR 0.9% / RUBY 0.1%.
+
+C) THE CREATORS THEMSELVES
+   The highest-leverage channel available, and it costs nothing. A creator who
+   finds their own card and posts it reaches the exact audience this game is for,
+   with an endorsement no ad can buy.
+   Pitch: "You're in it. Here's your card."
+   Mechanics: a direct link to a specific card would make this trivial to send.
+   See section 8 — it does not exist yet, and it is the single highest-value
+   missing feature for marketing purposes.
+   Caution: this is also the highest-risk channel. See section 6.
+
+D) DEVELOPERS / PORTFOLIO AUDIENCE   (a different product, same URL)
+   Pitch: "22,720 cards, zero dependencies, no build step, and every balance
+   claim in the repo is a measurement."
+   Surfaces: Hacker News, r/webdev, dev Twitter, LinkedIn.
+   The story here is the PROCESS, not the game: the decision log, the balance
+   tool, the Durable Object migration written up with the bug that forced it.
+   This audience converts to job conversations, not players. Do not blend this
+   pitch with A/B/C — it is a separate post.
+
+
+------------------------------------------------------------------------------
+5. WHAT IS ACTUALLY LIVE   (keep the claims honest)
+------------------------------------------------------------------------------
+
+Live and playable right now:
+  - 22,720 real creator cards across six rarity bands
+  - Pack opening, reveal, persistent collection, search/filter/sort binder
+  - Full 5v5 battle engine: classes, elements, formation, crits
+  - Quick battle vs AI
+  - Cross-device 1v1 by friend code (confirmed working on two real devices)
+  - Random matchmaking vs a stranger
+  - In-arena field manual explaining every mechanic
+
+On the roadmap, and already stated in the site footer:
+  - Tournament runs
+  - Difficulty settings
+  - Collection milestones
+  - Seasonal card sets
+
+Do NOT claim: accounts, saved match history, a ladder, rankings, or a mobile
+app. None exist and none are planned.
+
+
+------------------------------------------------------------------------------
+6. CONSTRAINTS THAT SHAPE THE MARKETING
+------------------------------------------------------------------------------
+
+These are not caveats to bury. They change what a campaign can look like.
+
+NO REVENUE, EVER. There is no ad slot, no purchase, no tip jar and no sponsor
+button, by explicit decision. "Success" cannot be measured in money, and there
+is no budget for paid acquisition. Every channel here has to be organic.
+
+LIKENESS EXPOSURE IS THE REAL RISK, AND PROMOTION RAISES IT. Cards currently
+carry creators' real profile photos. A quiet live site and an actively promoted
+one are different exposure levels, and this is flagged as unresolved in TASKS.md.
+Three honest options, one of which has to be picked BEFORE the first real post:
+   1. Launch on generated emblems (one flag: AVATAR_SOURCE = 'emblem')
+   2. Launch on photos, with the opt-out link and a same-day takedown promise
+   3. Take the legal consult first
+The opt-out already ships in the footer with a 7-day promise, and the emblem
+build is one config line away. That reversibility is the argument for option 2 —
+but it is Ash's call, and it is not a technical one.
+
+PEOPLE ONLY, NEVER INSTITUTIONS. Cards are humans and performer-shaped groups.
+No companies, labels, studios or brands, on purpose. If a post gets traction,
+expect "why isn't [company channel] in it" and answer with the rule — it reads
+as care, not as a gap.
+
+NO CHILDREN. 47 minors were removed from the deck deliberately. Worth having the
+sentence ready; it is the kind of thing that gets asked in public.
+
+CAPACITY. Quick battle costs nothing and scales indefinitely, so the main game is
+immune to a traffic spike. The multiplayer path runs on Cloudflare free-tier
+Durable Objects. The OLD KV backend was measured at roughly 150 cross-device
+matches/day before the write ceiling bit; the CURRENT backend has not been
+re-measured. Do that before any post that could land thousands of people at
+once — the failure mode is lobbies that hang rather than a page that errors, and
+that reads as "broken game" to a first-time visitor.
+
+THE DISCLAIMER IS NON-NEGOTIABLE. "Fan project. Not affiliated with or endorsed
+by YouTube or Google." It is in the footer and it belongs in any post that could
+be mistaken for official.
+
+
+------------------------------------------------------------------------------
+7. WHAT TO MEASURE
+------------------------------------------------------------------------------
+
+Cloudflare Pages already records requests, bandwidth and top paths server-side.
+Nothing needs deploying and no visitor is touched. That answers "did anyone
+come", and it is the only instrumentation this project should have.
+
+Explicitly do NOT switch on Cloudflare Web Analytics or any client-side beacon.
+The footer promises "No accounts, no tracking", and a script phoning home on
+every pageview is exactly the thing that sentence says is not happening. The
+promise is worth more than the funnel data.
+
+So the honest scoreboard is:
+  - unique visitors on the day of a post, and the shape of the tail after it
+  - whether anyone reaches /api/queue (i.e. did strangers actually pair)
+  - replies, screenshots and creator reactions, counted by hand — which is fine
+    at this scale
+
+
+------------------------------------------------------------------------------
+8. THE GAPS THAT WOULD MOST HELP MARKETING
+------------------------------------------------------------------------------
+
+Ranked by leverage per hour of work. None are required to launch.
+
+1. A SHAREABLE CARD LINK. Today you can share the site; you cannot share a card.
+   "Here is your card" is the entire creator-outreach play in 4C, and it
+   currently requires a screenshot. A URL that opens straight to one card — with
+   matching og: tags so it unfurls AS that card in Discord and Twitter — turns
+   every card in the deck into a distribution surface.
+
+2. og.png IS STILL A MANUAL STEP. The og: and twitter: tags are in place and
+   point at /og.png. Confirm the deployed image actually resolves before posting
+   anywhere: a scraper that fetches a 404 caches the failure, so the first bad
+   share poisons the link for everyone who sees it afterwards.
+
+3. A TEN-SECOND CAPTURE OF A UR PULL. The reveal is the best thing in the product
+   and there is currently no video of it. One screen recording is reusable across
+   every surface in section 4.
+
+4. A "FIND YOUR CARD" SEARCH ON THE FRONT PAGE. The binder searches what you own.
+   A visitor's first question is "is X in it?", and right now the only answer is
+   "pull and find out" — the wrong answer for a stranger who has not decided to
+   care yet.
+
+
+------------------------------------------------------------------------------
+9. SUGGESTED SEQUENCE
+------------------------------------------------------------------------------
+
+Phase 0 — Decide the avatar question (section 6). Everything else waits on it.
+Phase 1 — Verify og.png resolves on the live domain. Capture the UR pull video.
+Phase 2 — One dev-audience post (HN / r/webdev). Lowest risk, most forgiving
+          crowd, and it stress-tests the site before the players arrive.
+Phase 3 — One gacha-audience post, leading with "no monetization, here are the
+          real rates".
+Phase 4 — Creator outreach, one at a time, small channels first. Only after a
+          shareable card link exists — without it, this phase is asking busy
+          people to go hunting.
+
+Do not do all four in a week. Each one tells you something the next one needs.
+
+
+------------------------------------------------------------------------------
+10. OPEN QUESTIONS
+------------------------------------------------------------------------------
+
+  - Photos, emblems, or lawyer first? Nothing ships publicly until this is
+    answered.
+  - Is the dev-portfolio pitch a goal of this launch, or a separate track with
+    its own timing?
+  - Is a shareable card link worth building before the first post, or is a
+    screenshot good enough for v1?
+  - Public authorship under your own name, or under the project name only?
