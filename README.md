@@ -1,418 +1,137 @@
-# Creator Gacha
+<h1 align="center">Creator / Gacha</h1>
 
-> Pull collectible trading cards minted from real YouTube channel stats.
-> A browser-based gacha game where a channel's numbers *become* the card.
+<p align="center">
+  <strong>Real YouTube creators, collectible cards, and a five-card battle team.</strong><br>
+  Open a pack. Find a favourite. Pull something rare.
+</p>
 
-**▶ Play it: [creator-gacha.pages.dev](https://creator-gacha.pages.dev)** — no signup, no API key,
-20,739 cards.
+<p align="center">
+  <a href="https://creator-gacha.pages.dev/"><strong>Play the live game</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://github.com/ashishbarthwal/creator-gacha-card-game/releases/tag/wp-v2-ui-overhaul">V2 release notes</a>
+  &nbsp;&middot;&nbsp;
+  <a href="WP-V2-UI-OVERHAUL.md">V2 UI work package</a>
+</p>
 
-[![tests](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg)](https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml)
-
-A fan tribute to [Wikigacha](https://en.wikipedia.org/wiki/Wikigacha) (Harusugi, Feb 2026),
-which plays the same trick with Wikipedia article metrics. This one does it with YouTube:
-subscriber count sets a card's rarity, while attack and defense come from how a channel
-performs *against what its own size predicts* — views per video, and views per subscriber.
-
-**This is a portfolio piece, not a business.** The derivation logic is deliberately pure and
-deterministic — it exists partly to be tested in public.
-
-![A x10 pull result — five rarity bands, from N to UR, each in its own tier frame](docs/pull-reveal.png)
-
----
-
-## The core idea
-
-| Wikigacha | Creator Gacha |
-|---|---|
-| Article quality rank → rarity | **Subscriber count → rarity** |
-| Pageviews → ATK | **Views *per video*, against what a channel that size manages → ATK** |
-| Article length → DEF | **Views *per subscriber*, against the same → DEF** |
-
-The right-hand column is measured as a **residual**, not a raw number, and that is the whole
-trick: raw views-per-video is dominated by audience size, so the axis scores the *gap* between
-what a channel does and what a channel of its size normally does. 50 means exactly on trend. A
-200K-subscriber channel whose videos land like a 5M one reads as a genuine Carry; the giant
-coasting on reach does not. (This replaced a second, simpler derivation on 2026-08-09 — see
-**One derivation** below.)
-
-Rarity bands scale with subscribers:
-
-| Band | Subscribers |
-|---|---|
-| **N**    | under 100K |
-| **R**    | 100K – 1M |
-| **SR**   | 1M – 10M |
-| **SSR**  | 10M – 50M |
-| **UR**   | 50M – 100M |
-| **RUBY** | 100M and up |
-
-Rarer cards are weighted to pull less often, and buy a bigger **stat budget** — but not a
-multiplier. Size decides how many points a card gets; the card's own shape decides where they
-go. That split is what lets a well-built smaller card still take a fight off a giant, while a
-substantially more popular creator is still, generally, the stronger card.
+<p align="center">
+  <a href="https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml"><img src="https://github.com/ashishbarthwal/creator-gacha-card-game/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <img src="https://img.shields.io/badge/vanilla-JavaScript-f7df1e?logo=javascript&logoColor=111111" alt="Vanilla JavaScript">
+  <img src="https://img.shields.io/badge/hosting-Cloudflare%20Pages-f38020?logo=cloudflare&logoColor=white" alt="Cloudflare Pages">
+</p>
 
 ---
 
-## Run it
+## Who will you pull next?
 
-It's already running at **[creator-gacha.pages.dev](https://creator-gacha.pages.dev)** —
-the rest of this section is for running it locally.
+The V2 landing screen puts the pull fantasy first: four clickable chase cards, a compact pack
+control, and a collection that becomes personal after a player's first pull. It is designed to
+feel as good on a phone as it does on a desktop, without asking a new player to read a manual.
 
-No build step, no dependencies — plain ES modules under `src/`, served as-is.
+![Creator Gacha V2 landing screen: Ruby MrBeast, UR Cristiano Ronaldo, SSR Rihanna, and SR Austin Evans surround the pack](docs/v2-home.png)
 
-- **`npm run dev`** — the one that runs *everything*, including the two-player match
-  lobby. It is `wrangler pages dev`, so it serves the folder **and** compiles
-  `functions/api/ready/[room].js` with a local KV namespace bound as `READY`, exactly
-  the way Cloudflare Pages does in production. Open the address it prints (default
-  `http://localhost:8788`). Use this for anything involving Challenge / Accept.
-- **`npm run dev:static`** (`npx serve`) — static files only, no API. Fine for pulling,
-  the collection and Quick battle. **A two-player challenge will correctly report that
-  the live lobby is unreachable**, because a static server has no way to run a Pages
-  Function and answers `404` for `/api/ready/…`. That is not a bug in the game; it is
-  the copy-paste fallback doing its job.
-- Any other static server works too, but it must send a JavaScript MIME type for `.js` —
-  the app is ES modules, so `file://` double-click won't work (browsers block module
-  imports over `file://`), and `python -m http.server` only works if your OS maps `.js`
-  to `text/javascript`; some setups (notably Windows) serve it as `text/plain`, which
-  browsers reject for modules. GitHub Pages / Cloudflare Pages serve it correctly, so
-  deployment is unaffected.
-- **There is one deck and no mode picker.** Core Set loads, the pack is the pull button, and
-  that is the whole of the setup: no key, no dropdown, no choice to make before playing. Pull
-  ×1 / ×10, watch the reveal, build a collection, take it to the arena.
+## Six tiers. One collection.
 
-  This was three controls until **2026-08-16**, and losing them is worth stating plainly.
-  **Live mode** (bring your own [YouTube Data API v3](https://developers.google.com/youtube/v3/getting-started)
-  key, pull arbitrary channels) was the app's original premise, went dev-only on 2026-08-03,
-  and is now gone from the page — it asked a player for a Google Cloud key to reach a thinner
-  version of what the front page already does with 20,739 cards and no setup. **The set
-  picker** went with it, because a dropdown holding one entry can only ever be set to what it
-  already is. **In-page Magic Search** went too, since it lived inside the Live controls;
-  `tools/magic-search.js` is the same search from a terminal, which is a better place to spend
-  quota than a browser.
+Subscriber count sets rarity; a card's own performance shapes its battle stats. The result is a
+deck where a giant creator is a genuine chase pull, while each card still has a role in a team.
 
-  The **bundled demo set** — eight fictional channels, loaded from memory — is also gone, and
-  that one had a real cost: it was what made the app pullable with **no network at all**, and
-  nothing replaces it. A cold load with no connection is now an error and a Retry rather than a
-  fictional game. Traded knowingly, on the grounds that pulling invented creators into a
-  permanent collection was never what a visitor came for. Its data lives on as
-  `test/fixtures/demo-set.js`, which is what it had already become.
+| Tier | Audience | Card treatment |
+| :--- | :--- | :--- |
+| **RUBY** | 100M+ subscribers | Red-diamond crystal frame, deep sheen, and a rare pull moment |
+| **UR** | 50M - 100M | Violet frame, dense star field, and roaming edge light |
+| **SSR** | 10M - 50M | Icy blue halo and bright star detail |
+| **SR** | 1M - 10M | Gold frame and warm spark detail |
+| **R** | 100K - 1M | Silver frame |
+| **N** | Under 100K | Clean steel frame |
 
-  The live *adapter* is untouched and still exported from the seam — `tools/add-candidates.js`
-  imports it. It is pipeline code; only the UI stopped offering it.
+<p align="center">
+  <img src="docs/v2-collection.png" alt="Creator Gacha card gallery showing Ruby, UR, SSR, and SR cards" width="100%">
+</p>
 
----
+Each tier has its own visual language, but the actual creator art and card identity stay intact
+wherever the card appears: the first-visit showcase, pull results, collection, and admire view.
 
-## How it's built
+## What players do
 
-Two structural ideas do the heavy lifting:
+1. **Open a pack** - choose one card or ten, then reveal the pull with responsive motion that
+   respects reduced-motion settings.
+2. **Collect creators** - cards persist locally on the player's device. New players see chase
+   cards; returning players see their own strongest pulls.
+3. **Build a five-card team** - sort the collection, make a formation, and battle a matched AI
+   or another player through a shared lobby.
 
-**The data seam.** Fetched `sets` (curated JSON snapshots) and `live` (the YouTube Data API)
-produce an *identical* channel object shape, so nothing downstream can tell them apart. This is
-why tests never need an API key, and why adding the `sets` source needed no changes to the
-gacha, reveal, render, or collection code — it's just another pool behind the seam.
+## The game behind the cards
 
-There were three sources until 2026-08-16, when the bundled demo set was removed. The seam now
-has two and the UI offers one: `live` is reached only by `tools/`, which is the distinction the
-architecture has always drawn — a module's home follows from *what it may touch*, not from
-whether a screen happens to link to it.
+Creator Gacha uses public YouTube channel data. The rules are deliberately deterministic, so the
+same channel always receives the same rarity and base battle identity.
 
-**The pure core.** `rarityFromSubs` and `battleStatsFrom` are pure and deterministic — no I/O,
-no randomness, no DOM. They sit between the data seam and everything stateful, which makes them
-the natural test target. The gacha engine takes an injectable RNG (`rng = Math.random` as a
-default parameter) so pulls can be tested with a fixed seed.
-
-**One derivation.** `core.js` owns the rarity band and nothing else — `toCard` returns
-`{ channel, rarity }` and carries no stats. Every number a player sees, on the collection card
-and in a fight alike, comes from `battleStatsFrom`. It used to be two: the card face printed
-`log10(views) × 120 × rarityMultiplier`, which correlated with subscriber count at 0.897 while
-the battle engine ran at 0.187 — so the game played as a contest of shape and matchup and read
-as "whoever has more subscribers wins". Collapsed to one on 2026-08-09.
-
-Both live in `src/engine/`, because the source tree is organized by *what a module may touch*
-rather than by topic: nothing → `src/engine/` (headless — it would run unchanged in Node),
-the network → `src/data/`, the DOM → `src/ui/`. A new file's home follows from one question.
-
-```
-input (@handle | URL | UC id)
-        │
-   resolve to channelId
-        │
- ┌──────┴────────┐             ← the data seam
- sets            live (YouTube Data API v3)
- (curated JSON)  (tools/ only — no UI offers it)
- └──────┬────────┘
-        │
-  band (PURE)                   ← rarityFromSubs          core.js
-        │
-  gacha engine (weighted RNG, ×1/×10, dupes stack)
-        │
-  collection → card render + reveal
-        │
-  stats (PURE)                  ← battleStatsFrom   battle-stats.js
-        │                         the ONE derivation: card face and fight
-  battle (PURE, seeded)         ← the same channel object, read a second way
-        │
-   ┌────┴────┐
- vs AI    vs a player  ← a pasted code carries teams + seed + pinned clock,
-    ↑                     so both windows replay the identical fight
-    └ the AI rolls its OWN collection — same size as yours, same drop odds —
-      and brings its best five, rather than being fitted to your rating
+```text
+YouTube channel data
+        |
+        +--> subscriber count ------------> rarity tier
+        |
+        +--> views per video / subscriber -> battle stats
+                                                |
+                                                +--> packs, collection, and 5v5 arena
 ```
 
-The battle layer is the data seam's second payoff. A card's five combat stats are derived
-from the *same* channel object the rarity came from — nothing new is fetched, and nothing
-downstream can tell a set channel from a live one. Because that derivation is pure
-and the fight takes its randomness and its clock as parameters, two browsers that share
-nothing at all can be handed one string and resolve the same battle independently.
+Attack and defense do not simply mirror audience size. They are derived from how a channel
+performs against what creators of a similar size normally achieve, so a smaller creator can have
+a distinctive, useful battle profile.
 
-Vanilla JS, ES modules, no framework, no bundler. Fonts: Anton / Space Grotesk / Space Mono.
+## Built to stay simple
 
-### Tests
+- **Vanilla JavaScript and ES modules** - no frontend framework or production bundle.
+- **Static card sets** - curated JSON ships with the site; players need no account or API key.
+- **Cloudflare Pages** - static game delivery, with a small room service for live two-player
+  lobbies.
+- **Local-first collection** - cards are stored in browser storage and reconciled against the
+  current Core Set.
+- **Accessible motion** - touch and desktop share the same card language; reduced motion keeps
+  the hierarchy without forcing animations.
 
-578 Vitest tests pin the pure core — every rarity boundary from both sides, hidden and
-malformed subscriber counts, monotonic stat scaling — the gacha engine under a seeded RNG (so
-the drop-rate distribution is an exact assertion, including that the odds don't move when a
-band is padded with 200 more cards), the card-set adapter's validation, the discovery
-engine, whose query jitter is reproducible under an injected clock and seed, and the candidate
-DB, where two tests carry real weight: that a committed record leaks no channel data even
-through JSON, and that an opted-out creator stays out when a later sourcing run finds them
-again. CI
-runs them on every push (that's the badge above); each run uploads a self-contained HTML
-report as an artifact.
+## Run it locally
 
-Two blocks in there are doing something different from the rest, and are worth naming. The
-**balance block** asserts *design goals* rather than behaviour — that a well-shaped small card
-can out-rate a giant, that no class swallows the deck, that an even match stays even — so a
-tuning change that quietly re-couples power to channel size fails a test instead of being
-noticed months later by a player. And the **battle-code round trip** resolves the same fight
-twice, once from live objects and once from a decoded string, and asserts the two event logs
-are *identical*: if those ever diverge, two players are watching different battles, which is
-the one failure this feature cannot survive.
-
-```
-npm test              # run the suite
-npm run test:report   # also write reports/: JUnit XML + a double-clickable HTML report
+```bash
+npm install
+npm run dev
 ```
 
-Vitest is the repo's only dependency, dev-only — the shipped app has none.
+`npm run dev` starts the Pages development environment. For static UI work only, use
+`npm run dev:static`. The two-player lobby requires the room worker in a second terminal:
 
----
+```bash
+npm run dev:room
+```
 
-## Roadmap to the end goal
+Useful project commands:
 
-The game began as a single working `youtube-gacha.html` prototype and has since been split
-into a tested, modular, deployable project in dependency order (full detail in
-[`PLAN.md`](PLAN.md), design rationale in [`DECISIONS.md`](DECISIONS.md)):
+```bash
+npm test             # 628 automated checks
+npm run build:site   # assemble the deployable site into _site/
+npm run deploy       # hydrate the set, build, deploy, and record the release
+```
 
-- [x] **Prototype** — working single-file build: data seam, pure core, weighted gacha,
-      reveal animation, in-memory collection.
-- [x] **WP0 — Split the monolith.** Broke the single file into a pure core, the gacha
-      engine, `src/data/*` (the seam), `src/ui/*`, `src/state.js`, `src/main.js` (wiring).
-      Zero behavior change; `index.html` is now the entry point. (The core and the pull
-      engine later moved together into `src/engine/`.)
-- [x] **WP1 — Test suite.** Vitest against the pure core: exact rarity boundaries, hidden /
-      malformed subscriber counts, monotonic stat scaling, seeded-RNG gacha distribution.
-      56 tests as delivered, `npm test`, dev-only dependency. (The suite has grown with every
-      WP since; the current total is above.)
-- [x] **WP2 — Footer.** The "not affiliated with YouTube/Google" disclaimer. Originally also
-      carried a passive Buy Me a Coffee tip jar; that was **removed entirely on 2026-08-15**
-      and there is now no donation path of any kind (see DECISIONS.md).
-- [x] **WP3 — Holographic cards.** Pointer-tracked tilt + holo shine gated by rarity, with
-      reduced-motion and touch fallbacks. Grew into a full card redesign: metal-bevel frames
-      on a tier system mapped to the YouTube Creator Awards (Silver/Gold/Diamond/Red Diamond),
-      a click-to-enlarge inspector, and the inline CSS split out to `styles.css`.
-- [x] **WP4 — Card sets.** A sets adapter behind the seam, a `sets/index.json` manifest, and a
-      **Sets** banner mode that pulls from curated static JSON with no API key. Demo mode was
-      folded into a bundled demo set, so the default view paints instantly and works offline.
-      The pull became two-stage (band first, then card), so drop rates follow the weight table
-      instead of whatever shape the roster happens to have. (The demo set and the mode/set
-      pickers were **removed on 2026-08-16** — see *Run it* above. The two-stage pull is
-      unchanged and now also draws the AI's collection.)
-- [x] **WP5 — Magic Search.** Keyword → channel discovery: a pure sourcing core
-      (`engine/discover.js` — query build, uploader harvest, floor, pool tag), the live
-      `search.list` → `channels.list` fetch, a CLI that accumulates into a gitignored draft, and
-      in-page tier buttons.
-- [x] **WP6 — Discovery quality.** Seeded query jitter (both live callers had it disabled), a
-      generated keyword vocab, a subscriber ceiling, and three tier buttons that steer the
-      *search* rather than just filtering it. Bands derive from one constant so a tier can't
-      drift from the pool it sorts into.
-- [x] **WP7a — Creator opt-out.** A real contact route in the footer and a stated policy:
-      removal honored within 7 days, no identity check. Shipped deliberately *before* the first
-      real-creator set, since an opt-out that arrives after one is already too late.
-- [x] **WP7 — Set-build pipeline.** Two committed artifacts and one that never is.
-      `catalog/candidates.json` holds channel IDs, our own tags and the opt-out denylist —
-      never channel data, because anything in git is permanent and could satisfy neither the
-      30-day storage cap nor a promised removal. `build-set.js` hydrates those IDs into a full
-      set, re-runs the region filter on *fresh* data, and writes to a gitignored `sets/built/`.
-      The published record is assembled from a positive allowlist, so a self-declared `country`
-      cannot reach a shipped file by omission. Sets are minted at deploy, on the one machine
-      that can hold an API key without writing to a git history.
-- [x] **WP12 — Pull reveal theatre.** Built out of sequence: the pull is the moment the game is
-      *for*, and it was the weakest thing on screen. Rarity-escalated flip order, a beam
-      telegraph, specular sweep, SR+ twinkling stars, and a three-beat UR finish — all CSS, with
-      a reduced-motion path that stays still but keeps the rarity halo.
-- [x] **WP8 — Production hardening.** Dev affordances gated behind a runtime dev/prod flag
-      (hostname-detected, since there is no build step to compile a constant into), and an
-      avatar-source switch that can swap every real profile picture for a generated emblem
-      without a fork. That switch is what makes shipping real faces a reversible decision
-      rather than a permanent one.
-- [x] **WP9 — The decks + persistence.** A band cap so a chase card stays reachable, pins so a
-      set's headline cards can't be hashed out, seeded printing rotation, a localStorage
-      collection that reconciles against the loaded set, a refresh alarm (warn at 25 days,
-      refuse at 30), and the curation exclude.
-- [x] **WP10 — Deploy.** Live at
-      [creator-gacha.pages.dev](https://creator-gacha.pages.dev) (moved from Netlify
-      2026-08-03 — same direct-upload shape, no credit ceiling). Direct upload of a locally
-      assembled `_site`, never a CI build for the deploy step itself — the set has to be
-      hydrated with a real API key and can never be committed. Four guards run before
-      anything uploads: no drafts, no `country` field, nothing past the 30-day statistics
-      cap, no page linking to a page that didn't ship. Plus a
-      [privacy policy](https://creator-gacha.pages.dev/privacy.html) and
-      [terms](https://creator-gacha.pages.dev/terms.html).
-- [x] ~~**Card → PNG export.**~~ Built, then **scrapped before shipping**. An exported image
-      outlives a removal request, so the feature quietly broke the opt-out promise. Deleted
-      rather than hidden behind a flag.
-- [x] **WP-Arena — battles, and a real 1v1.** The 5v5 engine had been shippable since
-      2026-08-05 with no way to reach it; this is the arena in the app — a team builder over
-      your own cards, front/back ranks, and three ways to fight (a matched AI, a challenge you
-      hand out, a challenge you accept).
+## Project notes
 
-      **Two players share one fight without sharing anything.** A normal window and an
-      incognito one are storage-partitioned by design, so the channel between them is the
-      *player*: a pasted code. What makes that a real 1v1 rather than two simulations is a
-      property the engine already had for an unrelated reason — combat takes its randomness as
-      an injected `rng` and its clock as an injected `now`, both so the balance tests could
-      seed thousands of runs. Same teams, seed and clock ⇒ both windows replay the identical
-      fight, hit for hit. The reply carries *inputs, not a verdict*, so a claimed outcome never
-      has to be trusted.
+- [V2 UI overhaul work package](WP-V2-UI-OVERHAUL.md) - layout decisions, persistence rules,
+  motion rules, and verification notes.
+- [Frontend architecture](FRONTEND-ARCHITECTURE-05-09-2026.md) - UI modules and state flow.
+- [Backend architecture](BACKEND-ARCHITECTURE-05-09-2026.md) - data sourcing, deployment, and
+  room services.
+- [Design decisions](DECISIONS.md) - the durable product and data choices behind the project.
 
-      A small match lobby was added afterwards (the one exception to the guardrail below) so
-      the two sides can see each other arrive and start on the same countdown.
-- [x] **WP-Lobby — the room goes live, and two bugs only real play could find.** The lobby
-      shipped inert (no KV namespace bound); binding it produced a genuine cross-device 1v1 on
-      two machines and two networks, with no account, password or email anywhere in it — the
-      challenge code *is* the credential and consent *is* the access control. Then two failures
-      that no test would have caught. **Readiness was being inferred rather than performed:**
-      committing a team and pressing Ready were one server op, so the defender was marked ready
-      on leaving the builder and the challenger alone could start a fight nobody had agreed to.
-      **And a dropped request was indistinguishable from a missing lobby:** challenging from a
-      phone meant leaving the app to paste the code, mobile froze the tab, the poll died, and
-      the wait loop concluded there was no lobby anywhere — permanently. Now `off` (settled)
-      and `error` (retry) are different answers, and the loops wake on `visibilitychange`
-      instead of waiting out a throttled timer.
-- [x] **WP-Battle Tuning — nobody is zero at anything.** 3.7% of the deck sat at an axis of
-      exactly 0, which became an attack of **1** — roughly 590 real channels, typically the
-      daily grinder whose views-per-video is modest precisely *because* they upload constantly.
-      A residual measured against a trend means below average, not absent, so the axes floor at
-      12; small cards out-rating the median giant went 22.1% → 29.5%. Crit also moved from
-      cadence to **punch**: a critical hit is a video landing far above this channel's normal,
-      not a channel that posts often. The tuning knobs are now exported and printed live by
-      `tools/battle-balance.js`, alongside a per-class table — which immediately showed the
-      next problem, Assassin rating 249 against Carry's 462.
-- [x] **WP-Battle Balance — the game was solved, and not for the obvious reason.** Picking the
-      biggest-subscriber cards was already a *bad* strategy (it lost to a views-per-video team
-      70.8% of the time). The real problem: the combat rating predicts fights accurately, and
-      an accurate predictor is a solved game — "take the five highest-rated" beat everything
-      87–100%, and Auto-pick computes exactly that. Fixed by de-sizing the two axes that had
-      never had it (`devotion` and `cadence` were leaking channel size at 0.350/0.420),
-      repricing stats that were worth wildly different amounts at equal budget (momentum bought
-      a *seventeenth* of what health did), and adding a formation bonus that depends on the
-      shape of the *team* — the one thing a per-card rating cannot see. A channel 10× smaller
-      now out-rates a bigger one 39% of the time.
-- [x] **WP-Rebalance — subscribers become the dominant term, on purpose.** The line above was
-      the design goal until 2026-08-15, when it was **deliberately reversed**: the pull fantasy
-      this game sells is "I pulled a huge creator, that mattered" first and "light tactics decide
-      the close ones" second. `BUDGET_GAIN` 25 → 170 (budget spread 1.12× → ~2.0×), plus a
-      **subscriber power floor** — a famous creator whose shape dumped its budget into weak
-      multiplier stats could rate near an N, so a card is now floored at 0.82 of what an
-      even-shaped card of the same budget would rate, solved by bisection since the rating is
-      not linear in a uniform stat scale. Tactical upsets survive at ~9.6%: rare, real, and
-      earned through element counters and class verbs rather than handed out by raw stats.
-      **A change that restores the old 39% is now the regression, not the guarantee.**
-- [x] **WP-Fairness — a bigger collection stops being omniscient.** A battle picks five cards,
-      but the *search* happens over a whole collection, and collections vary by two orders of
-      magnitude. Once one side's collection exceeds 1.5× the other's, it gets a temporary,
-      rarity-weighted, semi-random slice to build from **for that battle only** — never a change
-      to what anyone owns. Guarantees a UR/SSR/SR slot when owned; RUBY is deliberately
-      unprotected but still favoured. `engine/fairness.js`, 26 tests.
-- [x] **WP-Arena Lobby — both sides face the same clock.** Acceptance now opens a 10-second
-      lobby instead of dropping straight into building, because only one side ever faces the
-      fairness gate and the other was building while they decided (measured: 7 of 30 seconds).
-      The build clock starts on the **second** `enter`, not on `accept`. Then a shared 30-second
-      **blind** build — empty tray on both sides, every time. Four ops now write a room
-      (`accept`/`enter`/`bail`/`lock`), and first accept claims the defender's seat, because a
-      challenge code is a string and two people could hold it.
-- [x] **WP-Quick Battle — the AI has a collection, not a rating.** It used to be a team aimed at
-      the player's exact rating out of the whole set: even by construction, and the wrong kind of
-      even — it was a difficulty setting wearing five cards, and pulling a RUBY changed nothing
-      about the fight you walked into. It now rolls its *own* collection, the same size as
-      yours, on the same drop curve (literally `bandsFrom`/`pullOne`, so its odds cannot drift
-      from yours), and brings its best five with the same Auto Select you have.
-- [x] **WP-Chaos Pass — louder dice, same ladder.** `VARIANCE` 0.25 → 0.35, crit 5% → 9%. What
-      moved is what a player watches: the share of matchups where six damage rolls disagree on
-      the winner went 44.0% → 49.8%. What did *not* move is the size ladder — it came out
-      byte-identical. The pass also caught the balance tool lying: its class-spread figure ran
-      26 team shapes × 12 near-duplicate re-rolls, and the "worst class" changed **identity**
-      between two adjacent settings. At an honest sample the real spread was 14.6 points, never
-      the 4.2 that had been reported.
-- [x] **WP-One Deck — three controls removed.** Live API mode, the bundled demo set and the set
-      picker are gone from the page; Core Set is the deck. See *Run it* above for what each cost.
-- [x] **WP-V2 UI Overhaul — the first pull now sells the game.** A neutral editorial shell,
-      four clickable chase cards for a new player, collection-ranked top cards after the first
-      pull, a compact interactive pack, and a bounded reveal replace the old generic landing
-      treatment. Desktop and touch now share consistent premium star visibility; UR gets a
-      denser field and delayed corner sheen in admire mode, and the phone keeps its scroll
-      position when results close.
-      Architecture, maintenance notes, and verification are recorded in
-      [`WP-V2-UI-OVERHAUL.md`](WP-V2-UI-OVERHAUL.md).
-- [ ] **Next.** SSR-band depth (the binding constraint, in lower walls), a difficulty setting
-      (`matchOpponent` and the `DIFFICULTY` dial are built and tested but unreached by any
-      screen), Bulwark/Riser scarcity at ~5% of the deck each, and procedural creator emblems to
-      dissolve the likeness question entirely. **Not** a Series 2 — series numbering was retired
-      on 2026-08-05 for one always-in-print Core Set, refreshed for freshness rather than
-      rotated for variety.
+## Creator and data policy
 
----
+Creator Gacha is a personal portfolio project, not a commercial product. It is an unofficial fan
+project and is not affiliated with or endorsed by YouTube or Google. Channel data comes from the
+YouTube Data API and belongs to the respective creators and Google.
 
-## Design guardrails
-
-A few decisions are deliberately locked (see [`DECISIONS.md`](DECISIONS.md) for the full log):
-
-- **No monetization, anywhere.** No paid pulls, currency, perks, or ads — and since
-  2026-08-15 no donation link either. The footer's Buy Me a Coffee tip jar was the last place
-  money touched this project and it is gone; there is no tip jar, sponsor button or payment
-  path left to unlock anything with.
-- **Client-side only, with one named exception.** Static hosting, no accounts, no database.
-  Cards ship as static JSON, so a player needs no API key — the key only ever exists on the
-  machine that builds a set. The exception, added 2026-08-08, is a single endpoint
-  (`functions/api/ready/[room].js`) that holds one two-player match for ten minutes so both
-  players can start a battle together. It holds no account, no identity, and no collection
-  beyond the five cards someone chose to field.
-
-  **What "optional" means narrowed on 2026-08-15, knowingly.** The copy-paste fallback for a
-  *challenge* is gone, because it worked by having the challenger commit a team the defender
-  could then scout and answer by hand — irreducibly asymmetric, so it could not survive the
-  shared blind build. What the decision actually protects is intact: **the game still works
-  with no server.** Quick battle needs nothing, the send screen probes for a lobby before
-  offering the button, and the waiting screen names Quick battle as the way on. The promise
-  that narrowed is "every fight has a serverless path", and it narrowed on purpose.
-- **No build step.** Plain ES modules, served as-is. Vitest is a dev-only dependency.
-
----
-
-## Disclaimer
-
-Unofficial fan project. **Not affiliated with or endorsed by YouTube or Google.** Channel data
-is retrieved via the YouTube Data API and belongs to the respective creators and Google. Cards
-use publicly available channel information.
-
-**Creators:** if you'd like your channel left out, email
-[ashish.barthwal.cs@gmail.com](mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20%E2%80%94%20card%20removal%20request).
-Removal is honored within 7 days, with no identity check — the same policy and address as the
-in-app footer. Removals are permanent: an excluded channel is recorded in `catalog/denylist.json`
-and re-enforced on every future sourcing run, so it cannot be silently re-added later.
+Creators can request removal at
+[ashish.barthwal.cs@gmail.com](mailto:ashish.barthwal.cs@gmail.com?subject=Creator%20Gacha%20card%20removal%20request).
+Requests are honoured within seven days, with no identity check, and exclusions are preserved in
+future set builds.
 
 ## License
 
-None — this is a personal portfolio project. The code is public to read and learn from, but it
-is **not** licensed for reuse. © 2026 Ashish Barthwal. All rights reserved.
+This is a personal portfolio project. The code is public to read and learn from, but it is not
+licensed for reuse. Copyright 2026 Ashish Barthwal. All rights reserved.
