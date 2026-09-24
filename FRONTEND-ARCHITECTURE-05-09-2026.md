@@ -1,5 +1,7 @@
 # Creator Gacha Frontend Architecture and UI Boundaries
 
+> Last verified against the V2 interface and current source on 2026-09-24.
+
 ## 1. Frontend Summary
 
 Creator Gacha is a browser-first single-page game built from plain HTML, CSS, and native ES modules. There is no framework, bundler, or runtime application server. The frontend is both the product and most of the game engine:
@@ -53,29 +55,36 @@ The visual system treats the card as the primary product object, not as a generi
 
 ### Palette and atmosphere
 
-The page uses a dark plum stage with YouTube-red action accents and a multi-hue rarity ladder:
+V2 uses a quiet editorial shell around the cards. The page chrome is dark neutral green-black,
+with warm off-white type, thin gray-green borders, and a restrained coral-red action color. The
+rarity palette belongs to the cards themselves rather than washing the entire page in tier color:
 
 | Role | Current direction |
 |---|---|
-| Stage | Deep plum background with layered radial lighting |
-| Primary action | Bright red play-button accent |
-| Text | Warm near-white with muted lavender secondary text |
+| Stage | Flat dark neutral (`#151817`) with slightly raised green-black panels |
+| Primary action | Restrained coral-red play-button accent (`#ee5345`) |
+| Text | Warm off-white with muted gray-green secondary text |
 | N | Graphite gray |
-| R | Blue |
-| SR | Violet |
-| SSR | Gold |
-| UR | Red / ruby |
-| RUBY | Red Diamond treatment |
+| R | Silver |
+| SR | Gold |
+| SSR | Ice blue / diamond |
+| UR | Violet |
+| RUBY | Red Diamond crystal treatment |
 | Battle elements | Independent colors for Gaming, Tech, Knowledge, Music, Comedy, Lifestyle, and Unaligned |
 
-The page typography has separate jobs:
+The typography stacks have separate jobs:
 
-- **Anton**: display headings and the brand voice.
-- **Space Grotesk**: body copy and general UI text.
-- **Space Mono**: stats, labels, and compact numeric information.
-- **Inter**: channel names at small card sizes, where legibility matters more than personality.
+- **Body sans** (`Space Grotesk` with system fallbacks): navigation, headings, copy, and controls.
+- **Mono** (`Space Mono` with monospace fallbacks): stats, labels, timestamps, and compact metadata.
+- **Name sans** (`Inter` with system fallbacks): creator names at small card sizes, where open
+  letterforms matter more than display personality.
+- **Display fallback** (`Anton` / narrow sans): retained for legacy card and arena accents, not
+  used as the dominant V2 page voice.
 
-CSS variables in `styles.css` keep these decisions centralized. The layout uses a constrained `1120px` page width and responsive breakpoints rather than a separate mobile application.
+The original tokens remain at the top of `styles.css` because the card system still consumes
+them. The later `2026 interface shell` section deliberately overrides page chrome without
+rewriting card materials. The shell uses a constrained `1200px` width and responsive breakpoints
+rather than a separate mobile application.
 
 ### Page composition
 
@@ -205,7 +214,7 @@ The main card states are:
 | State | Surface | Meaning |
 |---|---|---|
 | Back | Reveal overlay | A pull result exists but has not been shown |
-| Revealing | Reveal overlay | Rarity-ranked flip and spoiler beam are in progress |
+| Revealing | Reveal overlay | Rarity-ranked card arrival is in progress |
 | Revealed | Reveal, binder, inspector | The channel is visible and can be inspected |
 | New | Binder card | This channel was first acquired during the current session |
 | Stacked | Binder card | `count > 1`, shown as a count badge |
@@ -248,17 +257,21 @@ This keeps the drop curve independent of how many cards happen to be present in 
 `src/ui/reveal.js` turns a completed pull into a controlled sequence:
 
 - cards reveal in rarity order, with rarer cards later;
-- a color-coded pre-flip beam telegraphs rarity before the face appears;
-- the card flips and emits a seam glow as it lands;
+- each face arrives with a short opacity-and-translate transition;
+- the former pre-reveal shine, outline cue, and blurred cone layer are not created;
 - high rarities retain lightweight star effects;
-- the overlay supports card inspection and Pull again;
-- dismissing the finished reveal can return the player to the binder;
-- phones and desktop receive the same simplified reveal;
+- a hidden card can be revealed early, and a revealed card opens the inspector;
+- the overlay supports Reveal all, card inspection, Pull again, and empty-space dismissal after
+  every card is visible;
+- desktop dismissal may nudge the binder into view, while phone dismissal keeps the current
+  scroll position so repeated pulls stay convenient;
 - `prefers-reduced-motion` collapses the choreography to a calm immediate state;
 - reveal layout uses viewport-aware column caps: two columns on phones, three on tablets, five on desktop;
 - scroll snapping and optional short haptic ticks support the mobile reveal without changing the result.
 
-The removed high-cost sweep, aura, and multi-beat finale are not part of the current behavior. The current design spends motion on suspense and material feedback rather than spectacle for its own sake.
+The removed high-cost sweep, aura, multi-beat finale, and pre-reveal cue are not part of current
+behavior. The result is settled and banked before presentation begins; the reveal now spends its
+motion budget on ordering and legibility.
 
 ## 7. Collection and Persistence
 
@@ -288,7 +301,11 @@ Collection view state is intentionally session-only:
 - selected sort;
 - pull sequence and `NEW` markers.
 
-The collection module uses delegated event handlers so the grid can be rebuilt without rebinding every card. Search is debounced, sorting derives stats from the single battle-stat function, and high-rarity star fields are attached near the viewport to avoid thousands of off-screen animated nodes.
+The collection module uses delegated event handlers so the grid can be rebuilt without rebinding
+every card. Search is debounced, sorting derives stats from the single battle-stat function, and
+premium star fields are attached near the viewport to avoid thousands of off-screen animated
+nodes. UR and RUBY share four-point star geometry across desktop and touch; their density and
+tint remain tier-specific.
 
 ## 8. Binder Interaction Model
 
@@ -417,6 +434,7 @@ Responsive behavior is implemented through CSS and small viewport-aware decision
 - The banner and collection panels collapse naturally within the same document.
 - Reveal cards use two columns on phones, three on tablets, and five on desktop.
 - Cards maintain stable dimensions so text, stars, health bars, and badges cannot resize the grid.
+- Touch cards keep the same dark resting face as desktop instead of receiving a permanent holo wash.
 - Interactive controls receive visible `:focus-visible` outlines.
 - Native buttons, inputs, selects, status regions, and dialog-like surfaces are used where appropriate.
 - Collection cards support keyboard activation.
@@ -439,7 +457,8 @@ These are the frontend rules most likely to preserve the identity of the applica
 6. **The UI stages settled results.** Pulls and battles are resolved before their animations play.
 7. **Live coordination is optional.** A backend failure must never make Quick battle unavailable or strand a supported manual flow.
 8. **A promise must have a visible state.** Do not hide an unavailable battle behind a disabled button; explain the requirement in the arena.
-9. **Rarity is expressed through both language and material.** The band badge, award-tier name, color, frame, beam, and stars should agree.
+9. **Rarity is expressed through both language and material.** The band badge, award-tier name,
+   color, frame, stars, and tier finish should agree.
 10. **The frontend must remain honest about persistence.** Collection data is local and deletable; API credentials are not stored by the shipped UI.
 
 ## 14. Reading This Beside the Backend Architecture

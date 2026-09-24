@@ -70,6 +70,15 @@ export function persistCollection() {
   return saveCollection(state.collection);
 }
 
+/* Local presentation helper. It intentionally stays in memory so opening the
+   README capture cannot overwrite a developer's real saved collection. */
+export function previewCollection(cards) {
+  state.collection = new Map((cards ?? []).map(card => [
+    card.channel.id,
+    { card, count: 1 },
+  ]));
+}
+
 export function resetCollection() {
   state.collection = new Map();
   clearCollection();

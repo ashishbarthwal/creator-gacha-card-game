@@ -36,6 +36,17 @@ function detectDev() {
 
 export const IS_DEV = detectDev();
 
+/* A localhost-only presentation mode used to refresh README screenshots. It is
+   exported from the same environment seam as IS_DEV so capture behavior cannot
+   accidentally become available on the deployed hostname. */
+function detectReadmeCapture() {
+  if (typeof location === 'undefined') return false;
+  return DEV_HOSTS.has(location.hostname)
+    && new URLSearchParams(location.search).get('readmeCapture') === '1';
+}
+
+export const IS_README_CAPTURE = detectReadmeCapture();
+
 /* ─────────────────────────────────────────────────────────────────────────────
    AVATAR SOURCE — the launch's reversibility switch.
 

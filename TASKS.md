@@ -388,7 +388,8 @@ already loop generically over `RARITY_ORDER`, so almost no new pull logic was ne
       a 393px phone, below the width the card's own clamp() scale supports — stats under the
       avatar, handles sheared without an ellipsis. Overlay scrolls, 2/3/5 columns by viewport,
       sticky Done, and the card sheds detail under 190px instead of shearing it.
-- [X] **README screenshot** — `docs/pull-reveal.png`, a x10 result showing all five bands
+- [X] **README screenshots** — V2 landing and current collection tray in `docs/v2-home.png`
+      and `docs/v2-collection.png`; the older purple reveal capture was retired.
       (N through UR) in their tier frames. Captured from the bundled demo set, so the shot
       carries no real creator's face or stats — the one screenshot that can be committed.
 

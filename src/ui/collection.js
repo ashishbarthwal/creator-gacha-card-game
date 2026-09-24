@@ -10,7 +10,11 @@ import { renderCard } from './card.js';
 import { enableCardTilt } from './holo.js';
 import { openInspect } from './inspect.js';
 import { makeStars } from './stars.js';
+import { IS_README_CAPTURE } from '../config.js';
 
+/* README capture is deliberately a localhost-only presentation switch. The
+   public binder keeps its full tier effects; the capture has a quieter field so
+   a static image reads as cards rather than a wall of sparkles. */
 const collGrid = document.getElementById('collection-grid');
 const collSummary = document.getElementById('coll-summary');
 const collEmpty = document.getElementById('coll-empty');
@@ -340,7 +344,9 @@ export function renderCollection() {
     /* SR and up. Without an observer (no IntersectionObserver at all) the field
        simply goes on and stays on — the effect is the point, and the bound is
        the optimisation. */
-    const field = starFieldFor(item.card);
+    const field = IS_README_CAPTURE && !['UR', 'RUBY'].includes(item.card.rarity)
+      ? null
+      : starFieldFor(item.card);
     if (field) {
       if (starWatcher) { fieldForCard.set(el, field); starWatcher.observe(el); }
       else el.appendChild(field);

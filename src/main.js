@@ -4,23 +4,24 @@
 import { pull } from './engine/gacha.js';
 import { marketingPull } from './engine/marketing-pull.js';
 import { RARITY_ORDER } from './engine/core.js';
-import { currentPool, addToCollection, persistCollection } from './state.js';
+import { currentPool, addToCollection, persistCollection, previewCollection } from './state.js';
 import { initBanner, packSize } from './ui/banner.js';
 import { initCollection, renderCollection, notePulled, showBinder } from './ui/collection.js';
 import { openReveal, initReveal } from './ui/reveal.js';
 import { playPackOpen } from './ui/packopen.js';
 import { openArena } from './ui/battle.js';
 import { renderHeroShowcase } from './ui/hero-showcase.js';
+import { IS_README_CAPTURE } from './config.js';
 
 let pullBusy = false;
 let collectionDirty = false;
-async function presentPull(results) {
+async function presentPull(results, { persist = true } = {}) {
   pullBusy = true;
   const controls = ['pack-open', 'pull-dev', 'pull-marketing'];
   controls.forEach(id => { document.getElementById(id).disabled = true; });
   document.getElementById('status').textContent = 'Opening your pack...';
   try {
-    persistCollection(); // Bank once, before any animation.
+    if (persist && !IS_README_CAPTURE) persistCollection(); // Capture mode never overwrites a real local binder.
     notePulled(results);
     /* The first-pull showcase is collection state, not animation state. Remove
        it as soon as the banked result exists, before the pack flourish starts. */
@@ -84,20 +85,27 @@ async function doDevPull() {
   await presentPull(results);
 }
 
-/* Marketing-only: a fixed, repeatable ten for screenshots. Same banking order
-   as every other pull — resolved and persisted before the animation — so it is
-   a real pull that happens to be cast rather than drawn. The roster and the
-   reasoning live in engine/marketing-pull.js; the button is dev-gated. */
+/* Development-only: a fixed, repeatable ten for screenshots. It uses the same
+   reveal presentation as a real pull without banking cards or incrementing
+   duplicate counts. The roster lives in engine/marketing-pull.js. */
 async function doMarketingPull() {
   const pool = currentPool();
   if (pullBusy || !pool.length) return;
-  const results = marketingPull(pool).map(addToCollection);
-  await presentPull(results);
+  /* A repeatable presentation pull, not a collection mutation. The ten cards
+     are already seeded into the local README-capture collection; opening the
+     showcase again must not quietly turn all ten into duplicate stacks. */
+  const results = marketingPull(pool).map(card => ({ card, isNew: false }));
+  await presentPull(results, { persist: false });
 }
 
 function renderCollectionSurfaces() {
   renderCollection();
   renderHeroShowcase();
+}
+
+function renderLoadedSet() {
+  if (IS_README_CAPTURE) previewCollection(marketingPull(currentPool()));
+  renderCollectionSurfaces();
 }
 
 initCollection({ onCollectionChange: renderHeroShowcase });
@@ -106,7 +114,7 @@ initBanner({
   onPull: doPull,
   onDevPull: doDevPull,
   onMarketingPull: doMarketingPull,
-  onSetLoaded: renderCollectionSurfaces,
+  onSetLoaded: renderLoadedSet,
 });
 
 /* The reveal's "pull again" runs the SAME doPull the pack runs — summon,

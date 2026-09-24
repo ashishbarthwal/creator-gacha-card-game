@@ -1,5 +1,8 @@
 # Creator Gacha Backend Architecture
 
+> Last verified against the current Pages Functions, Durable Objects, and browser adapters on
+> 2026-09-24. No structural rewrite was required.
+
 ## 1. System Summary
 
 Creator Gacha is a browser-first YouTube creator card game. The deployed application is a static Cloudflare Pages site with vanilla ES modules. Most game behavior runs locally in the browser:

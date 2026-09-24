@@ -1,7 +1,7 @@
-/* marketing-pull — PURE. A fixed, reproducible ten-card pull for screenshots.
+/* marketing-pull — PURE. A fixed, reproducible ten-card showcase for screenshots.
 
    ── WHAT IT IS FOR, AND WHY IT IS NOT A GAME AFFORDANCE ───────────────────
-   A marketing image has one job the real pull cannot be asked to do: put
+   A showcase image has one job the real pull cannot be asked to do: put
    recognizable faces and a legible stat argument in one frame, every time, on
    demand. A weighted x10 draws RUBY at 0.1% and fills the rest with channels
    nobody has heard of, so capturing a good grid means re-rolling until the
@@ -29,15 +29,15 @@
 
 import { RARITY_ORDER, toCount } from './core.js';
 
-/* Ten cards, every band represented, weighted toward the top — which is where
-   the recognizable people are. This is Dev Pull's "one of every rarity" idea
-   with the spare slots spent on fame rather than on the weights.
+/* Ten recognizable cards across the four visually richest bands. The two
+   lower bands remain documented by the rarity table and real weighted pulls;
+   this fixed lineup exists to present the card system in one readable frame.
 
    The shape is NOT the drop curve and is not trying to be. `core.RARITY` holds
    the real rates, the reveal is honest about what it drew, and anything that
    claims to show a typical pull must use `gacha.pull` instead. */
 export const MARKETING_SHAPE = Object.freeze({
-  RUBY: 1, UR: 2, SSR: 3, SR: 1, R: 2, N: 1,
+  RUBY: 2, UR: 2, SSR: 4, SR: 2, R: 0, N: 0,
 });
 
 /* Biggest first. The reveal renders in array order, so this decides the grid:
@@ -60,6 +60,7 @@ export const MARKETING_ROSTER = Object.freeze([
   // succession: if the deck ever loses him, the next present name takes the
   // chase slot rather than the shape falling back to "biggest in band".
   '@mrbeast',
+  '@stokestwins',
   '@pewdiepie',
   '@blackpink',
 
@@ -76,6 +77,7 @@ export const MARKETING_ROSTER = Object.freeze([
   '@markiplier',
   '@mkbhd',
   '@rihanna',
+  '@skrillex',
   '@katyperry',
   '@zachking',
   '@linustechtips',
@@ -83,6 +85,7 @@ export const MARKETING_ROSTER = Object.freeze([
 
   // SR — instantly recognizable at a band where fame starts thinning out.
   '@thebeatles',
+  '@austinevans',
   '@moresidemen',
   '@slipknot',
   '@usher',

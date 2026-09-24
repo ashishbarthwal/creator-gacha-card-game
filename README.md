@@ -59,6 +59,24 @@ wherever the card appears: the first-visit showcase, pull results, collection, a
 3. **Build a five-card team** - sort the collection, make a formation, and battle a matched AI
    or another player through a shared lobby.
 
+## Multiplayer, without accounts
+
+Two players can take their own collections into a 5v5 duel across devices. A short-lived match
+room coordinates the invitation, presence, and ready state; the game does not ask either player
+to create an account or hand over a collection to a central profile.
+
+```mermaid
+flowchart LR
+  A[Player A\nlocal collection] -->|invite / ready| R[Short-lived\nmatch room]
+  B[Player B\nlocal collection] -->|join / ready| R
+  R -->|shared match inputs| E[Deterministic\nbattle engine]
+  E --> RA[Result for Player A]
+  E --> RB[Result for Player B]
+```
+
+The room only coordinates a match. Battle resolution is reproducible from the agreed match
+inputs, which keeps the experience lightweight while making both players see the same fight.
+
 ## The game behind the cards
 
 Creator Gacha uses public YouTube channel data. The rules are deliberately deterministic, so the
@@ -93,11 +111,17 @@ a distinctive, useful battle profile.
 
 ```bash
 npm install
+npm run build:set
 npm run dev
 ```
 
-`npm run dev` starts the Pages development environment. For static UI work only, use
-`npm run dev:static`. The two-player lobby requires the room worker in a second terminal:
+The hydrated Core Set is deliberately absent from Git history because its YouTube statistics are
+time-limited and creator removals must remain effective. Before `npm run build:set`, provide your
+own `YOUTUBE_API_KEY` environment variable or copy `config.local.example.js` to
+`src/config.local.js` and fill the ignored local copy.
+
+`npm run dev` starts the Pages development environment after the set exists. For static UI work
+only, use `npm run dev:static`. The two-player lobby requires the room worker in a second terminal:
 
 ```bash
 npm run dev:room
@@ -107,18 +131,24 @@ Useful project commands:
 
 ```bash
 npm test             # 628 automated checks
+npm run build:set    # hydrate the local Core Set with your YouTube API key
 npm run build:site   # assemble the deployable site into _site/
 npm run deploy       # hydrate the set, build, deploy, and record the release
 ```
 
 ## Project notes
 
+- [Architecture overview](ARCHITECTURE.md) - the fastest route through the browser, engine,
+  persistence, and multiplayer boundaries.
 - [V2 UI overhaul work package](WP-V2-UI-OVERHAUL.md) - layout decisions, persistence rules,
   motion rules, and verification notes.
 - [Frontend architecture](FRONTEND-ARCHITECTURE-05-09-2026.md) - UI modules and state flow.
 - [Backend architecture](BACKEND-ARCHITECTURE-05-09-2026.md) - data sourcing, deployment, and
   room services.
 - [Design decisions](DECISIONS.md) - the durable product and data choices behind the project.
+- [Contributing guide](CONTRIBUTING.md) - local setup, source boundaries, checks, and data rules.
+- [Showcase capture guide](docs/SHOWCASE-CAPTURE.md) - the deterministic local card lineup used
+  for README and release visuals.
 
 ## Creator and data policy
 

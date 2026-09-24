@@ -19,7 +19,8 @@ Creator Gacha V2 replaces the generic purple landing page with a quieter editori
 - Added a subtle UR ultraviolet corner sheen. In admire mode its first pass starts 300 ms after opening, then visits shuffled corners at randomized one-to-two-second intervals. Reduced-motion mode disables it.
 - Kept touch cards on the same dark resting face as desktop instead of applying a static holo wash.
 - Added reusable dialog focus handling, keyboard activation for showcase cards, responsive layouts, and reduced-motion fallbacks.
-- Added repeatable development and marketing pulls plus the supplied marketing screenshots.
+- Added repeatable development and non-banking Showcase 10 presentations plus the supplied
+  project screenshots.
 
 ## Architecture and maintenance
 
