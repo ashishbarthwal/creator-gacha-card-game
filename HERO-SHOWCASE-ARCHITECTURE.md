@@ -15,8 +15,8 @@ The collection is the source of truth. No additional onboarding flag is stored.
 
 | Collection state | Hero state | Content |
 |---|---|---|
-| Empty | Onboarding | MrBeast, Taylor Swift, Rihanna, and Austin Evans when present in the active set |
-| One or more cards | Owned | Separate most-followed and strongest-in-battle rows |
+| Empty | Onboarding | MrBeast, Cristiano Ronaldo, Taylor Swift, Rihanna, and Addison Rae when present in the active set |
+| One or more cards | Owned | Desktop shows separate most-followed and strongest-in-battle rows; phones show a short collection intro and keep the rankings PC-only |
 | Cleared | Onboarding | The current-set showcase returns |
 
 A successful pull updates the hero immediately after the collection is persisted and before the pack-opening animation begins. The showcase therefore disappears at the first completed pull decision, even while the reveal presentation is still running.
@@ -49,16 +49,16 @@ flowchart LR
 The first-visit roster is the ordered `FEATURED_HANDLES` array in `src/engine/showcase.js`:
 
 ```js
-['@mrbeast', '@cristiano', '@rihanna', '@austinevans']
+['@mrbeast', '@cristiano', '@taylorswift', '@rihanna', '@addisonrae']
 ```
 
-The lineup demonstrates the four highest pull tiers in descending order: RUBY, UR, SSR, and SR/Gold. This is based on current set data. A future subscriber-threshold crossing may require an editorial replacement to preserve the four-tier demonstration.
+The five-card desktop lineup demonstrates the four highest pull tiers. Phones use MrBeast, Cristiano, Rihanna, and Addison Rae as a four-card subset, one per tier. A future subscriber-threshold crossing may require an editorial replacement to preserve that spread.
 
 Handles are used because they are readable in review and stable across weekly statistics refreshes. Selection is performed against the loaded set. If a named creator is removed or absent, that slot is skipped; stale creator data is never bundled as a fallback.
 
 The official `@cristiano` channel title includes the `UR` prefix. The hero aliases it to `Cristiano Ronaldo` because the card badge already communicates rarity. The source set object remains unchanged.
 
-To change the lineup, edit the array and run `npm test`. Keep the list at four unless the composition and motion budgets below are deliberately revised.
+To change the lineup, edit the array and update the showcase selection checks. The current composition has room for five desktop cards and four phone cards; review both layouts if the count changes.
 
 ## Owned ranking rules
 
@@ -67,7 +67,7 @@ The owned hero answers two different questions:
 - **Most followed** sorts by subscriber count. Rarity, battle power, and title provide stable tie breaks.
 - **Battle leaders** sorts by `powerOf(battleStatsFrom(channel))`, the same composite rating used by matchmaking. Rarity, subscriber count, and title provide stable tie breaks.
 
-Duplicate count affects neither ranking because another copy does not make the card stronger or the creator larger. Each row renders up to three unique cards. A card may honestly appear in both rows when it leads by both measures.
+Duplicate count affects neither ranking because another copy does not make the card stronger or the creator larger. Each desktop row renders up to five unique cards. The phone hero omits these rankings; the full collection remains available below. A card may honestly appear in both desktop rows when it leads by both measures.
 
 A weekly data refresh can legitimately change either ranking because saved card snapshots are refreshed from the active set before the hero renders.
 
@@ -79,21 +79,21 @@ Owned top cards and first-visit showcase cards are keyboard and pointer accessib
 
 ## Motion and performance budget
 
-- Maximum aspirational cards: four on desktop and phones.
+- Maximum aspirational cards: five on desktop and four on phones.
 - Motion: one slow `transform` animation per wrapper.
 - Aura: one static radial gradient per wrapper, with no blur or filter.
 - No per-frame JavaScript.
 - No hero backdrop filter, particle emitter, or layout animation.
 - Reduced-motion mode disables drift completely.
 - The aspirational DOM is removed as soon as the collection becomes non-empty.
-- Owned mode renders at most six card instances across two bounded rows.
+- Owned mode renders at most ten card instances across two bounded rows.
 
 These limits keep the hero bounded independently of collection size and preserve the optimized pull path.
 
 ## Verification checklist
 
 1. Empty storage shows current-set showcase cards only after the set loads.
-2. The showcase presents MrBeast/RUBY, Taylor Swift/UR, Rihanna/SSR, and Austin Evans/SR while they remain in those set bands.
+2. The showcase presents five current-set examples across the featured tiers; phones show the four-card subset.
 3. Completing the first pull removes all `.hero-float` nodes before reveal dismissal.
 4. Each first-visit showcase card opens the inspector with click, Enter, or Space.
 5. Owned mode shows separate subscriber and battle-power rows and every card opens the inspector.

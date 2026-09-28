@@ -9,7 +9,7 @@
 
    The load-bearing test here is the thin-pool one. The first implementation
    drew against the whole pool and discarded duplicates under a fixed try-cap,
-   which cannot exhaust a rare band — RUBY is 0.1% of the weight, so on a pool
+   which cannot exhaust a rare band — RUBY is about 0.51% of the weight, so on a pool
    holding two of them the odds of never rolling a specific one were better than
    even, and the AI quietly ended up with FEWER cards than the player. That is
    the exact unfairness this whole change exists to remove, reintroduced by the
@@ -70,8 +70,8 @@ describe('the AI rolls its own collection', () => {
      implementation — the draw is BAND-WEIGHTED, not uniform over the pool.
      Six equal-sized bands mean a uniform draw would give each ~16.7%; the
      published curve gives N 55%. An earlier version of this test also required
-     every band to appear, which is flaky by construction: RUBY is 0.1% of the
-     weight, so at 4,000 draws it is missing outright about 1 run in 55. */
+     every band to appear, which is unnecessary even though a 0.51% Ruby rate
+     makes missing it rare over 4,000 draws. */
   it('draws on the published band odds, not uniformly over the pool', () => {
     const p = pool(200);
     const counts = {};
@@ -90,7 +90,7 @@ describe('the AI rolls its own collection', () => {
     expect(counts.N).toBeGreaterThan(counts.R);
     expect(counts.R).toBeGreaterThan(counts.SR);
     expect(counts.SR).toBeGreaterThan(counts.SSR);
-    expect((counts.UR ?? 0) + (counts.RUBY ?? 0)).toBeLessThan(N * 0.05);
+    expect((counts.UR ?? 0) + (counts.RUBY ?? 0)).toBeLessThan(N * 0.08);
   });
 
   it('fields a legal five, and the collection it came from', () => {

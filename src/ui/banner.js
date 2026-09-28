@@ -39,6 +39,7 @@
 import { state, currentPool, setSetsPool } from '../state.js';
 import { gateDevElement } from '../config.js';
 import { loadSet } from '../data/index.js';
+import { bandOdds } from '../engine/gacha.js';
 
 const setMeta = document.getElementById('set-meta');
 const setCount = document.getElementById('set-count');
@@ -48,6 +49,7 @@ const countBtn1 = document.getElementById('pull-1');
 const countBtn10 = document.getElementById('pull-10');
 const pullBtnDev = document.getElementById('pull-dev');
 const pullBtnMarketing = document.getElementById('pull-marketing');
+const oddsRows = document.getElementById('odds-rows');
 
 let statusTimer = null;
 
@@ -97,6 +99,29 @@ function renderPool() {
   packBtn.disabled = pullBtnDev.disabled = pullBtnMarketing.disabled = !ready;
   packBtn.classList.toggle('is-ready', ready);
   renderSetCount(pool);
+  renderOdds(pool);
+}
+
+function renderOdds(pool) {
+  if (!oddsRows) return;
+  oddsRows.replaceChildren();
+  const format = value => `${new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(value * 100)}%`;
+  const tierNames = { RUBY: 'Red Diamond', UR: 'Ruby', SSR: 'Diamond', SR: 'Gold', R: 'Silver', N: 'Graphite' };
+  for (const { rarity, ten } of bandOdds(pool).reverse()) {
+    const row = document.createElement('tr');
+    row.className = `odds-row odds-${rarity}`;
+    const tier = document.createElement('th');
+    tier.scope = 'row';
+    const shortName = document.createElement('span');
+    shortName.textContent = rarity;
+    const fullName = document.createElement('small');
+    fullName.textContent = tierNames[rarity];
+    tier.append(shortName, fullName);
+    const bundle = document.createElement('td');
+    bundle.textContent = format(ten);
+    row.append(tier, bundle);
+    oddsRows.appendChild(row);
+  }
 }
 
 /* Dev-only deck size. Reads the pool that is actually loaded rather than the

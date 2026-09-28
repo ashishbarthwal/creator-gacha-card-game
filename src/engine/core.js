@@ -34,12 +34,12 @@ export const RARITY_ORDER = ['N', 'R', 'SR', 'SSR', 'UR', 'RUBY'];
    engine/gacha.js picks a BAND by these and then a card uniformly inside it,
    so a band's real drop rate does not depend on how many cards it holds. */
 export const RARITY = {
-  N:    { weight: 55  },
+  N:    { weight: 54.58838 },
   R:    { weight: 27  },
   SR:   { weight: 12  },
   SSR:  { weight: 5   },
   UR:   { weight: 0.9 },
-  RUBY: { weight: 0.1 },
+  RUBY: { weight: 0.51162 },
 };
 
 /* The API reports counts as decimal strings and omits them entirely for

@@ -4,7 +4,8 @@
 import { pull } from './engine/gacha.js';
 import { marketingPull } from './engine/marketing-pull.js';
 import { RARITY_ORDER } from './engine/core.js';
-import { currentPool, addToCollection, persistCollection, previewCollection } from './state.js';
+import { state, currentPool, addToCollection, persistCollection, previewCollection } from './state.js';
+import { hasCompletedFirstPull, markFirstPullCompleted } from './storage.js';
 import { initBanner, packSize } from './ui/banner.js';
 import { initCollection, renderCollection, notePulled, showBinder } from './ui/collection.js';
 import { openReveal, initReveal } from './ui/reveal.js';
@@ -15,6 +16,12 @@ import { IS_README_CAPTURE } from './config.js';
 
 let pullBusy = false;
 let collectionDirty = false;
+const ownedOnArrival = state.collection.size > 0;
+let firstPullAwaitingGuide = !ownedOnArrival && !hasCompletedFirstPull();
+let guideOnRevealDismiss = false;
+/* Existing binders predate this marker. Treat their owners as returning players,
+   even if they later clear the collection and start a new one. */
+if (ownedOnArrival && !IS_README_CAPTURE) markFirstPullCompleted();
 async function presentPull(results, { persist = true } = {}) {
   pullBusy = true;
   const controls = ['pack-open', 'pull-dev', 'pull-marketing'];
@@ -22,6 +29,11 @@ async function presentPull(results, { persist = true } = {}) {
   document.getElementById('status').textContent = 'Opening your pack...';
   try {
     if (persist && !IS_README_CAPTURE) persistCollection(); // Capture mode never overwrites a real local binder.
+    if (persist && !IS_README_CAPTURE && firstPullAwaitingGuide) {
+      firstPullAwaitingGuide = false;
+      guideOnRevealDismiss = true;
+      markFirstPullCompleted();
+    }
     notePulled(results);
     /* The first-pull showcase is collection state, not animation state. Remove
        it as soon as the banked result exists, before the pack flourish starts. */
@@ -37,10 +49,12 @@ async function presentPull(results, { persist = true } = {}) {
 }
 function finishPull() {
   if (collectionDirty) { renderCollection(); collectionDirty = false; }
-  /* Keep a phone exactly where the pull began when the results close. Repeated
-     pulls live in the hero, and auto-scrolling to the binder made that loop
-     needlessly costly. Wider screens retain the existing collection nudge. */
-  if (!matchMedia('(max-width: 600px)').matches) showBinder();
+  /* One introduction to the binder, on any screen. Pull again keeps this pending
+     until the player actually dismisses a reveal; all later pulls stay put. */
+  if (guideOnRevealDismiss) {
+    guideOnRevealDismiss = false;
+    showBinder();
+  }
 }
 
 /* THE PULL IS RESOLVED AND BANKED BEFORE THE ANIMATION RUNS, and the ordering
@@ -68,7 +82,7 @@ async function doPull(count) {
    match in pool order, which is fixed for a given set, so every Dev Pull showed
    the identical UR — which reads exactly like a broken pull and cost a real
    round of debugging to rule out. The engine was never involved: a x10 over
-   Series 1 draws UR at 1.01% and hits all twelve UR cards uniformly. Only the
+   Series 1 draws UR at 0.9% and hits all UR cards uniformly. Only the
    sampling here was pinned. */
 function pickRandom(cards) {
   return cards[Math.floor(Math.random() * cards.length)];

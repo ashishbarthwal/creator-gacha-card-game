@@ -35,6 +35,9 @@ const KEY = 'creator-gacha:collection:v1';
    sharing a key would rewrite the whole collection dozens of times during a
    single team-build for no reason. */
 const LINEUP_KEY = 'creator-gacha:lineup:v1';
+/* A presentation milestone, kept even if the binder is cleared: the collection
+   jump is useful only after the player's first real pull. */
+const FIRST_PULL_KEY = 'creator-gacha:first-pull:v1';
 
 /* Access is inside the try as well as use: reading window.localStorage can
    itself throw in a sandboxed frame, so a bare `typeof` check is not enough. */
@@ -78,6 +81,18 @@ export function saveCollection(collection) {
   } catch {
     return false;
   }
+}
+
+export function hasCompletedFirstPull() {
+  const ls = store();
+  if (!ls) return false;
+  try { return ls.getItem(FIRST_PULL_KEY) === '1'; } catch { return false; }
+}
+
+export function markFirstPullCompleted() {
+  const ls = store();
+  if (!ls) return false;
+  try { ls.setItem(FIRST_PULL_KEY, '1'); return true; } catch { return false; }
 }
 
 /* The delete. Not an afterthought: a collection a player cannot remove is one

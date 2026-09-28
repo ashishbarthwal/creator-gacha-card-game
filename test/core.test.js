@@ -145,9 +145,8 @@ describe('RARITY table — internal consistency', () => {
     }
   });
 
-  it('weights fall as rarity climbs', () => {
-    for (let i = 1; i < RARITY_ORDER.length; i++) {
-      expect(RARITY[RARITY_ORDER[i]].weight).toBeLessThan(RARITY[RARITY_ORDER[i - 1]].weight);
-    }
+  it('keeps the drop curve normalized and the Ruby ten-card chance at five percent', () => {
+    expect(RARITY_ORDER.reduce((sum, rarity) => sum + RARITY[rarity].weight, 0)).toBe(100);
+    expect(RARITY.RUBY.weight).toBeCloseTo(0.51162, 5);
   });
 });

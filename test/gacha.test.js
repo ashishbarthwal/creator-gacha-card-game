@@ -8,7 +8,7 @@
    below as an exact sequence equality, not a tolerance. */
 
 import { describe, it, expect } from 'vitest';
-import { pull, pullOne, bandsFrom } from '../src/engine/gacha.js';
+import { pull, pullOne, bandsFrom, bandOdds } from '../src/engine/gacha.js';
 import { RARITY, RARITY_ORDER } from '../src/engine/core.js';
 
 /* mulberry32 — tiny seedable PRNG, deterministic across runs and platforms. */
@@ -81,15 +81,15 @@ describe('pull — weighting favors low rarity (seeded, deterministic)', () => {
   it('over 1000 seeded pulls, frequency follows the weight table strictly', () => {
     const counts = tally(pull(poolOfEachRarity(), 1000, mulberry32(2026)));
 
-    /* Weights are 55/27/12/5/0.9/0.1 — the observed order must match exactly. */
+    /* RUBY is a 5% ten-card chance; its per-card rate stays below UR. */
     expect(counts.N).toBeGreaterThan(counts.R);
     expect(counts.R).toBeGreaterThan(counts.SR);
     expect(counts.SR).toBeGreaterThan(counts.SSR);
     expect(counts.SSR).toBeGreaterThan(counts.UR);
-    expect(counts.UR).toBeGreaterThanOrEqual(counts.RUBY);
+    expect(counts.UR).toBeGreaterThan(counts.RUBY);
 
-    /* And the commonest band dominates: N alone is a majority of all pulls. */
-    expect(counts.N).toBeGreaterThan(500);
+    /* N remains the largest single band after funding RUBY's rate increase. */
+    expect(counts.N).toBeGreaterThan(450);
   });
 
   it('observed rates land on the declared weights, not merely in order', () => {
@@ -171,6 +171,26 @@ describe('bandsFrom — stage-1 grouping', () => {
 
   it('an empty pool yields no bands', () => {
     expect(bandsFrom([])).toEqual([]);
+  });
+});
+
+describe('bandOdds — the public drop table', () => {
+  it('matches weighted single pulls and independent ten-card odds', () => {
+    const odds = bandOdds(poolOfEachRarity());
+    expect(odds.map(row => row.rarity)).toEqual(RARITY_ORDER);
+    expect(odds.reduce((sum, row) => sum + row.one, 0)).toBeCloseTo(1);
+    expect(odds.find(row => row.rarity === 'RUBY').one).toBeCloseTo(.0051162, 6);
+    expect(odds.find(row => row.rarity === 'RUBY').ten).toBeCloseTo(.05, 6);
+    expect(odds.find(row => row.rarity === 'N').ten).toBeCloseTo(1 - (1 - .5458838) ** 10);
+    expect(RARITY_ORDER.reduce((sum, rarity) => sum + RARITY[rarity].weight, 0)).toBe(100);
+  });
+
+  it('renormalizes odds when a set lacks some tiers', () => {
+    const odds = bandOdds([...cardsOf('R', 2), ...cardsOf('SSR', 1)]);
+    expect(odds.map(row => row.rarity)).toEqual(['R', 'SSR']);
+    expect(odds[0].one).toBeCloseTo(27 / 32);
+    expect(odds[1].one).toBeCloseTo(5 / 32);
+    expect(bandOdds([])).toEqual([]);
   });
 });
 

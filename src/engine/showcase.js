@@ -9,8 +9,9 @@ import { battleStatsFrom, powerOf } from './battle-stats.js';
 export const FEATURED_HANDLES = Object.freeze([
   '@mrbeast',
   '@cristiano',
+  '@taylorswift',
   '@rihanna',
-  '@austinevans',
+  '@addisonrae',
 ]);
 
 /* The official channel title is "UR · Cristiano". The tier already appears in
@@ -19,7 +20,7 @@ const FEATURED_TITLES = Object.freeze({
   '@cristiano': 'Cristiano Ronaldo',
 });
 
-export function featuredCards(pool, handles = FEATURED_HANDLES, limit = 4) {
+export function featuredCards(pool, handles = FEATURED_HANDLES, limit = 5) {
   const byHandle = new Map(
     (pool ?? []).map(card => [String(card?.channel?.handle ?? '').toLowerCase(), card]),
   );
@@ -47,7 +48,7 @@ function rankedEntries(collection, now) {
 
 /* The strongest cards use the same composite rating as matchmaking. Duplicate
    count does not make one copy stronger. */
-export function topCollectionByPower(collection, limit = 3, now = Date.now()) {
+export function topCollectionByPower(collection, limit = 5, now = Date.now()) {
   return rankedEntries(collection, now)
     .sort((a, b) =>
       b.power - a.power
@@ -61,7 +62,7 @@ export function topCollectionByPower(collection, limit = 3, now = Date.now()) {
 
 /* Reach is deliberately separate from battle strength. This row answers the
    collector's "biggest name" question without claiming that reach wins fights. */
-export function topCollectionBySubscribers(collection, limit = 3, now = Date.now()) {
+export function topCollectionBySubscribers(collection, limit = 5, now = Date.now()) {
   return rankedEntries(collection, now)
     .sort((a, b) =>
       b.subscribers - a.subscribers

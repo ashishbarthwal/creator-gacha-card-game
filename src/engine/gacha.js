@@ -33,6 +33,18 @@ export function bandsFrom(cards) {
     .filter(band => band.cards.length > 0);
 }
 
+/* The table beside the pack uses the very same available bands as pull(). A
+   ten-card value means at least one hit in ten independent draws, not ten times
+   the single-card percentage and not a guaranteed rarity. */
+export function bandOdds(cards) {
+  const bands = bandsFrom(cards);
+  const total = bands.reduce((sum, band) => sum + band.weight, 0);
+  return bands.map(({ rarity, weight }) => {
+    const one = weight / total;
+    return { rarity, one, ten: 1 - (1 - one) ** 10 };
+  });
+}
+
 function pickBand(bands, rng) {
   const total = bands.reduce((sum, band) => sum + band.weight, 0);
   let roll = rng() * total;

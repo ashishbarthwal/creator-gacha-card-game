@@ -13,8 +13,9 @@
 
    The minimum is DERIVED from the same weight table the pull uses rather than
    being a flat number, because a flat number is wrong at both ends. N carries
-   weight 55 and takes ~5.5 of every 10 draws, so it needs a deep roster to look
-   varied; UR carries 1 and takes ~0.1, so two cards is already plenty. One
+   weight 54.58838 and takes ~5.46 of every 10 draws, so it needs a deep roster
+   to look varied; RUBY carries 0.51162 and takes ~0.05, while UR carries 0.9
+   and takes less than 0.1, so two cards remains the minimum for those bands. One
    constant tuned by hand would either starve the common band or reject a
    perfectly good rare one.
 
@@ -40,7 +41,7 @@ export const BAND_HEADROOM = 2;
 /* How many distinct cards a band needs to survive a x10 without visibly
    repeating. Derived from the band's own weight, normalized over the bands
    actually present — matching gacha.bandsFrom, which drops empty bands and
-   renormalizes, so a set holding only N and R really does draw 55:27 between
+   renormalizes, so a set holding only N and R really does draw 50.1:27 between
    them and the minimums must be computed against that same total. */
 export function minCardsForBand(rarity, presentRarities = RARITY_ORDER, pullSize = PULL_SIZE) {
   const total = presentRarities.reduce((sum, r) => sum + (RARITY[r]?.weight ?? 0), 0);

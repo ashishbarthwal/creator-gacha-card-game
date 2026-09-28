@@ -105,7 +105,7 @@ export const KEYWORD_SEEDS = [
      ones, so a random draw was still ~54% craft and a wildcards run came back
      with a Rubik's-cube channel on 26K subscribers. That was defensible while
      the commons were pure fodder; it stopped being defensible once the commons
-     turned out to be 55% of everything a player ever sees. A common nobody
+     turned out to be 50.1% of everything a player ever sees. A common nobody
      recognizes is not neutral — it is most of the game.
      Still excluded, unchanged and on purpose: news, politics, person-named
      channels, and the India-heavy verticals the region filter would drop

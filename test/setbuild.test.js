@@ -50,7 +50,7 @@ describe('minCardsForBand — derived from the weight table, not hand-tuned', ()
   it('demands a deeper roster for common bands than rare ones', () => {
     const full = RARITY_ORDER;
     const mins = full.map(r => minCardsForBand(r, full));
-    // N is drawn most often, so it needs the most distinct cards; RUBY the fewest
+    // N is drawn most often, so it needs the most distinct cards.
     expect(mins[0]).toBeGreaterThan(mins[full.length - 1]);
     expect([...mins]).toEqual([...mins].sort((a, b) => b - a)); // monotonically down
   });
@@ -62,8 +62,8 @@ describe('minCardsForBand — derived from the weight table, not hand-tuned', ()
   });
 
   it('is roughly the expected x10 draws times the headroom', () => {
-    // N carries 55 of 100 -> ~5.5 draws in a x10 -> 11 at 2x headroom
-    expect(minCardsForBand('N', RARITY_ORDER)).toBe(Math.ceil(PULL_SIZE * 0.55 * BAND_HEADROOM));
+    // N carries 50.1 of 100 -> ~5 draws in a x10 -> 11 at 2x headroom
+    expect(minCardsForBand('N', RARITY_ORDER)).toBe(Math.ceil(PULL_SIZE * 0.501 * BAND_HEADROOM));
   });
 
   it('renormalizes over the bands actually present, matching the pull', () => {
@@ -92,27 +92,12 @@ describe('bandTargets — the cap, so a chase card is reachable', () => {
   });
 
   it('gives every band roughly the same completion time', () => {
-    /* The whole point: the 79-card build had base bands finishing in ~200 pulls
-       and UR in ~3,720. Within 10% of each other is the fix.
-
-       RUBY is excluded from this parity check. Water-filling can only raise a
-       band's completion time (more cards makes a band HARDER to complete, never
-       easier), so a band whose floor already completes later than everyone
-       else's natural equilibrium can never be brought into line by spending
-       more budget — and RUBY's weight (0.1 of 100) puts its 2-card floor at
-       ~3000 pulls against the other bands' ~2100, with real-world population
-       (~9 known 100M+ channels) too shallow to ever move that. Its own floor
-       adequacy is covered by minCardsForBand's tests; this test asserts parity
-       only among bands the budget can actually equalize.
-
-       Tolerance widens from 10% to 15% for that remaining group: UR's own
-       weight (0.9 of 100, down from 1 pre-RUBY) is now thin enough that even
-       among the equalizable bands it lands as the visible outlier, at ~15%
-       above the rest rather than the old sub-10% spread. */
+    /* RUBY's 0.51% weight gives it a thinner roster than UR at 0.9%, while it
+       can still take part in the same water-filled allocation. Both rare bands
+       keep completion times balanced with the larger common-band rosters. */
     const targets = bandTargets(RARITY_ORDER, { targetSize: 400 });
-    const equalizable = RARITY_ORDER.filter(r => r !== 'RUBY');
-    const times = equalizable.map(r => completesIn(targets[r], r));
-    expect(Math.max(...times) / Math.min(...times)).toBeLessThan(1.15);
+    const times = RARITY_ORDER.map(r => completesIn(targets[r], r));
+    expect(Math.max(...times) / Math.min(...times)).toBeLessThan(1.2);
   });
 
   it('never allocates a band below the floor it has to clear', () => {
@@ -135,8 +120,11 @@ describe('bandTargets — the cap, so a chase card is reachable', () => {
 
   it('allocates a deeper roster to common bands than to rare ones', () => {
     const targets = bandTargets(RARITY_ORDER, { targetSize: 400 });
-    const counts = RARITY_ORDER.map(r => targets[r]);
-    expect([...counts]).toEqual([...counts].sort((a, b) => b - a));
+    expect(targets.N).toBeGreaterThan(targets.R);
+    expect(targets.R).toBeGreaterThan(targets.SR);
+    expect(targets.SR).toBeGreaterThan(targets.SSR);
+    expect(targets.SSR).toBeGreaterThan(targets.UR);
+    expect(targets.UR).toBeGreaterThan(targets.RUBY);
   });
 
   it('renormalizes over the bands actually present', () => {

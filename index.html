@@ -32,7 +32,8 @@
 <a class="skip-link" href="#collection">Skip to collection</a>
 <header class="site-head">
   <a class="brand" href="./" aria-label="Creator Gacha home"><span class="play-glyph" aria-hidden="true"></span><span>CREATOR<span class="brand-light"> / GACHA</span></span></a>
-  <nav aria-label="Main navigation"><a href="#collection">Collection <span aria-hidden="true">&#8599;</span></a><span class="local-label">Saved on this device</span></nav>
+  <span class="head-edition" aria-hidden="true">A LITTLE INTERNET COLLECTIBLE<br>ISSUE NO. 001</span>
+  <nav aria-label="Main navigation"><a href="#collection">Collection <span aria-hidden="true">&#8599;</span></a></nav>
 </header>
 <main>
   <section class="panel panel-banner" aria-labelledby="banner-h">
@@ -40,14 +41,22 @@
       <div class="hero-library-copy">
         <p id="hero-kicker" class="eyebrow"><span class="live-dot" aria-hidden="true"></span> <span id="hero-kicker-text">POSSIBLE PULLS</span></p>
         <h1 id="banner-h">Who will you pull next?</h1>
-        <p id="hero-top-copy" class="hero-description">Big names and rare tiers spread across thousands of creators. Collect 'em all!</p>
+        <p id="hero-top-copy" class="hero-description">Real creators. Real numbers. Thousands of cards, full of unexpected favourites.</p>
       </div>
+      <aside id="pull-odds" class="pull-odds" aria-label="Ten-card pull rarity odds">
+        <div class="odds-heading"><span>10-CARD ODDS</span><span>AT LEAST ONE</span></div>
+        <table class="odds-table">
+          <thead><tr><th scope="col">TIER</th><th scope="col">CHANCE</th></tr></thead>
+          <tbody id="odds-rows" class="odds-rows"><tr><td colspan="2">Odds load with the set.</td></tr></tbody>
+        </table>
+        <p class="odds-note">Ten independent draws. No guaranteed tier.</p>
+      </aside>
       <div id="hero-top-cards" class="hero-top-cards" aria-live="polite"></div>
       <div id="hero-top-empty" class="hero-top-empty">
-        <span aria-hidden="true">01</span><span aria-hidden="true">02</span><span aria-hidden="true">03</span><span aria-hidden="true">04</span>
+        <span aria-hidden="true">01</span><span aria-hidden="true">02</span><span aria-hidden="true">03</span><span aria-hidden="true">04</span><span aria-hidden="true">05</span>
       </div>
       <div id="hero-showcase" class="hero-showcase" role="group" aria-label="Featured cards from the current set" hidden></div>
-      <div class="hero-notes"><span id="hero-ranking-note">Four chase tiers.</span><span>Real creators. Real stats.</span></div>
+      <div class="hero-notes"><span id="hero-ranking-note">Example cards you can expect to pull from different tiers</span><span>Real creators. Real stats.</span></div>
     </div>
     <div class="stage">
       <div class="stage-caption"><span>THE CORE SET</span><span>VOL. 01</span></div>
@@ -55,6 +64,7 @@
         <span class="pack-card" aria-hidden="true"></span><span class="pack-card" aria-hidden="true"></span>
         <span class="pack-card" aria-hidden="true"><span class="pack-action"><span class="pack-action-icon"></span></span></span>
       </button>
+      <p class="pack-instruction" aria-hidden="true"><span>↖</span> PRESS THE CARD TO PULL</p>
       <div class="pack-controls">
         <div class="count-toggle" role="group" aria-label="Cards per pull">
           <button id="pull-1" class="count-btn" type="button" aria-pressed="false">1 card</button>
@@ -65,17 +75,19 @@
       <button id="pull-dev" class="btn debug" type="button" disabled>Dev Pull</button>
       <button id="pull-marketing" class="btn debug" type="button" disabled>Showcase 10</button>
       <p id="set-meta" class="stamp"></p><p id="set-count" class="stamp dev-stamp"></p>
+      <p class="data-use-note stage-data-note">Public YouTube Data API stats; current set snapshots are refreshed within 30 days. Noncommercial hobby project. <a href="https://developers.google.com/youtube/terms/developer-policies" target="_blank" rel="noreferrer">API policies</a></p>
     </div>
   </section>
   <div class="how-it-works" aria-label="How to play"><span><b>01</b> Open a pack</span><span><b>02</b> Find your favourites</span><span><b>03</b> Battle with five</span></div>
 
   <section id="collection" class="panel panel-collection" aria-labelledby="coll-h">
     <div class="panel-head">
-      <div><p class="eyebrow">THE KEEPERS</p><h2 id="coll-h">Your collection</h2></div>
+      <div><h2 id="coll-h">Your collection</h2></div>
       <span id="coll-summary" class="hint"></span>
       <button id="battle-open" type="button" class="btn ghost btn-battle">Battle!</button>
       <button id="coll-clear" type="button" class="linkish" hidden>Clear collection</button>
     </div>
+    <p class="collection-intro">Assemble your crew of 5 cards and head into Battle!</p>
 
     <div id="coll-tools" class="coll-tools">
       <div class="tool-search">
@@ -134,6 +146,7 @@
       </p>
     </div>
   </div>
+  <p class="data-use-note footer-data-note">Public YouTube Data API stats; current set snapshots are refreshed within 30 days. Noncommercial hobby project. <a href="https://developers.google.com/youtube/terms/developer-policies" target="_blank" rel="noreferrer">YouTube API policies</a></p>
 </footer>
 
 <div id="reveal" hidden role="dialog" aria-modal="true" aria-label="Pull results">

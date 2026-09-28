@@ -24,8 +24,8 @@ function channel(id, subscriberCount, handle = `@${id}`) {
 }
 
 describe('featuredCards', () => {
-  it('keeps the editorial four-tier showcase in its intended order', () => {
-    expect(FEATURED_HANDLES).toEqual(['@mrbeast', '@cristiano', '@rihanna', '@austinevans']);
+  it('keeps the five featured creators in their intended order', () => {
+    expect(FEATURED_HANDLES).toEqual(['@mrbeast', '@cristiano', '@taylorswift', '@rihanna', '@addisonrae']);
   });
 
   it('uses Cristiano Ronaldo as the readable showcase name without mutating set data', () => {
@@ -42,6 +42,11 @@ describe('featuredCards', () => {
     ];
     expect(featuredCards(pool, ['@mrbeast', '@missing', '@MKBHD']).map(card => card.channel.id))
       .toEqual(['Jimmy', 'Marques']);
+  });
+
+  it('shows five available cards by default', () => {
+    const pool = FEATURED_HANDLES.map((handle, i) => toCard(channel(`Creator ${i}`, 1_000_000 + i, handle)));
+    expect(featuredCards(pool).map(card => card.channel.id)).toHaveLength(5);
   });
 });
 
@@ -81,5 +86,15 @@ describe('owned hero rankings', () => {
     expect(topCollectionByPower(collection, 2, NOW)).toHaveLength(2);
     expect(topCollectionBySubscribers(collection, 2, NOW)).toHaveLength(2);
     expect(collection).toHaveLength(3);
+  });
+
+  it('shows five unique cards in each default ranking', () => {
+    const collection = new Map(Array.from({ length: 6 }, (_, i) => {
+      const card = toCard(channel(`Creator ${i}`, 1_000_000 + i * 100_000));
+      return [card.channel.id, { card, count: i + 1 }];
+    }));
+    expect(topCollectionByPower(collection)).toHaveLength(5);
+    expect(topCollectionBySubscribers(collection)).toHaveLength(5);
+    expect(collection).toHaveLength(6);
   });
 });

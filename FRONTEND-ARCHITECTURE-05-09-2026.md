@@ -1,6 +1,6 @@
 # Creator Gacha Frontend Architecture and UI Boundaries
 
-> Last verified against the V2 interface and current source on 2026-09-24.
+> Last verified against the current interface and source on 2026-09-28.
 
 ## 1. Frontend Summary
 
@@ -55,13 +55,14 @@ The visual system treats the card as the primary product object, not as a generi
 
 ### Palette and atmosphere
 
-V2 uses a quiet editorial shell around the cards. The page chrome is dark neutral green-black,
-with warm off-white type, thin gray-green borders, and a restrained coral-red action color. The
-rarity palette belongs to the cards themselves rather than washing the entire page in tier color:
+The current shell uses a dark olive surround, deep green gallery, and sand-colored pull stage.
+Warm type and coral actions carry through both first-visit and owned states, independently of the
+visitor's operating-system color preference. The rarity palette belongs to the cards themselves
+rather than washing the entire page in tier color:
 
 | Role | Current direction |
 |---|---|
-| Stage | Flat dark neutral (`#151817`) with slightly raised green-black panels |
+| Stage | Sand pull area beside a deep green gallery on a dark olive page (`#29382f`) |
 | Primary action | Restrained coral-red play-button accent (`#ee5345`) |
 | Text | Warm off-white with muted gray-green secondary text |
 | N | Graphite gray |
@@ -74,24 +75,22 @@ rarity palette belongs to the cards themselves rather than washing the entire pa
 
 The typography stacks have separate jobs:
 
-- **Body sans** (`Space Grotesk` with system fallbacks): navigation, headings, copy, and controls.
+- **Body sans** (`Space Grotesk` with system fallbacks): navigation, copy, and controls.
 - **Mono** (`Space Mono` with monospace fallbacks): stats, labels, timestamps, and compact metadata.
 - **Name sans** (`Inter` with system fallbacks): creator names at small card sizes, where open
   letterforms matter more than display personality.
-- **Display fallback** (`Anton` / narrow sans): retained for legacy card and arena accents, not
-  used as the dominant V2 page voice.
+- **Display** (`Impact` with narrow sans fallbacks): large gallery, binder, and empty-state headings.
 
 The original tokens remain at the top of `styles.css` because the card system still consumes
-them. The later `2026 interface shell` section deliberately overrides page chrome without
-rewriting card materials. The shell uses a constrained `1200px` width and responsive breakpoints
-rather than a separate mobile application.
+them. The later shell overrides page chrome without rewriting card materials. It uses a `1560px`
+maximum width and responsive breakpoints rather than a separate mobile application.
 
 ### Page composition
 
 `index.html` contains three primary regions:
 
 - **Header**: brand mark, title, and concise premise.
-- **Banner / stage**: the pack, x1/x10 choice, load status, and set metadata.
+- **Banner / stage**: the pack, x1/x10 choice, compact ten-card odds beside the hero title, load status, and set metadata.
 - **Collection panel**: binder heading, battle entry, collection controls, card grid, and empty states.
 - **Footer**: legal/disclaimer content and the future roadmap.
 
@@ -101,7 +100,7 @@ The pack is one native button rendered as a three-card stack. Its central play c
 
 The page uses stable HTML IDs as module integration points. UI modules capture their own elements, while `main.js` passes behavior callbacks instead of making the modules reach into each other.
 
-The home hero is collection-aware. An empty collection shows a bounded four-card preview spanning RUBY, UR, SSR, and SR from the active set. After the first banked pull, that layer is removed and the hero shows two owned-card rankings: most followed and strongest in battle. Selection and ranking live in `src/engine/showcase.js`, while `src/ui/hero-showcase.js` owns DOM presentation. See `HERO-SHOWCASE-ARCHITECTURE.md` for the state rules, maintenance path, and motion budget.
+The home hero is collection-aware. An empty collection shows five featured cards on desktop and four on phones, spanning the featured tiers in the active set. After the first banked pull, desktop shows two owned rankings; phones show a compact collection intro while the full collection remains below. Selection and ranking live in `src/engine/showcase.js`, while `src/ui/hero-showcase.js` owns DOM presentation. See `HERO-SHOWCASE-ARCHITECTURE.md` for the state rules, maintenance path, and motion budget.
 
 ## 4. Module Map
 
@@ -252,6 +251,10 @@ There is no fictional fallback pool. A disconnected first load is an explicit er
 
 This keeps the drop curve independent of how many cards happen to be present in each band. x1 and x10 select the number of draws; the pack itself remains the single primary action.
 
+With every rarity band available, RUBY has a 5% chance per draw and a 40.13% chance of appearing at least once in ten independent draws. The other fixed weights sum with it to 100%; N is 50.1%.
+
+The compact odds display beside the hero title reads the active bands through `bandOdds()` in `src/engine/gacha.js`. It shows the probability of at least one card of each rarity in ten independent draws. If a set lacks a rarity, the engine and display both renormalize over the available bands. The same display remains in the hero after a pull.
+
 ### Reveal choreography
 
 `src/ui/reveal.js` turns a completed pull into a controlled sequence:
@@ -288,6 +291,7 @@ state
 
 - collection data is stored under `creator-gacha:collection:v1`;
 - lineup IDs are stored separately under `creator-gacha:lineup:v1`;
+- a separate first-pull marker keeps the one-time binder introduction from repeating, even after the collection is cleared;
 - channel snapshots are persisted, not derived rarity or combat numbers;
 - loading re-derives cards from the stored channel snapshot;
 - a current set refreshes owned cards that remain in print;

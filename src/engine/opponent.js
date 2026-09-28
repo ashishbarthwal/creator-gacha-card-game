@@ -417,9 +417,9 @@ export function rollAiCollection(cards, size, { rng = Math.random } = {}) {
   /* TWO SAMPLERS, AND THE SECOND ONE IS NOT AN OPTIMISATION — IT IS THE ONLY
      REASON THIS TERMINATES AT THE RIGHT COUNT. Rolling against the full pool
      and discarding duplicates is the cheap, obviously-correct-looking way to
-     do this, and it silently cannot finish: RUBY is 0.1% of the weight, so on
-     a pool holding two of them the chance of never drawing a specific one
-     across a thousand rolls is better than even. Under a fixed try-cap that
+     do this, and it silently cannot finish reliably: RUBY is about 0.51% of the
+     weight, so on a pool holding two of them there is still about an 8% chance
+     of never drawing a specific one across a thousand rolls. Under a fixed try-cap that
      hands the AI a collection SMALLER than the player's — the exact unfairness
      this function exists to remove, reintroduced by the sampler.
 

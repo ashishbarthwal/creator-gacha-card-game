@@ -14,6 +14,9 @@ external-docs/
 # Parked research notes — kept locally, out of the repo
 Future/
 
+# Working marketing drafts and source assets — kept local until approved for release
+marketing material/
+
 # Claude Code personal settings (machine-local, not for the repo)
 .claude/settings.local.json
 

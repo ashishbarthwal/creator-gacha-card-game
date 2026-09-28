@@ -3,10 +3,11 @@
    ── WHAT IT IS FOR, AND WHY IT IS NOT A GAME AFFORDANCE ───────────────────
    A showcase image has one job the real pull cannot be asked to do: put
    recognizable faces and a legible stat argument in one frame, every time, on
-   demand. A weighted x10 draws RUBY at 0.1% and fills the rest with channels
-   nobody has heard of, so capturing a good grid means re-rolling until the
-   dice cooperate — and the shot still changes between takes, which makes a
-   set of images that do not look like they came from the same product.
+   demand. A weighted x10 draws RUBY at about 0.51% per card (5% for at least one)
+   and fills the rest with channels nobody has heard of, so capturing a good
+   grid means re-rolling until the dice cooperate — and the shot still changes
+   between takes, which makes a set of images that do not look like they came
+   from the same product.
 
    So this is Dev Pull's sibling and it is gated exactly the same way: it
    ignores the odds ON PURPOSE, and a control that quietly ignores the odds is

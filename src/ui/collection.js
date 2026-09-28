@@ -67,7 +67,7 @@ more.addEventListener('click', () => {
    player what they just pulled, seconds earlier and with the full flip — so a
    collection that also leads with it spends its best row answering a question
    that is already answered. The binder is a trophy case. Recency also decays as
-   a default: N is 55% of pulls, so after a few hundred the newest-first view is
+   a default: N is 50.1% of pulls, so after a few hundred the newest-first view is
    a wall of Graphite. The NEW badges keep this session's pulls findable under
    any sort. */
 const view = { q: '', rarity: null, sort: 'rarity' };
