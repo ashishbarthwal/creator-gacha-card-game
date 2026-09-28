@@ -23,11 +23,13 @@
 
 ## Who will you pull next?
 
-The V2 landing screen puts the pull fantasy first: four clickable chase cards, a compact pack
-control, and a collection that becomes personal after a player's first pull. It is designed to
-feel as good on a phone as it does on a desktop, without asking a new player to read a manual.
+The landing screen pairs a five-card featured lineup on desktop (four cards on phones) with the
+pull pack and a compact view of ten-card tier odds. The deep green and warm sand palette carries
+through the collection and battle screens. On desktop, the hero changes to the player's most
+followed and strongest cards after a pull; on phones, the featured-pull hero stays in place and
+the rankings remain desktop-only.
 
-![Creator Gacha V2 landing screen: Ruby MrBeast, UR Cristiano Ronaldo, SSR Rihanna, and SR Austin Evans surround the pack](docs/v2-home.png)
+![Current desktop landing screen with the green-and-sand palette, five featured creator cards, ten-card odds, and pull pack](docs/v2-home.png)
 
 ## Six tiers. One collection.
 
@@ -44,7 +46,7 @@ deck where a giant creator is a genuine chase pull, while each card still has a 
 | **N** | Under 100K | Clean steel frame |
 
 <p align="center">
-  <img src="docs/v2-collection.png" alt="Creator Gacha card gallery showing Ruby, UR, SSR, and SR cards" width="100%">
+  <img src="docs/v2-collection.png" alt="Current desktop owned-card rankings beside the pull pack, generated from a local showcase collection" width="100%">
 </p>
 
 Each tier has its own visual language, but the actual creator art and card identity stay intact
@@ -54,8 +56,8 @@ wherever the card appears: the first-visit showcase, pull results, collection, a
 
 1. **Open a pack** - choose one card or ten, then reveal the pull with responsive motion that
    respects reduced-motion settings.
-2. **Collect creators** - cards persist locally on the player's device. New players see chase
-   cards; returning players see their own strongest pulls.
+2. **Collect creators** - cards persist locally in the browser. Desktop shows owned-card rankings
+   after a pull; the phone hero keeps the featured lineup, with the full collection below.
 3. **Build a five-card team** - sort the collection, make a formation, and battle a matched AI
    or another player through a shared lobby.
 
@@ -130,7 +132,7 @@ npm run dev:room
 Useful project commands:
 
 ```bash
-npm test             # 628 automated checks
+npm test             # 632 automated tests at the 2026-09-28 verification
 npm run build:set    # hydrate the local Core Set with your YouTube API key
 npm run build:site   # assemble the deployable site into _site/
 npm run deploy       # hydrate the set, build, deploy, and record the release
@@ -149,6 +151,9 @@ npm run deploy       # hydrate the set, build, deploy, and record the release
 - [Contributing guide](CONTRIBUTING.md) - local setup, source boundaries, checks, and data rules.
 - [Showcase capture guide](docs/SHOWCASE-CAPTURE.md) - the deterministic local card lineup used
   for README and release visuals.
+
+`PLAN.md` and the historical work-package entries in `TASKS.md` are project history, not a
+current feature roadmap. Recheck the source and current policy before reviving a parked item.
 
 ## Creator and data policy
 

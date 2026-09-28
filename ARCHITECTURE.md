@@ -79,8 +79,8 @@ Rooms expire, and Quick Battle never needs the backend.
   rendering, reveal behavior, persistence, responsive design, and the arena state machine.
 - [Backend architecture](BACKEND-ARCHITECTURE-05-09-2026.md) covers Pages Functions, Durable
   Objects, room and queue lifecycles, deployment, and privacy boundaries.
-- [Hero showcase architecture](HERO-SHOWCASE-ARCHITECTURE.md) covers first-visit chase cards and
-  returning-player rankings.
+- [Hero showcase architecture](HERO-SHOWCASE-ARCHITECTURE.md) covers desktop owned-card rankings
+  and the phone hero's persistent featured lineup.
 - [V2 UI work package](WP-V2-UI-OVERHAUL.md) records the redesign decisions and verification.
 - [Design decisions](DECISIONS.md) is the long-form decision log.
 

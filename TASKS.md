@@ -1,45 +1,27 @@
-# Work Packages — checklist
+# Project Closeout and Historical Work Packages
 
-Working checklist. **Rationale lives in [DECISIONS.md](DECISIONS.md), history in the git log** —
-this file is only "what is done, what is next". A WP is for **architectural** work: a new seam,
-a new guarantee, a new capability. Recurring work goes under Miscellaneous and is never tracked
-individually.
+> Updated 2026-09-28. The launch-polish pass is complete and live at
+> https://creator-gacha.pages.dev. The project has no active feature queue in this file.
 
-**Now:** LIVE at https://creator-gacha.pages.dev serving **"Core Set", 22,720 cards**
-(snapshot **2026-08-17**), deployed **2026-08-17** at `b4e873a` — the live site and the repo
-match, verified by fetching the deployed `styles.css`, `src/ui/reveal.js` and
-`src/ui/collection.js` and confirming each carries the change it should. Production now holds
-the 2026-08-15 body of work (the arena lobby, the shared blind build phase, the AI collection
-model, the pack-opening summon, the coffee-link removal), the 2026-08-16 run (chaos pass, card
-finish, mobile pull path, shareable links, One Deck), and the 2026-08-17 twinkle pass. The live
-lobby now runs on a Durable Object (`workers/match-room`) and is confirmed running the four-op protocol (`accept`/`enter`/`bail`/`lock`).
-**597 tests pass.**
+## Current verified state
 
-**This was a CODE-ONLY deploy** — `build:site` + `wrangler pages deploy`, deliberately not
-`npm run deploy`. The full script starts with `build-set.js`, which would have rebuilt the deck
-from the **staged, unreviewed** candidate batch described in NEXT item 3 and published ~2,000
-cards nobody has read. Use the code-only path for any change that does not touch the deck; see
-the deck-refresh note in NEXT item 4 for when the full script is the right one.
+- Desktop has five featured cards and collection-derived Most Followed / Battle Leader rankings;
+  phones retain four featured cards and keep the possible-pulls hero after a pull.
+- Ten-card odds are shown beside the hero. RUBY's fixed per-draw weight is 0.51162%, giving a
+  5% chance of at least one RUBY in ten independent draws.
+- The pull, collection, battle, public-data, and creator-removal boundaries are documented in
+  `README.md` and the architecture documents. The retired development roadmap and duel footer
+  notice are removed.
+- Verification on 2026-09-28: `npm test` passed 24 files / 632 tests; `npm run build:site`
+  assembled the production site successfully.
+- Live code is published from the `wp-arena` branch to Cloudflare Pages. Current source, rather
+  than old commit IDs and card totals below, is the deployment reference.
 
-*(The 2026-08-16 deploy was never recorded — `record-deploy.js` did not run after it — so the
-refresh log skips from 2026-08-15 to today. Nothing is wrong with the deck; the receipt just has
-a gap, and it is noted here rather than back-filled with a timestamp nobody measured.)*
-
-**Run it locally with `npm run dev`** (`wrangler pages dev`, default `http://localhost:8788`).
-That is the only command that serves the site AND runs `functions/api/ready/[room].js` against a
-local KV namespace, so it is the only way to exercise a challenge. `npm run dev:static`
-(`npx serve`) is static-only and answers 404 for `/api/ready/…`, which the app now correctly
-reads as "no lobby today".
-
-**⚠ READ CLAUDE.md FIRST for anything touching battle, the arena or the pull screen.** Four
-sections there carry the reasoning and the traps: "Battle balance — the 2026-08-15 rebalance is
-now the settled state", "Collection-size fairness", "The lobby — how a live challenge actually
-runs", and "Quick battle — the AI has a collection, not a rating". They supersede everything
-below this paragraph that mentions the OLD invariant (19% N-above-median-UR) — that was
-**deliberately reversed** on Ash's instruction, not regressed. Do not "fix" it back.
-
-**DONE 2026-08-15, do not redo.** All of it shipped to production on 2026-08-16 and is live.
-What is still outstanding is *watching* it run with two humans — see NEXT item 1.
+The historical work packages, checklists, and parked design questions below are preserved as
+project history. Their dates, open checkboxes, statistics, and deployment identifiers describe
+the state at the time they were written; they are not current commitments. Re-triage an item
+against source, current set policy, and the live deployment before resuming it. `PLAN.md` is also
+explicitly historical. Durable rationale remains in `DECISIONS.md`.
 
 *The 40-item brief:*
 1. **Subscriber count dominates raw power** (items 1-3). `BUDGET_GAIN` 25 -> 170 plus a

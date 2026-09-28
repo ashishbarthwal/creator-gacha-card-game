@@ -2,10 +2,11 @@
 
 ## Purpose
 
-The home hero changes with collection state:
+The desktop home hero changes with collection state; the phone hero keeps its first-visit presentation after a pull:
 
 1. A first-time visitor sees a credible preview of desirable cards in the current set.
-2. A returning player sees useful summaries of their own collection.
+2. A returning desktop player sees useful summaries of their own collection.
+3. A phone player keeps the featured-pull hero and can browse their full collection below it. Phones hide the kicker and issue number and use taller featured cards.
 
 The hero never invents a card and never maintains a second card design. Every visible card is produced by `src/ui/card.js` from current set or saved collection data.
 
@@ -15,11 +16,11 @@ The collection is the source of truth. No additional onboarding flag is stored.
 
 | Collection state | Hero state | Content |
 |---|---|---|
-| Empty | Onboarding | MrBeast, Cristiano Ronaldo, Taylor Swift, Rihanna, and Addison Rae when present in the active set |
-| One or more cards | Owned | Desktop shows separate most-followed and strongest-in-battle rows; phones keep the same featured-pull hero and keep the rankings PC-only |
-| Cleared | Onboarding | The current-set showcase returns |
+| Empty | Onboarding | Five featured cards on desktop and four on phones, selected from the active set |
+| One or more cards | Owned | Desktop shows separate most-followed and strongest-in-battle rows; phones keep the same featured-pull hero and keep rankings desktop-only |
+| Cleared | Onboarding | The current-set showcase returns on both layouts |
 
-A successful pull updates the hero immediately after the collection is persisted and before the pack-opening animation begins. The showcase therefore disappears at the first completed pull decision, even while the reveal presentation is still running.
+A successful pull updates the desktop hero immediately after the collection is persisted and before the pack-opening animation begins. On phones, the featured cards and “Who will you pull next?” copy stay in place after the pull. Collection state still determines the desktop view; the hero does not store a separate onboarding flag.
 
 This feature has no backend dependency and introduces no network request. Featured cards come from the already loaded set, and owned cards come from the existing local collection. It does not change the collection storage schema or add a local-storage key.
 
@@ -38,7 +39,7 @@ flowchart LR
 ```
 
 - `src/engine/showcase.js` is pure. It selects editorial showcase cards and ranks owned cards.
-- `src/ui/hero-showcase.js` renders either hero state and wires every displayed card to the existing inspector.
+- `src/ui/hero-showcase.js` renders responsive hero states and wires every displayed card to the existing inspector.
 - `src/main.js` refreshes the hero after set load and immediately after a pull is banked.
 - `src/ui/collection.js` reports its internally owned clear action through a callback. It does not import the hero.
 - `index.html` supplies stable containers only.
@@ -85,8 +86,8 @@ Owned top cards and first-visit showcase cards are keyboard and pointer accessib
 - No per-frame JavaScript.
 - No hero backdrop filter, particle emitter, or layout animation.
 - Reduced-motion mode disables drift completely.
-- The aspirational DOM is removed as soon as the collection becomes non-empty.
-- Owned mode renders at most ten card instances across two bounded rows.
+- Desktop removes the aspirational DOM as soon as the collection becomes non-empty; phones retain the featured cards.
+- Desktop owned mode renders at most ten card instances across two bounded rows.
 
 These limits keep the hero bounded independently of collection size and preserve the optimized pull path.
 
@@ -94,9 +95,9 @@ These limits keep the hero bounded independently of collection size and preserve
 
 1. Empty storage shows current-set showcase cards only after the set loads.
 2. The showcase presents five current-set examples across the featured tiers; phones show the four-card subset.
-3. Completing the first pull removes all `.hero-float` nodes before reveal dismissal.
+3. Completing the first pull switches desktop to owned rankings before reveal dismissal; phones retain the featured `.hero-float` cards.
 4. Each first-visit showcase card opens the inspector with click, Enter, or Space.
-5. Owned mode shows separate subscriber and battle-power rows and every card opens the inspector.
+5. Desktop owned mode shows separate subscriber and battle-power rows and every card opens the inspector.
 6. Clearing the collection restores onboarding mode.
 7. Phone and desktop layouts have no horizontal overflow.
 8. `prefers-reduced-motion: reduce` leaves showcase cards static.

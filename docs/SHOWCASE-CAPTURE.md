@@ -5,10 +5,12 @@ README assets. It makes visual comparison repeatable without changing public pul
 
 ## Open the capture view
 
-Start a local server, then open:
+Build the static site from the current local set, start its server, then open:
 
 ```text
-http://localhost:4174/?readmeCapture=1
+npm run build:site
+npx serve -l tcp://127.0.0.1:4174 _site
+http://localhost:4174/?readmeCapture=1&dev=0
 ```
 
 The query is honoured only on `localhost`, `127.0.0.1`, or `::1`. It does three presentation-only
@@ -29,5 +31,7 @@ SR card treatments.
 - The mode cannot activate on the deployed hostname.
 - The public game and weighted pull table are unchanged.
 
-When a README image is refreshed, replace `docs/v2-collection.png` with the reviewed capture and
-run the regular tests before committing it.
+Use the root URL for the fresh-visitor landing image and `#collection-grid` for the populated
+desktop collection image. The `dev=0` override keeps local-only pull controls out of the capture.
+The checked-in screenshots are desktop product captures from 2026-09-28; refresh them from this
+route when the shipped layout changes.

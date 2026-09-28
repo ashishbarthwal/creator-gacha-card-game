@@ -6,6 +6,13 @@ plays with Wikipedia article metrics.
 
 This is a portfolio piece and fan tribute. Not a business.
 
+> **Current shipped state (verified 2026-09-28):** the live home uses a green-and-sand visual
+> system, five featured cards on desktop and four on phones, with visible ten-card odds. RUBY's
+> per-draw weight is 0.51162% (5% chance of at least one in ten). Desktop switches to owned-card
+> rankings after a pull; phones keep the featured-pull hero. For current UI and service details,
+> start with `ARCHITECTURE.md` and the frontend/backend architecture documents. The dated notes
+> below preserve past reasoning; recheck any old status or measurement against source.
+
 ## Owner context
 
 Ash — SDET moving into AI engineering. This repo is a portfolio artifact with two goals,
@@ -288,11 +295,10 @@ nothing the player sees. **The only property that has to survive is the drop cur
 odds cannot drift from the player's without the player's drifting too.
 
 **One trap, already sprung once and covered by `test/opponent.test.js`:** drawing against the
-whole pool and discarding duplicates cannot exhaust a rare band. RUBY is 0.1% of the weight, so
-on a pool holding two of them the chance of never rolling a specific one across a thousand draws
-is 0.571 — under a try-cap the AI silently ends up with FEWER cards than the player, which is the
-exact unfairness this exists to remove. A run of duplicates now rebuilds the bands from what is
-left (weighted sampling WITHOUT replacement, not a uniform mop-up that would flatten the tail).
+whole pool and discarding duplicates cannot exhaust a rare band. RUBY's current weight is
+0.51162% (a 5% chance of at least one in ten draws), so any retry bound must be evaluated against
+the current weight and available copies. A run of duplicates rebuilds the bands from what is left
+(weighted sampling WITHOUT replacement, not a uniform mop-up that would flatten the tail).
 
 `matchOpponent`, `matchQuality` and the `DIFFICULTY` dial remain in `opponent.js`, tested and
 unused by the UI — real capability, and the obvious raw material for a difficulty setting.
@@ -594,5 +600,5 @@ input (@handle | URL | UC id)
     `node tools/battle-balance.js` rather than editing figures by hand, or it becomes the
     thing this repo most dislikes, a confident document that disagrees with its own code.
 - Fonts: Anton (display), Space Grotesk (body), Space Mono (stats/numbers).
-- Palette: dark plum stage, YouTube-red accents.
+- Palette: dark olive and deep green, warm sand, and coral accents; the rarity colors stay on cards.
 - Record any new decision that closes off an option in `DECISIONS.md`.

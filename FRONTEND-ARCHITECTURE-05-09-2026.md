@@ -92,7 +92,7 @@ maximum width and responsive breakpoints rather than a separate mobile applicati
 - **Header**: brand mark, title, and concise premise.
 - **Banner / stage**: the pack, x1/x10 choice, compact ten-card odds beside the hero title, load status, and set metadata.
 - **Collection panel**: binder heading, battle entry, collection controls, card grid, and empty states.
-- **Footer**: legal/disclaimer content and the future roadmap.
+- **Footer**: fan-project, privacy, creator-removal, and public-data policy copy.
 
 The banner is visually warmer and more elevated than the binder because it is the first action. The binder is quieter and denser because it is a reading and management surface.
 
@@ -100,7 +100,7 @@ The pack is one native button rendered as a three-card stack. Its central play c
 
 The page uses stable HTML IDs as module integration points. UI modules capture their own elements, while `main.js` passes behavior callbacks instead of making the modules reach into each other.
 
-The home hero is collection-aware on desktop. An empty collection shows five featured cards on desktop and four on phones, spanning the featured tiers in the active set. After a banked pull, desktop shows two owned rankings; phones keep the same featured-pull hero while the full collection remains below. Selection and ranking live in `src/engine/showcase.js`, while `src/ui/hero-showcase.js` owns DOM presentation. See `HERO-SHOWCASE-ARCHITECTURE.md` for the state rules, maintenance path, and motion budget.
+The home hero shows five featured cards on desktop and four on phones. After a banked pull, desktop shows the player's two owned-card rankings; phones keep the same featured-pull hero, with rankings limited to desktop. The phone hero omits its kicker and issue number, gives the odds and supporting copy more breathing room, and uses taller featured cards. The full collection remains below on both layouts. Selection and ranking live in `src/engine/showcase.js`, while `src/ui/hero-showcase.js` owns DOM presentation. See `HERO-SHOWCASE-ARCHITECTURE.md` for the state rules, maintenance path, and motion budget.
 
 ## 4. Module Map
 
@@ -251,7 +251,7 @@ There is no fictional fallback pool. A disconnected first load is an explicit er
 
 This keeps the drop curve independent of how many cards happen to be present in each band. x1 and x10 select the number of draws; the pack itself remains the single primary action.
 
-With every rarity band available, RUBY has a 5% chance per draw and a 40.13% chance of appearing at least once in ten independent draws. The other fixed weights sum with it to 100%; N is 50.1%.
+With every rarity band available, RUBY has a 0.51162% chance per draw and a 5% chance of appearing at least once in ten independent draws. These are the same fixed band weights used by the pull engine; the displayed ten-card odds are cumulative, not per-card rates. The six weights sum to 100%.
 
 The compact odds display beside the hero title reads the active bands through `bandOdds()` in `src/engine/gacha.js`. It shows the probability of at least one card of each rarity in ten independent draws. If a set lacks a rarity, the engine and display both renormalize over the available bands. The same display remains in the hero after a pull.
 

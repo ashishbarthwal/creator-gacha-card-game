@@ -4914,23 +4914,7 @@
     padding-bottom: 38px;
     color: #9fa69e;
   }
-  .soon--foot { border-color: #373d38; color: #aeb5ac; }
-  .soon-tag {
-    border-radius: 3px;
-    border-color: #74633d;
-    background: #2a281f;
-    color: #dec172;
-  }
-  .soon-list li {
-    border-radius: 3px;
-    border-color: #3c443d;
-    background: #1d211f;
-    color: #b8beb7;
-  }
-  .soon-live, .footer-legal, .footer-optout { color: #9fa69e; }
-  .soon-live { display: block; flex-basis: 100%; line-height: 1.6; }
-  .soon-dot { display: inline-block; vertical-align: middle; margin-right: 7px; }
-  .soon-live b { color: #d8dcd5; }
+  .footer-legal, .footer-optout { color: #9fa69e; }
   .footer-docs a, .optout-link {
     color: #f0f0e9;
     text-decoration-color: #ee5345;
@@ -5439,9 +5423,7 @@
     background: var(--ink-dark);
     color: #bec6b7;
   }
-  .soon--foot { border-color: rgba(238,233,217,.25); }
-  .soon-list li { border-color: rgba(238,233,217,.26); border-radius: 0; background: transparent; color: #e3e3d5; }
-  .soon-live, .footer-legal, .footer-optout { color: #bec6b7; }
+  .footer-legal, .footer-optout { color: #bec6b7; }
   .footer-docs a, .optout-link { color: #f4eedf; }
   @media (max-width: 950px) {
     .panel-banner { grid-template-columns: minmax(0, 1fr) minmax(320px, .78fr); }
@@ -5655,7 +5637,6 @@
   .btn-battle:not(:disabled) { border-radius: 6px; }
   .tool-search .field, .tool-sort .field, .filter-chip { border-radius: 5px; }
   #coll-empty { border-radius: 8px; }
-  .soon-list li { border-radius: 4px; }
   @media (min-width: 1200px) {
     .cards-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
   }
@@ -5694,16 +5675,20 @@
   @media (max-width: 600px) {
     .hero-library { min-height: 0; padding: 30px 24px 24px; }
     .hero-library.has-top-cards { min-height: 0; padding: 30px 24px 24px; }
+    .hero-library::before,
+    .hero-library .eyebrow { display: none; }
+    .hero-library h1 { margin: 14px 0 23px; }
+    .hero-library .hero-description { line-height: 1.68; }
     .hero-library.has-top-cards .hero-top-cards,
     .hero-library.has-top-cards .hero-notes { display: none; }
     .hero-library-copy, .hero-library.has-top-cards .hero-library-copy { max-width: 100%; }
-    .pull-odds { position: relative; top: auto; right: auto; width: 100%; margin: 12px 0 0; }
+    .pull-odds { position: relative; top: auto; right: auto; width: 100%; margin: 20px 0 0; }
     .hero-library.has-top-cards .pull-odds { top: auto; }
     .hero-library::after { background: linear-gradient(180deg, transparent 93%, #1c2925 100%); }
-    .hero-showcase { position: relative; inset: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 8px; width: 100%; margin-top: 27px; }
-    .hero-float { position: relative; width: min(100%, 120px); justify-self: center; }
+    .hero-showcase { position: relative; inset: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; width: 100%; margin-top: 29px; }
+    .hero-float { position: relative; width: min(100%, 126px); justify-self: center; }
     .hero-float:nth-child(n) { left: auto; right: auto; top: auto; }
-    .hero-showcase .card { aspect-ratio: 5 / 7.6; }
+    .hero-showcase .card { aspect-ratio: 5 / 8.2; }
     .hero-top-empty { grid-template-columns: repeat(2, 1fr); }
     .hero-top-group { grid-template-columns: 86px minmax(0, 1fr); align-items: start; gap: 10px; }
     .hero-top-group-head { display: block; width: 100%; text-align: left; }
@@ -5725,7 +5710,9 @@
     .stage::after { display: none; }
     .odds-heading { display: flex; font-size: 10px; }
     .odds-heading span:last-child { font-size: 8px; }
+    .odds-table { margin-top: 14px; }
     .odds-table thead th { font-size: 8px; }
+    .odds-row :is(th, td) { height: 27px; }
     .odds-row { font-size: 11px; }
     .odds-row small { font-size: 8px; }
     .odds-note { font-size: 10px; }
