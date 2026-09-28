@@ -136,20 +136,21 @@ phoneLayout.addEventListener('change', renderHeroShowcase);
 export function renderHeroShowcase() {
   if (!hero || !topCards || !showcase) return;
   const hasCards = state.collection.size > 0;
-  hero.classList.toggle('has-top-cards', hasCards);
-  hero.classList.toggle('is-onboarding', !hasCards);
+  // Phones keep the first-visit hero after a pull; only desktop turns it into
+  // the owned-card rankings view.
+  const showOwnedRankings = hasCards && !phoneLayout.matches;
+  hero.classList.toggle('has-top-cards', showOwnedRankings);
+  hero.classList.toggle('is-onboarding', !showOwnedRankings);
 
-  if (hasCards) {
+  if (showOwnedRankings) {
     showcase.hidden = true;
     showcase.replaceChildren();
     featuredById.clear();
     emptySlots.hidden = true;
     kickerText.textContent = 'YOUR COLLECTION';
-    title.textContent = phoneLayout.matches ? 'Your collection' : 'Your top cards';
-    copy.textContent = phoneLayout.matches
-      ? 'Your cards are below. Build a five-card crew and head into Battle.'
-      : 'Your biggest names and boldest fighters, pulled from your own binder.';
-    rankingNote.textContent = phoneLayout.matches ? '' : 'Two ways to lead your collection.';
+    title.textContent = 'Your top cards';
+    copy.textContent = 'Your biggest names and boldest fighters, pulled from your own binder.';
+    rankingNote.textContent = 'Two ways to lead your collection.';
     topCards.replaceChildren();
     if (!phoneLayout.matches) renderOwned();
     return;

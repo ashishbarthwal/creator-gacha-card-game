@@ -100,7 +100,7 @@ The pack is one native button rendered as a three-card stack. Its central play c
 
 The page uses stable HTML IDs as module integration points. UI modules capture their own elements, while `main.js` passes behavior callbacks instead of making the modules reach into each other.
 
-The home hero is collection-aware. An empty collection shows five featured cards on desktop and four on phones, spanning the featured tiers in the active set. After the first banked pull, desktop shows two owned rankings; phones show a compact collection intro while the full collection remains below. Selection and ranking live in `src/engine/showcase.js`, while `src/ui/hero-showcase.js` owns DOM presentation. See `HERO-SHOWCASE-ARCHITECTURE.md` for the state rules, maintenance path, and motion budget.
+The home hero is collection-aware on desktop. An empty collection shows five featured cards on desktop and four on phones, spanning the featured tiers in the active set. After a banked pull, desktop shows two owned rankings; phones keep the same featured-pull hero while the full collection remains below. Selection and ranking live in `src/engine/showcase.js`, while `src/ui/hero-showcase.js` owns DOM presentation. See `HERO-SHOWCASE-ARCHITECTURE.md` for the state rules, maintenance path, and motion budget.
 
 ## 4. Module Map
 

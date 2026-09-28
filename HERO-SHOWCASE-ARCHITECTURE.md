@@ -16,7 +16,7 @@ The collection is the source of truth. No additional onboarding flag is stored.
 | Collection state | Hero state | Content |
 |---|---|---|
 | Empty | Onboarding | MrBeast, Cristiano Ronaldo, Taylor Swift, Rihanna, and Addison Rae when present in the active set |
-| One or more cards | Owned | Desktop shows separate most-followed and strongest-in-battle rows; phones show a short collection intro and keep the rankings PC-only |
+| One or more cards | Owned | Desktop shows separate most-followed and strongest-in-battle rows; phones keep the same featured-pull hero and keep the rankings PC-only |
 | Cleared | Onboarding | The current-set showcase returns |
 
 A successful pull updates the hero immediately after the collection is persisted and before the pack-opening animation begins. The showcase therefore disappears at the first completed pull decision, even while the reveal presentation is still running.
