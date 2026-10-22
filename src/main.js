@@ -12,7 +12,7 @@ import { openReveal, initReveal } from './ui/reveal.js';
 import { playPackOpen } from './ui/packopen.js';
 import { openArena } from './ui/battle.js';
 import { renderHeroShowcase } from './ui/hero-showcase.js';
-import { IS_README_CAPTURE } from './config.js';
+import { IS_LOCAL_CAPTURE } from './config.js';
 
 let pullBusy = false;
 let collectionDirty = false;
@@ -21,15 +21,15 @@ let firstPullAwaitingGuide = !ownedOnArrival && !hasCompletedFirstPull();
 let guideOnRevealDismiss = false;
 /* Existing binders predate this marker. Treat their owners as returning players,
    even if they later clear the collection and start a new one. */
-if (ownedOnArrival && !IS_README_CAPTURE) markFirstPullCompleted();
+if (ownedOnArrival && !IS_LOCAL_CAPTURE) markFirstPullCompleted();
 async function presentPull(results, { persist = true } = {}) {
   pullBusy = true;
   const controls = ['pack-open', 'pull-dev', 'pull-marketing'];
   controls.forEach(id => { document.getElementById(id).disabled = true; });
   document.getElementById('status').textContent = 'Opening your pack...';
   try {
-    if (persist && !IS_README_CAPTURE) persistCollection(); // Capture mode never overwrites a real local binder.
-    if (persist && !IS_README_CAPTURE && firstPullAwaitingGuide) {
+    if (persist && !IS_LOCAL_CAPTURE) persistCollection(); // Capture mode never overwrites a real local binder.
+    if (persist && !IS_LOCAL_CAPTURE && firstPullAwaitingGuide) {
       firstPullAwaitingGuide = false;
       guideOnRevealDismiss = true;
       markFirstPullCompleted();
@@ -118,7 +118,7 @@ function renderCollectionSurfaces() {
 }
 
 function renderLoadedSet() {
-  if (IS_README_CAPTURE) previewCollection(marketingPull(currentPool()));
+  if (IS_LOCAL_CAPTURE) previewCollection(marketingPull(currentPool()));
   renderCollectionSurfaces();
 }
 
@@ -138,7 +138,11 @@ initBanner({
 /* `onDismiss` fires when the player is FINISHED with the reveal — Done, the
    backdrop, Escape — and deliberately not when "Pull again" takes the overlay
    down on its way to another pack. See the note above `closeReveal`. */
-initReveal({ onPullAgain: () => doPull(packSize()), packSize, onDismiss: finishPull });
+initReveal({
+  onPullAgain: () => IS_LOCAL_CAPTURE ? doMarketingPull() : doPull(packSize()),
+  packSize: () => IS_LOCAL_CAPTURE ? marketingPull(currentPool()).length : packSize(),
+  onDismiss: finishPull,
+});
 
 /* The arena's own enabled state is maintained by ui/collection.js (it is the
    module that knows how many different creators are owned); introducing the two

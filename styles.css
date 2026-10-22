@@ -915,6 +915,7 @@
      (status) or instrumentation (Dev Pull) or a legal necessity (the snapshot
      stamp). All three are centred and quiet so none of them competes. */
   .stage .btn.debug { margin-top: 14px; }
+  .stage #pull-marketing { padding: 6px 12px; border-radius: 6px; font-size: 11px; }
   .stage .stamp { margin-top: 16px; opacity: 0.65; }
 
   /* The banner chips (.chips/.chip/.chip-pfp/.chip-name/.chip-x) came out
@@ -3557,6 +3558,11 @@
   }
 
   /* ── overlay shell ──────────────────────────────────────────────────────── */
+  /* The arena owns the page's vertical scroll while open. Without locking the
+     document behind this fixed, scrollable dialog, both the page and the arena
+     expose a scrollbar at the right edge. */
+  html.arena-open { overflow: hidden; }
+
   #arena {
     position: fixed;
     inset: 0;
@@ -4769,6 +4775,7 @@
   .count-btn.on { background: #e6e2d3; color: #202522; box-shadow: none; }
   .status { min-height: 19px; margin-top: 8px; font-size: 11px; text-align: center; }
   .stage .btn.debug { margin-top: 8px; }
+  .stage #pull-marketing { padding: 5px 10px; font-size: 10px; }
   .how-it-works { display: flex; justify-content: space-between; gap: 16px; padding: 20px 0; border-bottom: 1px solid #373d38; color: #b1b7b0; font-size: 11px; }
   .how-it-works b { margin-right: 12px; color: #ee5345; font-family: var(--font-mono); font-size: 10px; }
   .panel-collection { padding-top: 42px; background: transparent; border: 0; }

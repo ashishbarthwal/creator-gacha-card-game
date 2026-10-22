@@ -134,6 +134,10 @@ async function sparql(query) {
     method: 'POST',
     headers: { 'User-Agent': UA, Accept: 'application/sparql-results+json', 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ query }),
+    /* Bound slow WDQS requests so the shard retry/split path can recover rather
+       than leaving a sourcing run hung indefinitely. The service's own query
+       timeout is 60 seconds, so leave it a little room to return its response. */
+    signal: AbortSignal.timeout(55_000),
   });
   if (!res.ok) throw new Error(`SPARQL ${res.status}`);
   return (await res.json()).results.bindings;

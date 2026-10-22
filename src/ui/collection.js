@@ -268,7 +268,7 @@ export function showBinder() {
 
    ── WHY AN OBSERVER, WHEN NOTHING ELSE THAT USES makeStars NEEDS ONE ───────
    Because the binder is the one surface with no bound on how many cards are on
-   it. A reveal is ten cards and the inspector is exactly one; `renderCollection`
+   it. A reveal has at most twelve cards and the inspector is exactly one; `renderCollection`
    below renders EVERY matching card at once, with no virtualisation. A star
    field is ~20 infinitely-animating nodes, so a thousand-card binder filtered to
    SR would put ~18,000 of them on one page — and "filtered to SR" is not a

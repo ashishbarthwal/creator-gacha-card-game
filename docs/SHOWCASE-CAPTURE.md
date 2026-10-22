@@ -1,7 +1,7 @@
 # Local Showcase Capture
 
-The repository includes a deterministic, development-only ten-card showcase for screenshots and
-README assets. It makes visual comparison repeatable without changing public pull odds.
+The repository includes a deterministic, localhost-only twelve-card showcase for screenshots and
+marketing assets. It shows two cards from each of the six tiers without changing public pull odds.
 
 ## Open the capture view
 
@@ -10,28 +10,31 @@ Build the static site from the current local set, start its server, then open:
 ```text
 npm run build:site
 npx serve -l tcp://127.0.0.1:4174 _site
-http://localhost:4174/?readmeCapture=1&dev=0
+http://localhost:4174/?marketingCapture=1&dev=0
 ```
 
-The query is honoured only on `localhost`, `127.0.0.1`, or `::1`. It does three presentation-only
-things:
+The capture query is honored only on `localhost`, `127.0.0.1`, or `::1`. It:
 
-1. fills the in-memory collection with the curated ten-card lineup;
-2. limits collection-grid star fields to RUBY and UR so a static image stays readable;
-3. exposes the normal development-only **Showcase 10** control.
+1. fills the in-memory collection with a curated twelve-card lineup, two per rarity tier;
+2. uses the normal card renderer and reveal, with no change to public pull odds;
+3. exposes a **Showcase 12** button to replay the fixed lineup on demand.
 
-The current lineup is MrBeast, Stokes Twins, Cristiano Ronaldo, Taylor Swift, Markiplier,
-Marques Brownlee, Rihanna, Skrillex, The Beatles, and Austin Evans. It spans RUBY, UR, SSR, and
-SR card treatments.
+The preferred lineup is MrBeast and PewDiePie (RUBY); Cristiano Ronaldo and Taylor Swift (UR);
+Rihanna and Markiplier (SSR); Charli D'Amelio and MoreSidemen (SR); Jerma985 and Mizkif (R);
+Jonathan Blow and Ghetts (N). Handles are selected when present in the local set. A missing roster
+entry falls back to another card in that tier, so a deck rebuild does not leave the capture short.
 
 ## Safety properties
 
-- The capture collection is in memory and does not replace the browser's saved collection.
-- Pressing **Showcase 10** opens the normal reveal presentation without banking duplicates.
-- The mode cannot activate on the deployed hostname.
+- The capture collection stays in memory and does not replace the browser's saved collection.
+- Pressing **Showcase 12** opens the normal reveal without banking duplicates. Pull Again repeats
+  the same lineup while capture mode is active.
+- The button is restricted to localhost. The capture query is also host-gated.
 - The public game and weighted pull table are unchanged.
 
-Use the root URL for the fresh-visitor landing image and `#collection-grid` for the populated
-desktop collection image. The `dev=0` override keeps local-only pull controls out of the capture.
-The checked-in screenshots are desktop product captures from 2026-09-28; refresh them from this
-route when the shipped layout changes.
+Use `?marketingCapture=1&dev=0` to populate the binder while keeping other development controls
+hidden. The Showcase 12 button remains visible because it is separately restricted to localhost.
+Use the root URL without `marketingCapture=1` for the fresh-visitor landing image and
+`#collection-grid` for the populated desktop collection image. The checked-in screenshots are
+desktop product captures from 2026-09-28; refresh them from this route when the shipped layout
+changes.

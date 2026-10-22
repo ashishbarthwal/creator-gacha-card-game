@@ -80,7 +80,7 @@ export function openReveal(results) {
   el.hidden = false; el.scrollTop = 0;
   activateDialog(el, done);
   if (reduced.matches) return revealAll();
-  // Fixed cadence bounds a ten-card reveal to 2.1s, even with ten top tiers.
+  // Fixed cadence bounds the twelve-card capture reveal to about 2.1s.
   // Only cards currently visible animate; offscreen results settle directly.
   cells.forEach((cell, index) => {
     later(() => {

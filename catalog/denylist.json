@@ -329,6 +329,13 @@
       "reason": "minor",
       "basis": "child creators (b. 2013 / 2015); wikidata item is typed 'YouTube channel' so it carries no P569 for the screen to read",
       "added": "2026-08-17"
+    },
+    {
+      "id": "UCHNA1EASDBXfvwMBgWGr0vg",
+      "title": "Txunamy",
+      "reason": "minor",
+      "basis": "Wikidata Q105987098 P569 2009-03-23 (age 17.6 at screening)",
+      "added": "2026-10-20"
     }
   ]
 }

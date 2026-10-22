@@ -79,7 +79,7 @@ import { loadLineup, saveLineup } from '../storage.js';
 import {
   TEAM_SIZE, FRONT_SLOTS, battle, makeTeam, teamPower, matchupPreview, formationBonus,
 } from '../engine/battle.js';
-import { battleStatsFrom } from '../engine/battle-stats.js';
+import { battleStatsFrom, powerOf } from '../engine/battle-stats.js';
 import { arrangeFormation, bestTeamFrom, collectionOpponent } from '../engine/opponent.js';
 import { mountCodex } from './codex.js';
 import { ELEMENT_CYCLE, ELEMENT_LORE } from '../engine/element.js';
@@ -1197,12 +1197,21 @@ function slotRow(label, from, to, now) {
 }
 
 function poolPanel(now, pool = myChannels()) {
-  const panel = section('Your collection', 'Click a card to slot it. Click it again to take it out.');
+  const panel = section('Your collection', 'Strongest first by battle rating. Click a card to slot it; click again to take it out.');
   const grid = document.createElement('div');
   grid.className = 'ar-pool';
   const fieldedIds = new Set(filled().map(c => c.id));
 
-  for (const channel of pool) {
+  /* Use the same composite rating the battle engine uses, so the most capable
+     cards are immediately visible even when the collection is large. Keep ties
+     in their original order to make the picker stable across renders. */
+  const ranked = pool.map((channel, index) => ({
+    channel,
+    index,
+    power: powerOf(battleStatsFrom(channel, now)),
+  })).sort((a, b) => b.power - a.power || a.index - b.index);
+
+  for (const { channel } of ranked) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ar-pick';
@@ -2703,6 +2712,7 @@ export function openArena() {
   ui.stage = null;
   restoreLineup();
   arenaEl.hidden = false;
+  document.documentElement.classList.add('arena-open');
   /* Built on first open rather than at module load: it is a few hundred nodes
      that a player who never presses Battle should not pay for. `mountCodex`
      no-ops on every open after the first, so opened sections stay opened. */
@@ -2723,6 +2733,7 @@ export function closeArena() {
      screen and then start a fight nobody is watching. */
   readyGen++;
   arenaEl.hidden = true;
+  document.documentElement.classList.remove('arena-open');
   bodyEl.replaceChildren();
   current = null;
   if (lastTrigger?.focus) lastTrigger.focus();

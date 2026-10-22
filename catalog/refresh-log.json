@@ -490,6 +490,55 @@
       "slug": "core",
       "cards": 22697,
       "snapshotDate": "2026-09-20"
+    },
+    {
+      "at": "2026-10-19T17:31:16.043Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 22697,
+      "snapshotDate": "2026-09-20"
+    },
+    {
+      "at": "2026-10-20T17:36:01.238Z",
+      "event": "build",
+      "slug": "core",
+      "cards": 34824,
+      "snapshotDate": "2026-10-20"
+    },
+    {
+      "at": "2026-10-20T17:39:41.064Z",
+      "event": "build",
+      "slug": "core",
+      "cards": 34823,
+      "snapshotDate": "2026-10-20"
+    },
+    {
+      "at": "2026-10-20T17:47:14.822Z",
+      "event": "build",
+      "slug": "core",
+      "cards": 34180,
+      "snapshotDate": "2026-10-20"
+    },
+    {
+      "at": "2026-10-20T18:05:58.367Z",
+      "event": "build",
+      "slug": "core",
+      "cards": 34180,
+      "snapshotDate": "2026-10-20"
+    },
+    {
+      "at": "2026-10-20T18:06:47.320Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 34180,
+      "snapshotDate": "2026-10-20"
+    },
+    {
+      "at": "2026-10-20T18:19:51.029Z",
+      "event": "deploy",
+      "slug": "core",
+      "cards": 34180,
+      "snapshotDate": "2026-10-20"
     }
   ]
 }

@@ -1,0 +1,7 @@
+# Candidate source expansion (2026-10-20)
+
+The candidate roster was expanded using channel IDs from the YouNiverse dataset, "YouNiverse: Large-Scale Channel and Video Metadata from English-Speaking YouTube," by Manoel Horta Ribeiro and Robert West (2019 channel snapshot; released 2021). The dataset reports 136,470 English-filtered channel rows and is licensed CC BY 4.0. Source: https://doi.org/10.5281/zenodo.4650046.
+
+Only channel IDs were extracted from the local df_channels_en.tsv.gz file. Dataset titles and subscriber counts were not copied into the candidate catalog. Selected IDs were rehydrated through the YouTube Data API at the time of addition. The existing India region screen, institution name screen, deduplication, and denylist applied. A Wikidata classification pass removed matched channels that failed the project's performer, institution, geography, political-risk, or safety screens. The local Core Set was refreshed from live channel data. The source snapshot's language classification is historical and does not guarantee a channel's current language or activity.
+
+The dataset is a discovery seed, not a curated fame ranking. The hand-maintained catalog/legends.txt remains the recognition roster for prominent creators, pop culture figures, and sports personalities. It now pins Taylor Swift, Rihanna, Cristiano Ronaldo, and Neymar Jr. Ordinary candidates are not promoted to legends solely by historical subscriber counts.

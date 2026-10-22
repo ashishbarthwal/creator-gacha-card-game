@@ -37,7 +37,7 @@
    architecture section has always drawn. */
 
 import { state, currentPool, setSetsPool } from '../state.js';
-import { gateDevElement } from '../config.js';
+import { gateDevElement, gateLocalShowcaseElement } from '../config.js';
 import { loadSet } from '../data/index.js';
 import { bandOdds } from '../engine/gacha.js';
 
@@ -255,9 +255,8 @@ export function initBanner({ onPull, onDevPull, onMarketingPull, onSetLoaded = (
      The Magic Search and Live-mode gating that used to sit here went with the
      controls themselves on 2026-08-16 — see this file's header. */
   gateDevElement(pullBtnDev);
-  /* Showcase 10 hides outside dev for exactly Dev Pull's reason — it presents a
-     fixed ten and ignores the weights, so it is an operator's control, not a
-     player's. `?dev=1` reveals it when a screenshot is being taken. */
-  gateDevElement(pullBtnMarketing);
+  /* A fixed, odds-independent showcase is a capture affordance. Keep it on
+     localhost only, including when `?dev=1` is used to inspect a remote page. */
+  gateLocalShowcaseElement(pullBtnMarketing);
   gateDevElement(setCount);
 }

@@ -36,6 +36,9 @@ function detectDev() {
 
 export const IS_DEV = detectDev();
 
+export const IS_LOCALHOST = typeof location !== 'undefined'
+  && new Set(['localhost', '127.0.0.1', '[::1]']).has(location.hostname);
+
 /* A localhost-only presentation mode used to refresh README screenshots. It is
    exported from the same environment seam as IS_DEV so capture behavior cannot
    accidentally become available on the deployed hostname. */
@@ -46,6 +49,13 @@ function detectReadmeCapture() {
 }
 
 export const IS_README_CAPTURE = detectReadmeCapture();
+
+/* A separate localhost-only switch for the controlled 12-card marketing pull.
+   The query remains host-gated even when `?dev=1` is used elsewhere. */
+export const IS_MARKETING_CAPTURE = IS_LOCALHOST
+  && new URLSearchParams(location.search).get('marketingCapture') === '1';
+
+export const IS_LOCAL_CAPTURE = IS_README_CAPTURE || IS_MARKETING_CAPTURE;
 
 /* ─────────────────────────────────────────────────────────────────────────────
    AVATAR SOURCE — the launch's reversibility switch.
@@ -89,4 +99,10 @@ export function gateDevElement(el) {
   if (!el) return;
   el.dataset.devOnly = 'true';
   if (!IS_DEV) el.hidden = true;
+}
+
+export function gateLocalShowcaseElement(el) {
+  if (!el) return;
+  el.dataset.localShowcaseOnly = 'true';
+  if (!IS_LOCALHOST) el.hidden = true;
 }

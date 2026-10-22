@@ -8622,3 +8622,649 @@ UCgFXm4TI8htWmCyJ6cVPG_A  # Toys and Colors [83M] — kids-content brand
 UC295-Dw_tDNtZXFeAPAW6Aw  # 5-Minute Crafts [81M] — TheSoul Publishing, a company
 UC4NALVCmcmL5ntpV0thoH6w  # LooLoo Kids - Nursery Rhymes [62M] — kids-content brand
 UCRx3mKNUdl8QE06nEug7p6Q  # Billion Surprise Toys [58M] — kids-content brand, typed "songwriting team"
+# YouNiverse 2019 import review (2026-10-20): Wikidata screen for channel/person type,
+# corporate identity, India linkage, death, public office/party, criminal record, and blocked occupations.
+# IDs only. Supporting classification data and live card titles are in gitignored reports/.
+UC-8Q-hLdECwQmaWNwXitYDw  # Wikidata Q42493: public office, party affiliation
+UCM9r1xn6s30OnlJWb-jc3Sw  # Wikidata Q28561969: deceased
+UCstEtN0pgOmCf02EdXsGChw  # Wikidata Q287617: non-performer
+UCsT0YIqwnpJCM-mx7-gSA4Q  # Wikidata Q23058942: non-performer
+UCsRM0YB_dabtEPGPTKo-gcw  # Wikidata Q23215: public office
+UCX52tYZiEh_mHoFja3Veciw  # Wikidata Q25021952: non-performer, India link
+UCuHzBCaKmtaLcRAOoazhCPA  # Wikidata Q36153: party affiliation
+UC2pmfLm7iq6Ov1UwYrWYkZA  # Wikidata Q473873: non-performer
+UCw8ZhLPdQ0u_Y-TLKd61hGA  # Wikidata Q30930288: non-performer
+UCweOkPb1wVVH0Q0Tlj4a5Pw  # Wikidata Q109460155: non-performer
+UCPHjpfnnGklkRBBTd0k6aHg  # Wikidata Q505476: deceased
+UCgwv23FVv3lqh567yagXfNg  # Wikidata Q54860: non-performer, corporate
+UC_W0_Nv-3rxpWVvosddhrPw  # Wikidata Q108687851: non-performer
+UCD1Em4q90ZUK2R5HKesszJg  # Wikidata Q13399098: non-performer
+UCNL1ZadSjHpjm4q9j2sVtOA  # Wikidata Q19848: party affiliation
+UC9zX2xZIJ4cnwRsgBpHGvMg  # Wikidata Q36153: party affiliation
+UCxMAbVFmxKUVGAll0WVGpFw  # Wikidata Q29033668: party affiliation
+UC1SqP7_RfOC9Jf9L_GRHANg  # Wikidata Q505476: deceased
+UC5BMQOsAB8hKUyHu9KI6yig  # Wikidata Q15401647: non-performer
+UCITqR49EAUY8i1vZtXTwe-A  # Wikidata Q26209633: non-performer
+UC4-CH0epzZpD_ARhxCx6LaQ  # Wikidata Q108678445: non-performer
+UC09d82usokACH1z5YeKnfiA  # Wikidata Q3087893: non-performer
+UCo6DJdltbIub80bLiyJRv3w  # Wikidata Q108688177: non-performer
+UCR-QYzXrZF8yFarK8wZbHog  # Wikidata Q18204660: blocked occupation
+UCFeUyPY6W8qX8w2o6oSiRmw  # Wikidata Q15012089: non-performer
+UCsN8M73DMWa8SPp5o_0IAQQ  # Wikidata Q606649: non-performer
+UC3ifTl5zKiCAhHIBQYcaTeg  # Wikidata Q108713046: corporate
+UCssD3_aDYhaG44mwP53CO0w  # Wikidata Q158419: non-performer
+UCpcTrCXblq78GZrTUTLWeBw  # Wikidata Q253414: non-performer, corporate
+UC14UlmYlSNiQCBe9Eookf_A  # Wikidata Q3091261: non-performer
+UC67f2Qf7FYhtoUIF4Sf29cA  # Wikidata Q4840352: non-performer
+UCOs8VELPB5GC_eKibH9e-CQ  # Wikidata Q108678572: non-performer
+UCe52oeb7Xv_KaJsEzcKXJJg  # Wikidata Q486953: non-performer
+UCw7xjxzbMwgBSmbeYwqYRMg  # Wikidata Q17868037: non-performer, India link
+UCj5RwDivLksanrNvkW0FB4w  # Wikidata Q121833039: non-performer
+UCBi2mrWuNuyYy4gbM6fU18Q  # Wikidata Q287171: non-performer
+UCR1c65UsjpaVgcLKa7eM1tg  # Wikidata Q4258728: non-performer
+UC6QWhGQqf0YDYdRb0n6ojWw  # Wikidata Q28911845: non-performer
+UC5M_h2S8Ldoc9M6f7B-_m6A  # Wikidata Q154958: non-performer, corporate
+UCfLFTP1uTuIizynWsZq2nkQ  # Wikidata Q3096979: non-performer, corporate
+UCu59yAFE8fM0sVNTipR4edw  # Wikidata Q2667119: non-performer
+UC-FQUIVQ-bZiefzBiQAa8Fw  # Wikidata Q795585: non-performer
+UCr-gTfI7au9UaEjNCbnp_Nw  # Wikidata Q22278322: India link
+UC4XR0EZ0oHwSV2XhhShzX5A  # Wikidata Q913395: non-performer
+UCY26xU0-avwTJ6F6TzUZVEw  # Wikidata Q22026409: non-performer
+UChEYVadfkMCfrKUi6qr3I1Q  # Wikidata Q22005867: crime
+UCt2JXOLNxqry7B_4rRZME3Q  # Wikidata Q722694: non-performer
+UCEmCXnbNYz-MOtXi3lZ7W1Q  # Wikidata Q4860420: non-performer
+UCe9JSDmyqNgA_l2BzGHq1Ug  # Wikidata Q18125070: non-performer, corporate
+UCywhnhPP3dAw7huG_y0hdEg  # Wikidata Q65029898: blocked occupation
+UCNvzD7Z-g64bPXxGzaQaa4g  # Wikidata Q108687936: non-performer
+UC16niRr50-MSBwiO3YDb3RA  # Wikidata Q4704926: non-performer
+UCb3tJ5NKw7mDxyaQ73mwbRg  # Wikidata Q220861: non-performer, corporate
+UCNEKMkg_DG8eAyR1BNWsSvw  # Wikidata Q216843: non-performer
+UCI4I6ldZ0jWe7vXpUVeVcpg  # Wikidata Q5915777: non-performer
+UCNcdbMyA59zE-Vk668bKWOg  # Wikidata Q313621: non-performer, corporate
+UC0gOw4iy-6HwO01q-gA1B0Q  # Wikidata Q29388200: deceased
+UC7IcJI8PUf5Z3zKxnZvTBog  # Wikidata Q7762538: non-performer
+UCyKa1YNZLio6XfjMR7fw45Q  # Wikidata Q5618186: non-performer
+UCnM02drQP-dF7WMgtJHR4Xw  # Wikidata Q111144980: non-performer
+UCCp4IWg4A_JLexo30Jlf-UQ  # Wikidata Q108678806: non-performer
+UCGZXYc32ri4D0gSLPf2pZXQ  # Wikidata Q160732: non-performer, corporate
+UC97k3hlbE-1rVN8y56zyEEA  # Wikidata Q4936982: non-performer
+UCBMvWaA97BAegvJ_Hz6Vwuw  # Wikidata Q106775852: non-performer
+UCfqDvjXc2jbAzaeqlIggkkg  # Wikidata Q4765200: non-performer
+UCqYw-CTd1dU2yGI71sEyqNw  # Wikidata Q5513725: non-performer
+UCVCdOaiHD05nGQm9tf1SEzw  # Wikidata Q185610: party affiliation
+UC4qGmRZ7aLOLfVsSdj5Se2A  # Wikidata Q82748211: non-performer
+UCoSNIVBEIX6EIateDDKVlBA  # Wikidata Q108678618: non-performer
+UCajXeitgFL-rb5-gXI-aG8Q  # Wikidata Q53817372: non-performer
+UCPFVhmjjSkFhfstm2LghZIg  # Wikidata Q16145201: deceased
+UCwdo8-3UrfZ9scHPl0m4Ysg  # Wikidata Q7243489: non-performer
+UCuriCa9loP_OsH75_5j8M5w  # Wikidata Q84656893: non-performer
+UCIveFvW-ARp_B_RckhweNJw  # Wikidata Q7614597: blocked occupation
+UCiKsRIULyLr783nNZm-JlAQ  # Wikidata Q26625: party affiliation
+UCUudDyi0JiVmSxarvU98YYQ  # Wikidata Q231713: deceased
+UCJekW1Vj5fCVEGdye_mBN6Q  # Wikidata Q106695309: non-performer
+UC37PFGlxWgx4tU6SlhPCdCw  # Wikidata Q122698726: non-performer
+UCWwgaK7x0_FR1goeSRazfsQ  # Wikidata Q20716: non-performer
+UCNye-wNBqNL5ZzHSJj3l8Bg  # Wikidata Q4727585: non-performer
+UCIWZ1_W5BqsvW9fm1cYFPpQ  # Wikidata Q4667782: non-performer, corporate
+UCoyaxd5LQSuP4ChkxK0pnZQ  # Wikidata Q326704: non-performer
+UCjB_adDAIxOL8GA4Y4OCt8g  # Wikidata Q108678585: non-performer
+UCtn6Q5AFzVP-gkrcrp9MwrA  # Wikidata Q97670845: deceased
+UC1sELGmy5jp5fQUugmuYlXQ  # Wikidata Q49740: non-performer
+UChnf7fs7mlfbzsJpwWnJBYA  # Wikidata Q774155: public office
+UCQCjPX6e8jI3ukAS-FijXjw  # Wikidata Q111145180: non-performer
+UCJTyunmsBLj20wyguh6uMig  # Wikidata Q122817264: non-performer
+UCSJ4gkVC6NrvII8umztf0Ow  # Wikidata Q101833802: corporate
+UC9HlWVtENbiMQzVRmnbJxtw  # Wikidata Q1897911: crime
+UCttFk8-Nysnyw59aNlWOWzw  # Wikidata Q111145161: non-performer
+UCPOIFuct7fjWKkiDRTNJqrg  # Wikidata Q68126563: non-performer, corporate
+UCXIJgqnII2ZOINSWNOGFThA  # Wikidata Q186068: non-performer
+UCxHoBXkY88Tb8z1Ssj6CWsQ  # Wikidata Q26327: non-performer, corporate
+UCSugZEYrWbzqIWGD195V-YA  # Wikidata Q206032: crime
+UCLF-kfM8ZxHQ9lW_lpu_thw  # Wikidata Q108678578: non-performer
+UChIGU8b4l5cj6i5D9REsqdg  # Wikidata Q63642380: non-performer
+UCx4Lxn5CzeG99X01__YsJpw  # Wikidata Q6078: crime
+UCMmpLL2ucRHAXbNHiCPyIyg  # Wikidata Q4653979: non-performer
+UCxgDfpB3rBRPozm3zzaRXTQ  # Wikidata Q111145164: non-performer
+UCvebOuGWNvuUpZBzpV_Bc9Q  # Wikidata Q23820256: crime
+UCqsUQhA6UIwSams54bEnCJw  # Wikidata Q111145143: non-performer
+UCYC2wjLop-S6Ld4raeoUVNA  # Wikidata Q165094: non-performer
+UC81VD6eeuLLSfyY_D-N8sVw  # Wikidata Q1744: party affiliation
+UCgyqtNWZmIxTx3b6OxTSALw  # Wikidata Q107970848: non-performer, corporate
+UCUxc0iEpV8wZV4WLOui0RwQ  # Wikidata Q2738010: party affiliation
+UCqmld-BIYME2i_ooRTo1EOg  # Wikidata Q29564198: non-performer
+UCID-e04-H5Luw7tKq25QS-w  # Wikidata Q18392162: non-performer, corporate
+UC2GnuulpFRtTGFNuS1LKL5g  # Wikidata Q59738779: non-performer
+UCsumo4lY8cd4v8Xt5zG3eSg  # Wikidata Q2423094: non-performer
+UCjBp_7RuDBUYbd1LegWEJ8g  # Wikidata Q15281614: non-performer
+UC0BletW9phE4xHFM44q4qKA  # Wikidata Q52151598: deceased
+UCpDNnvxEf3iWuJbtmUk6DnA  # Wikidata Q111145151: non-performer
+UCsgv2QHkT2ljEixyulzOnUQ  # Wikidata Q52424029: blocked occupation
+UCZBY6V8Lxmwu8gGRBOyO11w  # Wikidata Q111145000: non-performer
+UCqJUX55akwq_spmYQGjiMOg  # Wikidata Q108678811: non-performer
+UCw5VDXH8up3pKUppIvcstNQ  # Wikidata Q108678514: non-performer
+UC_jQ64mgxDbvATLv94lMwaw  # Wikidata Q108678693: non-performer
+UCFctpiB_Hnlk3ejWfHqSm6Q  # Wikidata Q864: non-performer
+UCfRt399Q6kNLxS4YC8Xf8dw  # Wikidata Q111145184: non-performer
+UCvqRdlKsE5Q8mf8YXbdIJLw  # Wikidata Q39056670: non-performer
+UCrbSjN1_5U7hqFKRA0nvFXQ  # Wikidata Q18204660: blocked occupation
+UCRpjHHu8ivVWs73uxHlWwFA  # Wikidata Q276: non-performer
+UC4eYXhJI4-7wSWc8UNRwD4A  # Wikidata Q6955057: non-performer, corporate
+UCWEtnEiVwUy7mwFeshyAWLA  # Wikidata Q56404384: non-performer, corporate
+UCvyN-kMH-IrXzWNeZaQ_XaQ  # Wikidata Q9176944: non-performer
+UCw7FkXsC00lH2v2yB5LQoYA  # Wikidata Q108678566: non-performer
+UCcmpeVbSSQlZRvHfdC-CRwg  # Wikidata Q20647024: non-performer
+UC0iwHRFpv2_fpojZgQhElEQ  # Wikidata Q123730667: non-performer
+UCsD7zvGKkqB7GvQpygW2few  # Wikidata Q214227: party affiliation, crime
+UCL1AWvAE4U5aZN2zcaX4LdA  # Wikidata Q11453392: non-performer
+UCvJiYiBUbw4tmpRSZT2r1Hw  # Wikidata Q845056: non-performer
+UCDPk9MG2RexnOMGTD-YnSnA  # Wikidata Q138709: non-performer
+UCooVYzDxdwTtGYAkcPmOgOw  # Wikidata Q30330493: non-performer
+UC0KU8F9jJqSLS11LRXvFWmg  # Wikidata Q188273: non-performer
+UCmRSTd4DSZExer2tPuYh3qA  # Wikidata Q66519437: non-performer, corporate
+UC2PvBto6gvSLVub6CdwaivA  # Wikidata Q7277893: non-performer, corporate
+UCyYhB1bENJloiVoK1Hod_vg  # Wikidata Q6926814: non-performer, corporate
+UCbt63GNsB5wet6NO3dmhssA  # Wikidata Q48772637: non-performer
+UCuCk_7b2_4uSr6y5hFmjuMQ  # Wikidata Q2985197: non-performer
+UCelvBrvTHaZL_V6WuMkJDxQ  # Wikidata Q56276347: crime
+UCnMBV5Iw4WqKILKue1nP6Hg  # Wikidata Q5315817: non-performer, corporate
+UCtTLxG2tRLjB0aXMNWCmvhw  # Wikidata Q18354654: non-performer
+UCKDSzvjPZRIwSwWZstoy79w  # Wikidata Q108687959: non-performer
+UCY3TJECrA90t9YTrxhdjcVw  # Wikidata Q108678430: non-performer
+UCfw6CRDOg5xQsB-2QNC_KUA  # Wikidata Q108688206: non-performer
+UC3SEvBYhullC-aaEmbEQflg  # Wikidata Q324726: deceased
+UC4yqcgz49APdbgj0OMv7jpA  # Wikidata Q24289080: non-performer
+UCCvVpbYRgYjMN7mG7qQN0Pg  # Wikidata Q10426854: non-performer
+UCjsKIxAWiIKWpK0V7O5j48g  # Wikidata Q108678475: non-performer
+UCsVcseUYbYjldc-XgcsiEbg  # Wikidata Q485240: non-performer, corporate
+UCvNBXWGykQrWb7kPAn5eLUQ  # Wikidata Q474587: non-performer
+UCZnOEZsMyNLNoK_aKOEUU7Q  # Wikidata Q110555241: deceased
+UCIDlKYC7I6_76jCUBdX-6VQ  # Wikidata Q111145167: non-performer
+UCwNPPl_oX8oUtKVMLxL13jg  # Wikidata Q140585712: deceased
+UC8pYaQzbBBXg9GIOHRvTmDQ  # Wikidata Q10858737: non-performer
+UCckHBcinJJKHKi9sBEpGARA  # Wikidata Q55662802: non-performer
+UC4zS1wbO81p59CxKL7CQAcA  # Wikidata Q124209493: deceased
+UCL_f53ZEJxp8TtlOkHwMV9Q  # Wikidata Q6276882: public office
+UCbfUA3UGxAWL3muD004g0WQ  # Wikidata Q18353558: crime
+UC9cGX5x0_EXkdfmWlvPbu3g  # Wikidata Q5281888: non-performer, corporate
+UCLzKhsxrExAC6yAdtZ-BOWw  # Wikidata Q1422: non-performer, corporate
+UCsjSRfeVFmJcps2Bki1dRCw  # Wikidata Q7025410: non-performer, corporate
+UCr8oc-LOaApCXWLjL7vdsgw  # Wikidata Q3096979: non-performer, corporate
+UCTur7oM6mLL0rM2k0znuZpQ  # Wikidata Q2787411: non-performer, corporate
+UC-CSyyi47VX1lD9zyeABW3w  # Wikidata Q96376333: India link
+UCr3cBLTYmIK9kY0F_OdFWFQ  # Wikidata Q111144988: non-performer
+UCGBpxWJr9FNOcFYA5GkKrMg  # Wikidata Q15298445: non-performer
+UC3lz95UPhKJW1aS3_za6SuQ  # Wikidata Q484449: non-performer, corporate
+UCRs_jcZrHybnDiTCY0ZGdyg  # Wikidata Q108688171: non-performer
+UCyGa1YEx9ST66rYrJTGIKOw  # Wikidata Q35572: non-performer, corporate
+UC4FhvdvgZU5CVbXi2uWgiZg  # Wikidata Q97453296: non-performer
+UCA_-NVTKOlWgxgTWjqlzZlA  # Wikidata Q6107: deceased, crime
+UC-QZWTOtdsm6CNPHUR88irA  # Wikidata Q108687864: non-performer
+UCy47Au63gFpnzb_959sCcyg  # Wikidata Q111145091: non-performer
+UCOiUKJ6lMU3yHbVNtNXJyfw  # Wikidata Q30608536: non-performer
+UCy1Ms_5qBTawC-k7PVjHXKQ  # Wikidata Q6220303: deceased
+UCh5fwwlEPTqN68kZYL8nK5A  # Wikidata Q108678545: non-performer
+UCEwlPFzuck7KyNAnsujkkFg  # Wikidata Q6044705: non-performer
+UCt16NSYjauKclK67LCXvQyA  # Wikidata Q1886881: non-performer
+UCFlSrobAqUBzN80Et09iRQA  # Wikidata Q4938489: non-performer, corporate
+UC5SQGzkWyQSW_fe-URgq7xw  # Wikidata Q85951316: non-performer
+UCtRDjvmnxgv6nNL6h696UYg  # Wikidata Q111265124: non-performer
+UCXDG9ue-emCN8Ad3h7lERqQ  # Wikidata Q60769590: non-performer, corporate
+UC1WEOQjm8tyT1pXY6xaoYZQ  # Wikidata Q65333151: non-performer
+UCfnopZIrGu0NZhqRjEKA3tg  # Wikidata Q111145148: non-performer
+UCBnbnH7DGXT9yBBVFbZeIwQ  # Wikidata Q111145039: non-performer
+UCt65DQDznu6uPj3IRhySHmw  # Wikidata Q108678659: non-performer
+UCQ2IqAJyjCkVMGCd5kAZ2ow  # Wikidata Q111144994: non-performer
+UC_x5XG1OV2P6uZZ5FSM9Ttw  # Wikidata Q963120: non-performer
+UCTrtA2LyW7gie0o8hY4efXw  # Wikidata Q1139870: non-performer
+UCe1EQZHA239PHtDSAvQAfPw  # Wikidata Q66520269: non-performer, corporate
+UCWjVfZ3VnyUwBEOkuOlaU3g  # Wikidata Q6470744: non-performer
+UCBxZZfQ8R2xtk0YEU1d8l4Q  # Wikidata Q215546: party affiliation
+UChUHOEe7zgYmrv7a_LlpNng  # Wikidata Q31090460: non-performer
+UCswH8ovgUp5Bdg-0_JTYFNw  # Wikidata Q296609: blocked occupation
+UC3I2GFN_F8WudD_2jUZbojA  # Wikidata Q761627: non-performer
+UCM7Srv4mxJejt2NLmumkRRQ  # Wikidata Q97274323: non-performer
+UC8p1vwvWtl6T73JiExfWs1g  # Wikidata Q861764: non-performer
+UCNzjvv-FBaZzaLFvtfOyP6A  # Wikidata Q6813461: non-performer
+UCxUycBeiK8TcU6WBRkTXRlg  # Wikidata Q108688208: non-performer
+UC9Ape6X3wiKxdH4TdSDcrZA  # Wikidata Q13560283: party affiliation
+UCR6n79EOdY406JlZD8FEgyg  # Wikidata Q108418492: party affiliation
+UC2-_WWPT_124iN6jiym4fOw  # Wikidata Q80179795: non-performer
+UC7UGbBVrqLlq6CRxWWUmyKw  # Wikidata Q108687925: non-performer
+UCcjoLhqu3nyOFmdqF17LeBQ  # Wikidata Q22906668: non-performer
+UCVTKO1D_G19UlK03ezaADag  # Wikidata Q108687965: non-performer
+UCHTK-2W11Vh1V4uwofOfR4w  # Wikidata Q113378640: non-performer
+UCaEFegr3Rcs430VZWEoNstw  # Wikidata Q108678703: non-performer
+UCOcE8WdQOSeqFczVxGatGKg  # Wikidata Q63385071: deceased
+UCnkTo_wMqGtLiA4xX7roORg  # Wikidata Q45751: non-performer, corporate
+UCittVh8imKanO_5KohzDbpg  # Wikidata Q28911590: party affiliation, blocked occupation
+UCBMvc6jvuTxH6TNo9ThpYjg  # Wikidata Q188273: non-performer
+UCk9GmdlDTBfgGRb7vXeRMoQ  # Wikidata Q17466114: non-performer
+UCBGTFRlxG_irLDDZA3ZMdSw  # Wikidata Q111145201: non-performer
+UCqSNM6HkOfv8JdGXniY2Pcw  # Wikidata Q6727177: non-performer
+UCL8ZULXASCc1I_oaOT0NaOQ  # Wikidata Q777: non-performer
+UCaeO5vkdj5xOQHp4UmIN6dw  # Wikidata Q25094513: non-performer
+UCNyJk0eoESO3CxAmrktAB5w  # Wikidata Q20640619: blocked occupation
+UCZIrDb4j3_dJf3G9jROboZQ  # Wikidata Q2756349: deceased
+UCvHn0MTf40rdEQu6Y2yNL5g  # Wikidata Q4858102: non-performer
+UCjFqcJQXGZ6T6sxyFB-5i6A  # Wikidata Q65043494: non-performer
+UCYzEMRKqrh01-tauv7MYyVQ  # Wikidata Q108678726: non-performer
+UC6UL29enLNe4mqwTfAyeNuw  # Wikidata Q82595: non-performer
+UCHai12P6Gh7PaIYZGnzyrSA  # Wikidata Q15897: deceased
+UCWiY6fYdxuEe78r-0uFCnhA  # Wikidata Q111145134: non-performer
+UC9UTBXS_XpBCUIcOG7fwM8A  # Wikidata Q3096979: non-performer, corporate
+UCmnlTWVJysjWPFiZhQ5uudg  # Wikidata Q111145206: non-performer
+UCiormkBf3jm6mfb7k0yPbKA  # Wikidata Q3880200: non-performer
+UCQMbqH7xJu5aTAPQ9y_U7WQ  # Wikidata Q108678504: non-performer
+UCJGnNvYgPpUhd7ImU9diBSQ  # Wikidata Q6721245: non-performer, corporate
+UCBjh-uGy5RcclATnFpQBobw  # Wikidata Q111144986: non-performer
+UCp3dgMf1OUP2XqOpyOY2bzQ  # Wikidata Q111145144: non-performer
+UCVfwlh9XpX2Y_tQfjeln9QA  # Wikidata Q56641176: non-performer
+UC52OnlZcHd_ajoTiqcskrvg  # Wikidata Q28155029: deceased
+UClzCn8DxRSCuMFv_WfzkcrQ  # Wikidata Q43380: non-performer
+UCnhHe0_bk_1_0So41vsZvWw  # Wikidata Q11173360: non-performer, corporate
+UCEFuuAUSHlQzHMres7AD38Q  # Wikidata Q57311308: blocked occupation
+UCKuBf7CRNf4OYoDyTtAL5fg  # Wikidata Q63595820: non-performer
+UC_ahy2GUec7EmbWF3LGxLhQ  # Wikidata Q17989125: non-performer, corporate
+UCeNhHgTE36tTQkJsjPaPwnA  # Wikidata Q186304: party affiliation
+UCUhUtZhgZ9x6FCnNXhGCHTg  # Wikidata Q108678565: non-performer
+UCeY0bbntWzzVIaj2z3QigXg  # Wikidata Q2877626: non-performer
+UCQ_aa1q_dpqRc5uATuslRzg  # Wikidata Q13999699: deceased
+UCV6-CUNsfe2-STYfYkd7bBQ  # Wikidata Q18210303: non-performer
+UCuFFtHWoLl5fauMMD5Ww2jA  # Wikidata Q2931014: non-performer
+UC4w_tMnHl6sw5VD93tVymGw  # Wikidata Q6037584: non-performer
+UCIZGqIYkST36dLp0uf9o9nw  # Wikidata Q179157: deceased
+UCclHSnngVTZK7LEOQAzcg1w  # Wikidata Q218115: non-performer
+UCX77Km4pLRsU9OFYEMdIvew  # Wikidata Q108722156: non-performer
+UCyWJC7zaBfvdHpwF8vMABJQ  # Wikidata Q108678452: non-performer
+UCNAf1k0yIjyGu3k9BwAg3lg  # Wikidata Q104759302: non-performer
+UCNK813T2BNBwcfDPDTPeMPA  # Wikidata Q111145019: non-performer
+UCxe93I7CX6ib1Ttji_zBAQQ  # Wikidata Q108688178: non-performer
+UC3S6nIDGJ5OtpC-mbvFA8Ew  # Wikidata Q108678725: non-performer
+UCm1s2VS9BdyXL9FU4a-W_cQ  # Wikidata Q2073970: deceased
+UCyvOJDBxhi1yqW97hXw3BDw  # Wikidata Q3547550: non-performer, India link
+UCfFwvkI8a8tSWX2Z6Fn5zDg  # Wikidata Q108678526: non-performer
+UCFXKLSrT-4-Mf5TRqv40rgw  # Wikidata Q4897444: non-performer
+UCR1LVH-teuA3-Kfy576TYSw  # Wikidata Q130311: deceased
+UCoMdktPbSTixAyNGwb-UYkQ  # Wikidata Q217228: non-performer, corporate
+UCE9-bV_MCGgLnH7v4HSApDg  # Wikidata Q5257835: non-performer, corporate
+UC9-OpMMVoNP5o10_Iyq7Ndw  # Wikidata Q2906353: non-performer
+UCoBb8VNqTyUXBCjjd4nINpA  # Wikidata Q81315390: non-performer
+UCL8h3ri2WN_-IbviBlWtUcQ  # Wikidata Q123232182: non-performer
+UCnXDQbqIdp-HQuDyM4p12ng  # Wikidata Q28937399: non-performer
+UC-B2LyEZcl3avG0coKeohGQ  # Wikidata Q3446620: blocked occupation
+UC8SUpGjRdTSqIBuOfmWp3rg  # Wikidata Q7900340: non-performer
+UCPHKMJbis1c0R7d7WJQ35tA  # Wikidata Q55628195: non-performer
+UC3Nho5FPo__hIFbg_UlaCgA  # Wikidata Q47875: public office
+UC_6zPf4uuteHFFctnQtEaXQ  # Wikidata Q17510053: non-performer
+UC7sDT8jZ76VLV1u__krUutA  # Wikidata Q108268700: non-performer, corporate
+UCLFJxkc6mv0Mj6N49MHyK2Q  # Wikidata Q111145172: non-performer
+UChIjW4BWKLqpojTrS_tX0mg  # Wikidata Q9016800: non-performer
+UCSonmKTLAPC2bTCF4JHQ1lg  # Wikidata Q108678623: non-performer
+UCVrQ3fgcMGF8SyowGNaZA6Q  # Wikidata Q55837587: non-performer
+UCX9oTVxKUKkV28fgtdqT4dw  # Wikidata Q496350: non-performer
+UC3YmP7nqf514I1zh1eVbzrA  # Wikidata Q932829: India link
+UCUtUVnGVHrc83t1r0p5r7ww  # Wikidata Q108678435: non-performer
+UCs7sNio5rN3RvWuvKvc4Xtg  # Wikidata Q115379209: non-performer
+UCeXp3EC97_rUl_e2vgM3gLg  # Wikidata Q12470060: crime
+UCFAiFyGs6oDiF1Nf-rRJpZA  # Wikidata Q105396829: deceased
+UCsr6QVeLlkitleHoS0T4IxQ  # Wikidata Q3346898: non-performer, corporate
+UCwBV-eg1dAkzrdjqJfyEj0w  # Wikidata Q110158410: non-performer
+UC8f4o4-Sw2KitQR8MkIkSiw  # Wikidata Q85980646: non-performer, corporate
+UCZZx2Uaheeu1OGUBbWSbnPg  # Wikidata Q1357035: crime
+UCh37exjsK8dS54bsm3iUxPg  # Wikidata Q108678459: non-performer
+UC9YX5x_VU8gfe0Oui0TaLJg  # Wikidata Q2408041: non-performer
+UCHLqIOMPk20w-6cFgkA90jw  # Wikidata Q13057879: non-performer, corporate
+UCMBNjDVgy1lc_FyePVg60_Q  # Wikidata Q558226: public office
+UCPWQWav6BpPvtanCtloXkiw  # Wikidata Q212252: non-performer
+UCP1YcvxeNRHEcqyBk_7mjVg  # Wikidata Q108678583: non-performer
+UCQE1lrNtxcz0Na4F0afHrPw  # Wikidata Q18712251: non-performer, corporate
+UCRAWGR5ySuIDNrotce8pI3w  # Wikidata Q18749736: blocked occupation
+UCXXBi6rvC-u8VDZRD23F7tw  # Wikidata Q55679: non-performer
+UCpNzXJ5jpcJojC5mHQvGA8w  # Wikidata Q3267414: non-performer
+UC8h8NJG9gacZ5lAJJvhD0fQ  # Wikidata Q434956: blocked occupation
+UC-bXlo2JKw9pjM0V0wmGrGA  # Wikidata Q21659448: non-performer
+UCArVi6FH57DfXJWn1Gc8iAQ  # Wikidata Q67141180: non-performer
+UCH09uL3dLqsVsOh0XmapzLQ  # Wikidata Q55021894: non-performer
+UC-LqvZMkzlQIT2Wy6LyE1_A  # Wikidata Q1130577: non-performer
+UCu9g5OmzcCpcJnmSYyHnIVw  # Wikidata Q108678447: non-performer
+UCU1iFn3BNC1We_F_3Zc8VWA  # Wikidata Q4142134: non-performer
+UC26zQlW7dTNcyp9zKHVmv4Q  # Wikidata Q108688164: non-performer
+UCpJlmVOckoFYvK4Mf7tM4bQ  # Wikidata Q111145166: non-performer
+UCgM5P6QGHmrvu5fDPx79mug  # Wikidata Q20058639: non-performer
+UCFF2EpkAZoX8MQKhSjMZELw  # Wikidata Q108687859: non-performer
+UC54BNgZlPoWZg-Jg66Dt9SA  # Wikidata Q64713293: non-performer
+UCZH6G3Z5XINU6r92QN1l5Lw  # Wikidata Q3644483: non-performer, corporate
+UCnEiGCE13SUI7ZvojTAVBKw  # Wikidata Q5284: public office
+UCStaiwu-FAgp_RC_tBiLh9A  # Wikidata Q28404534: non-performer
+UChh-akEbUM8_6ghGVnJd6cQ  # Wikidata Q126638: non-performer
+UCP6HGa63sBC7-KHtkme-p-g  # Wikidata Q39681: non-performer
+UCdq61m8s_48EhJ5OM_MCeGw  # Wikidata Q18156042: non-performer
+UC9DXZC8BCDOW6pYAQKgozqw  # Wikidata Q35886: non-performer
+UCEonTFGPeAX7fmq28pfs6Vg  # Wikidata Q116971813: crime
+UCGp4u0WHLsK8OAxnvwiTyhA  # Wikidata Q2893565: non-performer
+UCJEdqOhpTEtHf246ri8vkrw  # Wikidata Q108678723: non-performer
+UCjwhEPNX5rsU6gl_8qZMQZg  # Wikidata Q158175: party affiliation
+UC4FVKG3QEgghwbnPDtfC1-Q  # Wikidata Q26882622: non-performer
+UCmQmc-Y4N9btVMUS1BfnyDw  # Wikidata Q1744: party affiliation
+UC9Rgo0CrNyd7OWliLekqqGA  # Wikidata Q4654772: non-performer, corporate
+UCCMo6F7pLIg_xF0wD-M6oHQ  # Wikidata Q108678464: non-performer
+UCLDbKMN_2Be5CSXhilgp-2g  # Wikidata Q271471: deceased
+UCXvSeBDvzmPO05k-0RyB34w  # Wikidata Q48815975: non-performer, corporate
+UC52X5wxOL_s5yw0dQk7NtgA  # Wikidata Q40469: non-performer, corporate
+UCGGdOIkVIZipux13jt7rprw  # Wikidata Q107564133: deceased
+UCDrq5eTH19GAW7mAPurFZQQ  # Wikidata Q108678574: non-performer
+UCtJe4NoCrHVFiLxcIi4gPvg  # Wikidata Q108678440: non-performer
+UCTil5w82CDH6HRmkjcPbsZw  # Wikidata Q114563941: non-performer
+UCC6ulNJ-KDoIa3VI2gcvQpA  # Wikidata Q111145116: non-performer
+UCeZje_7vr6CPK9vPQDfV3WA  # Wikidata Q111145132: non-performer
+UCIGl_6GmKR7fPRBBDDRcR0Q  # Wikidata Q111145171: non-performer
+UCzEnk4KWFlSj_PjXLz0-GMA  # Wikidata Q108678677: non-performer
+UCV8Do0nwSrYP7lwPBS4LWpw  # Wikidata Q119845915: non-performer
+UCHpw8xwDNhU9gdohEcJu4aA  # Wikidata Q11148: non-performer
+UCYsa8SOy3TkoxI5D17s1u-w  # Wikidata Q124038400: non-performer
+UCfLGZs8bSDbkNJjCRIE7NSg  # Wikidata Q3279602: non-performer
+UCd2KNtfphz8HvYzM4pwtHmg  # Wikidata Q1522899: non-performer
+UCqrimRUsQ-hTI8ceDP9c3FQ  # Wikidata Q795563: non-performer
+UCvxWyn4rfcI2H9APhfUIB1Q  # Wikidata Q468048: blocked occupation
+UC0G2qz-hoaCswQNgoWU_LTw  # Wikidata Q1326127: non-performer
+UCzFUs-fmDxTSIoaWYeFFyOA  # Wikidata Q111145160: non-performer
+UCF4uIIqbIy05Cmzx3rRt_8g  # Wikidata Q755830: India link
+UCqljQ3DHw8sTiPw5WLArNuA  # Wikidata Q151241: non-performer
+UCvRQKXtIGcK1yEnQ4Te8hWQ  # Wikidata Q46919525: non-performer
+UC-yewGHQbNFpDrGM0diZOLA  # Wikidata Q28924867: party affiliation, blocked occupation
+UCmKnJ1mLbnHNXS-fPNWO0OA  # Wikidata Q108678655: non-performer
+UCq3QBWXCKvMnltjwqWuB5bQ  # Wikidata Q111145186: non-performer
+UC18vz5hUUqxbGvym9ghtX_w  # Wikidata Q4273978: blocked occupation
+UCQfwfsi5VrQ8yKZ-UWmAEFg  # Wikidata Q166180: non-performer, corporate
+UCSrZ3UV4jOidv8ppoVuvW9Q  # Wikidata Q8478: non-performer, corporate
+UCYwrS5QvBY_JbSdbINLey6Q  # Wikidata Q26678: non-performer, corporate
+UCEjTIBn0uJe2g9q_glGTolw  # Wikidata Q108687970: non-performer
+UChc-m3saf8K2oJHDSsnsj_A  # Wikidata Q108678825: non-performer
+UCRLZb8PpI9N7COmYqHiDH7A  # Wikidata Q22313035: non-performer
+UCCA9jYYLcoteMaqynrIAylA  # Wikidata Q106866846: non-performer
+UCQG4cX86zZ51IU2cerZgPSA  # Wikidata Q111145199: non-performer
+UC8az0OO4wXXu2k0ifJjxxBg  # Wikidata Q20983895: non-performer
+UCf6J9yokPS0ys456jvjLBGQ  # Wikidata Q108678841: non-performer
+UC2Nul9h-VpjBpc9YL_VaVdA  # Wikidata Q3297371: non-performer
+UCvAhDxNNUDhi78tMXVGBUaQ  # Wikidata Q108678706: non-performer
+UCgrNz-aDmcr2uuto8_DL2jg  # Wikidata Q28089296: non-performer
+UCNFOCainfQUP0PE2O--j2LQ  # Wikidata Q361649: crime
+UCtInrnU3QbWqFGsdKT1GZtg  # Wikidata Q46199: non-performer
+UCm9K6rby98W8JigLoZOh6FQ  # Wikidata Q98446917: public office
+UCrg86qHshl4dGNc04A8RNDg  # Wikidata Q92564469: non-performer, corporate
+UCWlIGsKGsvgFJHkiZml4O1A  # Wikidata Q108687848: non-performer
+UCUkl1Yy2O0W0xNTqwpDjY9A  # Wikidata Q795561: non-performer
+UCCuzDCoI3EUOo_nhCj4noSw  # Wikidata Q138675635: non-performer
+UCuuWVW-KSu5eetL0Dlir-Rw  # Wikidata Q23541285: deceased
+UCTu8uX6lp735Jyc9wbM8I3w  # Wikidata Q16529841: non-performer
+UCKmLw-0rYN0prXDFITjN4og  # Wikidata Q241163: non-performer
+UC8EQAfueDGNeqb1ALm0LjHA  # Wikidata Q116671684: non-performer
+UCnj0TjaM0wyxkAWW_nz8_1g  # Wikidata Q83276: non-performer, corporate
+UC7zygr3uEiMSkxv-6nbFUGQ  # Wikidata Q16499972: non-performer
+UCuVxaQDraOja6xKidcmoufA  # Wikidata Q7226423: non-performer
+UCFKh_wQP_PhBMYIcVBiYmKA  # Wikidata Q7025410: non-performer, corporate
+UCIG1k8umaCIIrujZPzZPIMA  # Wikidata Q135908295: non-performer
+UChiwLDIBJrV5SxqdixMHmQA  # Wikidata Q28361581: non-performer
+UCofNexGUsTb8z0Qo4uclRIg  # Wikidata Q108678804: non-performer
+UCTrQ7HXWRRxr7OsOtodr2_w  # Wikidata Q3707372: non-performer
+UC1cdDGiSJUHm9r8z5ug8Brg  # Wikidata Q111145125: non-performer
+UCL8Nxsa1LB9DrMTHtt3IKiw  # Wikidata Q619899: non-performer
+UCcILXXthGExGeKAQLAIUaFQ  # Wikidata Q124816625: non-performer
+UCVi6ofFy7QyJJrZ9l0-fwbQ  # Wikidata Q137882945: non-performer
+UCwO2IsXSjviAoYnaYS2dAhQ  # Wikidata Q7025410: non-performer, corporate
+UC9M7-jzdU8CVrQo1JwmIdWA  # Wikidata Q94: non-performer
+UCnQC_G5Xsjhp9fEJKuIcrSw  # Wikidata Q4886439: party affiliation, blocked occupation
+UC8ZbLfj2ByWKkafT6N2hapw  # Wikidata Q24090301: non-performer
+UCCOSYITWQHRSUxvlQ4_PSCg  # Wikidata Q1046812: non-performer
+UC_Q2CkNSioDmiyeGTe5qq1g  # Wikidata Q28970594: deceased
+UCIICvcFTHdlmlZAY2tpYiMQ  # Wikidata Q28171825: non-performer, India link
+UCYU4eunPInnHTNWfGvOgkbg  # Wikidata Q1203: deceased, blocked occupation
+UCSo0TqIHMNPOE-NZ2Dwmkpg  # Wikidata Q689093: non-performer
+UC3Kmov5NYlfcDFS5OPcix7g  # Wikidata Q156491: deceased
+UCF5tN4DO3Eh-BBOddG09gHw  # Wikidata Q111145033: non-performer
+UCVHFbqXqoYvEWM1Ddxl0QDg  # Wikidata Q37870967: non-performer
+UCdtNjOwfQpgVK0FyOeLyzrg  # Wikidata Q79031: crime
+UCKo61AAaRD00ibCWJZ321MQ  # Wikidata Q64819822: non-performer
+UCrNnk0wFBnCS1awGjq_ijGQ  # Wikidata Q3245159: non-performer, corporate
+UC8YgWcDKi1rLbQ1OtrOHeDw  # Wikidata Q5383: deceased
+UC0uRT_armQXqds_rjTjqJ0g  # Wikidata Q80955: non-performer
+UCtGG8ucQgEJPeUPhJZ4M4jA  # Wikidata Q58648640: non-performer
+UCdpfQWie2gS-DdZLvrcQL6Q  # Wikidata Q130387160: non-performer
+UCAI5QLNSOSzOQTYCyNA06EQ  # Wikidata Q108678652: non-performer
+UCFrj6EBhnHlWqmvuwH1Ue4g  # Wikidata Q111145114: non-performer
+UCbRaUB7Hfe3clmKqqj8Nm1Q  # Wikidata Q105800495: deceased
+UCHd62-u_v4DvJ8TCFtpi4GA  # Wikidata Q166032: non-performer
+UCoOx45FcGxN7sI2xQakj0EA  # Wikidata Q1141217: non-performer
+UCESiRVMacmdsijiOtKvOeKQ  # Wikidata Q108688197: non-performer
+UCRMqQWxCWE0VMvtUElm-rEA  # Wikidata Q689141: non-performer
+UCZditekzWG-XNa4Utxzl_oA  # Wikidata Q18735049: blocked occupation
+UC4EY_qnSeAP1xGsh61eOoJA  # Wikidata Q1091983: non-performer
+UCSXm6c-n6lsjtyjvdD0bFVw  # Wikidata Q30118742: non-performer, corporate
+UCe3JCin4Gnv9azlWnAs5keg  # Wikidata Q133151: deceased
+UCZ8TREbPfawhSvayVe5pqKg  # Wikidata Q6351976: non-performer
+UCgyeJxD05YnoDquRMNBfBqw  # Wikidata Q215616: non-performer, corporate
+UCxAS_aK7sS2x_bqnlJHDSHw  # Wikidata Q20926529: non-performer
+UCk1SpWNzOs4MYmr0uICEntg  # Wikidata Q262900: non-performer
+UCD4ZEYIBnHIC2DUhiizMOHg  # Wikidata Q33105357: non-performer
+UCrd4Hfglr4EczsLXKdGvCLA  # Wikidata Q19663348: blocked occupation
+UCB0ABGbdSggBXLF0UdN4d5A  # Wikidata Q1953422: non-performer
+UCqcBu0YyEJH4vfKR--97cng  # Wikidata Q116171511: non-performer
+UC-6CA78zz_ZBl1vvJs5cWlw  # Wikidata Q111145122: non-performer
+UCv8k8_27bc7kEFGIsGYQpTA  # Wikidata Q7546779: non-performer
+UC3Xzm_n7d0jy726uHsTX7yA  # Wikidata Q16246617: non-performer
+UCvyyU4AdijSZFEO7qqXP6kQ  # Wikidata Q2685: public office, party affiliation, blocked occupation
+UCsoRf1YgRAfBndhyJzI8o6w  # Wikidata Q206152: deceased
+UCVgO39Bk5sMo66-6o6Spn6Q  # Wikidata Q4650197: non-performer
+UCKXUXx16fR-S0m54fDG9-MQ  # Wikidata Q19896109: India link
+UCWw6scNyopJ0yjMu1SyOEyw  # Wikidata Q7679885: non-performer
+UCGWkDcYbDKP9r--ym28YwAQ  # Wikidata Q941317: non-performer
+UCknLrEdhRCp1aegoMqRaCZg  # Wikidata Q39055013: non-performer
+UCla6APLHX6W3FeNLc8PYuvg  # Wikidata Q24078962: party affiliation, blocked occupation
+UCAmia3u27mHY-Y6c-lwakAQ  # Wikidata Q483913: non-performer
+UCclfz6zVWWOpsQsg3OheI3g  # Wikidata Q19894247: India link
+UCmkNr8WQC7zAC5TnYDI0wQw  # Wikidata Q615: public office, crime
+UC4zyoIAzmdsgpDZQfO1-lSA  # Wikidata Q3182559: non-performer
+UCztSIZEGBfWfC3Mq63QXnsA  # Wikidata Q55137543: non-performer, corporate
+UCQ8RapbM0DvGham-zDZEeFA  # Wikidata Q287149: non-performer, corporate
+UCsx4XWIceP5TsfGAT3Cuxpw  # Wikidata Q18149471: non-performer
+UCHcb3FQivl6xCRcHC2zjdkQ  # Wikidata Q55956050: deceased
+UCv3mNSNjuWldihk1DUdnGtw  # Wikidata Q7542: deceased
+UC35KuZBNIj4S5Ls0yjY-UHQ  # Wikidata Q5013089: non-performer
+UCPgLNge0xqQHWM5B5EFH9Cg  # Wikidata Q192621: non-performer
+UCVGOyzms_XJNk_DHqrffXCw  # Wikidata Q1406: non-performer
+UCatkw-24OJitQmOVKPhQk1g  # Wikidata Q7672209: non-performer, corporate
+UCGibQ-8a0sWpFXZGeYFjLYQ  # Wikidata Q90406228: non-performer
+UCqhY2i3JiRK0mZIUXP0CoQw  # Wikidata Q1505036: non-performer, corporate
+UCccjdJEay2hpb5scz61zY6Q  # Wikidata Q13974: non-performer
+UCFMjkrMT7Gvg84v0av-DIwA  # Wikidata Q19816655: India link
+UC6n8I1UDTKP1IWjQMg6_TwA  # Wikidata Q110628596: non-performer
+UCWt3xWeVSCnVPZFdhcjFsUQ  # Wikidata Q71245939: non-performer
+UCL0iAkpqV5YaIVG7xkDtS4Q  # Wikidata Q14636918: non-performer
+UCbLIqv9Puhyp9_ZjVtfOy7w  # Wikidata Q84587038: non-performer
+UC8yH-uI81UUtEMDsowQyx1g  # Wikidata Q48767445: non-performer
+UCUDQdVsKssximyFwg4IxnOQ  # Wikidata Q7025410: non-performer, corporate
+UCG08EqOAXJk_YXPDsAvReSg  # Wikidata Q63966: non-performer
+UCd8iY-kEHtaB8qt8MH--zGw  # Wikidata Q27586: non-performer
+UCImh042Sqo5MilDYye2dU_A  # Wikidata Q56469716: blocked occupation
+UCuCFbUOszL3QkYVUWZzKH8Q  # Wikidata Q3868643: non-performer, corporate
+UCX-EPC5_NsFmRFkfzTFaP9Q  # Wikidata Q108678451: non-performer
+UCG749Dj4V2fKa143f8sE60Q  # Wikidata Q7804121: blocked occupation
+UCqzju-_WMKsgNx8R3QwupQQ  # Wikidata Q1330225: non-performer
+UCAlTDckOOQ2jREOvuCShGbw  # Wikidata Q409: deceased
+UCQdSC4folRoUuPC3iiRkfFQ  # Wikidata Q467374: non-performer
+UCphl7N613vv9pgds_LdvpGg  # Wikidata Q51594682: non-performer
+UCxeMrViqXdLty51nKv3x-bQ  # Wikidata Q12297529: non-performer, corporate
+UCJg9wBPyKMNA5sRDnvzmkdg  # Wikidata Q121917610: non-performer
+UCDPQ8ANBva99QDVljBO8idg  # Wikidata Q6025486: non-performer
+UClQMNIPzABe5FqUrOO0yEiQ  # Wikidata Q19840989: non-performer
+UCL-g3eGJi1omSDSz48AML-g  # Wikidata Q28133964: non-performer
+UCEp_zjPPu8XG004wTNaMAkg  # Wikidata Q108688189: non-performer
+UCZqwIV1CGK_8MGMyvDrJvqw  # Wikidata Q108678557: non-performer
+UCQdq-lqPEq_yZ_wP_kuVB9Q  # Wikidata Q31179359: non-performer, corporate
+UC7SeFWZYFmsm1tqWxfuOTPQ  # Wikidata Q50857886: party affiliation
+UCAogbKfNxlAKxzBXFHB8i5g  # Wikidata Q12580711: non-performer, corporate
+UCalCDSmZAYD73tqVZ4l8yJg  # Wikidata Q461856: non-performer
+UC2qmmoQdJXLmre794U6zjXw  # Wikidata Q2308012: non-performer
+UCktXW3AQVjtZOFVjjiZRQpw  # Wikidata Q108678679: non-performer
+UCjDsbbzHgTrGc4Ff26TJtsA  # Wikidata Q5321351: non-performer
+UC6xD-jKli-_qIYXDTsNv4dw  # Wikidata Q542767: non-performer
+UCHS5XKgf2FCBF8pZllE_bjw  # Wikidata Q113069937: non-performer
+UC9zgYOQB6zkleAQjW53DLeQ  # Wikidata Q192284: non-performer, corporate
+UCihfR9bbPcwuMS5Y7Uxc5dw  # Wikidata Q81258872: deceased
+UCmONQe9yHyPcETc5xdiZMcA  # Wikidata Q28610155: non-performer
+UCcpONlgbqXAjyxsavqtauog  # Wikidata Q114310265: deceased
+UCkRJi9PI4RNYEh3QA64urYA  # Wikidata Q3346898: non-performer, corporate
+UC3CjpLYrGnKVvBUBXRe81dA  # Wikidata Q108566252: public office
+UC9EwwCBwzWhGGlNJujnnnRA  # Wikidata Q2624442: non-performer
+UC3NFtmTQ_bt87KOXx4QR3LA  # Wikidata Q161877: party affiliation
+UCRCOCvfOkoqneyQCbNOUPwg  # Wikidata Q3520826: non-performer
+UCJibHQKGbAb3PT6aCctYg2w  # Wikidata Q108688211: non-performer
+UCCspJ6mFfCwOV4qFjZWi2wg  # Wikidata Q1636958: non-performer
+UCW5gbSGTGIukUDsPt2sdhGw  # Wikidata Q16164774: non-performer, corporate
+UCT80YajolSXW8_ST9TFYS3Q  # Wikidata Q111145215: non-performer
+UChuLeaTGRcfzo0UjL-2qSbQ  # Wikidata Q137853: non-performer
+UC7ZWjLGJ20SDZ4DB071Y_ag  # Wikidata Q260794: blocked occupation
+UCvRoxL3xFaXyU6w9o0lxGPQ  # Wikidata Q1237110: public office
+UCcGL_0yoZTskvlgAixaEjEg  # Wikidata Q88995163: non-performer
+UC2ByuVQZEDA1fg6EzchETeQ  # Wikidata Q141646012: non-performer
+UCi-aUVwZR5U8GBNOy0CC4ww  # Wikidata Q7277893: non-performer, corporate
+UCw3fku0sH3qA3c3pZeJwdAw  # Wikidata Q210534: non-performer
+UC4sxB7lQ17CKRpFQpntloRg  # Wikidata Q107564133: deceased
+UCanSUlhgDEwVpNdVEurMA1A  # Wikidata Q17125136: non-performer
+UCQIyqMWCdx1GBvbw_Yi6lEA  # Wikidata Q173663: non-performer
+UCT1mF-u0Lcf7bYuUWTvDcpw  # Wikidata Q108678840: non-performer
+UCpWvshQVx1d7BqCsPnVuNIw  # Wikidata Q3522843: non-performer
+UCKcx1uK38H4AOkmfv4ywlrg  # Wikidata Q1543: non-performer
+UCd3X-p_3fRLHnu8LCPOMTNg  # Wikidata Q22936556: non-performer
+UCVSNOxehfALut52NbkfRBaA  # Wikidata Q228389: non-performer
+UCt8hUmML7zjM6effdZ3Ip5A  # Wikidata Q5281128: non-performer, corporate
+UCNMg6XDhRZI2QzL4pWOvP_w  # Wikidata Q6851: non-performer
+UChxaVQzXj3noXD5QHBWXfEg  # Wikidata Q108678713: non-performer
+UCM_zp2dVNflkGFWAFM_N7lg  # Wikidata Q15929999: non-performer
+UC59KhIPOR0Jj653dC4laEJw  # Wikidata Q106769219: non-performer
+UC4SUWizzKc1tptprBkWjX2Q  # Wikidata Q1198574: non-performer
+UCwjiBFz7LuxYvmIRw5kChFA  # Wikidata Q652569: non-performer
+UCJ6jdm9qTla9Lp3Jf-TPwbg  # Wikidata Q180432: non-performer
+UCe7sQfrqTHc-hWXdenf7VxQ  # Wikidata Q882: deceased
+UCAeWdyKJXGWmVAXFpgLNNTg  # Wikidata Q700402: non-performer
+UCcL78rRNuUQ8t7Dx4CLmRqA  # Wikidata Q2050788: India link
+UCJCUbMaY593_4SN1QPG7NFQ  # Wikidata Q3550660: non-performer, corporate
+UCeRe0C1x1w8We6ghjVn4M5w  # Wikidata Q1357035: crime
+UC7FldPQ7aT7Slikg7tZc30g  # Wikidata Q111265617: deceased
+UCuiK2XdDcyAd7TS9ioMqx6A  # Wikidata Q1812233: non-performer, corporate
+UCam8VtqRmUKCD-HWZgHtMEg  # Wikidata Q23815608: blocked occupation
+UCE28rwYoaV7jvU6GVzdu_GQ  # Wikidata Q369225: non-performer
+UClH-KpveOLJszChWRfFmPfQ  # Wikidata Q129793: non-performer
+UCkyfHZ6bY2TjqbJhiH8Y2QQ  # Wikidata Q19660032: non-performer
+UCTSvHZkOStz5Ak2J_q6YRlA  # Wikidata Q4938489: non-performer, corporate
+UCZq427EjGqUbV6pZIjEKkgg  # Wikidata Q157064: non-performer, corporate
+UC7fWeaHhqgM4Ry-RMpM2YYw  # Wikidata Q6063045: non-performer, corporate
+UC5G6kTnHXDz0WIBC2VGBOqg  # Wikidata Q7852: non-performer
+UCtBOJ9bEAoMOY9keGK6p2hQ  # Wikidata Q637164: non-performer
+UCENdrrK5sWM-RV5nTLwBNXw  # Wikidata Q348603: party affiliation, blocked occupation
+UCHBDXQDmqnaqIEPdEapEFVQ  # Wikidata Q204839: non-performer
+UCNuLcjVa3vCeHFyUeTKtBlA  # Wikidata Q640403: non-performer
+UCc3_ZthcYkMidoyly5kr83w  # Wikidata Q55641: non-performer
+UCYHfntv8p9G4c5ihe2NQM2w  # Wikidata Q158957: India link, public office
+UCBK_MzhanH8HamrFbABbe8Q  # Wikidata Q152864: non-performer
+UCO9b3Z-La3frSspQzNDiaPg  # Wikidata Q22907768: non-performer
+UCXTo3dt8TiauxltUe2HJdhg  # Wikidata Q28401914: non-performer
+UCKB_bev_I9nJqOw8CNlFB6A  # Wikidata Q559819: deceased, party affiliation
+UC7PY0etqxH1bbyon_9pzp_g  # Wikidata Q127256339: deceased
+UCBHwRLyX4GSHQ8XOFfJq84A  # Wikidata Q136445870: blocked occupation
+UCg70JR8kcR0fTdarQf9xj_w  # Wikidata Q17053233: non-performer
+UCE2oY4S4wOu6WofU2YbfWsw  # Wikidata Q4653987: non-performer, corporate
+UC6JBm9OAkpI6NUBV_NsLxTA  # Wikidata Q234606: crime, blocked occupation
+UCdnZdQxYXnbN4uWJg96oGxw  # Wikidata Q14903716: non-performer
+UC-xwwLWkh1Ypt90iJ7BvBew  # Wikidata Q21541647: non-performer, corporate
+UChjRM_qQAaOAiLNbOGbYcRA  # Wikidata Q104055230: non-performer
+UCPZsNertSS82YCT2qX9-wHA  # Wikidata Q4052939: non-performer
+UC8xwCP2Mn_WMY7Jr5q9FrvQ  # Wikidata Q7376314: blocked occupation
+UCrkkpNg0J0ziftHs6-5APhA  # Wikidata Q15154003: non-performer, corporate
+UCKhSqWRvBtjlivrs_xeT5aQ  # Wikidata Q19320959: non-performer
+UCCy3lijIc5OdCtNlDuKvzEg  # Wikidata Q7226103: non-performer, corporate
+UC-DuRqsBQOEk_5o1q4Ze-Fg  # Wikidata Q319565: non-performer
+UCaXKudqtVNM8pFvSx-ObYxQ  # Wikidata Q108687958: non-performer
+UCw7Krs0sYKx-tgX_d8A7Bqw  # Wikidata Q141328130: non-performer
+UCbr_gpafjcwT_MjV6K3Nh5g  # Wikidata Q39058079: non-performer
+UCyAN55vvo8odHHg7QY1pf5w  # Wikidata Q1034646: non-performer, corporate
+UC6o-wWU-v2ClFMwougmK7dA  # Wikidata Q25869: non-performer
+UClqCSuQEhuuiprJVTw3-rJQ  # Wikidata Q132360511: non-performer
+UC-kFCSJLpxuJdgMnQz8Dvrg  # Wikidata Q85140373: non-performer
+UCMTk_R_Y49jvq-HQXDmKI0Q  # Wikidata Q108678586: non-performer
+UC04KsGq3npibMCE9Td3mVDg  # Wikidata Q28453499: non-performer
+UClh2CI968a1tE8pQ31pg_Ww  # Wikidata Q115768547: non-performer
+UCn3jIZe_5xsAgo5FlvyYCXw  # Wikidata Q48815367: non-performer
+UCBmwzQnSoj9b6HzNmFrg_yw  # Wikidata Q509284: non-performer
+UC3XaG-7UVi2vD8ZZEMNnnpw  # Wikidata Q28452148: non-performer
+UCI3RT5PGmdi1KVp9FG_CneA  # Wikidata Q5323690: non-performer
+UCKCKzDbSsAYMGp2BccEaRUw  # Wikidata Q2930318: non-performer
+UCNbIDJNNgaRrXOD7VllIMRQ  # Wikidata Q17107494: non-performer
+UCkiC21kJxYO_eUEJ5GgFLnw  # Wikidata Q16952600: non-performer
+UC7YJqQIW_NACsE8wGZslsLw  # Wikidata Q1156382: non-performer, corporate
+UCIJ_l9TjwwVNO-S6QW0OXvg  # Wikidata Q110392699: non-performer
+UCo6fjlKg6GuCmEMeqYbGJng  # Wikidata Q178516: non-performer
+UCAM9Pvp3HzKvIAbAXHxidow  # Wikidata Q379079: non-performer
+UCdyMFblTjr-C2N-T5TGftQQ  # Wikidata Q108678461: non-performer
+UCdBD6uy0ZuX7sLK4__Ll6LQ  # Wikidata Q206112: party affiliation
+UCZLFu8bHbwtnIgWLg5UtINw  # Wikidata Q104857574: non-performer
+UC_PQ7gGEKIwJv0YsnxH3dUw  # Wikidata Q105962756: deceased
+UCGYRopFJRIOoMLmCiaEjMWw  # Wikidata Q3346898: non-performer, corporate
+UCAiKzCKUkA217-m_SuZFzjg  # Wikidata Q71209920: India link
+UCKgJEs_v0JB-6jWb8lIy9Xw  # Wikidata Q7711621: non-performer
+UCTw8xGVrk4FTAJwMG6mw22w  # Wikidata Q33978290: deceased
+UCBobmJyzsJ6Ll7UbfhI4iwQ  # Wikidata Q608276: non-performer
+UC9ckyA_A3MfXUa0ttxMoIZw  # Wikidata Q661379: non-performer
+UC93DEJOBeet3XXZlJy2uJuA  # Wikidata Q8058177: non-performer
+UCOmANDuJs2IHiEq8p9Ll5tw  # Wikidata Q1804779: non-performer
+UC_aP7p621ATY_yAa8jMqUVA  # Wikidata Q23548: non-performer
+UCB-7IEpKGIdXkgGUObE5D5A  # Wikidata Q23008275: non-performer, corporate
+UCMdtv1z_kXj7Wd97MA7BjXA  # Wikidata Q1418: non-performer, corporate
+UCJtvg6ZFwzdFdtcHBqetvwg  # Wikidata Q40912: deceased, party affiliation
+UC1rKAv7IwCeynqa9MPNfYaA  # Wikidata Q63977700: non-performer
+UCWIzrKzN4KY6BPU8hsk880Q  # Wikidata Q111792308: non-performer
+UC83jt4dlz1Gjl58fzQrrKZg  # Wikidata Q40238: non-performer
+UCnsNsFAFPvFwpbaHJf2JtCQ  # Wikidata Q214480: non-performer
+UC6wdP5hTf_phre6Q3kFiV2g  # Wikidata Q2345201: party affiliation, crime, blocked occupation
+UCl6vWwMCjufI8OPtOInHf0g  # Wikidata Q56317652: non-performer
+UC5vfWTTPnKdFp-8s0KbqJhw  # Wikidata Q98381451: non-performer
+UCf_suVrG2dA5BTjJhNLwthQ  # Wikidata Q108678818: non-performer
+UCU-HGStP8v-WXtqXlV2bUHQ  # Wikidata Q110849173: non-performer
+UCRlvF4jIeBWqXJDGNXfPyVw  # Wikidata Q1058745: party affiliation, blocked occupation
+UCoc8tpGCY1wrp8pV7mI0scA  # Wikidata Q188326: non-performer, corporate
+UCMTeSubtljLd15kWqOfLATw  # Wikidata Q139961131: non-performer
+UCkfZz95mfqPnzquatVpDTsQ  # Wikidata Q67: non-performer
+UCl9E4Zxa8CVr2LBLD0_TaNg  # Wikidata Q113997907: non-performer
+UC1pOTJteEef10zJM0cHs4iQ  # Wikidata Q53268: non-performer, corporate
+UCDMnCGlkv4gyFGZo_ZT3atg  # Wikidata Q22099055: non-performer
+UCiUC-8OJ7OqxyEEPNkBJEfA  # Wikidata Q186012: non-performer, corporate
+UC47UlrwAYX5HRs5bm2KbEZg  # Wikidata Q61710215: non-performer
+UCTGBHncizmXKmgvwwLh8UlQ  # Wikidata Q124344063: non-performer
+UCiVhsXk-DUzlf0BvBXnIxog  # Wikidata Q11453392: non-performer
+UCWMl6Xw3M37ti_C964vmYvg  # Wikidata Q104434247: non-performer
+UCHY2-UtRFv1WKf4o7cpEp3w  # Wikidata Q16820462: non-performer
+UCXO2ZE-H4ZVjJDjTuQzv-Bw  # Wikidata Q1438774: non-performer
+UCJprx3bX49vNl6Bcw01Cwfg  # Wikidata Q483981: non-performer
+UCy6Pvlythh0mHb1RmSCMdCw  # Wikidata Q3595390: non-performer
+UCb--64Gl51jIEVE-GLDAVTg  # Wikidata Q1022311: non-performer
+UCY_LMaDAoa6hwHKBE4Dx56w  # Wikidata Q133521213: non-performer
+UCrmm_7RDZJeQzq2-wvmjueg  # Wikidata Q1332419: non-performer
+UCloqTh1nPpW13LCntQglS-Q  # Wikidata Q48663: non-performer
+UCNAxrHudMfdzNi6NxruKPLw  # Wikidata Q296047: party affiliation
+UCTDY63iWJKlu3dk1g2VN5rg  # Wikidata Q661869: non-performer
+UCifWD4FBa4eaKK7HLF0PlTA  # Wikidata Q16243518: non-performer
+UC22Sr8bNYjAKqxLr-snMGnA  # Wikidata Q7523123: non-performer
+UCw-kH-Od73XDAt7qtH9uBYA  # Wikidata Q170418: non-performer, corporate
+UCMnG2uX4BdrqKw0zhSYqsrQ  # Wikidata Q26923194: party affiliation, blocked occupation
+UCc68e8lhc1uFH5ht5DQsr8A  # Wikidata Q173402: non-performer
+UC6xgTiK4FtXmD6Thr_uSU7Q  # Wikidata Q593708: non-performer
+UCxjzlr0hdKWfIwK2lY0SvEg  # Wikidata Q2277867: non-performer
+UC7D-mXO4kk-XWvH6lBXdrPw  # Wikidata Q1929063: public office, party affiliation
+UCGS474QoP8SCnSo6hOCaayA  # Wikidata Q471806: non-performer
+UCIyIoM_Nd8HtY19fuR_ov2A  # Wikidata Q110568004: non-performer
+UCL0u5uz7KZ9q-pe-VC8TY-w  # Wikidata Q43302090: party affiliation, blocked occupation
+UCCyrXyelKeXFx5KDgldMmNw  # Wikidata Q755167: non-performer
+UCsvqVGtbbyHaMoevxPAq9Fg  # Wikidata Q16949803: non-performer
+UC5q0PIKGr2lGOsiT14AlEYg  # Wikidata Q191485: non-performer
+UCcabW7890RKJzL968QWEykA  # Wikidata Q17008253: non-performer
+UCoEqHpK5VNVEBRvwL0EW8Gw  # Wikidata Q220072: non-performer, corporate

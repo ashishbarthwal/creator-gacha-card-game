@@ -66,10 +66,8 @@
 # way to be told which cards a set is sold on. Recognition is not subscriber
 # count and no query can compute it, so it is stated here by hand.
 #
-# The eight pins below are exactly the eight UR slots, so this band is entirely
-# curated. The music-label channels stay in the roster unpinned: they are real
-# 50M+ channels and belong in the DB, but a card game about YouTubers should not
-# have a record label as its chase card.
+# Recognition pins identify the familiar names to preserve if a future build
+# applies a band cap. Rarity still comes from the live subscriber thresholds.
 !@MrBeast               # the definitional YouTube chase card
 !@PewDiePie             # ditto, and the older half of the same story
 !@MarkRober             # engineering builds — also the closest UR to the craft vocab
@@ -81,11 +79,11 @@
 @Cocomelon              # animated: a UR carrying no real person's face at all
 @5MinuteCraftsYouTube   # craft-adjacent, faceless brand
 @BLACKPINK              # unpinned — huge, but not an Anglosphere YouTuber
-@justinbieber           # unpinned — label channel, not a YouTuber
-@taylorswift            # unpinned
-@EdSheeran              # unpinned
-@ArianaGrande           # unpinned
-@BillieEilish           # unpinned
+!@justinbieber # recognition pin; current tier remains subscriber-based
+!@taylorswift            # globally recognized pop icon
+!@EdSheeran # recognition pin; current tier remains subscriber-based
+!@ArianaGrande # recognition pin; current tier remains subscriber-based
+!@BillieEilish # recognition pin; current tier remains subscriber-based
 
 # ── SSR candidates (10M–50M) ─────────────────────────────────────────────────
 # The band where recognition actually lives: almost every famous English-language
@@ -247,16 +245,15 @@
 # carries no likeness question at all — the "face" is a drawing the creator owns.
 
 # ── UR candidates (50M+) ─────────────────────────────────────────────────────
-# Unpinned: these are label and studio channels, real 50M+ but not what anyone is
-# chasing. They sit in the DB and fill only if a printing runs short.
+# More high-recognition music and creator channels; pins survive future caps.
 @MOVIECLIPS
-@Eminem
-@Marshmello
-@brunomars
-@Rihanna
-@katyperry
+!@Eminem # recognition pin; current tier remains subscriber-based
+!@Marshmello # recognition pin; current tier remains subscriber-based
+!@brunomars # recognition pin; current tier remains subscriber-based
+!@Rihanna                # globally recognized pop icon
+!@katyperry # recognition pin; current tier remains subscriber-based
 
-# ── SSR: gaming ──────────────────────────────────────────────────────────────
+# ?? SSR: gaming ??????????????????????????????????????????????????????????????
 !@AliA
 !@Lachlan
 !@PopularMMOs
@@ -330,3 +327,7 @@
 @Formula1
 @Netflix
 @BuzzFeedVideo
+
+# Pop and sports icons added 2026-10-20: recognition pins, not subscriber rank.
+!@cristiano              # football icon and global creator
+!@neymarjr               # football icon; English-filtered channel
